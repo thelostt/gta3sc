@@ -1,0 +1,4 @@
+varnames
+labels
+scope checking of var types when using a call / start new script / etc
+local vars can only be used in scope (TIMERA TIMERB)
