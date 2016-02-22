@@ -1,8 +1,9 @@
 #pragma once
 #include "cxx17/filesystem.hpp"
-#include "cxx17/optional.hpp"
 #include <string>
+#include <vector>
 
+// forward ANTLR structs
 struct gta3scriptLexer_Ctx_struct;
 struct gta3scriptParser_Ctx_struct;
 struct ANTLR3_COMMON_TOKEN_STREAM_struct;
@@ -39,33 +40,37 @@ private:
 class SyntaxTree
 {
 public:
-    SyntaxTree(const SyntaxTree&);             // copy is only be allowed when this->parser == nullptr
+    SyntaxTree(const SyntaxTree&) = delete;            // expensive, make a explicit method if needed
     SyntaxTree(SyntaxTree&&);
-    SyntaxTree& operator=(const SyntaxTree&);  // copy is only be allowed when this->parser == nullptr
+    SyntaxTree& operator=(const SyntaxTree&) = delete; // expensive, make a explicit method if needed
     SyntaxTree& operator=(SyntaxTree&&);
-    ~SyntaxTree();
-
+    
     static SyntaxTree compile(const TokenStream& tstream);
 
+    static SyntaxTree from_raw_tree(ANTLR3_BASE_TREE_struct*);
 
     // contains state changes
-    const std::string& text() const;
+    const std::string& text() const
+    {
+        return this->data;
+    }
 
-    size_t SyntaxTree::child_count() const;
-    SyntaxTree SyntaxTree::child(size_t i) const;
-    uint32_t type() const;
+    size_t SyntaxTree::child_count() const
+    {
+        return this->childs.size();
+    }
+    
+    const SyntaxTree& SyntaxTree::child(size_t i) const
+    {
+        return this->childs[i];
+    }
 
-
-    ANTLR3_BASE_TREE_struct* get() const {
-        return tree;
+    uint32_t type() const
+    {
+        return this->type_;
     }
 
     std::string to_string() const;
-
-    SyntaxTree shallow_copy() const
-    {
-        return SyntaxTree(nullptr, this->tree);
-    }
 
     // left to right, including visiting childs of left before going to the right
     // bool(SyntaxTree)
@@ -75,7 +80,7 @@ public:
         auto fun_ref = std::ref(fun);
         for(size_t i = 0, max = this->child_count(); i < max; ++i)
         {
-            auto child = this->child(i);
+            auto& child = this->child(i);
             if(fun(child)) child.walk(fun_ref);
         }
     }
@@ -93,24 +98,12 @@ public:
     }
 
 private:
-    ANTLR3_BASE_TREE_struct* tree;
-    gta3scriptParser_Ctx_struct* parser;
-    optional<std::string> cached_text;
+    int                     type_;
+    std::string             data;
+    std::vector<SyntaxTree> childs;
 
-    explicit SyntaxTree(gta3scriptParser_Ctx_struct* parser, ANTLR3_BASE_TREE_struct* tree);
-};
-
-class Token
-{
-public:
-    Token(const Token&) = default;
-    Token(Token&&) = default;
-    Token& operator=(const Token&) = default;
-    Token& operator=(Token&&) = default;
-
-protected:
-    explicit Token(ANTLR3_COMMON_TOKEN_struct* token);
-
-private:
-    ANTLR3_COMMON_TOKEN_struct* token;
+    explicit SyntaxTree(int type, std::string data = std::string())
+        : type_(type), data(std::move(data))
+    {
+    }
 };

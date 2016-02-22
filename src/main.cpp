@@ -4,6 +4,8 @@
 #include <vector>
 #include "parser.hpp"
 
+#include "cxx17/optional.hpp"
+
 #include "thirdparty/cppformat/format.h"
 
 struct iless
@@ -194,7 +196,7 @@ struct SymTable
                         type == ScriptType::Mission? this->mission :
                         assert(!"A"), this->mission);
 
-        auto args = command.child(1);
+        auto& args = command.child(1);
 
         // ignore validity of parameters for now?
         if(args.child_count() >= 1)
@@ -259,19 +261,15 @@ struct SymTable
 
 struct Script : std::enable_shared_from_this<Script>
 {
-    fs::path    path;       // ...order of those...
-    TokenStream tstream;    // ...members is important...
-    SyntaxTree  tree_owner; // ...for construction...
-    SyntaxTree  tree;       // ...this too..
+    fs::path    path;       // ...order of those members...
+    SyntaxTree  tree;       // ...is important for construction...
 
     ScriptType type;
 
     Script(fs::path path_, ScriptType type)
         : type(type),
           path(std::move(path_)),
-          tstream(this->path),
-          tree_owner(SyntaxTree::compile(this->tstream)),
-          tree(tree_owner.shallow_copy())
+          tree( SyntaxTree::compile(TokenStream(this->path)) )
     {
     }
 
@@ -355,7 +353,7 @@ SymTable Script::scan_symbols() const
 
                 for(size_t i = 0, max = node.child_count(); i < max; ++i)
                 {
-                    auto varnode = node.child(i);
+                    auto& varnode = node.child(i);
 
                     auto name = varnode.text();
                     auto count = optional<uint32_t>(nullopt);

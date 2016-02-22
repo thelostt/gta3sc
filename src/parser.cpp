@@ -48,61 +48,55 @@ std::string read_file_utf8(const fs::path& path)
 }
 
 //
-// Token
-//
-
-Token::Token(pANTLR3_COMMON_TOKEN token)
-    : token(token)
-{
-}
-
-//
 // SyntaxTree
 //
 
-SyntaxTree::SyntaxTree(pgta3scriptParser parser, pANTLR3_BASE_TREE tree) :
-    parser(parser), tree(tree)
+SyntaxTree SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
 {
-}
+    std::string data;
+    int type = node->getType(node);
+    size_t child_count = node->getChildCount(node);
 
-SyntaxTree::SyntaxTree(const SyntaxTree& rhs)
-{
-    *this = rhs;
+    switch(type)
+    {
+        case IDENTIFIER:
+        case INTEGER:
+        case FLOAT:
+        {
+            data = (const char*) node->getText(node)->chars;
+            break;
+        }
+
+        case LONG_STRING:
+        case SHORT_STRING:
+            data = (const char*) node->getText(node)->chars;
+            break;
+    }
+
+    SyntaxTree tree(type, data);
+    tree.childs.reserve(child_count);
+
+    for(size_t i = 0; i < child_count; ++i)
+    {
+        auto node_child = (pANTLR3_BASE_TREE)(node->getChild(node, i));
+        tree.childs.emplace_back(from_raw_tree(node_child));
+    }
+
+    return tree;
 }
 
 SyntaxTree::SyntaxTree(SyntaxTree&& rhs)
+    : type_(rhs.type_), data(std::move(rhs.data)), childs(std::move(rhs.childs))
 {
-    *this = std::move(rhs);
-}
-
-SyntaxTree::~SyntaxTree()
-{
-    if(this->parser)
-        this->parser->free(this->parser);
+    rhs.type_ = 1;
 }
 
 SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
 {
-    if(this->parser)
-        this->parser->free(this->parser);
-
-    this->parser = rhs.parser;
-    this->tree = rhs.tree;
-    rhs.parser = nullptr;
-
-    return *this;
-}
-
-SyntaxTree& SyntaxTree::operator=(const SyntaxTree& rhs)
-{
-    assert(rhs.parser == nullptr);
-
-    if(this->parser)
-        this->parser->free(this->parser);
-
-    this->parser = rhs.parser;
-    this->tree = rhs.tree;
-
+    this->data = std::move(rhs.data);
+    this->childs = std::move(rhs.childs);
+    this->type_ = rhs.type_;
+    rhs.type_ = -1;
     return *this;
 }
 
@@ -115,7 +109,7 @@ SyntaxTree SyntaxTree::compile(const TokenStream& tstream)
 
         if(start_tree.tree)
         {
-            return SyntaxTree(parser, start_tree.tree);
+            return SyntaxTree::from_raw_tree(start_tree.tree);
         }
     }
 
@@ -124,49 +118,9 @@ SyntaxTree SyntaxTree::compile(const TokenStream& tstream)
 
 std::string SyntaxTree::to_string() const
 {
-    auto raw = tree->toStringTree(tree);
-    auto result = std::string((const char*)(raw->chars), raw->len);
-    raw->factory->destroy(raw->factory, raw);
-    return result;
+    // stub
+    return "";
 }
-
-uint32_t SyntaxTree::type() const
-{
-    return tree->getType(tree);
-}
-
-size_t SyntaxTree::child_count() const
-{
-    return tree->getChildCount(tree);
-}
-
-SyntaxTree SyntaxTree::child(size_t i) const
-{
-    if(void* p = tree->getChild(tree, i))
-    {
-        return SyntaxTree(nullptr, (pANTLR3_BASE_TREE)(p));
-    }
-    else
-    {
-        assert(!"TODO");
-    }
-}
-
-const std::string& SyntaxTree::text() const
-{
-    // This function is very stateful despite the constness of the function.
-    // Both tree->getText and us will do state changes.
-
-    if(!this->cached_text)
-    {
-        // VERY STATEFUL BLOCK
-        auto str = tree->getText(tree);
-        const_cast<SyntaxTree*>(this)->cached_text.emplace((const char*)(str->chars), str->len);
-        str->factory->destroy(str->factory, str);
-    }
-    return this->cached_text.value();
-}
-
 
 
 
