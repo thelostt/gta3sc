@@ -55,10 +55,6 @@ struct iequal_to
 };
 
 //////////////
-#include "grammar/autogen/gta3scriptLexer.h"
-#include "grammar/autogen/gta3scriptParser.h"
-#undef true
-#undef false
 
 using std::shared_ptr;
 using std::weak_ptr;
@@ -102,28 +98,28 @@ enum class ScriptType
 
 
 // <global, VarType>
-inline std::pair<bool, VarType> token_to_vartype(uint32_t token_type)
+inline std::pair<bool, VarType> token_to_vartype(NodeType token_type)
 {
     switch(token_type)
     {
-    case VAR_INT:
-        return std::make_pair(true, VarType::Int);
-    case VAR_FLOAT:
-        return std::make_pair(true, VarType::Float);
-    case VAR_TEXT_LABEL:
-        return std::make_pair(true, VarType::TextLabel);
-    case VAR_TEXT_LABEL16:
-        return std::make_pair(true, VarType::TextLabel16);
-    case LVAR_INT:
-        return std::make_pair(false, VarType::Int);
-    case LVAR_FLOAT:
-        return std::make_pair(false, VarType::Float);
-    case LVAR_TEXT_LABEL:
-        return std::make_pair(false, VarType::TextLabel);
-    case LVAR_TEXT_LABEL16:
-        return std::make_pair(false, VarType::TextLabel16);
-    default:
-        assert(!"wut");
+        case NodeType::VAR_INT:
+            return std::make_pair(true, VarType::Int);
+        case NodeType::VAR_FLOAT:
+            return std::make_pair(true, VarType::Float);
+        case NodeType::VAR_TEXT_LABEL:
+            return std::make_pair(true, VarType::TextLabel);
+        case NodeType::VAR_TEXT_LABEL16:
+            return std::make_pair(true, VarType::TextLabel16);
+        case NodeType::LVAR_INT:
+            return std::make_pair(false, VarType::Int);
+        case NodeType::LVAR_FLOAT:
+            return std::make_pair(false, VarType::Float);
+        case NodeType::LVAR_TEXT_LABEL:
+            return std::make_pair(false, VarType::TextLabel);
+        case NodeType::LVAR_TEXT_LABEL16:
+            return std::make_pair(false, VarType::TextLabel16);
+        default:
+            assert(!"wut");
     }
 }
 
@@ -143,16 +139,16 @@ struct Var
     {
         switch(type)
         {
-        case VarType::Int:
-            return 1 * count.value_or(1);
-        case VarType::Float:
-            return 1 * count.value_or(1);
-        case VarType::TextLabel:
-            return 2 * count.value_or(1);
-        case VarType::TextLabel16:
-            return 4 * count.value_or(1);
-        default:
-            assert(!"??");
+            case VarType::Int:
+                return 1 * count.value_or(1);
+            case VarType::Float:
+                return 1 * count.value_or(1);
+            case VarType::TextLabel:
+                return 2 * count.value_or(1);
+            case VarType::TextLabel16:
+                return 4 * count.value_or(1);
+            default:
+                assert(!"??");
         }
     }
 };
@@ -297,7 +293,7 @@ SymTable Script::scan_symbols() const
     {
         switch(node.type())
         {
-            case LABEL:
+            case NodeType::Label:
             {
                 auto name = node.child(0).text();
 
@@ -307,7 +303,7 @@ SymTable Script::scan_symbols() const
                 return false;
             }
 
-            case SCOPE:
+            case NodeType::Scope:
             {
                 if(current_scope)
                     throw CompilerError("Already inside a scope.");
@@ -322,7 +318,7 @@ SymTable Script::scan_symbols() const
                 return false;
             }
 
-            case COMMAND:
+            case NodeType::Command:
             {
                 auto name = node.child(0).text();
 
@@ -336,10 +332,10 @@ SymTable Script::scan_symbols() const
                 return false;
             }
 
-            case VAR_INT: case LVAR_INT:
-            case VAR_FLOAT: case LVAR_FLOAT:
-            case VAR_TEXT_LABEL: case LVAR_TEXT_LABEL:
-            case VAR_TEXT_LABEL16: case LVAR_TEXT_LABEL16:
+            case NodeType::VAR_INT: case NodeType::LVAR_INT:
+            case NodeType::VAR_FLOAT: case NodeType::LVAR_FLOAT:
+            case NodeType::VAR_TEXT_LABEL: case NodeType::LVAR_TEXT_LABEL:
+            case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
             {
                 bool global; VarType vartype;
 

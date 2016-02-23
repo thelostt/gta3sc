@@ -9,13 +9,35 @@ options {
 }
 
 tokens {
+	SKIPS;  // Skip this statement (newline)
 	BLOCK;	// Block of statements
 	SCOPE;	// Scope of statements { }
 	LABEL;	// Label:
 	ARRAY;	// array[1]
 	COMMAND;// COMMAND x y z
-	ARGS;
+	OP_LE;
+	OP_LEQ;
+	OP_GE;
+	OP_GEQ;
+	OP_EQ;
+	OP_ADD;
+	OP_SUB;
+	OP_MUL;
+	OP_DIV;
+	OP_MOD;
+	OP_TIMED_ADD;
+	OP_TIMED_SUB;
+	OP_CAST;
+	OP_SHL;
+	OP_SHR;
+	OP_AND;
+	OP_OR;
+	OP_XOR;
+	OP_INC; // ++
+	OP_DEC; // --
+	// Any new token, add to autogen.py
 }
+
 
 @parser::header {
    #define _empty NULL
@@ -24,6 +46,7 @@ tokens {
 @lexer::header {
    #define _empty NULL
 }
+
 
 ////////////////////////////////////////////////////////////////
 //************************** Rules **************************//
@@ -148,67 +171,77 @@ conditionListOr
 //////
 
 expressionStatement
-	:	(id=identifier opa=assignmentOperators a=argument newLine)
-		->  ^($opa $id $a)
+	:	(id=identifier opa1=assignmentOperators1 a=argument newLine)
+		->  ^($opa1 $id $a)
+	|	(id=identifier opa2=assignmentOperators2 a=argument newLine)
+		->  ^(OP_EQ $id ^($opa2 $id $a))
+	|	(id=identifier WS* '=' a=argument opb=binaryOperators b=argument newLine)
+		->  ^(OP_EQ $id ^($opb $a $b))
 	|	(id=identifier opr=relationalOperators a=argument newLine)
 		->  ^($opr $id $a)
-	|	(id=identifier (WS*)! '=' a=argument opb=binaryOperators b=argument newLine)
-		->  ^('=' $id ^($opb $a $b))
 	|   ((unaryOperators identifier | identifier unaryOperators) newLine)
 		->  ^(unaryOperators identifier)
 	;
 
-assignmentOperators
+// non-compound
+assignmentOperators1
 	: ((WS*)!
 	   op=(
-	     '='		// natively supported
-	 	|'*='		// natively supported
-	 	|'/='		// natively supported
-	 	|'%='
-	 	|'+=@'		// natively supported
-	 	|'-=@'		// natively supported
-	 	|'+='		// natively supported
-	 	|'-='		// natively supported
-	 	|'#='		// natively supported
-	 	|'<<='
-	 	|'>>='
-	 	|'&='
-	 	|'^='
-	 	|'|='))
+	     '=' -> OP_EQ		// natively supported
+		|'=#' -> OP_CAST))	// natively supported
+	 	-> $op
+	;
+
+// compound
+assignmentOperators2
+	: ((WS*)!
+	   op=(
+	 	 '+=' -> OP_ADD		// natively supported
+	 	|'-=' -> OP_SUB		// natively supported
+	 	|'*=' -> OP_MUL		// natively supported
+	 	|'/=' -> OP_DIV		// natively supported
+	 	|'%=' -> OP_MOD
+	 	|'+=@' -> OP_TIMED_ADD	// natively supported
+	 	|'-=@' -> OP_TIMED_SUB	// natively supported
+	 	|'<<=' -> OP_SHL
+	 	|'>>=' -> OP_SHR
+	 	|'&=' -> OP_AND
+	 	|'^=' -> OP_XOR
+	 	|'|=' -> OP_OR))
 	 	-> $op
 	;
 	
 binaryOperators
 	: 	((WS*)!
 	    op=
-	    ('+'	// natively supported
-	    |'-'	// natively supported
-	    |'*'	// natively supported
-	    |'/'	// natively supported
-	    |'%'
-	    |'+@'	// natively supported
-	    |'-@'	// natively supported
-	    |'|'
-	    |'&'
-	    |'^'
-	    |'<<'
-	    |'>>'))
+	    ('+' -> OP_ADD	// natively supported
+	    |'-' -> OP_SUB	// natively supported
+	    |'*' -> OP_MUL	// natively supported
+	    |'/' -> OP_DIV	// natively supported
+	    |'%' -> OP_MOD
+	    |'+@' -> OP_TIMED_ADD	// natively supported
+	    |'-@' -> OP_TIMED_SUB	// natively supported
+	    |'|' -> OP_OR
+	    |'&' -> OP_AND
+	    |'^' -> OP_XOR
+	    |'<<' -> OP_SHL
+	    |'>>' -> OP_SHR))
 	    -> $op
 	;
 	
 relationalOperators
 	: ((WS*)!
 	   op=(
-	     '<'
-	 	|'>'
-	 	|'>='
-	 	|'<='))
+	     '<'  -> OP_LE
+	 	|'>'  -> OP_GE
+	 	|'>=' -> OP_GEQ
+	 	|'<=' -> OP_LEQ))
 	 	-> $op
 	;
 
 unaryOperators
 	:	((WS*)!
-		op=('++'|'--'))
+		op=('++' -> OP_INC |'--' -> OP_DEC))
 		-> $op
 	;
 	
@@ -221,7 +254,7 @@ commandStatement
 	
 positiveCommandStatement
 	:	expressionStatement
-	|	(WS* IDENTIFIER argument* newLine) -> ^(COMMAND IDENTIFIER ^(ARGS argument*))
+	|	(WS* IDENTIFIER argument* newLine) -> ^(COMMAND IDENTIFIER argument*)
 	;
 
 argument
@@ -245,7 +278,7 @@ integerConstant
 	;
 
 newLine
-	:	WS* '\r'? ('\n'|EOF) -> '\n'
+	:	WS* '\r'? ('\n'|EOF) -> SKIPS
 	;
 
 ////////////////////////////////////////////////////////////////

@@ -11,6 +11,9 @@ struct ANTLR3_COMMON_TOKEN_struct;
 struct ANTLR3_INPUT_STREAM_struct;
 struct ANTLR3_BASE_TREE_struct;
 
+#include "grammar/autogen/gta3scriptsTokens.hpp"
+using NodeType = Token;
+
 class TokenStream
 {
 public:
@@ -65,7 +68,7 @@ public:
         return this->childs[i];
     }
 
-    uint32_t type() const
+    NodeType type() const
     {
         return this->type_;
     }
@@ -98,12 +101,12 @@ public:
     }
 
 private:
-    int                     type_;
+    NodeType                type_;
     std::string             data;
     std::vector<SyntaxTree> childs;
 
     explicit SyntaxTree(int type, std::string data = std::string())
-        : type_(type), data(std::move(data))
+        : type_(NodeType(type)), data(std::move(data))
     {
     }
 };

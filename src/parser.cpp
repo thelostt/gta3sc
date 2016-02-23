@@ -7,7 +7,7 @@
 #include "grammar/autogen/gta3scriptParser.h"
 #undef true
 #undef false
-
+#undef EOF
 
 
 
@@ -79,7 +79,10 @@ SyntaxTree SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
     for(size_t i = 0; i < child_count; ++i)
     {
         auto node_child = (pANTLR3_BASE_TREE)(node->getChild(node, i));
-        tree.childs.emplace_back(from_raw_tree(node_child));
+        if(node_child->getType(node_child) != SKIPS) // newline statements
+        {
+            tree.childs.emplace_back(from_raw_tree(node_child));
+        }
     }
 
     return tree;
@@ -88,7 +91,7 @@ SyntaxTree SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
 SyntaxTree::SyntaxTree(SyntaxTree&& rhs)
     : type_(rhs.type_), data(std::move(rhs.data)), childs(std::move(rhs.childs))
 {
-    rhs.type_ = 1;
+    rhs.type_ = NodeType::Ignore;
 }
 
 SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
@@ -96,7 +99,7 @@ SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
     this->data = std::move(rhs.data);
     this->childs = std::move(rhs.childs);
     this->type_ = rhs.type_;
-    rhs.type_ = -1;
+    rhs.type_ = NodeType::Ignore;
     return *this;
 }
 
