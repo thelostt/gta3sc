@@ -1,4 +1,5 @@
 #pragma once
+#include "cxx17/optional.hpp"
 #include "cxx17/filesystem.hpp"
 #include <string>
 #include <vector>
@@ -43,14 +44,33 @@ private:
 class SyntaxTree
 {
 public:
+    using const_iterator = std::vector<std::shared_ptr<SyntaxTree>>::const_iterator;
+
     SyntaxTree(const SyntaxTree&) = delete;            // expensive, make a explicit method if needed
     SyntaxTree(SyntaxTree&&);
     SyntaxTree& operator=(const SyntaxTree&) = delete; // expensive, make a explicit method if needed
     SyntaxTree& operator=(SyntaxTree&&);
     
-    static SyntaxTree compile(const TokenStream& tstream);
+    static std::shared_ptr<SyntaxTree> compile(const TokenStream& tstream);
 
-    static SyntaxTree from_raw_tree(ANTLR3_BASE_TREE_struct*);
+    static std::shared_ptr<SyntaxTree> from_raw_tree(ANTLR3_BASE_TREE_struct*);
+
+    const_iterator begin() const
+    {
+        return this->childs.begin();
+    }
+
+    const_iterator end() const
+    {
+        return this->childs.end();
+    }
+
+    const_iterator find(const SyntaxTree& child) const
+    {
+        return std::find_if(begin(), end(), [&](const std::shared_ptr<SyntaxTree>& node) {
+            return node.get() == std::addressof(child);
+        });
+    }
 
     // contains state changes
     const std::string& text() const
@@ -65,7 +85,7 @@ public:
     
     const SyntaxTree& SyntaxTree::child(size_t i) const
     {
-        return this->childs[i];
+        return *this->childs[i];
     }
 
     NodeType type() const
@@ -73,9 +93,18 @@ public:
         return this->type_;
     }
 
+    std::shared_ptr<SyntaxTree> parent() const
+    {
+        if(this->parent_)
+            return this->parent_.value().lock();
+        return nullptr;
+    }
+
+
     std::string to_string() const;
 
     // left to right, including visiting childs of left before going to the right
+    // does not visit myself
     // bool(SyntaxTree)
     template<typename Functor>
     void walk(Functor fun) const
@@ -89,6 +118,7 @@ public:
     }
 
     // left to right, no childs
+    // does not visit myself
     // void(SyntaxTree)
     template<typename Functor>
     void walk_top(Functor fun) const
@@ -101,11 +131,13 @@ public:
     }
 
 private:
-    NodeType                type_;
-    std::string             data;
-    std::vector<SyntaxTree> childs;
+    // This data structure assumes all those members are constant for the entire lifetime of this object!
+    NodeType                                    type_;
+    std::string                                 data;
+    std::vector<std::shared_ptr<SyntaxTree>>    childs;
+    optional<std::weak_ptr<SyntaxTree>>         parent_;
 
-    explicit SyntaxTree(int type, std::string data = std::string())
+    explicit SyntaxTree(int type, std::string data)
         : type_(NodeType(type)), data(std::move(data))
     {
     }

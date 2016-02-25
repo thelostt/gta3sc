@@ -51,7 +51,7 @@ std::string read_file_utf8(const fs::path& path)
 // SyntaxTree
 //
 
-SyntaxTree SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
+std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
 {
     std::string data;
     int type = node->getType(node);
@@ -60,28 +60,38 @@ SyntaxTree SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
     switch(type)
     {
         case IDENTIFIER:
+        {
+            data = (const char*)node->getText(node)->chars;
+            std::transform(data.begin(), data.end(), data.begin(), ::toupper); // TODO UTF-8 able
+            break;
+        }
+
         case INTEGER:
         case FLOAT:
         {
-            data = (const char*) node->getText(node)->chars;
+            data = (const char*)node->getText(node)->chars;
             break;
         }
 
         case LONG_STRING:
         case SHORT_STRING:
+        {
             data = (const char*) node->getText(node)->chars;
             break;
+        }
     }
 
-    SyntaxTree tree(type, data);
-    tree.childs.reserve(child_count);
+    std::shared_ptr<SyntaxTree> tree(new SyntaxTree(type, data));
+    tree->childs.reserve(child_count);
 
     for(size_t i = 0; i < child_count; ++i)
     {
         auto node_child = (pANTLR3_BASE_TREE)(node->getChild(node, i));
         if(node_child->getType(node_child) != SKIPS) // newline statements
         {
-            tree.childs.emplace_back(from_raw_tree(node_child));
+            auto my_child = from_raw_tree(node_child);
+            my_child->parent_ = std::weak_ptr<SyntaxTree>(tree);
+            tree->childs.emplace_back(std::move(my_child));
         }
     }
 
@@ -89,9 +99,10 @@ SyntaxTree SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
 }
 
 SyntaxTree::SyntaxTree(SyntaxTree&& rhs)
-    : type_(rhs.type_), data(std::move(rhs.data)), childs(std::move(rhs.childs))
+    : type_(rhs.type_), data(std::move(rhs.data)), childs(std::move(rhs.childs)), parent_(std::move(rhs.parent_))
 {
     rhs.type_ = NodeType::Ignore;
+    rhs.parent_ = nullopt;
 }
 
 SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
@@ -99,11 +110,13 @@ SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
     this->data = std::move(rhs.data);
     this->childs = std::move(rhs.childs);
     this->type_ = rhs.type_;
+    this->parent_ = std::move(rhs.parent_);
     rhs.type_ = NodeType::Ignore;
+    rhs.parent_ = nullopt;
     return *this;
 }
 
-SyntaxTree SyntaxTree::compile(const TokenStream& tstream)
+std::shared_ptr<SyntaxTree> SyntaxTree::compile(const TokenStream& tstream)
 {
     auto parser = gta3scriptParserNew(tstream.get());
     if(parser)
