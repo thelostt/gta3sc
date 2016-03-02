@@ -86,6 +86,8 @@ size_t compiled_size(const CompiledData& varg);
 /// Transforms an annotated syntax tree into a intermediate representation (vector of pseudo-instructions).
 struct CompilerContext
 {
+    // TODO think about more guards?
+
     // Inputs
     const Commands&                 commands;
     const shared_ptr<const Script>  script;
@@ -93,6 +95,11 @@ struct CompilerContext
 
     // Output
     std::vector<CompiledData>       compiled;
+
+    // Helpers
+    std::vector<shared_ptr<Label>> internal_labels;
+    shared_ptr<Scope> current_scope;
+
 
     /// Note 1: The SyntaxTree of the script must have been anotated. (TODO explain how to annotate the tree?).
     /// Note 2: TODO explain how to generate a symbol table?
@@ -135,12 +142,38 @@ struct CompilerContext
 
 private:
 
+    shared_ptr<Label> make_internal_label()
+    {
+        // TODO pass scope
+        internal_labels.emplace_back(std::make_shared<Label>(nullptr, this->script));
+        return internal_labels.back();
+    }
+
+    void compile_label(const SyntaxTree& label_node)
+    {
+        return compile_label(label_node.annotation<shared_ptr<Label>>());
+    }
+
+    void compile_label(shared_ptr<Label> label_ptr)
+    {
+        this->compiled.emplace_back(std::move(label_ptr));
+    }
+
+    void compile_command(const Command& command, std::vector<ArgVariant> args)
+    {
+        this->compiled.emplace_back(CompiledCommand{ command.id, std::move(args) });
+    }
+
     void compile_statements(const SyntaxTree& base)
     {
         for(auto it = base.begin(); it != base.end(); ++it)
         {
             switch((*it)->type())
             {
+                case NodeType::Block:
+                    // group of anything, usually group of statements
+                    compile_statements(*it->get());
+                    break;
                 case NodeType::Command:
                     compile_command(*it->get());
                     break;
@@ -148,34 +181,36 @@ private:
                     compile_label(*it->get());
                     break;
                 case NodeType::Scope:
+                    compile_scope(*it->get());
                     break;
                 case NodeType::IF:
+                    compile_if(*it->get());
                     break;
                 case NodeType::WHILE:
+                    compile_while(*it->get());
                     break;
                 case NodeType::REPEAT:
+                    // TODO
                     break;
                 case NodeType::SWITCH:
+                    // TODO
                     break;
                 case NodeType::BREAK:
+                    // TODO after SWITCH is done
                     break;
                 case NodeType::CONTINUE:
+                    // TODO after SWITCH is done
+                    // this is specific to this compiler, be pedantic!
                     break;
                 case NodeType::VAR_INT:
-                    break;
                 case NodeType::LVAR_INT:
-                    break;
                 case NodeType::VAR_FLOAT:
-                    break;
                 case NodeType::LVAR_FLOAT:
-                    break;
                 case NodeType::VAR_TEXT_LABEL:
-                    break;
                 case NodeType::LVAR_TEXT_LABEL:
-                    break;
                 case NodeType::VAR_TEXT_LABEL16:
-                    break;
                 case NodeType::LVAR_TEXT_LABEL16:
+                    // Nothing to do, vars already known from symbol table.
                     break;
                 default:
                     Unreachable();
@@ -183,16 +218,82 @@ private:
         }
     }
 
-    void compile_label(const SyntaxTree& label_node)
+    void compile_scope(const SyntaxTree& scope_node)
     {
-        shared_ptr<Label> label = label_node.annotation<shared_ptr<Label>>();
-        this->compiled.emplace_back(std::move(label));
+        auto guard = make_scope_guard([this] {
+            this->current_scope = nullptr;
+        });
+
+        Expects(this->current_scope == nullptr);
+        this->current_scope = scope_node.annotation<shared_ptr<Scope>>();
+        compile_statements(scope_node.child(0));
     }
+
+    void compile_if(const SyntaxTree& if_node)
+    {
+        if(if_node.child_count() == 3) // [conds, case_true, else]
+        {
+            auto else_ptr = make_internal_label();
+            auto end_ptr  = make_internal_label();
+            compile_conditions(if_node.child(0), else_ptr);
+            compile_statements(if_node.child(1));
+            compile_command(this->commands.goto_(), { end_ptr });
+            compile_label(else_ptr);
+            compile_statements(if_node.child(2));
+            compile_label(end_ptr);
+        }
+        else // [conds, case_true]
+        {
+            auto end_ptr = make_internal_label();
+            compile_conditions(if_node.child(0), end_ptr);
+            compile_statements(if_node.child(1));
+            compile_label(end_ptr);
+        }
+    }
+
+    void compile_while(const SyntaxTree& while_node)
+    {
+        auto beg_ptr = make_internal_label();
+        auto end_ptr = make_internal_label();
+        compile_label(beg_ptr);
+        compile_conditions(while_node.child(0), end_ptr);
+        compile_statements(while_node.child(1));
+        compile_command(this->commands.goto_(), { beg_ptr });
+        compile_label(end_ptr);
+    }
+
+
+    void compile_conditions(const SyntaxTree& conds_node, const shared_ptr<Label>& else_ptr)
+    {
+        auto compile_multi_andor = [this](const auto& conds_vector, size_t op)
+        {
+            compile_command(this->commands.andor(), { conv_int(op + conds_vector.child_count()) });
+            for(auto& cond : conds_vector) compile_command(*cond);
+        };
+
+        switch(conds_node.type())
+        {
+            case NodeType::Command: // single condition
+                compile_command(this->commands.andor(), { conv_int(0) });
+                compile_command(conds_node);
+                break;
+            case NodeType::AND: // 1-8
+                compile_multi_andor(conds_node, 0);
+                break;
+            case NodeType::OR: // 21-28
+                compile_multi_andor(conds_node, 20);
+                break;
+            default:
+                Unreachable();
+        }
+
+        compile_command(this->commands.goto_if_false(), { else_ptr });
+    }
+
 
     void compile_command(const SyntaxTree& command_node)
     {
         auto& command_name = command_node.child(0).text();
-        auto  num_args = command_node.child_count() - 1;
 
         const Command& command = this->commands.match(command_node);
         std::vector<ArgVariant> args = get_args(command, command_node);
@@ -233,6 +334,11 @@ private:
                         args.emplace_back(*opt_label);
                     }
 
+                    if(auto opt_var = this->symbols.find_var(arg_node.text(), this->current_scope))
+                    {
+                        args.emplace_back(CompiledVar { *opt_var, nullopt });
+                    }
+
                     // TODO
                     break;
                 }
@@ -254,7 +360,19 @@ private:
 
     ArgVariant get_int(const std::string& s)
     {
-        int32_t i = std::stoi(s, nullptr, 0);
+        return conv_int(std::stoi(s, nullptr, 0));
+    }
+
+    ArgVariant get_float(const std::string& s)
+    {
+        // TODO GTA III
+        return std::stof(s);
+    }
+
+    template<typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
+    ArgVariant conv_int(T integral)
+    {
+        int32_t i = static_cast<int32_t>(integral);
 
         if(i >= std::numeric_limits<int8_t>::min() && i <= std::numeric_limits<int8_t>::max())
             return int8_t(i);
@@ -262,12 +380,6 @@ private:
             return int16_t(i);
         else
             return int32_t(i);
-    }
-
-    ArgVariant get_float(const std::string& s)
-    {
-        // TODO GTA III
-        return std::stof(s);
     }
 };
 
@@ -318,10 +430,12 @@ inline size_t compiled_size(const shared_ptr<Label>&)
     return 1 + sizeof(int32_t);
 }
 
-inline size_t compiled_size(const CompiledVar&)
+inline size_t compiled_size(const CompiledVar& v)
 {
-    // TODO
-    return 0;
+    if(v.index == nullopt)
+        return 1 + sizeof(uint16_t);
+    else
+        return 1 + sizeof(uint16_t) * 2 + sizeof(uint8_t) * 2;
 }
 
 inline size_t compiled_size(const CompiledString& s)

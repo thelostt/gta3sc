@@ -73,6 +73,9 @@ struct Var
 
     /// \returns the space, in words (i.e. bytes/4), that this variable takes in memory.
     uint32_t space_taken();
+
+    /// \returns the byte offset (index*4) on which this variable is in memory.
+    uint32_t offset() { return index * 4; }
 };
 
 /// Scope information.
@@ -93,11 +96,19 @@ struct Label
     Label(shared_ptr<const Scope> scope, shared_ptr<const Script> script)
         : scope(std::move(scope)), script(std::move(script))
     {}
+
+    /// Returns the global offset for this label.
+    uint32_t offset()
+    {
+        return script->offset.value() + this->local_offset.value();
+    }
 };
 
 /// Stores important symbols defined throught scripts (labels, vars, scopes, subscripts).
 struct SymTable
 {
+    // TODO check conflicts of label names and global names!?! (on merge too)
+
     // IMPORTANT! Make sure whenever you add any new field, to update merge() accordingly !!!!!!!!!!
 
     std::map<std::string, shared_ptr<Label>> labels;
@@ -123,6 +134,32 @@ struct SymTable
     shared_ptr<Scope> add_scope()
     {
         return *local_scopes.emplace(local_scopes.end());
+    }
+
+    /// Finds global var `name` or local var `name` in `current_scope`. `current_scope` may be nullptr,
+    /// otherwise it must be a scope owned by this symbol table.
+    optional<shared_ptr<Var>> find_var(const std::string& name, const shared_ptr<Scope>& current_scope) const
+    {
+        auto itg = global_vars.find(name);
+        if(itg != global_vars.end())
+        {
+            return itg->second;
+        }
+
+        if(current_scope)
+        {
+            assert(std::any_of(local_scopes.begin(), local_scopes.end(), [&](const auto& scope_ptr) {
+                return current_scope == scope_ptr;
+            }));
+
+            auto itl = current_scope->vars.find(name);
+            if(itl != current_scope->vars.end())
+            {
+                return itl->second;
+            }
+        }
+
+        return nullopt;
     }
 
     /// \throws CompilerError if label already exists.

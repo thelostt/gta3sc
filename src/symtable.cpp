@@ -54,6 +54,7 @@ void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scrip
     }
 }
 
+// TODO is this func useless because of the offset() method?
 void SymTable::compute_label_offsets_globally()
 {
     for(auto it = this->labels.begin(); it != this->labels.end(); ++it)

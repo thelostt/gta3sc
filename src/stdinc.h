@@ -72,6 +72,65 @@ struct iequal_to
     }
 };
 
+template<typename Functor>
+class scope_guard final
+{
+public:
+    static_assert(std::is_nothrow_move_constructible<Functor>::value, "Functor must be NoThrow MoveConstructible");
+
+    scope_guard(Functor f)
+        : fun(std::move(f)), dismissed(false)
+    {}
+
+    ~scope_guard() noexcept
+    {
+        this->execute();
+    }
+
+    scope_guard(const scope_guard&) = delete;
+    scope_guard(scope_guard&& rhs) noexcept
+        : dismissed(rhs.dismissed), fun(std::move(rhs.fun))
+    {
+        rhs.dismiss();
+    }
+
+    scope_guard& operator=(scope_guard const&) = delete;
+    scope_guard& operator=(scope_guard&& rhs) noexcept
+    {
+        this->fun = std::move(fun);
+        this->dismissed = rhs.dismissed;
+        rhs.dismiss();
+    }
+
+    void dismiss() noexcept
+    {
+        this->dismissed = true;
+    }
+
+    void execute() noexcept
+    {
+        if(!this->dismissed)
+        {
+            this->fun();
+            this->dismiss();
+        }
+    }
+
+private:
+    Functor fun;
+    bool    dismissed;
+};
+
+template<typename Functor>
+inline auto make_scope_guard(Functor f) -> scope_guard<Functor>
+{
+    return scope_guard<Functor>(std::move(f));
+}
+
+
+
+
+
 struct broken_contract : std::runtime_error
 {
     broken_contract(const char* msg)

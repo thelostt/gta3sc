@@ -52,13 +52,13 @@ struct CodeGenerator
         }
     }
 
-    void emplace_u8(int8_t value)
+    void emplace_u8(uint8_t value)
     {
         assert(this->offset + 1 <= this->script->size);
         bytecode[this->offset++] = reinterpret_cast<uint8_t&>(value);
     }
 
-    void emplace_u16(int16_t value)
+    void emplace_u16(uint16_t value)
     {
         // TODO maybe optimize, write a entire i16 at a time? is that portable?
         //assert(this->offset + 2 <= this->script->size);
@@ -66,7 +66,7 @@ struct CodeGenerator
         emplace_u8((value & 0xFF00) >> 8);
     }
 
-    void emplace_u32(int32_t value)
+    void emplace_u32(uint32_t value)
     {
         // TODO maybe optimize, write a entire i32 at a time? is that portable?
         //assert(this->offset + 4 <= this->script->size);
@@ -76,17 +76,17 @@ struct CodeGenerator
         emplace_u8((value & 0xFF000000) >> 24);
     }
 
-    void emplace_i8(uint8_t value)
+    void emplace_i8(int8_t value)
     {
         return emplace_u8(reinterpret_cast<uint8_t&>(value));
     }
 
-    void emplace_i16(uint16_t value)
+    void emplace_i16(int16_t value)
     {
         return emplace_u16(reinterpret_cast<uint16_t&>(value));
     }
 
-    void emplace_i32(uint32_t value)
+    void emplace_i32(int32_t value)
     {
         return emplace_u32(reinterpret_cast<uint32_t&>(value));
     }
@@ -140,7 +140,7 @@ inline void generate_code(const float& value, CodeGenerator& codegen)
 inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& codegen)
 {
     codegen.emplace_u8(1);
-    codegen.emplace_i32(label_ptr->global_offset.value());
+    codegen.emplace_i32(label_ptr->offset());
 }
 
 inline void generate_code(const CompiledString&, CodeGenerator&)
@@ -148,9 +148,32 @@ inline void generate_code(const CompiledString&, CodeGenerator&)
     // TODO
 }
 
-inline void generate_code(const CompiledVar&, CodeGenerator&)
+inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
 {
-    // TODO
+    bool global = v.var->global;
+
+    if(v.index == nullopt)
+    {
+        switch(v.var->type)
+        {
+            case VarType::Int:
+            case VarType::Float:
+                codegen.emplace_u8(global? 0x2 : 0x3);
+                break;
+            case VarType::TextLabel:
+                codegen.emplace_u8(global? 0xA : 0xB);
+                break;
+            case VarType::TextLabel16:
+                codegen.emplace_u8(global? 0x10 : 0x11);
+                break;
+        }
+
+        codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() : v.var->index));
+    }
+    else
+    {
+        // TODO array SA only
+    }
 }
 
 inline void generate_code(const ArgVariant& varg, CodeGenerator& codegen)

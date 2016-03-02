@@ -26,6 +26,7 @@ struct Command
         //std::vector<shared_ptr<Enum>> enums;
     };
 
+    // TODO maybe bool conditional?
     bool                supported;  /// Is this command supported by the script engine?
     uint16_t            id;         /// The opcode id.
     //std::array<Arg, 40> args;
@@ -47,6 +48,24 @@ struct Commands
     ///
     /// \throws `BadAlternator` if no match found.
     const Command& match(const SyntaxTree& command_node) const;
+
+    const Command& goto_() const    // can't be named purely goto() because of the C keyword
+    {
+        // TODO cached
+        return commands.find("GOTO")->second;
+    }
+
+    const Command& goto_if_false() const
+    {
+        // TODO cached
+        return commands.find("GOTO_IF_FALSE")->second;
+    }
+
+    const Command& andor() const
+    {
+        // TODO cached
+        return commands.find("ANDOR")->second;
+    }
 };
 
 inline Commands get_test_commands()
@@ -73,7 +92,28 @@ inline Commands get_test_commands()
                 },
             }
         },
-        } };
+        {
+            "GOTO_IF_FALSE",
+            {
+                true,
+                0x004D,
+                {
+                    { ArgType::Label, false, true, true, true, },
+                },
+            }
+        },
+        {
+            "ANDOR",
+            {
+                true,
+                0x00D6,
+                {
+                    { ArgType::Integer, false, true, false, false, },
+                },
+            }
+        },
+      }
+    };
 }
 
 /// Checks if the argument types are compatible with each other.
