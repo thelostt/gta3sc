@@ -16,6 +16,7 @@ int main()
 
     auto main = std::make_shared<Script>("test.sc", ScriptType::Main);
     auto symbols = SymTable::from_script(*main);
+    symbols.apply_offset_to_vars(2);
 
     scripts.emplace_back(main);
 

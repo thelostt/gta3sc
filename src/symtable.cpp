@@ -122,6 +122,8 @@ void SymTable::add_script(ScriptType type, const SyntaxTree& command)
 
 void SymTable::merge(SymTable t2)
 {
+    // TODO improve readability of this
+
     auto& t1 = *this;
 
     decltype(labels) int_labels;
@@ -146,6 +148,18 @@ void SymTable::merge(SymTable t2)
 
     if(int_gvars.size() > 0)
         throw CompilerError("TODO dup global var between script units");
+
+    shared_ptr<Var> highest_var;
+    uint32_t begin_t2_vars = 0;
+    for(const auto& var : t1.global_vars)
+    {
+        if(highest_var == nullptr || var.second->index > highest_var->index)
+        {
+            highest_var = var.second;
+            begin_t2_vars = highest_var->index + highest_var->space_taken();
+        }
+    }
+    t2.apply_offset_to_vars(begin_t2_vars);
 
     t1.labels.insert(std::make_move_iterator(t2.labels.begin()),
         std::make_move_iterator(t2.labels.end()));

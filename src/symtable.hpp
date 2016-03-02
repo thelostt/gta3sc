@@ -64,7 +64,7 @@ struct Var
 {
     const bool                global;
     const VarType             type;
-    const uint32_t            index; /// (not offset, index indeed)
+    uint32_t                  index; /// (not offset, index indeed)
     const optional<uint32_t>  count; /// If an array, the number of elements of it.
 
     Var(bool global, VarType type, uint32_t index, optional<uint32_t> count)
@@ -133,7 +133,7 @@ struct SymTable
     /// Creates a new scope in this table.
     shared_ptr<Scope> add_scope()
     {
-        return *local_scopes.emplace(local_scopes.end());
+        return *local_scopes.emplace(local_scopes.end(), new Scope());
     }
 
     /// Finds global var `name` or local var `name` in `current_scope`. `current_scope` may be nullptr,
@@ -193,6 +193,13 @@ struct SymTable
     /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
     /// of the labels in this table and the scripts they're in should be running while this method is executed.
     void compute_label_offsets_globally();
+
+    /// Shifts all global vars offsets by `offset`. The unit is not bytes, but indices.
+    void apply_offset_to_vars(uint32_t offset_in_index)
+    {
+        for(auto& var : global_vars)
+            var.second->index += offset_in_index;
+    }
 };
 
 template<typename InputIt> inline
