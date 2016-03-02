@@ -1,3 +1,14 @@
+///
+/// This is the grammar of the gta3script language.
+///
+/// This file is given as input to ANTLRv3 (http://www.antlr3.org/) which generates a
+/// C lexer and parser for the language.
+///
+/// A auto-generated lexer/parser is being used because of simplicity (which is the objective of this project):
+/// Lexers and Parsers are usually consume a lot of lines of code and are *annoying* for maintence.
+///
+/// Refer to autogen.py and parser.hpp/cpp for deeper details.
+///
 grammar gta3script;
 
 // TODO nested comments as in R*'s gta3script

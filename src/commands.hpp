@@ -1,6 +1,8 @@
 #pragma once
 #include "stdinc.h"
+#include "parser.hpp"
 
+/// Fundamental type of a command argument.
 enum class ArgType : uint8_t
 {
     Any,
@@ -11,113 +13,43 @@ enum class ArgType : uint8_t
     TextLabel,
 };
 
-bool argtype_matches(ArgType type1, ArgType type2);
-
+/// Stores command information.
 struct Command
 {
     struct Arg
     {
-        ArgType type;
-        bool optional : 1;
-        bool allow_constant : 1;
-        bool allow_local_var : 1;
-        bool allow_global_var : 1;
-        // std::vector<shared_ptr<Enum>> enums;
+        ArgType type;               /// Fundamental type of argument.
+        bool optional : 1;          /// Allows as many optional arguments as possible (must be the last arg).
+        bool allow_constant : 1;    /// Allow literal values
+        bool allow_local_var : 1;   /// Allow local variables
+        bool allow_global_var : 1;  /// Allow global variables
+        //std::vector<shared_ptr<Enum>> enums;
     };
 
-    bool                supported;
-    uint16_t            id;
+    bool                supported;  /// Is this command supported by the script engine?
+    uint16_t            id;         /// The opcode id.
     //std::array<Arg, 40> args;
-    std::vector<Arg>    args;
+    std::vector<Arg>    args;       /// The arguments of the command.
 
+    /// Checks if there's any optional argument on this command.
     bool has_optional() const
     {
         return args.empty()? false : args.back().optional;
     }
 };
 
+/// Stores the list of commands and alternators.
 struct Commands
 {
     std::multimap<std::string, Command> commands;
 
-    // throws BadAlternator on error
+    /// Matches the best command based on the name and arguments given a COMMAND node in the AST.
+    ///
+    /// \throws `BadAlternator` if no match found.
     const Command& match(const SyntaxTree& command_node) const;
 };
 
-inline
-const Command& Commands::match(const SyntaxTree& command_node) const
-{
-    auto num_args = command_node.child_count() - 1;
-    auto alter_range = commands.equal_range(command_node.child(0).text());
-
-    for(auto alter_kv = alter_range.first; alter_kv != alter_range.second; ++alter_kv)
-    {
-        size_t arg_readen = 0;
-
-        const Command& alter = alter_kv->second;
-
-        auto it_alt_arg = alter.args.begin();
-        auto it_target_arg = command_node.begin() + 1;
-
-        bool is_optional = false;
-
-        for(; ;
-        (it_alt_arg->optional? it_alt_arg : ++it_alt_arg),
-            ++it_target_arg,
-            ++arg_readen)
-        {
-            assert(arg_readen <= num_args);
-
-            if(arg_readen < num_args)
-            {
-                if(it_alt_arg == alter.args.end())
-                    break;
-            }
-            else // arg_readen == num_args, i.e. end of arguments
-            {
-                if(it_alt_arg == alter.args.end() || it_alt_arg->optional)
-                    return alter;
-                else
-                    break;
-            }
-
-            bool bad_alternative = false;
-
-            switch((*it_target_arg)->type())
-            {
-                case NodeType::Integer:
-                    bad_alternative = (!argtype_matches(it_alt_arg->type, ArgType::Integer) || !it_alt_arg->allow_constant);
-                    break;
-                case NodeType::Float:
-                    bad_alternative = (!argtype_matches(it_alt_arg->type, ArgType::Float) || !it_alt_arg->allow_constant);
-                    break;
-                case NodeType::Array:
-                    // TODO
-                    break;
-                case NodeType::Identifier:
-                    // TODO
-                    break;
-                case NodeType::ShortString:
-                    bad_alternative = (!argtype_matches(it_alt_arg->type, ArgType::TextLabel) || !it_alt_arg->allow_constant);
-                case NodeType::LongString:
-                    bad_alternative = (!argtype_matches(it_alt_arg->type, ArgType::TextLabel) && !argtype_matches(it_alt_arg->type, ArgType::Buffer128));
-                    bad_alternative = bad_alternative || !it_alt_arg->allow_constant;;
-                    break;
-            }
-
-            if(bad_alternative)
-            {
-                // try another alternative
-                break;
-            }
-        }
-    }
-
-    throw BadAlternator("TODO");
-}
-
-inline
-Commands get_test_commands()
+inline Commands get_test_commands()
 {
     return Commands
     { {
@@ -144,8 +76,8 @@ Commands get_test_commands()
         } };
 }
 
+/// Checks if the argument types are compatible with each other.
 inline bool argtype_matches(ArgType type1, ArgType type2)
 {
     return type1 == type2 || type1 == ArgType::Any || type2 == ArgType::Any;
 }
-

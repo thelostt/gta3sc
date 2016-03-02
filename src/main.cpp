@@ -1,51 +1,10 @@
-#include <memory>
-#include <map>
-#include <string>
-#include <vector>
+#include "stdinc.h"
 #include "parser.hpp"
-
-#include <numeric>
-
-#include "cxx17/variant.hpp"
-#include "cxx17/optional.hpp"
-
-#include "thirdparty/cppformat/format.h"
-
 #include "error.hpp"
 #include "symtable.hpp"
 #include "commands.hpp"
 #include "compiler.hpp"
 #include "codegen.hpp"
-
-#include <algorithm>
-
-
-struct iequal_to
-{
-    using is_transparent = std::true_type;
-
-    bool operator()(const std::string& left, const std::string& right) const
-    {
-        return this->operator()(left.c_str(), right.c_str());
-    }
-
-    bool operator()(const char* left, const std::string& right) const
-    {
-        return this->operator()(left, right.c_str());
-    }
-
-    bool operator()(const std::string& left, const char* right) const
-    {
-        return this->operator()(left.c_str(), right);
-    }
-
-    bool operator()(const char* left, const char* right) const
-    {
-        return (_stricmp(left, right) == 0);
-    }
-};
-
-
 
 int main()
 {
