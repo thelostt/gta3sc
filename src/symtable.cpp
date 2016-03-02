@@ -167,18 +167,18 @@ void SymTable::merge(SymTable t2)
 
 void SymTable::scan_symbols(const Script& script)
 {
-    std::function<bool(const SyntaxTree&)> walker;
+    std::function<bool(SyntaxTree&)> walker;
 
     // states for the scan
     std::shared_ptr<Scope> current_scope = nullptr;
     size_t global_index = 0, local_index = 0;
-    std::string next_scoped_label;
+    shared_ptr<SyntaxTree> next_scoped_label;
 
     // the scan output
     SymTable& table = *this;
 
     // the scanner
-    walker = [&](const SyntaxTree& node)
+    walker = [&](SyntaxTree& node)
     {
         switch(node.type())
         {
@@ -190,13 +190,14 @@ void SymTable::scan_symbols(const Script& script)
                 if(next != parent->end() && ++next != parent->end()
                     && (*next)->type() == NodeType::Scope)
                 {
-                    // lazyly add label since we need to put it into a scope (the rule following this one)
-                    next_scoped_label = node.child(0).text();
+                    // we'll add this label later since we need to put it into a scope (the rule following this one)
+                    next_scoped_label = node.shared_from_this();
                 }
                 else
                 {
-                    auto& name = node.child(0).text();
-                    table.add_label(name, current_scope, script.shared_from_this());
+                    auto& label_name = node.child(0).text();
+                    auto label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
+                    node.set_annotation(std::move(label_ptr));
                 }
                 return false;
             }
@@ -209,13 +210,17 @@ void SymTable::scan_symbols(const Script& script)
                 local_index = 0;
                 current_scope = table.add_scope();
                 {
-                    if(!next_scoped_label.empty())
+                    if(next_scoped_label)
                     {
-                        table.add_label(next_scoped_label, current_scope, script.shared_from_this());
-                        next_scoped_label.clear();
+                        auto& label_name = next_scoped_label->child(0).text();
+                        auto label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
+                        next_scoped_label->set_annotation(std::move(label_ptr));
+                        next_scoped_label = nullptr;
                     }
 
                     node.walk(std::ref(walker));
+
+                    node.set_annotation(std::move(current_scope));
                 }
                 current_scope = nullptr;
 
@@ -269,11 +274,14 @@ void SymTable::scan_symbols(const Script& script)
                     }
 
                     auto it = target.emplace(name, std::make_shared<Var>(global, vartype, index, count));
+                    auto var_ptr = it.first->second;
 
                     if(it.second == false)
                         throw CompilerError("Variable {} already exists.", name);
 
-                    index += it.first->second->space_taken();
+                    index += var_ptr->space_taken();
+
+                    varnode.set_annotation(std::move(var_ptr));
                 }
 
                 return false;

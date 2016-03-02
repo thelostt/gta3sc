@@ -126,11 +126,12 @@ struct SymTable
     }
 
     /// \throws CompilerError if label already exists.
-    void add_label(const std::string& name, shared_ptr<const Scope> scope, shared_ptr<const Script> script)
+    shared_ptr<Label> add_label(const std::string& name, shared_ptr<const Scope> scope, shared_ptr<const Script> script)
     {
         auto it = this->labels.emplace(name, std::make_shared<Label>(scope, script));
         if(it.second == false)
             throw CompilerError("Label {} already exists.", name);
+        return it.first->second;
     }
 
     /// Finds label `name` in this table.

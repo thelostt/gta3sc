@@ -99,7 +99,8 @@ std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
 }
 
 SyntaxTree::SyntaxTree(SyntaxTree&& rhs)
-    : type_(rhs.type_), data(std::move(rhs.data)), childs(std::move(rhs.childs)), parent_(std::move(rhs.parent_))
+    : type_(rhs.type_), data(std::move(rhs.data)), childs(std::move(rhs.childs)), parent_(std::move(rhs.parent_)),
+      udata(std::move(rhs.udata))
 {
     rhs.type_ = NodeType::Ignore;
     rhs.parent_ = nullopt;
@@ -111,6 +112,7 @@ SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
     this->childs = std::move(rhs.childs);
     this->type_ = rhs.type_;
     this->parent_ = std::move(rhs.parent_);
+    this->udata = std::move(udata);
     rhs.type_ = NodeType::Ignore;
     rhs.parent_ = nullopt;
     return *this;

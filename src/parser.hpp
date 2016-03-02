@@ -1,8 +1,5 @@
 #pragma once
-#include "cxx17/optional.hpp"
-#include "cxx17/filesystem.hpp"
-#include <string>
-#include <vector>
+#include "stdinc.h"
 
 // forward ANTLR structs
 struct gta3scriptLexer_Ctx_struct;
@@ -41,7 +38,7 @@ private:
     ANTLR3_COMMON_TOKEN_STREAM_struct* tokstream;
 };
 
-class SyntaxTree
+class SyntaxTree : public std::enable_shared_from_this<SyntaxTree>
 {
 public:
     using const_iterator = std::vector<std::shared_ptr<SyntaxTree>>::const_iterator;
@@ -88,6 +85,11 @@ public:
         return *this->childs[i];
     }
 
+    SyntaxTree& SyntaxTree::child(size_t i)
+    {
+        return *this->childs[i];
+    }
+
     NodeType type() const
     {
         return this->type_;
@@ -107,7 +109,7 @@ public:
     // does not visit myself
     // bool(SyntaxTree)
     template<typename Functor>
-    void walk(Functor fun) const
+    void walk(Functor fun) //const
     {
         auto fun_ref = std::ref(fun);
         for(size_t i = 0, max = this->child_count(); i < max; ++i)
@@ -121,7 +123,7 @@ public:
     // does not visit myself
     // void(SyntaxTree)
     template<typename Functor>
-    void walk_top(Functor fun) const
+    void walk_top(Functor fun) //const
     {
         auto fun_ref = std::ref(fun);
         for(size_t i = 0, max = this->child_count(); i < max; ++i)
@@ -130,12 +132,26 @@ public:
         }
     }
 
+    template<typename ValueType>
+    void set_annotation(ValueType&& v)
+    {
+        this->udata = std::forward<ValueType>(v);
+    }
+
+    template<typename T> // you can get a ref by using e.g. <int&> instead of <int>
+    T annotation() const
+    {
+        return any_cast<T>(this->udata);
+    }
+
 private:
     // This data structure assumes all those members are constant for the entire lifetime of this object!
+    // ...except for udata
     NodeType                                    type_;
     std::string                                 data;
     std::vector<std::shared_ptr<SyntaxTree>>    childs;
     optional<std::weak_ptr<SyntaxTree>>         parent_;
+    any                                         udata;
 
     explicit SyntaxTree(int type, std::string data)
         : type_(NodeType(type)), data(std::move(data))

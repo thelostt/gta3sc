@@ -185,11 +185,7 @@ private:
 
     void compile_label(const SyntaxTree& label_node)
     {
-        // XXX PERF this can (maybe) be faster if we cache the shared_ptr<Label> as a userdata in its SyntaxTree node
-        // during the scan_symbols compilation step. The cons of that is that we'll turn SyntaxTree into a mutable thing.
-        // So, do this only in last case if we need more performance.
-
-        shared_ptr<Label> label = *this->symbols.find_label(label_node.child(0).text());
+        shared_ptr<Label> label = label_node.annotation<shared_ptr<Label>>();
         this->compiled.emplace_back(std::move(label));
     }
 
