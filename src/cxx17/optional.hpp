@@ -20,7 +20,7 @@
 #    endif
 #  endif
 #  ifndef _CXX17_OPTIONAL_TYPE           // Still undefined? Use our embeded version.
-#    include "../thirdparty/optional/optional.hpp"
+#    include <optional/optional.hpp>
 #    define _CXX17_OPTIONAL_TYPE    std::experimental::optional
 #    define _CXX17_NULLOPT_OBJECT   std::experimental::nullopt
 #  endif

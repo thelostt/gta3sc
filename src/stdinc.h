@@ -5,13 +5,14 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <cppformat/format.h>
 #include "cxx17/any.hpp"
 #include "cxx17/variant.hpp"
 #include "cxx17/optional.hpp"
 #include "cxx17/filesystem.hpp"
-#include "thirdparty/cppformat/format.h"
 
 // TODO make all maps and such be transparently comparable
+// TODO transform lots of structs into class; make members private;
 // TODO better organization of this (stdinc.h), perhaps put stuff in other utility headers
 
 struct Var;
