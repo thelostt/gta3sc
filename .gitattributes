@@ -1,0 +1,2 @@
+/src/grammar/autogen/* linguist-vendored
+*.g linguist-language=ANTLR
