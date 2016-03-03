@@ -34,10 +34,8 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
         throw BadAlternator("TODO kind of var not allowed");
 }
 
-static void match_identifier(const SyntaxTree& node, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
+static void match_identifier(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
 {
-    // TODO IMPROVE CHECKS (THINK)
-
     switch(arg.type)
     {
         case ArgType::Label:
@@ -54,9 +52,10 @@ static void match_identifier(const SyntaxTree& node, const Command::Arg& arg, co
         case ArgType::Float:
         case ArgType::Any:
         {
-            if(arg.allow_constant)
+            if(arg.allow_constant && arg.type != ArgType::Float)
             {
-                // TODO try find enum, break if successful
+                if(commands.find_constant_for_arg(node.text(), arg))
+                    break;
             }
 
             if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
@@ -130,7 +129,7 @@ const Command& Commands::match(const SyntaxTree& command_node, const SymTable& s
                 case NodeType::Identifier:
                     try
                     {
-                        match_identifier(**it_target_arg, *it_alter_arg, symbols, scope_ptr);
+                        match_identifier(**it_target_arg, *this, *it_alter_arg, symbols, scope_ptr);
                     }
                     catch(const CompilerError&)
                     {
@@ -206,8 +205,9 @@ void Commands::annotate(SyntaxTree& command_node, const Command& command,
                 }
                 else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any)
                 {
-                    if(false) // TODO find constant
+                    if(auto opt_const = this->find_constant_for_arg(arg_node.text(), arg))
                     {
+                        arg_node.set_annotation(*opt_const);
                     }
                     else if(auto opt_var = symbols.find_var(arg_node.text(), scope_ptr))
                     {
