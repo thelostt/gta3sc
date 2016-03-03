@@ -90,6 +90,13 @@ struct CodeGenerator
     {
         return emplace_u32(reinterpret_cast<uint32_t&>(value));
     }
+
+    void emplace_chars(size_t count, const char* data)
+    {
+        assert(this->offset + count <= this->script->size);
+        std::strncpy(reinterpret_cast<char*>(&this->bytecode[offset]), data, count);
+        this->offset += count;
+    }
 };
 
 template<typename T>
@@ -143,9 +150,30 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
     codegen.emplace_i32(label_ptr->offset());
 }
 
-inline void generate_code(const CompiledString&, CodeGenerator&)
+inline void generate_code(const CompiledString& str, CodeGenerator& codegen)
 {
-    // TODO
+    switch(str.type)
+    {
+        case CompiledString::Type::Buffer8_3VC:
+            codegen.emplace_chars(8, str.storage.c_str());
+            break;
+        case CompiledString::Type::Buffer8:
+            codegen.emplace_u8(9);
+            codegen.emplace_chars(8, str.storage.c_str());
+            break;
+        case CompiledString::Type::Buffer16:
+            codegen.emplace_u8(0xF);
+            codegen.emplace_chars(16, str.storage.c_str());
+            break;
+        case CompiledString::Type::BufferVar:
+            codegen.emplace_u8(0xE);
+            codegen.emplace_u8(str.storage.size()); // TODO CHECK SIZE < 128!?
+            codegen.emplace_chars(str.storage.size(), str.storage.c_str());
+            break;
+        case CompiledString::Type::Buffer128:
+            codegen.emplace_chars(128, str.storage.c_str());
+            break;
+    }
 }
 
 inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)

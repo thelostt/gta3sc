@@ -44,8 +44,8 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
             break;
 
         case ArgType::TextLabel:
-            // TODO what if a enum has a constant that is same as the label?
-            throw BadAlternator("Still needs to be implemented");
+            // Nothing to do, identifiers can be text labels with no checks.
+            // TODO check for vars
             break;
 
         case ArgType::Integer:
@@ -201,7 +201,7 @@ void Commands::annotate(SyntaxTree& command_node, const Command& command,
                 }
                 else if(arg.type == ArgType::TextLabel)
                 {
-                    // TODO
+                    arg_node.set_annotation(arg_node.text());
                 }
                 else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any)
                 {

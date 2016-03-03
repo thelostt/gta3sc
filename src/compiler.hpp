@@ -337,6 +337,10 @@ private:
                     {
                         args.emplace_back(*opt_label);
                     }
+                    else if( auto opt_text = arg_node.maybe_annotation<std::string>() )
+                    {
+                        args.emplace_back(CompiledString { CompiledString::Type::Buffer8_3VC, *opt_text });
+                    }
                     else if( auto opt_int = arg_node.maybe_annotation<int32_t>() )
                     {
                         args.emplace_back(conv_int(*opt_int));

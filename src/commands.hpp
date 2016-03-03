@@ -173,6 +173,18 @@ inline Commands get_test_commands()
                 },
             }
         },
+        {
+            "PRINT_BIG",
+            {
+                true,
+                186,
+                {
+                    { ArgType::TextLabel, false, true, true, true },
+                    { ArgType::Integer, false, true, true, true },
+                    { ArgType::Integer, false, true, true, true },
+                },
+            }
+        }
       },
       {
           {
