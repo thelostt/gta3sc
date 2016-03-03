@@ -10,6 +10,10 @@ int main()
 {
     _wchdir(L"../..");
 
+    GameConfig gta3_config;
+    gta3_config.has_text_label_prefix = false;
+    gta3_config.use_half_float = true;
+
     std::vector<shared_ptr<Script>> scripts;
 
     auto commands = get_test_commands();
@@ -52,12 +56,14 @@ int main()
 
     CompilerContext cc(main, symbols, commands);
     cc.compile();
-    main->size = cc.compute_labels();
 
-    Script::compute_script_offsets(scripts);
-    symbols.compute_label_offsets_globally();
+
     
-    CodeGenerator cgen(std::move(cc));
+    CodeGenerator cgen(gta3_config, std::move(cc));
+    
+    main->size = cgen.compute_labels(); // not thread-safe
+    Script::compute_script_offsets(scripts); // ^
+
     cgen.generate();
 
     FILE* f = fopen("output.cs", "wb");

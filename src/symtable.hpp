@@ -198,13 +198,6 @@ struct SymTable
     /// Merges symbol table `t2` into this one.
     void merge(SymTable t2);
 
-    /// Finds the global offset for all labels in this table.
-    /// TODO explain further
-    ///
-    /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
-    /// of the labels in this table and the scripts they're in should be running while this method is executed.
-    void compute_label_offsets_globally();
-
     /// Shifts all global vars offsets by `offset`. The unit is not bytes, but indices.
     void apply_offset_to_vars(uint32_t offset_in_index)
     {

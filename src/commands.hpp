@@ -184,6 +184,16 @@ inline Commands get_test_commands()
                     { ArgType::Integer, false, true, true, true },
                 },
             }
+        },
+        {
+            "SET_TIME_SCALE",
+            {
+                true,
+                349,
+                {
+                    { ArgType::Float, false, true, true, true },
+                },
+            }
         }
       },
       {

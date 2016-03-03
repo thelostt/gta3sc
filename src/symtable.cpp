@@ -55,17 +55,6 @@ void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scrip
     }
 }
 
-// TODO is this func useless because of the offset() method?
-void SymTable::compute_label_offsets_globally()
-{
-    for(auto it = this->labels.begin(); it != this->labels.end(); ++it)
-    {
-        auto& label_ptr = it->second;
-        Expects(label_ptr->global_offset == nullopt);
-        label_ptr->global_offset = label_ptr->script->offset.value() + label_ptr->local_offset.value();
-    }
-}
-
 std::map<std::string, fs::path, iless> Script::scan_subdir() const
 {
     auto output = std::map<std::string, fs::path, iless>();

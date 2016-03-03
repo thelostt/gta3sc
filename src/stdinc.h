@@ -1,4 +1,6 @@
 #pragma once
+#define _CRT_SECURE_NO_WARNINGS
+#include <cstring>
 #include <stdexcept>
 #include <memory>
 #include <string>
@@ -21,6 +23,12 @@ struct CodeGenerator;
 
 using std::shared_ptr;
 using std::weak_ptr;
+
+struct GameConfig
+{
+    bool use_half_float = false;
+    bool has_text_label_prefix = false;
+};
 
 struct iless
 {
