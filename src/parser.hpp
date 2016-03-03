@@ -144,6 +144,14 @@ public:
         return any_cast<T>(this->udata);
     }
 
+    template<typename T> // you can get a ref by using e.g. <int&> instead of <int>
+    optional<T> maybe_annotation() const
+    {
+        if(const T* p = any_cast<T>(&this->udata))
+            return *p;
+        return nullopt;
+    }
+
 private:
     // This data structure assumes all those members are constant for the entire lifetime of this object!
     // ...except for udata

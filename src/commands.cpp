@@ -1,5 +1,77 @@
 #include "commands.hpp"
+#include "symtable.hpp"
 #include "error.hpp"
+
+static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg& arg, const SymTable& symbols)
+{
+    bool is_good = false;
+
+    if((var->global && arg.allow_global_var) || (!var->global && arg.allow_local_var))
+    {
+        switch(var->type)
+        {
+            case VarType::Int:
+                is_good = (arg.type == ArgType::Integer || arg.type == ArgType::Any);
+                break;
+            case VarType::Float:
+                is_good = (arg.type == ArgType::Float || arg.type == ArgType::Any);
+                break;
+            case VarType::TextLabel:
+                is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::Any);
+                break;
+            case VarType::TextLabel16:
+                // TODO ArgType::TextLabel16??
+                is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::Any);
+                break;
+            default:
+                Unreachable();
+        }
+
+        if(is_good == false)
+            throw BadAlternator("TODO type mismatch");
+    }
+    else
+        throw BadAlternator("TODO kind of var not allowed");
+}
+
+static void match_identifier(const SyntaxTree& node, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
+{
+    // TODO IMPROVE CHECKS (THINK)
+
+    switch(arg.type)
+    {
+        case ArgType::Label:
+            if(!symbols.find_label(node.text()))
+                throw BadAlternator("TODO not label identifier");
+            break;
+
+        case ArgType::TextLabel:
+            // TODO what if a enum has a constant that is same as the label?
+            throw BadAlternator("Still needs to be implemented");
+            break;
+
+        case ArgType::Integer:
+        case ArgType::Float:
+        case ArgType::Any:
+        {
+            if(arg.allow_constant)
+            {
+                // TODO try find enum, break if successful
+            }
+
+            if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
+            {
+                match_identifier_var(*opt_var, arg, symbols);
+                break;
+            }
+
+            throw BadAlternator("TODO");
+        }
+
+        default:
+            Unreachable();
+    }
+}
 
 /// Finds all commands named after a specific name (found in the syntax tree node),
 /// and iterates on the arguments of the syntax tree node and each of these commands
@@ -7,7 +79,7 @@
 ///
 /// Due to giving a descriptive error message, it throws BadAlternator instead of
 /// returning a nullopt when a command cannot be matched.
-const Command& Commands::match(const SyntaxTree& command_node) const
+const Command& Commands::match(const SyntaxTree& command_node, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr) const
 {
     auto num_target_args  = command_node.child_count() - 1;
     auto alternator_range = commands.equal_range(command_node.child(0).text());
@@ -56,7 +128,14 @@ const Command& Commands::match(const SyntaxTree& command_node) const
                     // TODO
                     break;
                 case NodeType::Identifier:
-                    // TODO
+                    try
+                    {
+                        match_identifier(**it_target_arg, *it_alter_arg, symbols, scope_ptr);
+                    }
+                    catch(const CompilerError&)
+                    {
+                        bad_alternative = true;
+                    }
                     break;
                 case NodeType::ShortString:
                     bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::TextLabel) && it_alter_arg->allow_constant);
@@ -72,4 +151,80 @@ const Command& Commands::match(const SyntaxTree& command_node) const
     }
 
     throw BadAlternator("TODO");
+}
+
+void Commands::annotate(SyntaxTree& command_node, const Command& command, 
+    const SymTable& symbols, const shared_ptr<Scope>& scope_ptr) const
+{
+    size_t i = 0;
+
+    // Expects all command_args matches command.args
+
+    for(auto it = command_node.begin() + 1; it != command_node.end(); ++it)
+    {
+        auto& arg = command.args[i];
+        if(!arg.optional) ++i;
+
+        SyntaxTree& arg_node = **it;
+
+        switch((*it)->type())
+        {
+            case NodeType::Integer:
+            {
+                arg_node.set_annotation( static_cast<int32_t>(std::stoi(arg_node.text(), nullptr, 0)) );
+                break;
+            }
+            case NodeType::Float:
+            {
+                arg_node.set_annotation(std::stof(arg_node.text()));
+                break;
+            }
+
+            case NodeType::ShortString:
+            case NodeType::LongString:
+            {
+                // TODO unescape and annotate
+                break;
+            }
+
+            case NodeType::Array:
+            {
+                // TODO
+                break;
+            }
+
+            case NodeType::Identifier:
+            {
+                if(arg.type == ArgType::Label)
+                {
+                    shared_ptr<Label> label_ptr = symbols.find_label(arg_node.text()).value();
+                    arg_node.set_annotation(label_ptr);
+                }
+                else if(arg.type == ArgType::TextLabel)
+                {
+                    // TODO
+                }
+                else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any)
+                {
+                    if(false) // TODO find constant
+                    {
+                    }
+                    else if(auto opt_var = symbols.find_var(arg_node.text(), scope_ptr))
+                    {
+                        arg_node.set_annotation(*opt_var);
+                    }
+                    else
+                        Unreachable();
+                }
+                else
+                {
+                    Unreachable();
+                }
+                break;
+            }
+
+            default:
+                Unreachable();
+        }
+    }
 }

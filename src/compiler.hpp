@@ -293,12 +293,9 @@ private:
 
     void compile_command(const SyntaxTree& command_node)
     {
-        auto& command_name = command_node.child(0).text();
-
-        const Command& command = this->commands.match(command_node);
+        const Command& command = this->commands.match(command_node, symbols, current_scope);
         std::vector<ArgVariant> args = get_args(command, command_node);
-
-        this->compiled.emplace_back(CompiledCommand{ command.id, std::move(args) });
+        return compile_command(command, std::move(args));
     }
 
     std::vector<ArgVariant> get_args(const Command& command, const SyntaxTree& command_node)
@@ -314,44 +311,61 @@ private:
             {
                 case NodeType::Integer:
                 {
-                    args.emplace_back(get_int(arg_node.text()));
+                    args.emplace_back(conv_int(arg_node.annotation<int32_t>()));
                     break;
                 }
+
                 case NodeType::Float:
                 {
-                    args.emplace_back(get_float(arg_node.text()));
+                    args.emplace_back(arg_node.annotation<float>());
                     break;
                 }
+
                 case NodeType::Array:
                 {
                     // TODO
                     break;
                 }
+
                 case NodeType::Identifier:
                 {
-                    if(auto opt_label = this->symbols.find_label(arg_node.text()))
-                    {
-                        args.emplace_back(*opt_label);
-                    }
-
-                    if(auto opt_var = this->symbols.find_var(arg_node.text(), this->current_scope))
+                    if( auto opt_var = arg_node.maybe_annotation<shared_ptr<Var>>() )
                     {
                         args.emplace_back(CompiledVar { *opt_var, nullopt });
                     }
-
-                    // TODO
+                    else if( auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>() )
+                    {
+                        args.emplace_back(*opt_label);
+                    }
+                    else if( auto opt_int = arg_node.maybe_annotation<int32_t>() )
+                    {
+                        args.emplace_back(conv_int(*opt_int));
+                    }
+                    else if( auto opt_flt = arg_node.maybe_annotation<float>() )
+                    {
+                        args.emplace_back(*opt_flt);
+                    }
+                    else
+                    {
+                        Unreachable();
+                    }
                     break;
                 }
+
                 case NodeType::ShortString:
                 {
                     // TODO
                     break;
                 }
+
                 case NodeType::LongString:
                 {
                     // TODO
                     break;
                 }
+
+                default:
+                    Unreachable();
             }
         }
 

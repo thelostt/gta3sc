@@ -25,6 +25,9 @@ enum class ScriptType
 /// \returns pair(is_global, vartype).
 std::pair<bool, VarType> token_to_vartype(NodeType token_type);
 
+struct SymTable;
+struct Commands;
+
 /// Represents a *.sc script file.
 struct Script : std::enable_shared_from_this<Script>
 {
@@ -34,6 +37,12 @@ struct Script : std::enable_shared_from_this<Script>
         this->path = std::move(path_);
         this->tree = SyntaxTree::compile(TokenStream(this->path));
     }
+
+    /// Annnotates this script's syntax tree with informations to simplify the compilation step.
+    /// For example, annotates whether a identifier is a variable, enum, label, etc.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
+    void annotate_tree(const SymTable& symbols, const Commands& commands);
 
     /// Scans the subdirectory (recursively) named after the name of this script file.
     /// \returns map of (filename, filepath) to all script files found.
@@ -120,7 +129,7 @@ struct SymTable
     std::vector<std::string>    mission;    /// LOAD_AND_LAUNCH_MISSION scripts
 
     /// Construts a SymTable from the symbols in `script`.
-    static SymTable from_script(const Script& script)
+    static SymTable from_script(Script& script)
     {
         SymTable symbols;
         symbols.scan_symbols(script);
@@ -128,7 +137,9 @@ struct SymTable
     }
 
     /// Scans all symbols in `script` and adds them to this table.
-    void scan_symbols(const Script& script);
+    ///
+    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
+    void scan_symbols(Script& script);
 
     /// Creates a new scope in this table.
     shared_ptr<Scope> add_scope()

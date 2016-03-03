@@ -1,4 +1,5 @@
 #include "symtable.hpp"
+#include "commands.hpp"
 
 uint32_t Var::space_taken()
 {
@@ -180,7 +181,7 @@ void SymTable::merge(SymTable t2)
     std::move(t2.mission.begin(), t2.mission.end(), std::back_inserter(t1.mission));
 }
 
-void SymTable::scan_symbols(const Script& script)
+void SymTable::scan_symbols(Script& script)
 {
     std::function<bool(SyntaxTree&)> walker;
 
@@ -222,6 +223,10 @@ void SymTable::scan_symbols(const Script& script)
                 if(current_scope)
                     throw CompilerError("Already inside a scope.");
 
+                auto guard = make_scope_guard([&] {
+                    current_scope = nullptr;
+                });
+
                 local_index = 0;
                 current_scope = table.add_scope();
                 {
@@ -237,7 +242,7 @@ void SymTable::scan_symbols(const Script& script)
 
                     node.set_annotation(std::move(current_scope));
                 }
-                current_scope = nullptr;
+                // guard sets current_scope to nullptr
 
                 return false;
             }
@@ -246,6 +251,7 @@ void SymTable::scan_symbols(const Script& script)
             {
                 auto name = node.child(0).text();
 
+                // TODO use `const Commands&` to identify these?
                 if(name == "LOAD_AND_LAUNCH_MISSION")
                     table.add_script(ScriptType::Mission, node);
                 else if(name == "LAUNCH_MISSION")
@@ -310,5 +316,64 @@ void SymTable::scan_symbols(const Script& script)
     script.tree->walk(std::ref(walker));
 }
 
+void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
+{
+    std::function<bool(SyntaxTree&)> walker;
+
+    std::shared_ptr<Scope> current_scope = nullptr;
+
+    walker = [&](SyntaxTree& node)
+    {
+        switch(node.type())
+        {
+            case NodeType::Label:
+                // already annotated in SymTable::scan_symbols
+                return false;
+
+            case NodeType::Scope:
+            {
+                // already annotated in SymTable::scan_symbols, but let's inform about current scope
+                
+                auto guard = make_scope_guard([&] {
+                    current_scope = nullptr;
+                });
+
+                Expects(current_scope == nullptr);
+
+                current_scope = node.annotation<shared_ptr<Scope>>();
+                node.walk(std::ref(walker));
+                // guard sets current_scope to nullptr
+
+                return false;
+            }
+
+            case NodeType::VAR_INT: case NodeType::LVAR_INT:
+            case NodeType::VAR_FLOAT: case NodeType::LVAR_FLOAT:
+            case NodeType::VAR_TEXT_LABEL: case NodeType::LVAR_TEXT_LABEL:
+            case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
+                // already annotated in SymTable::scan_symbols
+                return false;
+
+            case NodeType::Command:
+            {
+                try
+                {
+                    const Command& command = commands.match(node, symbols, current_scope);
+                    commands.annotate(node, command, symbols, current_scope);
+                }
+                catch(const BadAlternator&)
+                {
+                    // ignore this one for now, let compiler.cpp/hpp handle this FOR NOW
+                }
+                return false;
+            }
+
+            default:
+                return true;
+        }
+    };
+
+    this->tree->walk(std::ref(walker));
+}
 
 

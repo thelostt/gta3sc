@@ -2,6 +2,9 @@
 #include "stdinc.h"
 #include "parser.hpp"
 
+struct SymTable;
+struct Scope;
+
 /// Fundamental type of a command argument.
 enum class ArgType : uint8_t
 {
@@ -47,7 +50,10 @@ struct Commands
     /// Matches the best command based on the name and arguments given a COMMAND node in the AST.
     ///
     /// \throws `BadAlternator` if no match found.
-    const Command& match(const SyntaxTree& command_node) const;
+    const Command& match(const SyntaxTree& command_node, const SymTable&, const shared_ptr<Scope>&) const;
+
+    /// TODO doc
+    void annotate(SyntaxTree& command_node, const Command&, const SymTable&, const shared_ptr<Scope>&) const;
 
     const Command& goto_() const    // can't be named purely goto() because of the C keyword
     {

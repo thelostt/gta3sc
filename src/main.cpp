@@ -44,6 +44,12 @@ int main()
         scripts.emplace_back(x.first); // maybe move
     }
 
+    for(auto& script : scripts)
+    {
+        script->annotate_tree(symbols, commands);
+    }
+
+
     CompilerContext cc(main, symbols, commands);
     cc.compile();
     main->size = cc.compute_labels();
