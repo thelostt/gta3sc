@@ -4,6 +4,7 @@ Commands gtavc_commands()
 {
     return Commands
     {
+        // Commands
         {
             {
                 "NOP",
@@ -16945,12 +16946,13 @@ Commands gtavc_commands()
                     1474,
                     {
                         { ArgType::Buffer128, false, true, false, false,{} },
-                        { ArgType::Buffer128, false, true, false, false,{} },
-                        { ArgType::Buffer128, false, true, false, false,{} },
-                        { ArgType::Buffer128, false, true, false, false,{} },
                     }
                 }
             },
-        }
+        },
+
+        // Enums
+        {
+        },
     };
 }

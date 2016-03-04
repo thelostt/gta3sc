@@ -1,7 +1,7 @@
 #pragma once
 #include "stdinc.h"
-#include "parser.hpp"
 
+class SyntaxTree;
 struct SymTable;
 struct Scope;
 
@@ -70,16 +70,27 @@ struct Command
 /// Stores the list of commands and alternators.
 struct Commands
 {
+private:
     std::multimap<std::string, Command> commands;
     std::map<std::string, shared_ptr<Enum>> enums; // [""] stores enums allowed on every context
 
+public:
     using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
 
-    /// Matches the best command based on the name and arguments given a COMMAND node in the AST.
+    Commands(std::initializer_list<decltype(commands)::value_type> init_cmds,
+             std::initializer_list<decltype(enums)::value_type> init_enums) :
+        commands(std::move(init_cmds)), enums(std::move(init_enums))
+    {
+    }
+
+    /// Matches the best command based on the alternators with the command name and arguments given a COMMAND node in the AST.
     ///
     /// \throws `BadAlternator` if no match found.
     const Command& match(const SyntaxTree& command_node, const SymTable&, const shared_ptr<Scope>&) const;
 
+    /// Matches the best command based on the given alternators (`commands`) and its arguments in the AST `nodes...`.
+    ///
+    /// \throws `BadAlternator` if no match found.
     template<typename... TSyntaxTree>
     const Command& match_args(const SymTable& symbols, const shared_ptr<Scope>& scope, alternator_pair commands, const TSyntaxTree&... nodes) const
     {
@@ -87,13 +98,10 @@ struct Commands
         return match_internal(symbols, scope, commands, std::begin(args), std::end(args));
     }
 
-    // TODO private
-    const Command& match_internal(const SymTable&, const shared_ptr<Scope>&,
-                                  alternator_pair commands, const SyntaxTree** begin, const SyntaxTree** end) const;
+    /// Annotates the argument nodes of a COMMAND node in the AST for a specific `command`.
+    void annotate(SyntaxTree& command_node, const Command& command, const SymTable&, const shared_ptr<Scope>&) const;
 
-    /// TODO doc
-    void annotate(SyntaxTree& command_node, const Command&, const SymTable&, const shared_ptr<Scope>&) const;
-
+    /// Annotates the argument `nodes...` for a specific `command`.
     template<typename... TSyntaxTree>
     void annotate_args(const SymTable& symbols, const shared_ptr<Scope>& scope, const Command& command, TSyntaxTree&... nodes) const
     {
@@ -101,40 +109,16 @@ struct Commands
         return annotate_internal(symbols, scope, command, std::begin(args), std::end(args));
     }
 
-    // TODO private
-    void annotate_internal(const SymTable&, const shared_ptr<Scope>&,
-                           const Command&, SyntaxTree** begin, SyntaxTree** end) const;
+    /// Finds the literal value of a constant `value`.
+    /// `context_free_only` is whether we only search for constants that can be used in any occasion or
+    /// constants that can be used only in specific commands arguments.
+    optional<int32_t> find_constant(const std::string& value, bool context_free_only) const;
+
+    /// Finds the literal value of a constant `value` assuming we're dealing with argument `arg`.
+    optional<int32_t> find_constant_for_arg(const std::string& value, const Command::Arg& arg) const;
 
 
-
-    optional<int32_t> find_constant(const std::string& value, bool context_free_only) const
-    {
-        int x = 0;
-        if(context_free_only)
-        {
-            auto it = enums.find("");
-            if(it != enums.end())
-            {
-                if(it->second != nullptr)
-                    return it->second->find(value);
-            }
-            return nullopt;
-        }
-        else
-        {
-            // TODO
-            return nullopt;
-        }
-    }
-
-    optional<int32_t> find_constant_for_arg(const std::string& value, const Command::Arg& arg) const
-    {
-        if(auto opt_const = arg.find_constant(value))
-            return opt_const;
-        else if(auto opt_const = this->find_constant(value, true))
-            return opt_const;
-        return nullopt;
-    }
+    // --- Important Commands ---
 
     const Command& goto_() const    // can't be named purely goto() because of the C keyword
     {
@@ -159,85 +143,15 @@ struct Commands
         // TODO cached
         return commands.equal_range("SET");
     }
-};
 
-inline Commands get_test_commands()
-{
-    return Commands
-    { {
-        {
-            "WAIT",
-            {
-                true,
-                0x0001,
-                {
-                    { ArgType::Integer, false, true, true, true,
-                    { std::make_shared<Enum>(Enum { { {"TEST1", 1111}, {"TEST2", 2222} } }) } },
-                },
-            }
-        },
-        {
-            "GOTO",
-            {
-                true,
-                0x0002,
-                {
-                    { ArgType::Label, false, true, true, true, },
-                },
-            }
-        },
-        {
-            "GOTO_IF_FALSE",
-            {
-                true,
-                0x004D,
-                {
-                    { ArgType::Label, false, true, true, true, },
-                },
-            }
-        },
-        {
-            "ANDOR",
-            {
-                true,
-                0x00D6,
-                {
-                    { ArgType::Integer, false, true, false, false, },
-                },
-            }
-        },
-        {
-            "PRINT_BIG",
-            {
-                true,
-                186,
-                {
-                    { ArgType::TextLabel, false, true, true, true },
-                    { ArgType::Integer, false, true, true, true },
-                    { ArgType::Integer, false, true, true, true },
-                },
-            }
-        },
-        {
-            "SET_TIME_SCALE",
-            {
-                true,
-                349,
-                {
-                    { ArgType::Float, false, true, true, true },
-                },
-            }
-        }
-      },
-      {
-          {
-              "", std::make_shared<Enum>(Enum {{
-                  {"TRUE", 1}, {"FALSE", 0}, // TODO DAY NIGHT 
-                }})
-          }
-      },
-    };
-}
+private:
+
+    const Command& match_internal(const SymTable&, const shared_ptr<Scope>&,
+        alternator_pair commands, const SyntaxTree** begin, const SyntaxTree** end) const;
+
+    void annotate_internal(const SymTable&, const shared_ptr<Scope>&,
+        const Command&, SyntaxTree** begin, SyntaxTree** end) const;
+};
 
 /// Checks if the argument types are compatible with each other.
 inline bool argtype_matches(ArgType type1, ArgType type2)

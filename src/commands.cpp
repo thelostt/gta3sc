@@ -72,12 +72,6 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
     }
 }
 
-/// Finds all commands named after a specific name (found in the syntax tree node),
-/// and iterates on the arguments of the syntax tree node and each of these commands
-/// until one of them finally matches the content of the syntax tree arguments.
-///
-/// Due to giving a descriptive error message, it throws BadAlternator instead of
-/// returning a nullopt when a command cannot be matched.
 template<typename Iter> static 
 const Command& match_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
     Commands::alternator_pair alternator_range, Iter begin, Iter end)
@@ -255,4 +249,32 @@ void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope
     const Command& command, SyntaxTree** begin, SyntaxTree** end) const
 {
     return ::annotate_internal(*this, symbols, scope_ptr, command, begin, end);
+}
+
+optional<int32_t> Commands::find_constant(const std::string& value, bool context_free_only) const
+{
+    if(context_free_only)
+    {
+        auto it = enums.find("");
+        if(it != enums.end())
+        {
+            if(it->second != nullptr)
+                return it->second->find(value);
+        }
+        return nullopt;
+    }
+    else
+    {
+        // TODO
+        return nullopt;
+    }
+}
+
+optional<int32_t> Commands::find_constant_for_arg(const std::string& value, const Command::Arg& arg) const
+{
+    if(auto opt_const = arg.find_constant(value))
+        return opt_const;
+    else if(auto opt_const = this->find_constant(value, true))
+        return opt_const;
+    return nullopt;
 }
