@@ -73,16 +73,43 @@ struct Commands
     std::multimap<std::string, Command> commands;
     std::map<std::string, shared_ptr<Enum>> enums; // [""] stores enums allowed on every context
 
+    using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
+
     /// Matches the best command based on the name and arguments given a COMMAND node in the AST.
     ///
     /// \throws `BadAlternator` if no match found.
     const Command& match(const SyntaxTree& command_node, const SymTable&, const shared_ptr<Scope>&) const;
 
+    template<typename... TSyntaxTree>
+    const Command& match_args(const SymTable& symbols, const shared_ptr<Scope>& scope, alternator_pair commands, const TSyntaxTree&... nodes) const
+    {
+        const SyntaxTree* args[] = { std::addressof<const TSyntaxTree>(nodes)... };
+        return match_internal(symbols, scope, commands, std::begin(args), std::end(args));
+    }
+
+    // TODO private
+    const Command& match_internal(const SymTable&, const shared_ptr<Scope>&,
+                                  alternator_pair commands, const SyntaxTree** begin, const SyntaxTree** end) const;
+
     /// TODO doc
     void annotate(SyntaxTree& command_node, const Command&, const SymTable&, const shared_ptr<Scope>&) const;
 
+    template<typename... TSyntaxTree>
+    void annotate_args(const SymTable& symbols, const shared_ptr<Scope>& scope, const Command& command, TSyntaxTree&... nodes) const
+    {
+        SyntaxTree* args[] = { std::addressof<TSyntaxTree>(nodes)... };
+        return annotate_internal(symbols, scope, command, std::begin(args), std::end(args));
+    }
+
+    // TODO private
+    void annotate_internal(const SymTable&, const shared_ptr<Scope>&,
+                           const Command&, SyntaxTree** begin, SyntaxTree** end) const;
+
+
+
     optional<int32_t> find_constant(const std::string& value, bool context_free_only) const
     {
+        int x = 0;
         if(context_free_only)
         {
             auto it = enums.find("");
@@ -125,6 +152,12 @@ struct Commands
     {
         // TODO cached
         return commands.find("ANDOR")->second;
+    }
+
+    alternator_pair set() const
+    {
+        // TODO cached
+        return commands.equal_range("SET");
     }
 };
 

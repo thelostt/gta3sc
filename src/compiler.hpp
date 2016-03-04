@@ -154,7 +154,7 @@ private:
                     compile_while(*it->get());
                     break;
                 case NodeType::REPEAT:
-                    // TODO
+                    compile_repeat(*it->get());
                     break;
                 case NodeType::SWITCH:
                     // TODO
@@ -175,6 +175,9 @@ private:
                 case NodeType::VAR_TEXT_LABEL16:
                 case NodeType::LVAR_TEXT_LABEL16:
                     // Nothing to do, vars already known from symbol table.
+                    break;
+                case NodeType::Equal:
+                    compile_equal(*it->get());
                     break;
                 default:
                     Unreachable();
@@ -226,6 +229,16 @@ private:
         compile_label(end_ptr);
     }
 
+    void compile_repeat(const SyntaxTree& repeat_node)
+    {
+        // TODO
+    }
+
+    void compile_equal(const SyntaxTree& eq_node)
+    {
+        const Command& command = eq_node.annotation<std::reference_wrapper<const Command>>();
+        compile_command(command, { get_arg(eq_node.child(0)), get_arg(eq_node.child(1)) });
+    }
 
     void compile_conditions(const SyntaxTree& conds_node, const shared_ptr<Label>& else_ptr)
     {
@@ -257,6 +270,7 @@ private:
 
     void compile_command(const SyntaxTree& command_node)
     {
+        // TODO use Command& annotated on tree
         const Command& command = this->commands.match(command_node, symbols, current_scope);
         std::vector<ArgVariant> args = get_args(command, command_node);
         return compile_command(command, std::move(args));
@@ -270,74 +284,78 @@ private:
         for(auto ita = command_node.begin() + 1; ita != command_node.end(); ++ita)
         {
             const SyntaxTree& arg_node = **ita;
-
-            switch(arg_node.type())
-            {
-                case NodeType::Integer:
-                {
-                    args.emplace_back(conv_int(arg_node.annotation<int32_t>()));
-                    break;
-                }
-
-                case NodeType::Float:
-                {
-                    args.emplace_back(arg_node.annotation<float>());
-                    break;
-                }
-
-                case NodeType::Array:
-                {
-                    // TODO
-                    break;
-                }
-
-                case NodeType::Identifier:
-                {
-                    if( auto opt_var = arg_node.maybe_annotation<shared_ptr<Var>>() )
-                    {
-                        args.emplace_back(CompiledVar { *opt_var, nullopt });
-                    }
-                    else if( auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>() )
-                    {
-                        args.emplace_back(*opt_label);
-                    }
-                    else if( auto opt_text = arg_node.maybe_annotation<std::string>() )
-                    {
-                        args.emplace_back(CompiledString { CompiledString::Type::TextLabel8, *opt_text });
-                    }
-                    else if( auto opt_int = arg_node.maybe_annotation<int32_t>() )
-                    {
-                        args.emplace_back(conv_int(*opt_int));
-                    }
-                    else if( auto opt_flt = arg_node.maybe_annotation<float>() )
-                    {
-                        args.emplace_back(*opt_flt);
-                    }
-                    else
-                    {
-                        Unreachable();
-                    }
-                    break;
-                }
-
-                case NodeType::ShortString:
-                {
-                    // TODO
-                    break;
-                }
-
-                case NodeType::LongString:
-                {
-                    // TODO
-                    break;
-                }
-
-                default:
-                    Unreachable();
-            }
+            args.emplace_back( get_arg(arg_node) );
         }
 
         return args;
+    }
+
+    ArgVariant get_arg(const SyntaxTree& arg_node)
+    {
+        switch(arg_node.type())
+        {
+            case NodeType::Integer:
+            {
+                return conv_int(arg_node.annotation<int32_t>());
+            }
+
+            case NodeType::Float:
+            {
+                return arg_node.annotation<float>();
+            }
+
+            case NodeType::Array:
+            {
+                // TODO
+                break;
+            }
+
+            case NodeType::Identifier:
+            {
+                if(auto opt_var = arg_node.maybe_annotation<shared_ptr<Var>>())
+                {
+                    return CompiledVar{ *opt_var, nullopt };
+                }
+                else if(auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>())
+                {
+                    return *opt_label;
+                }
+                else if(auto opt_text = arg_node.maybe_annotation<std::string>())
+                {
+                    return CompiledString{ CompiledString::Type::TextLabel8, *opt_text };
+                }
+                else if(auto opt_int = arg_node.maybe_annotation<int32_t>())
+                {
+                    return conv_int(*opt_int);
+                }
+                else if(auto opt_flt = arg_node.maybe_annotation<float>())
+                {
+                    return *opt_flt;
+                }
+                else
+                {
+                    Unreachable();
+                }
+                break;
+            }
+
+            case NodeType::ShortString:
+            {
+                // TODO
+                break;
+            }
+
+            case NodeType::LongString:
+            {
+                // TODO
+                break;
+            }
+
+            default:
+                Unreachable();
+        }
+
+        Unreachable();
     }
 
     template<typename T, typename = std::enable_if_t<std::is_integral<T>::value>>

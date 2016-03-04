@@ -197,17 +197,15 @@ expressionStatement
 // non-compound
 assignmentOperators1
 	: ((WS*)!
-	   op=(
-	     '=' -> OP_EQ		// natively supported
+	   ( '=' -> OP_EQ		// natively supported
 		|'=#' -> OP_CAST))	// natively supported
-	 	-> $op
+
 	;
 
 // compound
 assignmentOperators2
 	: ((WS*)!
-	   op=(
-	 	 '+=' -> OP_ADD		// natively supported
+	   ( '+=' -> OP_ADD		// natively supported
 	 	|'-=' -> OP_SUB		// natively supported
 	 	|'*=' -> OP_MUL		// natively supported
 	 	|'/=' -> OP_DIV		// natively supported
@@ -219,12 +217,10 @@ assignmentOperators2
 	 	|'&=' -> OP_AND
 	 	|'^=' -> OP_XOR
 	 	|'|=' -> OP_OR))
-	 	-> $op
 	;
 	
 binaryOperators
 	: 	((WS*)!
-	    op=
 	    ('+' -> OP_ADD	// natively supported
 	    |'-' -> OP_SUB	// natively supported
 	    |'*' -> OP_MUL	// natively supported
@@ -237,23 +233,19 @@ binaryOperators
 	    |'^' -> OP_XOR
 	    |'<<' -> OP_SHL
 	    |'>>' -> OP_SHR))
-	    -> $op
 	;
 	
 relationalOperators
 	: ((WS*)!
-	   op=(
-	     '<'  -> OP_LE
+	   ( '<'  -> OP_LE
 	 	|'>'  -> OP_GE
 	 	|'>=' -> OP_GEQ
 	 	|'<=' -> OP_LEQ))
-	 	-> $op
 	;
 
 unaryOperators
 	:	((WS*)!
-		op=('++' -> OP_INC |'--' -> OP_DEC))
-		-> $op
+		('++' -> OP_INC |'--' -> OP_DEC))
 	;
 	
 //////

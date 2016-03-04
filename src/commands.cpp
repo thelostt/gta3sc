@@ -78,10 +78,11 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
 ///
 /// Due to giving a descriptive error message, it throws BadAlternator instead of
 /// returning a nullopt when a command cannot be matched.
-const Command& Commands::match(const SyntaxTree& command_node, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr) const
+template<typename Iter> static 
+const Command& match_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
+    Commands::alternator_pair alternator_range, Iter begin, Iter end)
 {
-    auto num_target_args  = command_node.child_count() - 1;
-    auto alternator_range = commands.equal_range(command_node.child(0).text());
+    auto num_target_args = (size_t)std::distance(begin, end);
 
     for(auto it = alternator_range.first; it != alternator_range.second; ++it)
     {
@@ -91,10 +92,10 @@ const Command& Commands::match(const SyntaxTree& command_node, const SymTable& s
         size_t args_readen = 0;
 
         auto it_alter_arg = alternative.args.begin();
-        auto it_target_arg = command_node.begin() + 1;
+        auto it_target_arg = begin;
 
-        for( ; ;
-            (it_alter_arg->optional? it_alter_arg : ++it_alter_arg),
+        for(; ;
+        (it_alter_arg->optional? it_alter_arg : ++it_alter_arg),
             ++it_target_arg,
             ++args_readen)
         {
@@ -129,7 +130,7 @@ const Command& Commands::match(const SyntaxTree& command_node, const SymTable& s
                 case NodeType::Identifier:
                     try
                     {
-                        match_identifier(**it_target_arg, *this, *it_alter_arg, symbols, scope_ptr);
+                        match_identifier(**it_target_arg, commands, *it_alter_arg, symbols, scope_ptr);
                     }
                     catch(const CompilerError&)
                     {
@@ -152,14 +153,15 @@ const Command& Commands::match(const SyntaxTree& command_node, const SymTable& s
     throw BadAlternator("TODO");
 }
 
-void Commands::annotate(SyntaxTree& command_node, const Command& command, 
-    const SymTable& symbols, const shared_ptr<Scope>& scope_ptr) const
+template<typename Iter> static
+void annotate_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
+    const Command& command, Iter begin, Iter end)
 {
     size_t i = 0;
 
-    // Expects all command_args matches command.args
+    // Expects all command_args (begin,end) matches command.args
 
-    for(auto it = command_node.begin() + 1; it != command_node.end(); ++it)
+    for(auto it = begin; it != end; ++it)
     {
         auto& arg = command.args[i];
         if(!arg.optional) ++i;
@@ -170,7 +172,7 @@ void Commands::annotate(SyntaxTree& command_node, const Command& command,
         {
             case NodeType::Integer:
             {
-                arg_node.set_annotation( static_cast<int32_t>(std::stoi(arg_node.text(), nullptr, 0)) );
+                arg_node.set_annotation(static_cast<int32_t>(std::stoi(arg_node.text(), nullptr, 0)));
                 break;
             }
             case NodeType::Float:
@@ -205,7 +207,7 @@ void Commands::annotate(SyntaxTree& command_node, const Command& command,
                 }
                 else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any)
                 {
-                    if(auto opt_const = this->find_constant_for_arg(arg_node.text(), arg))
+                    if(auto opt_const = commands.find_constant_for_arg(arg_node.text(), arg))
                     {
                         arg_node.set_annotation(*opt_const);
                     }
@@ -227,4 +229,30 @@ void Commands::annotate(SyntaxTree& command_node, const Command& command,
                 Unreachable();
         }
     }
+}
+
+////////
+
+const Command& Commands::match(const SyntaxTree& command_node, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr) const
+{
+    auto alternator_range = commands.equal_range(command_node.child(0).text());
+    return ::match_internal(*this, symbols, scope_ptr, alternator_range, command_node.begin() + 1, command_node.end());
+}
+
+const Command& Commands::match_internal(const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
+    alternator_pair alternator_range, const SyntaxTree** begin, const SyntaxTree** end) const
+{
+    return ::match_internal(*this, symbols, scope_ptr, alternator_range, begin, end);
+}
+
+void Commands::annotate(SyntaxTree& command_node, const Command& command, 
+    const SymTable& symbols, const shared_ptr<Scope>& scope_ptr) const
+{
+    return ::annotate_internal(*this, symbols, scope_ptr, command, command_node.begin() + 1, command_node.end());
+}
+
+void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
+    const Command& command, SyntaxTree** begin, SyntaxTree** end) const
+{
+    return ::annotate_internal(*this, symbols, scope_ptr, command, begin, end);
 }

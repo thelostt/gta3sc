@@ -357,6 +357,27 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 return false;
             }
 
+            case NodeType::Equal:
+            {
+                // TODO CHECK IF IN A CONDITION
+                try
+                {
+                    auto alternators = commands.set();
+                    SyntaxTree& left = node.child(0);
+                    SyntaxTree& right = node.child(1);
+                    
+                    const Command& command = commands.match_args(symbols, current_scope, alternators, left, right);
+                    commands.annotate_args(symbols, current_scope, command, left, right);
+
+                    node.set_annotation(std::cref(command));
+                }
+                catch(const BadAlternator&)
+                {
+                    // ignore this one for now, let compiler.cpp/hpp handle this FOR NOW
+                }
+                return false;
+            }
+
             default:
                 return true;
         }
