@@ -240,6 +240,12 @@ private:
         compile_command(command, { get_arg(eq_node.child(0)), get_arg(eq_node.child(1)) });
     }
 
+    void compile_command(const SyntaxTree& command_node)
+    {
+        const Command& command = command_node.annotation<std::reference_wrapper<const Command>>();
+        return compile_command(command, get_args(command, command_node));
+    }
+
     void compile_conditions(const SyntaxTree& conds_node, const shared_ptr<Label>& else_ptr)
     {
         auto compile_multi_andor = [this](const auto& conds_vector, size_t op)
@@ -268,13 +274,6 @@ private:
     }
 
 
-    void compile_command(const SyntaxTree& command_node)
-    {
-        // TODO use Command& annotated on tree
-        const Command& command = this->commands.match(command_node, symbols, current_scope);
-        std::vector<ArgVariant> args = get_args(command, command_node);
-        return compile_command(command, std::move(args));
-    }
 
     std::vector<ArgVariant> get_args(const Command& command, const SyntaxTree& command_node)
     {

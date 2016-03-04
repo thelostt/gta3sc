@@ -319,6 +319,13 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 // already annotated in SymTable::scan_symbols
                 return false;
 
+            case NodeType::VAR_INT: case NodeType::LVAR_INT:
+            case NodeType::VAR_FLOAT: case NodeType::LVAR_FLOAT:
+            case NodeType::VAR_TEXT_LABEL: case NodeType::LVAR_TEXT_LABEL:
+            case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
+                // already annotated in SymTable::scan_symbols
+                return false;
+
             case NodeType::Scope:
             {
                 // already annotated in SymTable::scan_symbols, but let's inform about current scope
@@ -336,45 +343,26 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 return false;
             }
 
-            case NodeType::VAR_INT: case NodeType::LVAR_INT:
-            case NodeType::VAR_FLOAT: case NodeType::LVAR_FLOAT:
-            case NodeType::VAR_TEXT_LABEL: case NodeType::LVAR_TEXT_LABEL:
-            case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
-                // already annotated in SymTable::scan_symbols
-                return false;
-
             case NodeType::Command:
             {
-                try
-                {
-                    const Command& command = commands.match(node, symbols, current_scope);
-                    commands.annotate(node, command, symbols, current_scope);
-                }
-                catch(const BadAlternator&)
-                {
-                    // ignore this one for now, let compiler.cpp/hpp handle this FOR NOW
-                }
+                const Command& command = commands.match(node, symbols, current_scope);
+                commands.annotate(node, command, symbols, current_scope);
+                node.set_annotation(std::cref(command));
+
                 return false;
             }
 
             case NodeType::Equal:
             {
                 // TODO CHECK IF IN A CONDITION
-                try
-                {
-                    auto alternators = commands.set();
-                    SyntaxTree& left = node.child(0);
-                    SyntaxTree& right = node.child(1);
-                    
-                    const Command& command = commands.match_args(symbols, current_scope, alternators, left, right);
-                    commands.annotate_args(symbols, current_scope, command, left, right);
+                auto alternators = commands.set();
+                SyntaxTree& left = node.child(0);
+                SyntaxTree& right = node.child(1);
 
-                    node.set_annotation(std::cref(command));
-                }
-                catch(const BadAlternator&)
-                {
-                    // ignore this one for now, let compiler.cpp/hpp handle this FOR NOW
-                }
+                const Command& command = commands.match_args(symbols, current_scope, alternators, left, right);
+                commands.annotate_args(symbols, current_scope, command, left, right);
+                node.set_annotation(std::cref(command));
+
                 return false;
             }
 
