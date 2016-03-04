@@ -5,6 +5,9 @@
 #include "commands.hpp"
 #include "compiler.hpp"
 #include "codegen.hpp"
+#include "defs/defs.hpp"
+
+extern void convert();
 
 int main()
 {
@@ -14,9 +17,10 @@ int main()
     gta3_config.has_text_label_prefix = false;
     gta3_config.use_half_float = true;
 
-    std::vector<shared_ptr<Script>> scripts;
+    Commands commands = gta3_commands();
 
-    auto commands = get_test_commands();
+
+    std::vector<shared_ptr<Script>> scripts;
 
     auto main = std::make_shared<Script>("test.sc", ScriptType::Main);
     auto symbols = SymTable::from_script(*main);

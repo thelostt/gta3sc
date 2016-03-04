@@ -39,8 +39,8 @@ struct Command
         ArgType type;               /// Fundamental type of argument.
         bool optional : 1;          /// Allows as many optional arguments as possible (must be the last arg).
         bool allow_constant : 1;    /// Allow literal values
-        bool allow_local_var : 1;   /// Allow local variables
         bool allow_global_var : 1;  /// Allow global variables
+        bool allow_local_var : 1;   /// Allow local variables
         std::vector<shared_ptr<Enum>> enums;
 
         ::optional<int32_t> find_constant(const std::string& value) const
