@@ -130,66 +130,74 @@ private:
         this->compiled.emplace_back(std::move(label_ptr));
     }
 
-    void compile_command(const Command& command, std::vector<ArgVariant> args)
+    void compile_command(const Command& command, std::vector<ArgVariant> args, bool not_flag = false)
     {
-        this->compiled.emplace_back(CompiledCommand{ command.id, std::move(args) });
+        uint16_t id = command.id | (not_flag? uint16_t(0x8000) : uint16_t(0x0000));
+        this->compiled.emplace_back(CompiledCommand{ id, std::move(args) });
     }
 
     void compile_statements(const SyntaxTree& base)
     {
         for(auto it = base.begin(); it != base.end(); ++it)
+            compile_statement(*it->get());
+    }
+
+    void compile_statement(const SyntaxTree& node, bool not_flag = false)
+    {
+        switch(node.type())
         {
-            switch((*it)->type())
-            {
-                case NodeType::Block:
-                    // group of anything, usually group of statements
-                    compile_statements(*it->get());
-                    break;
-                case NodeType::Command:
-                    compile_command(*it->get());
-                    break;
-                case NodeType::Equal:
-                case NodeType::Cast:
-                    compile_equal(*it->get());
-                    break;
-                case NodeType::Label:
-                    compile_label(*it->get());
-                    break;
-                case NodeType::Scope:
-                    compile_scope(*it->get());
-                    break;
-                case NodeType::IF:
-                    compile_if(*it->get());
-                    break;
-                case NodeType::WHILE:
-                    compile_while(*it->get());
-                    break;
-                case NodeType::REPEAT:
-                    compile_repeat(*it->get());
-                    break;
-                case NodeType::SWITCH:
-                    // TODO
-                    break;
-                case NodeType::BREAK:
-                    // TODO after SWITCH is done
-                    break;
-                case NodeType::CONTINUE:
-                    // TODO after SWITCH is done
-                    // this is specific to this compiler, be pedantic!
-                    break;
-                case NodeType::VAR_INT:
-                case NodeType::LVAR_INT:
-                case NodeType::VAR_FLOAT:
-                case NodeType::LVAR_FLOAT:
-                case NodeType::VAR_TEXT_LABEL:
-                case NodeType::LVAR_TEXT_LABEL:
-                case NodeType::VAR_TEXT_LABEL16:
-                case NodeType::LVAR_TEXT_LABEL16:
-                    // Nothing to do, vars already known from symbol table.
-                    break;
-                default:
-                    Unreachable();
-            }
+            case NodeType::Block:
+                // group of anything, usually group of statements
+                compile_statements(node);
+                break;
+            case NodeType::NOT:
+                // TODO should we allow compilation of this here? this isn't a condition!
+                compile_statement(node.child(0), !not_flag);
+                break;
+            case NodeType::Command:
+                compile_command(node, not_flag);
+                break;
+            case NodeType::Equal:
+            case NodeType::Cast:
+                compile_equal(node, not_flag);
+                break;
+            case NodeType::Label:
+                compile_label(node);
+                break;
+            case NodeType::Scope:
+                compile_scope(node);
+                break;
+            case NodeType::IF:
+                compile_if(node);
+                break;
+            case NodeType::WHILE:
+                compile_while(node);
+                break;
+            case NodeType::REPEAT:
+                compile_repeat(node);
+                break;
+            case NodeType::SWITCH:
+                // TODO
+                break;
+            case NodeType::BREAK:
+                // TODO after SWITCH is done
+                break;
+            case NodeType::CONTINUE:
+                // TODO after SWITCH is done
+                // this is specific to this compiler, be pedantic!
+                break;
+            case NodeType::VAR_INT:
+            case NodeType::LVAR_INT:
+            case NodeType::VAR_FLOAT:
+            case NodeType::LVAR_FLOAT:
+            case NodeType::VAR_TEXT_LABEL:
+            case NodeType::LVAR_TEXT_LABEL:
+            case NodeType::VAR_TEXT_LABEL16:
+            case NodeType::LVAR_TEXT_LABEL16:
+                // Nothing to do, vars already known from symbol table.
+                break;
+            default:
+                Unreachable();
         }
     }
 
@@ -253,11 +261,13 @@ private:
         compile_command(this->commands.goto_if_false(), { loop_ptr });
     }
 
-    void compile_equal(const SyntaxTree& eq_node)
+    void compile_equal(const SyntaxTree& eq_node, bool not_flag = false)
     {
         if(eq_node.child(1).maybe_annotation<std::reference_wrapper<const Command>>())
         {
             // 'a = b OP c' or 'a OP= b'
+
+            // Expects(not_flag == false); -- don't expect this while it's allowed in compile_statement
 
             const SyntaxTree& op_node = eq_node.child(1);
 
@@ -269,35 +279,38 @@ private:
             auto c = get_arg(op_node.child(1));
 
             if(!is_same_var(a, b))
-                compile_command(cmd_set, { a, b });
-            compile_command(cmd_op,  { a, c });
+                compile_command(cmd_set, { a, b }, not_flag);
+            compile_command(cmd_op,  { a, c }, not_flag);
         }
         else
         {
             // 'a = b' or 'a =# b'
             const Command& cmd_set = eq_node.annotation<std::reference_wrapper<const Command>>();
-            compile_command(cmd_set, { get_arg(eq_node.child(0)), get_arg(eq_node.child(1)) });
+            compile_command(cmd_set, { get_arg(eq_node.child(0)), get_arg(eq_node.child(1)) }, not_flag);
         }
     }
 
-    void compile_command(const SyntaxTree& command_node)
+    void compile_command(const SyntaxTree& command_node, bool not_flag = false)
     {
         const Command& command = command_node.annotation<std::reference_wrapper<const Command>>();
-        return compile_command(command, get_args(command, command_node));
+        return compile_command(command, get_args(command, command_node), not_flag);
     }
 
-    void compile_condition(const SyntaxTree& node)
+    void compile_condition(const SyntaxTree& node, bool not_flag = false)
     {
         switch(node.type())
         {
             case NodeType::Command:
-                return compile_command(node);
+                return compile_command(node, not_flag);
             case NodeType::Equal:
             case NodeType::Greater:
             case NodeType::GreaterEqual:
-            case NodeType::Lesser:      // TODO 'NOT'
-            case NodeType::LesserEqual: // TODO 'NOT'
                 return compile_equal(node);
+            case NodeType::Lesser:
+            case NodeType::LesserEqual:
+                return compile_equal(node, !not_flag);
+            case NodeType::NOT:
+                return compile_condition(node.child(0), !not_flag);
             default:
                 Unreachable();
         }
