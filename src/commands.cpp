@@ -166,12 +166,18 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
         {
             case NodeType::Integer:
             {
-                arg_node.set_annotation(static_cast<int32_t>(std::stoi(arg_node.text(), nullptr, 0)));
+                if(arg_node.is_annotated())
+                    Expects(arg_node.maybe_annotation<const int32_t&>());
+                else
+                    arg_node.set_annotation(static_cast<int32_t>(std::stoi(arg_node.text(), nullptr, 0)));
                 break;
             }
             case NodeType::Float:
             {
-                arg_node.set_annotation(std::stof(arg_node.text()));
+                if(arg_node.is_annotated())
+                    Expects(arg_node.maybe_annotation<const float&>());
+                else
+                    arg_node.set_annotation(std::stof(arg_node.text()));
                 break;
             }
 
@@ -192,22 +198,36 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
             {
                 if(arg.type == ArgType::Label)
                 {
-                    shared_ptr<Label> label_ptr = symbols.find_label(arg_node.text()).value();
-                    arg_node.set_annotation(label_ptr);
+                    if(arg_node.is_annotated())
+                        Expects(arg_node.maybe_annotation<const shared_ptr<Label>&>());
+                    else
+                    {
+                        shared_ptr<Label> label_ptr = symbols.find_label(arg_node.text()).value();
+                        arg_node.set_annotation(label_ptr);
+                    }
                 }
                 else if(arg.type == ArgType::TextLabel)
                 {
-                    arg_node.set_annotation(arg_node.text());
+                    if(arg_node.is_annotated())
+                        Expects(arg_node.maybe_annotation<const std::string&>());
+                    else
+                        arg_node.set_annotation(arg_node.text());
                 }
                 else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any)
                 {
                     if(auto opt_const = commands.find_constant_for_arg(arg_node.text(), arg))
                     {
-                        arg_node.set_annotation(*opt_const);
+                        if(arg_node.is_annotated())
+                            Expects(arg_node.maybe_annotation<const int32_t&>());
+                        else
+                            arg_node.set_annotation(*opt_const);
                     }
                     else if(auto opt_var = symbols.find_var(arg_node.text(), scope_ptr))
                     {
-                        arg_node.set_annotation(*opt_var);
+                        if(arg_node.is_annotated())
+                            Expects(arg_node.maybe_annotation<const shared_ptr<Var>&>());
+                        else
+                            arg_node.set_annotation(*opt_var);
                     }
                     else
                         Unreachable();

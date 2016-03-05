@@ -99,9 +99,11 @@ public:
     }
 
     /// Annotates the argument nodes of a COMMAND node in the AST for a specific `command`.
+    /// If nodes are already annotated, will just ensure the type of annotation is the same (program will abort otherwise).
     void annotate(SyntaxTree& command_node, const Command& command, const SymTable&, const shared_ptr<Scope>&) const;
 
     /// Annotates the argument `nodes...` for a specific `command`.
+    /// If nodes are already annotated, will just ensure the type of annotation is the same  (program will abort otherwise).
     template<typename... TSyntaxTree>
     void annotate_args(const SymTable& symbols, const shared_ptr<Scope>& scope, const Command& command, TSyntaxTree&... nodes) const
     {
@@ -142,6 +144,18 @@ public:
     {
         // TODO cached
         return commands.equal_range("SET");
+    }
+
+    alternator_pair add_thing_to_thing() const
+    {
+        // TODO cached
+        return commands.equal_range("ADD_THING_TO_THING");
+    }
+
+    alternator_pair is_thing_greater_or_equal_to_thing() const
+    {
+        // TODO cached
+        return commands.equal_range("IS_THING_GREATER_OR_EQUAL_TO_THING");
     }
 
 private:

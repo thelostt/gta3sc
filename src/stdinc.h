@@ -16,6 +16,7 @@
 // TODO make all maps and such be transparently comparable
 // TODO transform lots of structs into class; make members private;
 // TODO better organization of this (stdinc.h), perhaps put stuff in other utility headers
+// TODO what's SAVE_VAR_INT/SAVE_VAR_FLOAT really?
 
 struct Var;
 struct Script;

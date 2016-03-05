@@ -343,6 +343,42 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 return false;
             }
 
+            case NodeType::REPEAT:
+            {
+                auto& times = node.child(0);
+                auto& var = node.child(1);
+
+                // TODO cache this or dunno?
+                SyntaxTree number_zero = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "0") :
+                                          times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "0.0") :
+                                          throw CompilerError("TODO times must be int or float"));
+
+                SyntaxTree number_one = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "1") :
+                                         times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "1.0") :
+                                         throw CompilerError("TODO times must be int or float"));
+
+                // TODO to be pedantic REPEAT must accept only INT times
+
+                const Command& set_var_to_zero = commands.match_args(symbols, current_scope, commands.set(), var, number_zero);
+                commands.annotate_args(symbols, current_scope, set_var_to_zero, var, number_zero);
+                
+                const Command& add_var_with_one = commands.match_args(symbols, current_scope, commands.add_thing_to_thing(), var, number_one);
+                commands.annotate_args(symbols, current_scope, add_var_with_one, var, number_one);
+
+                const Command& is_var_geq_times = commands.match_args(symbols, current_scope, commands.is_thing_greater_or_equal_to_thing(), var, times);
+                commands.annotate_args(symbols, current_scope, is_var_geq_times, var, times);
+
+                node.child(2).walk(std::ref(walker));
+
+                node.set_annotation(RepeatAnnotation {
+                    set_var_to_zero, add_var_with_one, is_var_geq_times,
+                    std::make_shared<SyntaxTree>(std::move(number_zero)),
+                    std::make_shared<SyntaxTree>(std::move(number_one))
+                });
+
+                return false;
+            }
+
             case NodeType::Command:
             {
                 const Command& command = commands.match(node, symbols, current_scope);
@@ -355,11 +391,10 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
             case NodeType::Equal:
             {
                 // TODO CHECK IF IN A CONDITION
-                auto alternators = commands.set();
                 SyntaxTree& left = node.child(0);
                 SyntaxTree& right = node.child(1);
 
-                const Command& command = commands.match_args(symbols, current_scope, alternators, left, right);
+                const Command& command = commands.match_args(symbols, current_scope, commands.set(), left, right);
                 commands.annotate_args(symbols, current_scope, command, left, right);
                 node.set_annotation(std::cref(command));
 

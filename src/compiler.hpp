@@ -231,7 +231,18 @@ private:
 
     void compile_repeat(const SyntaxTree& repeat_node)
     {
-        // TODO
+        auto& annotation = repeat_node.annotation<const RepeatAnnotation>();
+        auto& times = repeat_node.child(0);
+        auto& var = repeat_node.child(1);
+
+        auto loop_ptr = make_internal_label();
+        
+        compile_command(annotation.set_var_to_zero, { get_arg(var), get_arg(*annotation.number_zero) });
+        compile_label(loop_ptr);
+        compile_statements(repeat_node.child(2));
+        compile_command(annotation.add_var_with_one, { get_arg(var), get_arg(*annotation.number_one) });
+        compile_command(annotation.is_var_geq_times, { get_arg(var), get_arg(times) });
+        compile_command(this->commands.goto_if_false(), { loop_ptr });
     }
 
     void compile_equal(const SyntaxTree& eq_node)

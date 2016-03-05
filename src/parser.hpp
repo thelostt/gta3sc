@@ -147,9 +147,23 @@ public:
     template<typename T> // you can get a ref by using e.g. <int&> instead of <int>
     optional<T> maybe_annotation() const
     {
-        if(const T* p = any_cast<T>(&this->udata))
+        using TNoRef = std::remove_reference_t<T>;
+        if(const TNoRef* p = any_cast<TNoRef>(&this->udata))
             return *p;
         return nullopt;
+    }
+
+    bool is_annotated() const
+    {
+        return !this->udata.empty();
+    }
+
+public:
+    /// Builds a temporary SyntaxTree which isn't dynamically allocated (for shared_ptr).
+    /// Careful, `shared_from_this()` returns null for these.
+    static SyntaxTree temporary(NodeType type, std::string data)
+    {
+        return SyntaxTree((int)type, std::move(data));
     }
 
 private:

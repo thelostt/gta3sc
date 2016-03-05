@@ -3,6 +3,8 @@
 #include "parser.hpp"
 #include "error.hpp"
 
+struct Command;
+
 /// Declared type of a variable.
 enum class VarType
 {
@@ -225,3 +227,15 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
 
     return output;
 }
+
+//////
+
+struct RepeatAnnotation
+{
+    const Command& set_var_to_zero;
+    const Command& add_var_with_one;
+    const Command& is_var_geq_times;
+    // numbers compatible with set_var_to_times and add_var_with_int
+    shared_ptr<SyntaxTree> number_zero;
+    shared_ptr<SyntaxTree> number_one;
+};
