@@ -292,7 +292,11 @@ private:
         {
             case NodeType::Command:
                 return compile_command(node);
-            case NodeType::Equal: // TODO other comparisions
+            case NodeType::Equal:
+            case NodeType::Greater:
+            case NodeType::GreaterEqual:
+            case NodeType::Lesser:      // TODO 'NOT'
+            case NodeType::LesserEqual: // TODO 'NOT'
                 return compile_equal(node);
             default:
                 Unreachable();
@@ -309,8 +313,13 @@ private:
 
         switch(conds_node.type())
         {
-            case NodeType::Command: // single condition
-            case NodeType::Equal: // TODO other comparisions
+            // single condition
+            case NodeType::Command:
+            case NodeType::Equal:
+            case NodeType::Greater:
+            case NodeType::GreaterEqual:
+            case NodeType::Lesser:
+            case NodeType::LesserEqual:
                 compile_command(this->commands.andor(), { conv_int(0) });
                 compile_condition(conds_node);
                 break;

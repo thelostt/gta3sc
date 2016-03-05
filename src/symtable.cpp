@@ -335,6 +335,12 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 return commands.add_thing_to_thing_timed();
             case NodeType::TimedMinus:
                 return commands.sub_thing_from_thing_timed();
+            case NodeType::Greater:
+            case NodeType::LesserEqual: // NOT'd
+                return commands.is_thing_greater_than_thing();
+            case NodeType::GreaterEqual:
+            case NodeType::Lesser: // NOT'd
+                return commands.is_thing_greater_or_equal_to_thing();
             case NodeType::Module:
                 // TODO CLEO
                 break;
@@ -473,8 +479,12 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
 
             case NodeType::Equal:
             case NodeType::Cast:
+            case NodeType::Greater:
+            case NodeType::GreaterEqual:
+            case NodeType::Lesser:
+            case NodeType::LesserEqual:
             {
-                Commands::alternator_pair alter_set = find_command_for_expr(node).value();
+                Commands::alternator_pair alter_cmds1 = find_command_for_expr(node).value();
 
                 if(auto alter_op = find_command_for_expr(node.child(1)))
                 {
@@ -484,12 +494,14 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
 
                     // TODO buh what if '=' is IS_THING_EQUAL_TO_THING here?
 
+                    // TODO ensure alter_cmds1 is only '=' here (it will happen, but we need to Expects somehow)
+
                     SyntaxTree& op = node.child(1);
                     SyntaxTree& a = node.child(0);
                     SyntaxTree& b = op.child(0);
                     SyntaxTree& c = op.child(1);
 
-                    const Command& cmd_set = commands.match_args(symbols, current_scope, alter_set, a, b);
+                    const Command& cmd_set = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
                     commands.annotate_args(symbols, current_scope, cmd_set, a, b);
 
                     const Command& cmd_op = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, c);
@@ -500,12 +512,12 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 }
                 else
                 {
-                    // 'a = b' or 'a =# b'
+                    // 'a = b' or 'a =# b' or 'a > b' (and such)
 
                     SyntaxTree& a = node.child(0);
                     SyntaxTree& b = node.child(1);
 
-                    const Command& command = commands.match_args(symbols, current_scope, alter_set, a, b);
+                    const Command& command = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
                     commands.annotate_args(symbols, current_scope, command, a, b);
                     node.set_annotation(std::cref(command));
                 }

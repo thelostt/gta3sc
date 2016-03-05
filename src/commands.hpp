@@ -194,6 +194,12 @@ public:
         return commands.equal_range("IS_THING_EQUAL_TO_THING");
     }
 
+    alternator_pair is_thing_greater_than_thing() const
+    {
+        // TODO cached
+        return commands.equal_range("IS_THING_GREATER_THAN_THING");
+    }
+
     alternator_pair is_thing_greater_or_equal_to_thing() const
     {
         // TODO cached
