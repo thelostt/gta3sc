@@ -146,10 +146,52 @@ public:
         return commands.equal_range("SET");
     }
 
+    alternator_pair cset() const
+    {
+        // TODO cached
+        return commands.equal_range("CSET");
+    }
+
     alternator_pair add_thing_to_thing() const
     {
         // TODO cached
         return commands.equal_range("ADD_THING_TO_THING");
+    }
+
+    alternator_pair sub_thing_from_thing() const
+    {
+        // TODO cached
+        return commands.equal_range("SUB_THING_FROM_THING");
+    }
+
+    alternator_pair mult_thing_by_thing() const
+    {
+        // TODO cached
+        return commands.equal_range("MULT_THING_BY_THING");
+    }
+
+    alternator_pair div_thing_by_thing() const
+    {
+        // TODO cached
+        return commands.equal_range("DIV_THING_BY_THING");
+    }
+
+    alternator_pair add_thing_to_thing_timed() const
+    {
+        // TODO cached
+        return commands.equal_range("ADD_THING_TO_THING_TIMED");
+    }
+
+    alternator_pair sub_thing_from_thing_timed() const
+    {
+        // TODO cached
+        return commands.equal_range("SUB_THING_FROM_THING_TIMED");
+    }
+
+    alternator_pair is_thing_equal_to_thing() const
+    {
+        // TODO cached
+        return commands.equal_range("IS_THING_EQUAL_TO_THING");
     }
 
     alternator_pair is_thing_greater_or_equal_to_thing() const

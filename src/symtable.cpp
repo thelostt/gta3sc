@@ -310,6 +310,77 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
     std::function<bool(SyntaxTree&)> walker;
 
     std::shared_ptr<Scope> current_scope = nullptr;
+    bool is_condition_block = false;
+
+    auto find_command_for_expr = [&](const SyntaxTree& op) -> optional<Commands::alternator_pair>
+    {
+        switch(op.type())
+        {
+            case NodeType::Equal:
+                if(is_condition_block)
+                    return commands.is_thing_equal_to_thing();
+                else
+                    return commands.set();
+            case NodeType::Cast:
+                return commands.cset();
+            case NodeType::Plus:
+                return commands.add_thing_to_thing();
+            case NodeType::Minus:
+                return commands.sub_thing_from_thing();
+            case NodeType::Times:
+                return commands.mult_thing_by_thing();
+            case NodeType::Divide:
+                return commands.div_thing_by_thing();
+            case NodeType::TimedPlus:
+                return commands.add_thing_to_thing_timed();
+            case NodeType::TimedMinus:
+                return commands.sub_thing_from_thing_timed();
+            case NodeType::Module:
+                // TODO CLEO
+                break;
+            case NodeType::LeftShift:
+                // TODO CLEO
+                break;
+            case NodeType::RightShift:
+                // TODO CLEO
+                break;
+            case NodeType::BitAND:
+                // TODO CLEO
+                break;
+            case NodeType::BitOR:
+                // TODO CLEO
+                break;
+            case NodeType::BitXOR:
+                // TODO CLEO
+                break;
+            case NodeType::OR:
+                // TODO CLEO
+                break;
+            default:
+                return nullopt;
+        }
+        Unreachable();
+    };
+
+    auto walk_on_condition = [&](SyntaxTree& node, size_t cond_child_id) {
+        
+        for(size_t i = 0, max = node.child_count(); i < max; ++i)
+        {
+            if(i == cond_child_id)
+            {
+                auto guard = make_scope_guard([&, was_cond_before = is_condition_block] {
+                    is_condition_block = was_cond_before;
+                });
+
+                is_condition_block = true;
+                node.child(i).walk_inclusive(std::ref(walker));
+            }
+            else
+            {
+                node.child(i).walk_inclusive(std::ref(walker));
+            }
+        }
+    };
 
     walker = [&](SyntaxTree& node)
     {
@@ -340,6 +411,18 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 node.walk(std::ref(walker));
                 // guard sets current_scope to nullptr
 
+                return false;
+            }
+
+            case NodeType::IF:
+            {
+                walk_on_condition(node, 0);
+                return false;
+            }
+
+            case NodeType::WHILE:
+            {
+                walk_on_condition(node, 0);
                 return false;
             }
 
@@ -389,17 +472,48 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
             }
 
             case NodeType::Equal:
+            case NodeType::Cast:
             {
-                // TODO CHECK IF IN A CONDITION
-                SyntaxTree& left = node.child(0);
-                SyntaxTree& right = node.child(1);
+                Commands::alternator_pair alter_set = find_command_for_expr(node).value();
 
-                const Command& command = commands.match_args(symbols, current_scope, commands.set(), left, right);
-                commands.annotate_args(symbols, current_scope, command, left, right);
-                node.set_annotation(std::cref(command));
+                if(auto alter_op = find_command_for_expr(node.child(1)))
+                {
+                    // either 'a = b OP c' or 'a OP= c'
 
+                    // TODO to be pedantic, alter_set can be only SET (i.e. cannot be CSET)
+
+                    // TODO buh what if '=' is IS_THING_EQUAL_TO_THING here?
+
+                    SyntaxTree& op = node.child(1);
+                    SyntaxTree& a = node.child(0);
+                    SyntaxTree& b = op.child(0);
+                    SyntaxTree& c = op.child(1);
+
+                    const Command& cmd_set = commands.match_args(symbols, current_scope, alter_set, a, b);
+                    commands.annotate_args(symbols, current_scope, cmd_set, a, b);
+
+                    const Command& cmd_op = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, c);
+                    commands.annotate_args(symbols, current_scope, cmd_op, a, c);
+
+                    node.set_annotation(std::cref(cmd_set));
+                    op.set_annotation(std::cref(cmd_op));
+                }
+                else
+                {
+                    // 'a = b' or 'a =# b'
+
+                    SyntaxTree& a = node.child(0);
+                    SyntaxTree& b = node.child(1);
+
+                    const Command& command = commands.match_args(symbols, current_scope, alter_set, a, b);
+                    commands.annotate_args(symbols, current_scope, command, a, b);
+                    node.set_annotation(std::cref(command));
+                }
+                
                 return false;
             }
+
+            
 
             default:
                 return true;

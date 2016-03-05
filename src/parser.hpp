@@ -106,7 +106,7 @@ public:
     std::string to_string() const;
 
     // left to right, including visiting childs of left before going to the right
-    // does not visit myself
+    // does **not** visit myself
     // bool(SyntaxTree)
     template<typename Functor>
     void walk(Functor fun) //const
@@ -119,8 +119,18 @@ public:
         }
     }
 
-    // left to right, no childs
+    // left to right, including visiting childs of left before going to the right
     // does not visit myself
+    // bool(SyntaxTree)
+    template<typename Functor>
+    void walk_inclusive(Functor fun) //const
+    {
+        fun(*this);
+        this->walk(std::ref(fun));
+    }
+
+    // left to right, no childs
+    // does **not** visit myself
     // void(SyntaxTree)
     template<typename Functor>
     void walk_top(Functor fun) //const

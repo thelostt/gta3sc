@@ -9,6 +9,8 @@
 #pragma once
 #include "stdinc.h"
 
+// TODO improve performance for some parts of code that does get_arg() for the same value two or three times, call just once.
+
 /// IR for end of argument list used in variadic argument commands.
 struct EOAL
 {
@@ -19,6 +21,11 @@ struct CompiledVar
 {
     shared_ptr<Var>                            var;
     optional<variant<size_t, shared_ptr<Var>>> index;
+
+    bool operator==(const CompiledVar& rhs) const
+    {
+        return this->var == rhs.var && this->index == rhs.index;
+    }
 };
 
 /// IR for strings, no matter if it's a fixed size (8/16/128 bytes) or var length.
@@ -141,6 +148,10 @@ private:
                 case NodeType::Command:
                     compile_command(*it->get());
                     break;
+                case NodeType::Equal:
+                case NodeType::Cast:
+                    compile_equal(*it->get());
+                    break;
                 case NodeType::Label:
                     compile_label(*it->get());
                     break;
@@ -175,9 +186,6 @@ private:
                 case NodeType::VAR_TEXT_LABEL16:
                 case NodeType::LVAR_TEXT_LABEL16:
                     // Nothing to do, vars already known from symbol table.
-                    break;
-                case NodeType::Equal:
-                    compile_equal(*it->get());
                     break;
                 default:
                     Unreachable();
@@ -247,8 +255,29 @@ private:
 
     void compile_equal(const SyntaxTree& eq_node)
     {
-        const Command& command = eq_node.annotation<std::reference_wrapper<const Command>>();
-        compile_command(command, { get_arg(eq_node.child(0)), get_arg(eq_node.child(1)) });
+        if(eq_node.child(1).maybe_annotation<std::reference_wrapper<const Command>>())
+        {
+            // 'a = b OP c' or 'a OP= b'
+
+            const SyntaxTree& op_node = eq_node.child(1);
+
+            const Command& cmd_set = eq_node.annotation<std::reference_wrapper<const Command>>();
+            const Command& cmd_op  = op_node.annotation<std::reference_wrapper<const Command>>();
+
+            auto a = get_arg(eq_node.child(0));
+            auto b = get_arg(op_node.child(0));
+            auto c = get_arg(op_node.child(1));
+
+            if(!is_same_var(a, b))
+                compile_command(cmd_set, { a, b });
+            compile_command(cmd_op,  { a, c });
+        }
+        else
+        {
+            // 'a = b' or 'a =# b'
+            const Command& cmd_set = eq_node.annotation<std::reference_wrapper<const Command>>();
+            compile_command(cmd_set, { get_arg(eq_node.child(0)), get_arg(eq_node.child(1)) });
+        }
     }
 
     void compile_command(const SyntaxTree& command_node)
@@ -257,19 +286,33 @@ private:
         return compile_command(command, get_args(command, command_node));
     }
 
+    void compile_condition(const SyntaxTree& node)
+    {
+        switch(node.type())
+        {
+            case NodeType::Command:
+                return compile_command(node);
+            case NodeType::Equal: // TODO other comparisions
+                return compile_equal(node);
+            default:
+                Unreachable();
+        }
+    }
+
     void compile_conditions(const SyntaxTree& conds_node, const shared_ptr<Label>& else_ptr)
     {
         auto compile_multi_andor = [this](const auto& conds_vector, size_t op)
         {
             compile_command(this->commands.andor(), { conv_int(op + conds_vector.child_count()) });
-            for(auto& cond : conds_vector) compile_command(*cond);
+            for(auto& cond : conds_vector) compile_condition(*cond);
         };
 
         switch(conds_node.type())
         {
             case NodeType::Command: // single condition
+            case NodeType::Equal: // TODO other comparisions
                 compile_command(this->commands.andor(), { conv_int(0) });
-                compile_command(conds_node);
+                compile_condition(conds_node);
                 break;
             case NodeType::AND: // 1-8
                 compile_multi_andor(conds_node, 0);
@@ -379,6 +422,15 @@ private:
             return int16_t(i);
         else
             return int32_t(i);
+    }
+
+    bool is_same_var(const ArgVariant& lhs, const ArgVariant& rhs)
+    {
+        if(is<CompiledVar>(lhs) && is<CompiledVar>(rhs))
+        {
+            return get<CompiledVar>(lhs) == get<CompiledVar>(rhs);
+        }
+        return false;
     }
 };
 

@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <stack>
 #include <map>
 #include <algorithm>
 #include <cppformat/format.h>
