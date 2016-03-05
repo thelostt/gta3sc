@@ -9,7 +9,6 @@
 #pragma once
 #include "stdinc.h"
 
-// TODO improve performance for some parts of code that does get_arg() for the same value two or three times, call just once.
 
 /// IR for end of argument list used in variadic argument commands.
 struct EOAL
@@ -115,8 +114,7 @@ private:
 
     shared_ptr<Label> make_internal_label()
     {
-        // TODO pass scope
-        internal_labels.emplace_back(std::make_shared<Label>(nullptr, this->script));
+        internal_labels.emplace_back(std::make_shared<Label>(this->current_scope, this->script));
         return internal_labels.back();
     }
 
@@ -151,15 +149,14 @@ private:
                 compile_statements(node);
                 break;
             case NodeType::NOT:
-                // TODO should we allow compilation of this here? this isn't a condition!
-                compile_statement(node.child(0), !not_flag);
+                throw CompilerError("XXX NOT outside of a condition block");
                 break;
             case NodeType::Command:
                 compile_command(node, not_flag);
                 break;
             case NodeType::Equal:
             case NodeType::Cast:
-                compile_equal(node, not_flag);
+                compile_expr(node, not_flag);
                 break;
             case NodeType::Label:
                 compile_label(node);
@@ -177,13 +174,13 @@ private:
                 compile_repeat(node);
                 break;
             case NodeType::SWITCH:
-                // TODO
+                // TODO SA
                 break;
             case NodeType::BREAK:
-                // TODO after SWITCH is done
+                // TODO after SA SWITCH is done
                 break;
             case NodeType::CONTINUE:
-                // TODO after SWITCH is done
+                // TODO after SA SWITCH is done
                 // this is specific to this compiler, be pedantic!
                 break;
             case NodeType::VAR_INT:
@@ -247,6 +244,8 @@ private:
 
     void compile_repeat(const SyntaxTree& repeat_node)
     {
+        // PERF if performance is needed, get_arg(var) can be cached in the stack
+
         auto& annotation = repeat_node.annotation<const RepeatAnnotation>();
         auto& times = repeat_node.child(0);
         auto& var = repeat_node.child(1);
@@ -261,13 +260,11 @@ private:
         compile_command(this->commands.goto_if_false(), { loop_ptr });
     }
 
-    void compile_equal(const SyntaxTree& eq_node, bool not_flag = false)
+    void compile_expr(const SyntaxTree& eq_node, bool not_flag = false)
     {
         if(eq_node.child(1).maybe_annotation<std::reference_wrapper<const Command>>())
         {
             // 'a = b OP c' or 'a OP= b'
-
-            // Expects(not_flag == false); -- don't expect this while it's allowed in compile_statement
 
             const SyntaxTree& op_node = eq_node.child(1);
 
@@ -305,10 +302,10 @@ private:
             case NodeType::Equal:
             case NodeType::Greater:
             case NodeType::GreaterEqual:
-                return compile_equal(node);
+                return compile_expr(node);
             case NodeType::Lesser:
             case NodeType::LesserEqual:
-                return compile_equal(node, !not_flag);
+                return compile_expr(node, !not_flag);
             case NodeType::NOT:
                 return compile_condition(node.child(0), !not_flag);
             default:
@@ -320,6 +317,8 @@ private:
     {
         auto compile_multi_andor = [this](const auto& conds_vector, size_t op)
         {
+            // TODO check amount of conditions <= 8
+
             compile_command(this->commands.andor(), { conv_int(op + conds_vector.child_count()) });
             for(auto& cond : conds_vector) compile_condition(*cond);
         };
@@ -381,7 +380,7 @@ private:
 
             case NodeType::Array:
             {
-                // TODO
+                // TODO array SA
                 break;
             }
 
@@ -416,13 +415,13 @@ private:
 
             case NodeType::ShortString:
             {
-                // TODO
+                // TODO SA
                 break;
             }
 
             case NodeType::LongString:
             {
-                // TODO
+                // TODO SA
                 break;
             }
 

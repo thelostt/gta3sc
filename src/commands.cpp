@@ -20,7 +20,7 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
                 is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::Any);
                 break;
             case VarType::TextLabel16:
-                // TODO ArgType::TextLabel16??
+                // TODO ArgType::TextLabel16?? (SA)
                 is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::Any);
                 break;
             default:
@@ -28,10 +28,10 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
         }
 
         if(is_good == false)
-            throw BadAlternator("TODO type mismatch");
+            throw BadAlternator("XXX type mismatch");
     }
     else
-        throw BadAlternator("TODO kind of var not allowed");
+        throw BadAlternator("XXX kind of var not allowed");
 }
 
 static void match_identifier(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
@@ -40,12 +40,12 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
     {
         case ArgType::Label:
             if(!symbols.find_label(node.text()))
-                throw BadAlternator("TODO not label identifier");
+                throw BadAlternator("XXX not label identifier");
             break;
 
         case ArgType::TextLabel:
             // Nothing to do, identifiers can be text labels with no checks.
-            // TODO check for vars
+            // TODO check for vars (SA)
             break;
 
         case ArgType::Integer:
@@ -64,7 +64,7 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
                 break;
             }
 
-            throw BadAlternator("TODO");
+            throw BadAlternator("XXX");
         }
 
         default:
@@ -119,7 +119,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::Float) && it_alter_arg->allow_constant);
                     break;
                 case NodeType::Array:
-                    // TODO
+                    // TODO array SA
                     break;
                 case NodeType::Identifier:
                     try
@@ -144,7 +144,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
         }
     }
 
-    throw BadAlternator("TODO");
+    throw BadAlternator("XXX");
 }
 
 template<typename Iter> static
@@ -184,13 +184,13 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
             case NodeType::ShortString:
             case NodeType::LongString:
             {
-                // TODO unescape and annotate
+                // TODO unescape and annotate SA
                 break;
             }
 
             case NodeType::Array:
             {
-                // TODO
+                // TODO array SA
                 break;
             }
 

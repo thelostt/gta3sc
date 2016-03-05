@@ -102,7 +102,6 @@ struct Label
     shared_ptr<const Script>  script;
 
     optional<uint32_t> local_offset;    // relative to `script` base
-    optional<uint32_t> global_offset;
 
     Label(shared_ptr<const Scope> scope, shared_ptr<const Script> script)
         : scope(std::move(scope)), script(std::move(script))

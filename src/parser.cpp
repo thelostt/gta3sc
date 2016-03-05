@@ -9,6 +9,7 @@
 #undef false
 #undef EOF
 
+// TODO std::runtime_error to CompilerError or something
 
 
 std::string read_file_utf8(const fs::path& path)

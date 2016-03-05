@@ -1,6 +1,8 @@
 #include "symtable.hpp"
 #include "commands.hpp"
 
+// TODO check if vars, labels, etc aren't already constants and etc
+
 uint32_t Var::space_taken()
 {
     switch(this->type)
@@ -75,7 +77,7 @@ void SymTable::add_script(ScriptType type, const SyntaxTree& command)
     
     if(args.child_count() < 1)
     {
-        throw CompilerError("TODO few args");
+        throw CompilerError("XXX few args");
     }
     else
     {
@@ -90,11 +92,11 @@ void SymTable::add_script(ScriptType type, const SyntaxTree& command)
         bool found_mission   = std::any_of(this->mission.begin(), this->mission.end(), searcher);
 
         if(found_extfile && type != ScriptType::MainExtension)
-            throw CompilerError("TODO incompatible, previous declaration blabla");
+            throw CompilerError("XXX incompatible, previous declaration blabla");
         else if(found_subscript && type != ScriptType::Subscript)
-            throw CompilerError("TODO incompatible, previous declaration blabla");
+            throw CompilerError("XXX incompatible, previous declaration blabla");
         else if(found_mission && type != ScriptType::Mission)
-            throw CompilerError("TODO incompatible, previous declaration blabla");
+            throw CompilerError("XXX incompatible, previous declaration blabla");
         else 
         {
             // still not added to its list?
@@ -134,10 +136,10 @@ void SymTable::merge(SymTable t2)
     // TODO check for conflicting extfiles, subscripts and mission
 
     if(int_labels.size() > 0)
-        throw CompilerError("TODO dup label between script units");
+        throw CompilerError("XXX dup label between script units");
 
     if(int_gvars.size() > 0)
-        throw CompilerError("TODO dup global var between script units");
+        throw CompilerError("XXX dup global var between script units");
 
     shared_ptr<Var> highest_var;
     uint32_t begin_t2_vars = 0;
@@ -440,11 +442,11 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 // TODO cache this or dunno?
                 SyntaxTree number_zero = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "0") :
                                           times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "0.0") :
-                                          throw CompilerError("TODO times must be int or float"));
+                                          throw CompilerError("XXX times must be int or float"));
 
                 SyntaxTree number_one = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "1") :
                                          times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "1.0") :
-                                         throw CompilerError("TODO times must be int or float"));
+                                         throw CompilerError("XXX times must be int or float"));
 
                 // TODO to be pedantic REPEAT must accept only INT times
 
