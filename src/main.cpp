@@ -70,10 +70,6 @@ int main()
 
     cgen.generate();
 
-    FILE* f = fopen("output.cs", "wb");
-    fwrite(cgen.bytecode.get(), 1, cgen.script->size.value(), f);
-    fclose(f);
-
-    //getchar();
+    write_file("output.cs", cgen.bytecode.get(), cgen.script->size.value());
 }
 

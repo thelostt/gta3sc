@@ -1,3 +1,8 @@
+/// Library Fundamentals v1 : Optional
+///
+/// http://en.cppreference.com/w/cpp/experimental/optional
+/// http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4480.html
+///
 #pragma once
 
 #ifndef _CXX17_OPTIONAL_TYPE

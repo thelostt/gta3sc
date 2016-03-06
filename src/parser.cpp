@@ -12,42 +12,6 @@
 // TODO std::runtime_error to CompilerError or something
 
 
-std::string read_file_utf8(const fs::path& path)
-{
-    // TODO move to somewhere more "visible" so it can be useful to somewhere else in the project too
-    // TODO this func is terrible ugly
-    size_t size;
-
-#ifdef _WIN32
-    auto f = _wfopen(path.c_str(), L"rb");
-#else
-    auto f = fopen(path.c_str(), "rb");
-#endif
-
-    if(f != nullptr)
-    {
-        if(!fseek(f, 0L, SEEK_END)
-        && (size = ftell(f)) != -1
-        && !fseek(f, 0L, SEEK_SET))
-        {
-            std::string output;
-
-            output.resize(size);
-
-            if(fread(&output[0], sizeof(char), size, f) == size)
-            {
-                fclose(f);
-                return output;
-            }
-        }
-
-        fclose(f);
-        throw std::runtime_error("TODO");
-    }
-
-    throw std::runtime_error("TODO failed to open file");
-}
-
 //
 // SyntaxTree
 //
@@ -164,6 +128,11 @@ TokenStream::TokenStream(std::string data_, const char* stream_name)
     }
 
     throw std::runtime_error("Failed to open token stream named '" + std::string(stream_name) + "' for reading.");
+}
+
+TokenStream::TokenStream(optional<std::string> data_, const char* stream_name)
+    : TokenStream((data_? std::move(data_.value()) : throw std::runtime_error("")), stream_name)
+{
 }
 
 TokenStream::TokenStream(const fs::path& path)

@@ -6,6 +6,7 @@
 ///
 #pragma once
 #include "stdinc.h"
+#include "defs/game.hpp"
 
 /// Generates bytecode from the intermediate representation T.
 ///

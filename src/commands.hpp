@@ -1,10 +1,6 @@
 #pragma once
 #include "stdinc.h"
 
-class SyntaxTree;
-struct SymTable;
-struct Scope;
-
 /// Fundamental type of a command argument.
 enum class ArgType : uint8_t
 {

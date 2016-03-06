@@ -36,6 +36,8 @@ private:
     ANTLR3_INPUT_STREAM_struct* istream;
     gta3scriptLexer_Ctx_struct* lexer;
     ANTLR3_COMMON_TOKEN_STREAM_struct* tokstream;
+
+    explicit TokenStream(optional<std::string> data, const char* stream_name);
 };
 
 class SyntaxTree : public std::enable_shared_from_this<SyntaxTree>
