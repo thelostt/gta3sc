@@ -28,15 +28,17 @@ std::pair<bool, VarType> token_to_vartype(NodeType token_type);
 
 struct SymTable;
 struct Commands;
+struct Label;
 
 /// Represents a *.sc script file.
 struct Script : std::enable_shared_from_this<Script>
 {
-    Script(fs::path path_, ScriptType type)
-        : type(type)
+    static shared_ptr<Script> create(fs::path path_, ScriptType type)
     {
-        this->path = std::move(path_);
-        this->tree = SyntaxTree::compile(TokenStream(this->path));
+        auto p = std::make_shared<Script>(std::move(path_), type, priv_ctor());
+        p->start_label = std::make_shared<Label>(nullptr, p->shared_from_this());
+        p->top_label = std::make_shared<Label>(nullptr, p->shared_from_this());
+        return p;
     }
 
     /// Annnotates this script's syntax tree with informations to simplify the compilation step.
@@ -55,10 +57,12 @@ struct Script : std::enable_shared_from_this<Script>
     /// of the scripts in the `scripts` vector should be running while this method is executed.
     static void compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts);
 
-
     fs::path                path;
     ScriptType              type;
     shared_ptr<SyntaxTree>  tree;
+
+    shared_ptr<Label>       top_label;      // the label on the very very top of the script
+    shared_ptr<Label>       start_label;    // the label to jump into when starting this script.
 
     /// The offset of this script, in bytes, in the fully compiled SCM.
     /// TODO explain further on which compilation step this value gets to be available.
@@ -67,6 +71,18 @@ struct Script : std::enable_shared_from_this<Script>
     /// The full size, in bytes, of the script if already available.
     /// TODO explain further on which compilation step this value gets to be available.
     optional<uint32_t>      size;
+
+private:
+    struct priv_ctor {};
+
+public:
+    /// Use create instead.
+    explicit Script(fs::path path_, ScriptType type, priv_ctor)
+        : type(type)
+    {
+        this->path = std::move(path_);
+        this->tree = SyntaxTree::compile(TokenStream(this->path));
+    }
 };
 
 /// Information about a previosly declared variable.
@@ -106,6 +122,10 @@ struct Label
         : scope(std::move(scope)), script(std::move(script))
     {}
 
+    Label(shared_ptr<const Scope> scope, shared_ptr<const Script> script, uint32_t local_offset)
+        : scope(std::move(scope)), script(std::move(script)), local_offset(local_offset)
+    {}
+
     /// Returns the global offset for this label.
     uint32_t offset()
     {
@@ -119,10 +139,10 @@ struct SymTable
     // TODO check conflicts of label names and global names!?! (on merge too)
 
     // IMPORTANT! Make sure whenever you add any new field, to update merge() accordingly !!!!!!!!!!
-
-    std::map<std::string, shared_ptr<Label>> labels;
-    std::map<std::string, shared_ptr<Var>>   global_vars;
-    std::vector<std::shared_ptr<Scope>>      local_scopes;
+    std::map<std::string, shared_ptr<Script>> scripts;
+    std::map<std::string, shared_ptr<Label>>  labels;
+    std::map<std::string, shared_ptr<Var>>    global_vars;
+    std::vector<std::shared_ptr<Scope>>       local_scopes;
 
     std::vector<std::string>    extfiles;   /// GOSUB_FILE scripts
     std::vector<std::string>    subscript;  /// LAUNCH_MISSION scripts
@@ -140,6 +160,9 @@ struct SymTable
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
     void scan_symbols(Script& script);
+
+    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
+    void build_script_table(const std::vector<shared_ptr<Script>>& scripts);
 
     /// Creates a new scope in this table.
     shared_ptr<Scope> add_scope()
@@ -195,6 +218,14 @@ struct SymTable
     /// \throws CompilerError if declaration conflicts with previosly ones.
     void add_script(ScriptType type, const SyntaxTree& command);
 
+    optional<shared_ptr<Script>> find_script(const std::string& filename) const
+    {
+        auto it = this->scripts.find(filename);
+        if(it != this->scripts.end())
+            return it->second;
+        return nullopt;
+    }
+
     /// Merges symbol table `t2` into this one.
     void merge(SymTable t2);
 
@@ -218,7 +249,7 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
         if(path_it == subdir.end())
             throw CompilerError("File '{}' does not exist in '{}' subdirectory.", *it, "main");
 
-        auto script = std::make_shared<Script>(path_it->second, type);
+        auto script = Script::create(path_it->second, type);
         auto symtable = SymTable::from_script(*script);
         output.emplace_back(std::make_pair(std::move(script), std::move(symtable)));
     }

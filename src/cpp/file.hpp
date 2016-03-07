@@ -4,6 +4,11 @@
 #include "optional.hpp"
 #include "filesystem.hpp"
 
+inline bool write_file(FILE* f, const void* data, size_t size)
+{
+    return (fwrite(data, 1, size, f) == size);
+}
+
 inline bool write_file(const fs::path& path, const void* data, size_t size)
 {
 #ifdef _WIN32
@@ -14,13 +19,9 @@ inline bool write_file(const fs::path& path, const void* data, size_t size)
     
     if(f != nullptr)
     {
-        if(fwrite(data, 1, size, f) == size)
-        {
-            fclose(f);
-            return true;
-        }
-
+        bool result = write_file(f, data, size);
         fclose(f);
+        return result;
     }
 
     return false;

@@ -22,7 +22,7 @@ int main()
 
     std::vector<shared_ptr<Script>> scripts;
 
-    auto main = std::make_shared<Script>("test.sc", ScriptType::Main);
+    auto main = Script::create("test.sc", ScriptType::Main);
     auto symbols = SymTable::from_script(*main);
     symbols.apply_offset_to_vars(2);
 
@@ -52,24 +52,49 @@ int main()
         scripts.emplace_back(x.first); // maybe move
     }
 
+    symbols.build_script_table(scripts);
+
     for(auto& script : scripts)
     {
         script->annotate_tree(symbols, commands);
     }
 
 
-    CompilerContext cc(main, symbols, commands);
-    cc.compile();
+    std::vector<CodeGenerator> gens;
+    for(auto& script : scripts)
+    {
+        CompilerContext cc(script, symbols, commands);
+        cc.compile();
+        gens.emplace_back(gta3_config, std::move(cc));
+    }
+
+    // not thread-safe
+    Expects(gens.size() == scripts.size());
+    for(size_t i = 0; i < gens.size(); ++i) // zip
+    {
+        scripts[i]->size = gens[i].compute_labels(); // <- maybe???! this is actually thread safe
+    }                                                //
+    Script::compute_script_offsets(scripts);         // <- but this isn't
 
 
+    for(auto& gen : gens)
+        gen.generate();
+
+    if(FILE* f = fopen("output.cs", "wb"))
+    {
+        auto guard = make_scope_guard([&] {
+            fclose(f);
+        });
+
+        for(auto& gen : gens)
+        {
+            write_file(f, gen.bytecode.get(), gen.script->size.value());
+        }
+    }
+    else
+    {
+        throw CompilerError("XXX");
+    }
     
-    CodeGenerator cgen(gta3_config, std::move(cc));
-    
-    main->size = cgen.compute_labels(); // not thread-safe
-    Script::compute_script_offsets(scripts); // ^
-
-    cgen.generate();
-
-    write_file("output.cs", cgen.bytecode.get(), cgen.script->size.value());
 }
 

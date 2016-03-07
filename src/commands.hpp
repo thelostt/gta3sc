@@ -66,7 +66,11 @@ struct Command
 /// Stores the list of commands and alternators.
 struct Commands
 {
-private:
+protected:
+    friend Commands gta3_commands();
+    friend Commands gtavc_commands();
+    friend Commands gtasa_commands();
+
     std::multimap<std::string, Command> commands;
     std::map<std::string, shared_ptr<Enum>> enums; // [""] stores enums allowed on every context
 
@@ -117,6 +121,30 @@ public:
 
 
     // --- Important Commands ---
+
+    const Command& gosub_file() const
+    {
+        // TODO cached
+        return commands.find("GOSUB_FILE")->second;
+    }
+
+    const Command& launch_mission() const
+    {
+        // TODO cached
+        return commands.find("LAUNCH_MISSION")->second;
+    }
+
+    const Command& load_and_launch_mission() const
+    {
+        // TODO cached
+        return commands.find("LOAD_AND_LAUNCH_MISSION")->second;
+    }
+
+    const Command& start_new_script() const
+    {
+        // TODO cached
+        return commands.find("START_NEW_SCRIPT")->second;
+    }
 
     const Command& goto_() const    // can't be named purely goto() because of the C keyword
     {
@@ -215,4 +243,9 @@ private:
 inline bool argtype_matches(ArgType type1, ArgType type2)
 {
     return type1 == type2 || type1 == ArgType::Any || type2 == ArgType::Any;
+}
+
+inline shared_ptr<Enum> make_enum(std::initializer_list<decltype(Enum::values)::value_type> init)
+{
+    return std::make_shared<Enum>(Enum { init });
 }

@@ -2,6 +2,12 @@
 
 Commands gtavc_commands()
 {
+    auto fade_enum = make_enum
+    ({
+        { "FADE_OUT", 0 },
+        { "FADE_IN",  1 },
+    });
+
     return Commands
     {
         // Commands
@@ -4005,8 +4011,8 @@ Commands gtavc_commands()
                     true,
                     362,
                     {
-                        { ArgType::Integer, false, true, true, true,{} },
-                        { ArgType::Integer, false, true, true, true,{} },
+                        { ArgType::Integer, false, true, true, true, {} },
+                        { ArgType::Integer, false, true, true, true, { fade_enum } },
                     }
                 }
             },
@@ -16953,6 +16959,29 @@ Commands gtavc_commands()
 
         // Enums
         {
+            {
+                "",  make_enum
+                ({
+                    // Boolean
+                    { "FALSE", 0 },
+                    { "TRUE",  1 },
+
+                    // Boolean ON/OFF
+                    { "OFF",    0 },
+                    { "ON",     1 },
+
+                    // Day/Night
+                    { "NIGHT",  0 },
+                    { "DAY",    1 },
+
+                    // Kill Frenzy (yes, it's a free enum)
+                    { "KILLFRENZY_INITIALLY",   0 },
+                    { "KILLFRENZY_ONGOING",     1 },
+                    { "KILLFRENZY_PASSED",      2 },
+                    { "KILLFRENZY_FAILED",      3 },
+                }),
+            },
+            { "FADE", fade_enum },
         },
     };
 }

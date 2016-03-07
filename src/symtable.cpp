@@ -71,17 +71,28 @@ std::map<std::string, fs::path, iless> Script::scan_subdir() const
     return output;
 }
 
+void SymTable::build_script_table(const std::vector<shared_ptr<Script>>& scripts)
+{
+    // TODO check or not to check if script is in our `extfiles`, `missions` etc?
+    for(auto& script : scripts)
+    {
+        auto name = script->path.filename().u8string();
+        std::transform(name.begin(), name.end(), name.begin(), ::toupper); // TODO UTF-8 able
+        this->scripts.emplace(std::move(name), script);
+    }
+}
+
 void SymTable::add_script(ScriptType type, const SyntaxTree& command)
 {
-    auto& args = command.child(1);
-    
-    if(args.child_count() < 1)
+    if(command.child_count() <= 1)
     {
         throw CompilerError("XXX few args");
     }
     else
     {
-        auto script_name = args.child(0).text();
+        auto script_name = (command.child(0).text() == "GOSUB_FILE"?
+                                command.child(2).text() :
+                                command.child(1).text());
 
         auto searcher = [&](const std::string& other) {
             return iequal_to()(other, script_name);
@@ -102,11 +113,11 @@ void SymTable::add_script(ScriptType type, const SyntaxTree& command)
             // still not added to its list?
             if(!found_extfile && !found_subscript && !found_mission)
             {
-                auto& vector = (type == ScriptType::MainExtension? this->extfiles :
-                    type == ScriptType::Subscript? this->subscript :
-                    type == ScriptType::Mission? this->mission : Unreachable());
+                auto& vector = (type == ScriptType::MainExtension? std::ref(this->extfiles) :
+                    type == ScriptType::Subscript? std::ref(this->subscript) :
+                    type == ScriptType::Mission? std::ref(this->mission) : Unreachable());
 
-                vector.emplace_back(std::move(script_name));
+                vector.get().emplace_back(std::move(script_name));
             }
         }
     }
@@ -120,6 +131,7 @@ void SymTable::merge(SymTable t2)
 
     decltype(labels) int_labels;
     decltype(global_vars) int_gvars;
+    decltype(scripts) int_scripts;
 
     // finds items that are common in both
     std::set_intersection(t1.labels.begin(), t1.labels.end(),
@@ -152,6 +164,9 @@ void SymTable::merge(SymTable t2)
         }
     }
     t2.apply_offset_to_vars(begin_t2_vars);
+
+    t1.scripts.insert(std::make_move_iterator(t2.scripts.begin()),
+        std::make_move_iterator(t2.scripts.end()));
 
     t1.labels.insert(std::make_move_iterator(t2.labels.begin()),
         std::make_move_iterator(t2.labels.end()));
@@ -472,9 +487,21 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
 
             case NodeType::Command:
             {
-                const Command& command = commands.match(node, symbols, current_scope);
-                commands.annotate(node, command, symbols, current_scope);
-                node.set_annotation(std::cref(command));
+                auto& command_name = node.child(0).text();
+
+                if(command_name == "LAUNCH_MISSION")
+                {
+                    const Command& command = commands.launch_mission();
+                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                    node.child(1).set_annotation(script->start_label);
+                    node.set_annotation(std::cref(command));
+                }
+                else
+                {
+                    const Command& command = commands.match(node, symbols, current_scope);
+                    commands.annotate(node, command, symbols, current_scope);
+                    node.set_annotation(std::cref(command));
+                }
 
                 return false;
             }

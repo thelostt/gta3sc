@@ -107,6 +107,10 @@ struct CompilerContext
     void compile()
     {
         Expects(compiled.empty());
+        Expects(!script->top_label->local_offset);
+        Expects(!script->start_label->local_offset);
+        compile_label(script->top_label);
+        compile_label(script->start_label); // TODO at MISSION_START actually
         return compile_statements(*script->tree);
     }
 
