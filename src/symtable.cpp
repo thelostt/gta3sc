@@ -496,6 +496,15 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                     node.child(1).set_annotation(script->start_label);
                     node.set_annotation(std::cref(command));
                 }
+                else if(command_name == "GOSUB_FILE")
+                {
+                    const Command& command = commands.gosub_file();
+                    shared_ptr<Label>  label  = symbols.find_label(node.child(1).text()).value();
+                    shared_ptr<Script> script = symbols.find_script(node.child(2).text()).value();
+                    node.child(1).set_annotation(label);
+                    node.child(2).set_annotation(script->top_label);
+                    node.set_annotation(std::cref(command));
+                }
                 else
                 {
                     const Command& command = commands.match(node, symbols, current_scope);
