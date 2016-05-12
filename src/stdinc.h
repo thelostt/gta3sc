@@ -24,6 +24,7 @@
 
 using std::shared_ptr;
 using std::weak_ptr;
+using dynamic_bitset = std::vector<bool>;
 
 class SyntaxTree;
 struct Command;

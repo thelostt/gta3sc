@@ -72,6 +72,7 @@ protected:
     friend Commands gtasa_commands();
 
     std::multimap<std::string, Command> commands;
+    std::multimap<uint16_t, const Command*> commands_by_id; // TODO use shared_ptr<Command>!?
     std::map<std::string, shared_ptr<Enum>> enums; // [""] stores enums allowed on every context
 
 public:
@@ -81,6 +82,10 @@ public:
              std::initializer_list<decltype(enums)::value_type> init_enums) :
         commands(std::move(init_cmds)), enums(std::move(init_enums))
     {
+        for(auto& pair : this->commands)
+        {
+            this->commands_by_id.emplace(pair.second.id, &pair.second);
+        }
     }
 
     /// Matches the best command based on the alternators with the command name and arguments given a COMMAND node in the AST.
@@ -120,6 +125,16 @@ public:
     optional<int32_t> find_constant_for_arg(const std::string& value, const Command::Arg& arg) const;
 
 
+    /// Find a command based on its id.
+    optional<const Command&> find_command(uint16_t id) const
+    {
+        auto it = this->commands_by_id.find(id);
+        if(it != this->commands_by_id.end())
+            return *it->second;
+        return nullopt;
+    }
+
+
     // --- Important Commands ---
 
     const Command& gosub_file() const
@@ -144,6 +159,18 @@ public:
     {
         // TODO cached
         return commands.find("START_NEW_SCRIPT")->second;
+    }
+
+    const Command& terminate_this_script() const
+    {
+        // TODO cached
+        return commands.find("TERMINATE_THIS_SCRIPT")->second;
+    }
+
+    const Command& return_() const    // can't be named purely return() because of the C keyword
+    {
+        // TODO cached
+        return commands.find("RETURN")->second;
     }
 
     const Command& goto_() const    // can't be named purely goto() because of the C keyword

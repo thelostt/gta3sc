@@ -348,6 +348,13 @@ inline void generate_code(const CompiledLabelDef&, CodeGenerator&)
     // label definitions do not have a physical representation
 }
 
+inline void generate_code(const CompiledHex& hex, CodeGenerator& codegen)
+{
+    // TODO maybe we could have a codegen.emplace_bytes
+    for(size_t i = 0; i < hex.data.size(); ++i)
+        codegen.emplace_u8(hex.data[i]);
+}
+
 inline void generate_code(const CompiledData& data, CodeGenerator& codegen)
 {
     return visit_one(data.data, [&](const auto& data) { return ::generate_code(data, codegen); });

@@ -4,10 +4,14 @@
 #include "symtable.hpp"
 #include "commands.hpp"
 #include "compiler.hpp"
+#include "disassembler.hpp"
 #include "codegen.hpp"
 #include "defs/defs.hpp"
 
 extern void convert();
+
+int test_compiler(const GameConfig& gta3_config, const Commands& commands);
+int test_decompiler(const GameConfig& gta3_config, const Commands& commands);
 
 int main()
 {
@@ -19,7 +23,11 @@ int main()
 
     Commands commands = gta3_commands();
 
+    return test_decompiler(gta3_config, commands);
+}
 
+int test_compiler(const GameConfig& gta3_config, const Commands& commands)
+{
     std::vector<shared_ptr<Script>> scripts;
 
     auto main = Script::create("test.sc", ScriptType::Main);
@@ -95,6 +103,16 @@ int main()
     {
         throw CompilerError("XXX");
     }
-    
+
+    return 0;
 }
 
+int test_decompiler(const GameConfig& gta3_config, const Commands& commands)
+{
+    auto decomp = DisassemblerContext::from_file(gta3_config, commands, "output.cs");
+
+    decomp.run_analyzer();
+    auto data = decomp.get_data();
+
+    return 0;
+}

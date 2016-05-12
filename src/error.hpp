@@ -18,6 +18,8 @@ private:
     std::string what_;
 };
 
+using DecompilerError = CompilerError;
+
 class BadAlternator : public CompilerError
 {
 public:

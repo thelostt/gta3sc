@@ -9,7 +9,6 @@
 #pragma once
 #include "stdinc.h"
 
-
 /// IR for end of argument list used in variadic argument commands.
 struct EOAL
 {
@@ -65,19 +64,36 @@ struct CompiledLabelDef
     }
 };
 
+/// IR for HEX data.
+struct CompiledHex
+{
+    std::vector<uint8_t> data;
+
+    size_t compiled_size() const
+    {
+        return data.size();
+    }
+};
+
 /// IR for a fundamental piece of compiled data. May be a label or a command.
 struct CompiledData
 {
-    variant<CompiledLabelDef, CompiledCommand> data;
+    variant<CompiledLabelDef, CompiledCommand, CompiledHex> data;
 
     CompiledData(CompiledCommand x)
         : data(std::move(x))
+    {}
+
+    CompiledData(std::vector<uint8_t> x)
+        : data(CompiledHex { std::move(x) })
     {}
 
     CompiledData(shared_ptr<Label> x)
         : data(CompiledLabelDef{ std::move(x) })
     {}
 };
+
+
 
 /// Transforms an annotated syntax tree into a intermediate representation (vector of pseudo-instructions).
 struct CompilerContext
