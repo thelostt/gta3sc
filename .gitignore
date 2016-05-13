@@ -36,6 +36,7 @@ __Test___input.txt
 *.out
 *.app
 !premake5.exe
+!minilua.exe
 
 
 #################
