@@ -60,7 +60,7 @@ struct DecompiledData
 };
 
 
-struct DisassemblerContext
+struct Disassembler
 {
 private:
     const GameConfig config;
@@ -82,7 +82,7 @@ private:
 public:
     // undefined behaviour is invoked if data inside `bytecode` is changed while
     // this context object is still alive.
-    DisassemblerContext(GameConfig config, const Commands& commands,
+    Disassembler(GameConfig config, const Commands& commands,
                         const uint8_t* bytecode, size_t size) :
         bytecode(bytecode), bytecode_size(size),
         config(std::move(config)), commands(commands)
@@ -91,21 +91,21 @@ public:
         this->offset_explored.resize(size);
     }
 
-    DisassemblerContext(GameConfig config, const Commands& commands, std::vector<uint8_t> bytecode_) :
-        DisassemblerContext(std::move(config), commands, bytecode_.data(), bytecode_.size())
+    Disassembler(GameConfig config, const Commands& commands, std::vector<uint8_t> bytecode_) :
+        Disassembler(std::move(config), commands, bytecode_.data(), bytecode_.size())
     {
         this->bytecode_buffer_ = std::move(bytecode_);
     }
 
-    DisassemblerContext(const DisassemblerContext&) = delete;
+    Disassembler(const Disassembler&) = delete;
 
-    DisassemblerContext(DisassemblerContext&&) = default;
+    Disassembler(Disassembler&&) = default;
 
-    static DisassemblerContext from_file(GameConfig config, const Commands& commands, const fs::path& path)
+    static Disassembler from_file(GameConfig config, const Commands& commands, const fs::path& path)
     {
         if(auto opt_bytecode = read_file_binary(path))
         {
-            return DisassemblerContext(config, commands, *opt_bytecode);
+            return Disassembler(config, commands, *opt_bytecode);
         }
         else
         {

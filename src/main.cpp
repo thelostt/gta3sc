@@ -5,6 +5,7 @@
 #include "commands.hpp"
 #include "compiler.hpp"
 #include "disassembler.hpp"
+#include "decompiler.hpp"
 #include "codegen.hpp"
 #include "defs/defs.hpp"
 
@@ -109,10 +110,14 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
 
 int test_decompiler(const GameConfig& gta3_config, const Commands& commands)
 {
-    auto decomp = DisassemblerContext::from_file(gta3_config, commands, "output.cs");
+    auto decomp = Disassembler::from_file(gta3_config, commands, "output.cs");
 
     decomp.run_analyzer();
     auto data = decomp.get_data();
+
+    printf("%d\n", data.size());
+
+    puts(DecompilerContext(commands, std::move(data)).decompile().c_str());
 
     return 0;
 }

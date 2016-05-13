@@ -134,6 +134,26 @@ public:
         return nullopt;
     }
 
+    optional<std::string> find_command_name(uint16_t id, bool never_fail = false) const
+    {
+        // TODO speed up this search
+
+        for(auto& pair : this->commands)
+        {
+            if(pair.second.id == id)
+                return pair.first;
+        }
+
+        if(never_fail)
+        {
+            char buffer[sizeof("COMMAND_")-1 + 4 + 1];
+            snprintf(buffer, sizeof(buffer), "COMMAND_%.4X", id);
+            return std::string(std::begin(buffer), std::end(buffer) - 1);
+        }
+
+        return nullopt;
+    }
+
 
     // --- Important Commands ---
 
