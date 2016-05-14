@@ -30,11 +30,12 @@ static int32_t resolve_extern(Dst_DECL, unsigned char* addr, const char* extern_
 #endif
 #line 20 "test.dasc"
 //| .actionlist actions
-static const unsigned char actions[67] = {
-  144,144,144,144,255,104,237,255,252,255,53,237,255,252,255,181,233,255,184,
-  240,32,237,255,139,5,240,129,237,255,139,133,253,240,129,233,255,199,5,237,
-  237,255,199,133,233,237,255,85,255,232,243,129,196,239,255,185,237,232,243,
-  255,249,255,252,233,245,250,15,255
+static const unsigned char actions[84] = {
+  144,144,144,144,255,104,237,255,80,240,32,255,252,255,53,237,255,252,255,
+  181,233,255,137,5,240,129,237,255,137,133,253,240,129,233,255,184,240,32,
+  237,255,139,5,240,129,237,255,139,133,253,240,129,233,255,199,5,237,237,255,
+  199,133,233,237,255,85,255,232,243,129,196,239,255,185,237,232,243,255,249,
+  255,252,233,245,250,15,255
 };
 
 #line 21 "test.dasc"
@@ -157,7 +158,7 @@ public://TODO priv
     friend auto generate_code(const DecompiledData& data, CodeGeneratorIA32::IterData, CodeGeneratorIA32& codegen)->CodeGeneratorIA32::IterData;
 
 public:
-    enum class Reg
+    enum class Reg : uint8_t
     {
         // Ids must match the rN pattern of x86-64.
         // See https://corsix.github.io/dynasm-doc/instructions.html
@@ -169,6 +170,7 @@ public:
         Ebp = 5,
         Esi = 6,
         Edi = 7,
+        Max_,
     };
 
     CodeGeneratorIA32(const Commands& commands, std::vector<DecompiledData> decompiled)
@@ -182,6 +184,17 @@ public:
         global_vars = nullptr;
 
         this->init_generators();
+
+        // MUST construct in the same order as the enum is
+        this->regstates.reserve(static_cast<size_t>(Reg::Max_));
+        this->regstates.emplace_back(Reg::Eax, false);
+        this->regstates.emplace_back(Reg::Ecx, false);
+        this->regstates.emplace_back(Reg::Edx, false);
+        this->regstates.emplace_back(Reg::Ebx, false);
+        this->regstates.emplace_back(Reg::Esp, true);
+        this->regstates.emplace_back(Reg::Ebp, true);
+        this->regstates.emplace_back(Reg::Esi, false);
+        this->regstates.emplace_back(Reg::Edi, false);
     }
 
     CodeGeneratorIA32(const CodeGeneratorIA32&) = delete;
@@ -230,6 +243,274 @@ public:
     }
 
 
+    struct RegGuard;
+
+    struct RegState
+    {
+    public:
+        RegState(Reg reg, bool always_allocated)
+            : id(static_cast<int>(reg)), storage(unk_t{}), is_dirty(false), is_allocated(always_allocated)
+        {}
+
+    protected:
+        void set_dirty()
+        {
+            assert(this->is_allocated);
+            if(is<DecompiledVar>(this->storage))
+            {
+                this->is_dirty = true;
+            }
+            else
+            {
+                assert(this->is_dirty == false);
+                this->storage = unk_t{};
+            }
+        }
+
+        void clear_storage()
+        {
+            assert(this->is_allocated);
+            this->storage = unk_t{};
+            this->is_dirty = false;
+        }
+
+        
+        void set_storage(int32_t i)
+        {
+            assert(this->is_allocated);
+            this->storage = i;
+            this->is_dirty = false;
+        }
+        
+
+        void set_storage(DecompiledVar var)
+        {
+            assert(this->is_allocated);
+            this->storage = std::move(var);
+            this->is_dirty = false;
+        }
+
+        
+        bool is_storage(int32_t i)
+        {
+            assert(this->is_allocated);
+            return is<int32_t>(storage) && get<int32_t>(storage) == i;
+        }
+        
+
+        bool is_storage(const DecompiledVar& var)
+        {
+            assert(this->is_allocated);
+            return is<DecompiledVar>(storage) && get<DecompiledVar>(storage) == var;
+        }
+
+        bool is_storing_something()
+        {
+            assert(this->is_allocated);
+            return is<DecompiledVar>(storage);
+        }
+
+        bool is_storing(const DecompiledVar& var)
+        {
+            return is<DecompiledVar>(storage) && get<DecompiledVar>(storage) == var;
+        }
+        
+    private:
+
+    protected:
+        friend struct CodeGeneratorIA32;
+        friend struct CodeGeneratorIA32::RegGuard;
+
+        struct unk_t {};
+
+        // If is_dirty=true and is_allocated=false, reg still must be flushed into context.
+
+        bool is_allocated : 1;
+        bool is_dirty     : 1;
+
+        int id; // TODO smaller type?
+
+        int refcount = 0;
+
+        variant<unk_t, int32_t, DecompiledVar> storage;
+    };
+
+    struct RegGuard
+    {
+    public:
+        RegState* operator->()              { assert(has_state); return &state.get(); }
+        RegState& operator*()               { assert(has_state); return state.get(); }
+        const RegState* operator->() const  { assert(has_state); return &state.get(); }
+        const RegState& operator*() const   { assert(has_state); return state.get(); }
+
+        RegGuard(const RegGuard&) = delete;
+
+        RegGuard(RegGuard&& rhs) :
+            has_state(rhs.has_state), state(rhs.state), codegen(rhs.codegen)
+        {
+            rhs.has_state = false;
+        }
+
+        ~RegGuard()
+        {
+            if(this->has_state)
+            {
+                if(--state.get().refcount == 0)
+                {
+                    codegen.get().regfree_base(static_cast<Reg>(state.get().id));
+                }
+            }
+        }
+
+    protected:
+        friend struct CodeGeneratorIA32;
+
+        RegGuard(CodeGeneratorIA32& codegen, RegState& state) :
+            has_state(true), state(state), codegen(codegen)
+        {
+            ++this->state.get().refcount;
+        }
+
+        void forget()
+        {
+            this->has_state = false;
+            --this->state.get().refcount;
+        }
+
+        bool                                            has_state;
+        std::reference_wrapper<RegState>                state;
+        std::reference_wrapper<CodeGeneratorIA32>       codegen;
+    };
+
+    
+    std::vector<RegState> regstates;
+
+    static constexpr int purposes_temp = 1;
+    static constexpr int purposes_all  = 2;
+
+    optional<Reg> regalloc_base(Reg reg, bool looking_for_cache = false, bool force_alloc = false)
+    {
+        if(looking_for_cache)
+        {
+            Expects(force_alloc == false);
+        }
+
+        auto i = static_cast<size_t>(reg);
+        if(this->regstates[i].is_allocated == false)
+        {
+            if(!looking_for_cache)
+            {
+                if(regstates[i].is_dirty)
+                {
+                    if(!force_alloc)
+                        return nullopt;
+
+                    emit_flush____(regstates[i]);
+                }
+                Expects(regstates[i].is_dirty == false);
+            }
+            regstates[i].is_allocated = true;
+            return static_cast<Reg>(i);
+        }
+        return nullopt;
+    }
+
+    optional<Reg> regalloc_base(int purposes)
+    {
+        // TODO algorithm routine is very crappy, improve!!!!!!!!
+
+        size_t max_inclusive;
+
+        auto xalloc = [this](Reg reg) -> optional<Reg>
+        {
+            return this->regalloc_base(reg);
+        };
+
+        auto xalloc_force = [this](Reg reg) -> optional<Reg>
+        {
+            return this->regalloc_base(reg, false, true);
+        };
+
+        if(purposes == purposes_temp)
+        {
+            // Check the temporary purposes registers first.
+            if(xalloc(Reg::Eax))
+                return static_cast<Reg>(Reg::Eax);
+            if(xalloc(Reg::Ecx))
+                return static_cast<Reg>(Reg::Ecx);
+            if(xalloc(Reg::Edx))
+                return static_cast<Reg>(Reg::Edx);
+
+            max_inclusive = static_cast<size_t>(Reg::Eax);
+        }
+        else
+        {
+            Expects(purposes == purposes_all);
+            max_inclusive = static_cast<size_t>(Reg::Ebx);
+        }
+
+        for(size_t k = this->regstates.size(); k > max_inclusive; --k)
+        {
+            auto reg = static_cast<Reg>(k - 1);
+            if(xalloc(static_cast<Reg>(reg)))
+                return reg;
+        }
+
+        // now force allocation
+        for(size_t k = this->regstates.size(); k > max_inclusive; --k)
+        {
+            auto reg = static_cast<Reg>(k - 1);
+            if(xalloc_force(static_cast<Reg>(reg)))
+                return reg;
+        }
+
+        return nullopt;
+    }
+
+    void regfree_base(Reg reg)
+    {
+        auto i = static_cast<size_t>(reg);
+        Expects(regstates[i].is_allocated);
+        regstates[i].is_allocated = false;
+    }
+    
+
+    RegGuard regalloc(int purposes)
+    {
+        if(auto opt_reg = regalloc_base(purposes))
+        {
+            auto idx = static_cast<size_t>(*opt_reg);
+            Expects(regstates[idx].refcount >= 0); // not negative
+            return RegGuard(*this, regstates[idx]);
+        }
+        else
+        {
+            throw DynarecError("Register allocation failed! This is a bug!!!");
+        }
+    }
+
+    // find cached var
+    optional<RegGuard> regcached(const DecompiledVar& var)
+    {
+        for(auto& state : this->regstates)
+        {
+            if(state.is_storing(var))
+            {
+                if(auto opt_reg = regalloc_base(static_cast<Reg>(state.id), true))
+                {
+                    Expects(static_cast<Reg>(state.id) == *opt_reg);
+                    Expects(regstates[state.id].refcount >= 0); // not negative
+                    return RegGuard(*this, regstates[state.id]);
+                }
+            }
+        }
+        return nullopt;
+    }
+
+
+
+
+
     void test()
     {
         auto& codegen = *this;
@@ -244,7 +525,7 @@ public:
         //| nop
         //| nop
         dasm_put(Dst, 0);
-#line 214 "test.dasc"
+#line 494 "test.dasc"
 
         size_t code_size;
         dasm_link(&dstate, &code_size);
@@ -264,7 +545,47 @@ public:
     void emit_flush()
     {
         // flush CRunningScript context/variables
+        for(auto& state : this->regstates)
+        {
+            emit_flush____(state);
+        }
     }
+
+    void emit_flush____(RegState& state, bool clear_storage = false)
+    {
+        // WOW, this is fucking hacky, maybe find a better way to do this later.
+        RegGuard fake_guard(*this, state);
+        auto was_allocated = fake_guard->is_allocated;
+        fake_guard->is_allocated = true;
+        
+        this->emit_flush(fake_guard);
+        if(clear_storage) fake_guard->clear_storage();
+
+        fake_guard->is_allocated = was_allocated;
+        fake_guard.forget();
+    }
+
+    void emit_flush(RegGuard& reg)
+    {
+        if(reg->is_dirty)
+        {
+            emit_movi32(get<DecompiledVar>(reg->storage), reg);
+            // remove dirtness after the mov
+            reg->is_dirty = false;
+        }
+    }
+
+    void emit_flush_before_call()
+    {
+        // flush temp registers (eax, ecx, edx)
+        auto& eax = this->regstates[static_cast<size_t>(Reg::Eax)];
+        auto& ecx = this->regstates[static_cast<size_t>(Reg::Ecx)];
+        auto& edx = this->regstates[static_cast<size_t>(Reg::Edx)];
+        emit_flush____(eax, true);
+        emit_flush____(ecx, true);
+        emit_flush____(edx, true);
+    }
+
 
 
 
@@ -278,23 +599,37 @@ public:
     {
         //| push imm32
         dasm_put(Dst, 5, imm32);
-#line 246 "test.dasc"
+#line 566 "test.dasc"
+    }
+
+    void emit_pushi32(RegGuard& reg)
+    {
+        //| push Rd(reg->id)
+        dasm_put(Dst, 8, (reg->id));
+#line 571 "test.dasc"
     }
 
     void emit_pushi32(const DecompiledVar& var)
     {
-        if(var.global)
+        if(auto opt_reg = regcached(var))
         {
-            //| push dword [(global_vars + var.offset)]
-            dasm_put(Dst, 8, (global_vars + var.offset));
-#line 253 "test.dasc"
+            return emit_pushi32(*opt_reg);
         }
         else
         {
-            auto offset = offsetof(CRunningScript, tls) + (var.offset * 4);
-            //| push dword [ebp + offset]
-            dasm_put(Dst, 13, offset);
-#line 258 "test.dasc"
+            if(var.global)
+            {
+                //| push dword [(global_vars + var.offset)]
+                dasm_put(Dst, 12, (global_vars + var.offset));
+#line 584 "test.dasc"
+            }
+            else
+            {
+                auto offset = offsetof(CRunningScript, tls) + var.offset;
+                //| push dword [ebp + offset]
+                dasm_put(Dst, 17, offset);
+#line 589 "test.dasc"
+            }
         }
     }
 
@@ -325,36 +660,72 @@ public:
 
 
 
-    void emit_movi32(Reg reg_dst, int32_t imm32)
+    void emit_movi32(const DecompiledVar& dst, RegGuard& reg_src)
     {
-        int id_dst = static_cast<int>(reg_dst);
-        //| mov Rd(id_dst), imm32
-        dasm_put(Dst, 18, (id_dst), imm32);
-#line 292 "test.dasc"
-    }
+        // Don't try to use a cached register because of emit_flush calling this.
+        // (Hmm, could we work around this?)
 
-    void emit_movi32(Reg reg_dst, const DecompiledVar& src)
-    {
-        int id_dst = static_cast<int>(reg_dst);
-        if(src.global)
+        if(dst.global)
         {
-            //| mov Rd(id_dst), dword[(global_vars + src.offset)]
-            dasm_put(Dst, 23, (id_dst), (global_vars + src.offset));
-#line 300 "test.dasc"
+            //| mov dword[(global_vars + dst.offset)], Rd(reg_src->id)
+            dasm_put(Dst, 22, (reg_src->id), (global_vars + dst.offset));
+#line 628 "test.dasc"
         }
         else
         {
-            auto offset = offsetof(CRunningScript, tls) + (src.offset * 4);
-            //| mov Rd(id_dst), dword[ebp + offset]
-            dasm_put(Dst, 29, (id_dst), offset);
-#line 305 "test.dasc"
+            auto offset = offsetof(CRunningScript, tls) + dst.offset;
+            //| mov dword[ebp + offset], Rd(reg_src->id)
+            dasm_put(Dst, 28, (reg_src->id), offset);
+#line 633 "test.dasc"
+        }
+
+        if(!reg_src->is_storing_something())
+        {
+            // Don't flush!
+            //  1. if reg->is_storing_something() is false, there's nothing to flush;
+            //  2. this is called by a overload of emit_movi32 that be called from emit_flush(), we don't want a infinite recursion.
+            Expects(reg_src->is_dirty == false);
+            reg_src->set_storage(dst);
         }
     }
 
-    void emit_movi32(Reg reg_dst, const ArgVariant2& src)
+    void emit_movi32(RegGuard& reg_dst, int32_t imm32)
     {
-        int id_dst = static_cast<int>(reg_dst);
+        if(!reg_dst->is_storage(imm32))
+        {
+            emit_flush(reg_dst);
+            //| mov Rd(reg_dst->id), imm32
+            dasm_put(Dst, 35, (reg_dst->id), imm32);
+#line 651 "test.dasc"
+            reg_dst->set_storage(imm32);
+        }
+    }
 
+    void emit_movi32(RegGuard& reg_dst, const DecompiledVar& src)
+    {
+        if(!reg_dst->is_storage(src))
+        {
+            emit_flush(reg_dst);
+            if(src.global)
+            {
+                //| mov Rd(reg_dst->id), dword[(global_vars + src.offset)]
+                dasm_put(Dst, 40, (reg_dst->id), (global_vars + src.offset));
+#line 663 "test.dasc"
+                reg_dst->set_storage(src);
+            }
+            else
+            {
+                auto offset = offsetof(CRunningScript, tls) + src.offset;
+                //| mov Rd(reg_dst->id), dword[ebp + offset]
+                dasm_put(Dst, 46, (reg_dst->id), offset);
+#line 669 "test.dasc"
+                reg_dst->set_storage(src);
+            }
+        }
+    }
+
+    void emit_movi32(RegGuard& reg_dst, const ArgVariant2& src)
+    {
         if(auto opt_imm32 = get_imm32(src, *this))
         {
             emit_movi32(reg_dst, *opt_imm32);
@@ -393,20 +764,32 @@ public:
 
     void emit_movi32(const DecompiledVar& var_dst, int32_t imm32)
     {
-        if(var_dst.global)
+        if(auto opt_reg_dst = regcached(var_dst))
         {
-            //| mov dword[(global_vars + var_dst.offset)], imm32
-            dasm_put(Dst, 36, (global_vars + var_dst.offset), imm32);
-#line 353 "test.dasc"
+            auto& reg_dst = *opt_reg_dst;
+            //| mov Rd(reg_dst->id), imm32
+            dasm_put(Dst, 35, (reg_dst->id), imm32);
+#line 718 "test.dasc"
+            reg_dst->set_dirty();
         }
         else
         {
-            auto offset = offsetof(CRunningScript, tls) + (var_dst.offset * 4);
-            //| mov dword[ebp + offset], imm32
-            dasm_put(Dst, 41, offset, imm32);
-#line 358 "test.dasc"
+            if(var_dst.global)
+            {
+                //| mov dword[(global_vars + var_dst.offset)], imm32
+                dasm_put(Dst, 53, (global_vars + var_dst.offset), imm32);
+#line 725 "test.dasc"
+            }
+            else
+            {
+                auto offset = offsetof(CRunningScript, tls) + var_dst.offset;
+                //| mov dword[ebp + offset], imm32
+                dasm_put(Dst, 58, offset, imm32);
+#line 730 "test.dasc"
+            }
         }
     }
+
 
     void emit_movi32(const DecompiledVar& var_dst, const ArgVariant2& src)
     {
@@ -416,10 +799,9 @@ public:
         }
         else
         {
-            // TODO do proper register allocation
-            //emit_movi32(Reg::Eax, src);
-            //| mov 
-            // TODO
+            auto rx = this->regalloc(purposes_temp);
+            emit_movi32(rx, src);
+            emit_movi32(var_dst, rx);
         }
     }
 
@@ -435,8 +817,8 @@ public:
     void emit_push(tag_CRunningScript_t)
     {
         //| push ebp
-        dasm_put(Dst, 46);
-#line 388 "test.dasc"
+        dasm_put(Dst, 63);
+#line 761 "test.dasc"
     }
 
     void emit_push(const ArgVariant2& varg)
@@ -450,10 +832,11 @@ public:
         auto& codegen = *this;
         auto target_ptr = resolve_extern(&this->dstate, nullptr, extern_name, false);
         this->emit_rpushes(std::forward<Args>(args)...);
+        this->emit_flush_before_call();
         //| call &target_ptr
         //| add esp, (sizeof...(args) * 4)
-        dasm_put(Dst, 48, (ptrdiff_t)(target_ptr), (sizeof...(args) * 4));
-#line 403 "test.dasc"
+        dasm_put(Dst, 65, (ptrdiff_t)(target_ptr), (sizeof...(args) * 4));
+#line 777 "test.dasc"
     }
 
     template<typename... Args>
@@ -462,10 +845,11 @@ public:
         auto& codegen = *this;
         auto target_ptr = resolve_extern(&this->dstate, nullptr, extern_name, false);
         this->emit_rpushes(std::forward<Args>(args)...);
+        this->emit_flush_before_call();
         //| mov ecx, this_ptr     // TODO abstract the mov
         //| call &target_ptr
-        dasm_put(Dst, 54, this_ptr, (ptrdiff_t)(target_ptr));
-#line 413 "test.dasc"
+        dasm_put(Dst, 71, this_ptr, (ptrdiff_t)(target_ptr));
+#line 788 "test.dasc"
         // callee cleanup
     }
 
@@ -475,9 +859,10 @@ public:
         auto& codegen = *this;
         auto target_ptr = resolve_extern(&this->dstate, nullptr, extern_name, false);
         this->emit_rpushes(std::forward<Args>(args)...);
+        this->emit_flush_before_call();
         //| call &target_ptr
-        dasm_put(Dst, 56, (ptrdiff_t)(target_ptr));
-#line 423 "test.dasc"
+        dasm_put(Dst, 73, (ptrdiff_t)(target_ptr));
+#line 799 "test.dasc"
         // callee cleanup
     }
 
@@ -525,8 +910,8 @@ auto generate_code(const DecompiledLabelDef& def, CodeGeneratorIA32::IterData it
     // flush context, the beggining of label should have all the context in CRunningScript
     codegen.emit_flush();
     //| =>(label_id):
-    dasm_put(Dst, 59, (label_id));
-#line 470 "test.dasc"
+    dasm_put(Dst, 76, (label_id));
+#line 846 "test.dasc"
 
     return ++it;
 }
@@ -626,19 +1011,38 @@ void CodeGeneratorIA32::init_generators()
         codegen.emit_flush();
         //| jmp =>(label_id)
         //| .align 16 // nice place to put Intel's recommended alignment
-        dasm_put(Dst, 61, (label_id));
-#line 569 "test.dasc"
+        dasm_put(Dst, 78, (label_id));
+#line 945 "test.dasc"
 
         return ++it;
     });
 
-    // 0@ = int
-    this->add_generator(0x0006, [&](const DecompiledCommand& ccmd, IterData it)
+    // SET
     {
-        Expects(ccmd.args.size() == 2);
-        codegen.emit_movi32(ccmd.args[0], ccmd.args[1]);
-        return ++it;
-    });
+        auto opgen_set = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() == 2);
+            codegen.emit_movi32(ccmd.args[0], ccmd.args[1]);
+            return ++it;
+        };
+
+        this->add_generator(0x0004, opgen_set);
+        this->add_generator(0x0005, opgen_set);
+        this->add_generator(0x0006, opgen_set);
+        this->add_generator(0x0007, opgen_set);
+        this->add_generator(0x0084, opgen_set);
+        this->add_generator(0x0085, opgen_set);
+        this->add_generator(0x0086, opgen_set);
+        this->add_generator(0x0087, opgen_set);
+        this->add_generator(0x0088, opgen_set);
+        this->add_generator(0x0089, opgen_set);
+        this->add_generator(0x008A, opgen_set);
+        this->add_generator(0x008B, opgen_set);
+        this->add_generator(0x04AE, opgen_set);
+        this->add_generator(0x04AF, opgen_set);
+    }
+
+
 
 }
 

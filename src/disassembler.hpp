@@ -13,6 +13,11 @@ struct DecompiledVar
 {
     bool               global;
     uint32_t           offset; // if global, i*1, if local, i*4;
+
+    bool operator==(const DecompiledVar& rhs) const
+    {
+        return this->global == rhs.global && this->offset == rhs.offset;
+    }
 };
 
 // constrats to CompiledVar
