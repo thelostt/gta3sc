@@ -562,6 +562,18 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     void emit_pushi32(int32_t imm32)
     {
         | push imm32
@@ -614,9 +626,6 @@ public:
 
     void emit_movi32(const DecompiledVar& dst, RegGuard& reg_src)
     {
-        // Don't try to use a cached register because of emit_flush calling this.
-        // (Hmm, could we work around this?)
-
         if(dst.global)
         {
             | mov dword[(global_vars + dst.offset)], Rd(reg_src->id)
@@ -626,43 +635,23 @@ public:
             auto offset = offsetof(CRunningScript, tls) + dst.offset;
             | mov dword[ebp + offset], Rd(reg_src->id)
         }
-
-        if(!reg_src->is_storing_something())
-        {
-            // Don't flush!
-            //  1. if reg->is_storing_something() is false, there's nothing to flush;
-            //  2. this is called by a overload of emit_movi32 that be called from emit_flush(), we don't want a infinite recursion.
-            Expects(reg_src->is_dirty == false);
-            reg_src->set_storage(dst);
-        }
     }
 
     void emit_movi32(RegGuard& reg_dst, int32_t imm32)
     {
-        if(!reg_dst->is_storage(imm32))
-        {
-            emit_flush(reg_dst);
-            | mov Rd(reg_dst->id), imm32
-            reg_dst->set_storage(imm32);
-        }
+        | mov Rd(reg_dst->id), imm32
     }
 
     void emit_movi32(RegGuard& reg_dst, const DecompiledVar& src)
     {
-        if(!reg_dst->is_storage(src))
+        if(src.global)
         {
-            emit_flush(reg_dst);
-            if(src.global)
-            {
-                | mov Rd(reg_dst->id), dword[(global_vars + src.offset)]
-                reg_dst->set_storage(src);
-            }
-            else
-            {
-                auto offset = offsetof(CRunningScript, tls) + src.offset;
-                | mov Rd(reg_dst->id), dword[ebp + offset]
-                reg_dst->set_storage(src);
-            }
+            | mov Rd(reg_dst->id), dword[(global_vars + src.offset)]
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + src.offset;
+            | mov Rd(reg_dst->id), dword[ebp + offset]
         }
     }
 
@@ -731,6 +720,104 @@ public:
             emit_movi32(var_dst, rx);
         }
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void emit_addi32(const ArgVariant2& dst, const ArgVariant2& src)
+    {
+        if(is<DecompiledVar>(dst))
+        {
+            emit_addi32(get<DecompiledVar>(dst), src);
+        }
+        else if(is<DecompiledVarArray>(dst))
+        {
+            // TODO
+            NotImplementedYet();
+        }
+        else
+        {
+            throw DynarecUnexpectedValue(dst.which());
+        }
+    }
+
+    void emit_addi32(const DecompiledVar& var_dst, const ArgVariant2& src)
+    {
+        if(auto opt_imm32 = get_imm32(src, *this))
+        {
+            emit_addi32(var_dst, *opt_imm32);
+        }
+        else
+        {
+            auto rx = this->regalloc(purposes_temp);
+            emit_movi32(rx, src);
+            emit_addi32(var_dst, rx);
+        }
+    }
+
+    void emit_addi32(const DecompiledVar& var_dst, int32_t imm32)
+    {
+        if(var_dst.global)
+        {
+            | add dword[(global_vars + var_dst.offset)], imm32
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + var_dst.offset;
+            | add dword[ebp + offset], imm32
+        }
+    }
+
+    void emit_addi32(const DecompiledVar& dst, RegGuard& reg_src)
+    {
+        if(dst.global)
+        {
+            | add dword[(global_vars + dst.offset)], Rd(reg_src->id)
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + dst.offset;
+            | add dword[ebp + offset], Rd(reg_src->id)
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -957,6 +1044,13 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x04AF, opgen_set);
     }
 
+    // NOTICE: FLOATHING ADD IS DIFFERENT FROM INT ADD!
+    this->add_generator(0x000A, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        Expects(ccmd.args.size() == 2);
+        codegen.emit_addi32(ccmd.args[0], ccmd.args[1]);
+        return ++it;
+    });
 
 
 }

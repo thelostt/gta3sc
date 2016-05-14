@@ -30,12 +30,13 @@ static int32_t resolve_extern(Dst_DECL, unsigned char* addr, const char* extern_
 #endif
 #line 20 "test.dasc"
 //| .actionlist actions
-static const unsigned char actions[84] = {
+static const unsigned char actions[108] = {
   144,144,144,144,255,104,237,255,80,240,32,255,252,255,53,237,255,252,255,
   181,233,255,137,5,240,129,237,255,137,133,253,240,129,233,255,184,240,32,
   237,255,139,5,240,129,237,255,139,133,253,240,129,233,255,199,5,237,237,255,
-  199,133,233,237,255,85,255,232,243,129,196,239,255,185,237,232,243,255,249,
-  255,252,233,245,250,15,255
+  199,133,233,237,255,129,5,253,237,239,255,129,133,233,239,255,1,5,240,129,
+  237,255,1,133,253,240,129,233,255,85,255,232,243,129,196,239,255,185,237,
+  232,243,255,249,255,252,233,245,250,15,255
 };
 
 #line 21 "test.dasc"
@@ -242,6 +243,8 @@ public:
         throw DynarecError("Unexpected ArgVariant2 on add_label; varg.which() == {}", varg.which());
     }
 
+
+    //////// --------------- BEGIN HORRIBLE CACHE CODE ----------------------------
 
     struct RegGuard;
 
@@ -507,7 +510,7 @@ public:
         return nullopt;
     }
 
-
+    //////// --------------- END HORRIBLE CACHE CODE ----------------------------
 
 
 
@@ -525,7 +528,7 @@ public:
         //| nop
         //| nop
         dasm_put(Dst, 0);
-#line 494 "test.dasc"
+#line 496 "test.dasc"
 
         size_t code_size;
         dasm_link(&dstate, &code_size);
@@ -595,41 +598,46 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
     void emit_pushi32(int32_t imm32)
     {
         //| push imm32
         dasm_put(Dst, 5, imm32);
-#line 566 "test.dasc"
+#line 580 "test.dasc"
     }
 
     void emit_pushi32(RegGuard& reg)
     {
         //| push Rd(reg->id)
         dasm_put(Dst, 8, (reg->id));
-#line 571 "test.dasc"
+#line 585 "test.dasc"
     }
 
     void emit_pushi32(const DecompiledVar& var)
     {
-        if(auto opt_reg = regcached(var))
+        if(var.global)
         {
-            return emit_pushi32(*opt_reg);
+            //| push dword [(global_vars + var.offset)]
+            dasm_put(Dst, 12, (global_vars + var.offset));
+#line 592 "test.dasc"
         }
         else
         {
-            if(var.global)
-            {
-                //| push dword [(global_vars + var.offset)]
-                dasm_put(Dst, 12, (global_vars + var.offset));
-#line 584 "test.dasc"
-            }
-            else
-            {
-                auto offset = offsetof(CRunningScript, tls) + var.offset;
-                //| push dword [ebp + offset]
-                dasm_put(Dst, 17, offset);
-#line 589 "test.dasc"
-            }
+            auto offset = offsetof(CRunningScript, tls) + var.offset;
+            //| push dword [ebp + offset]
+            dasm_put(Dst, 17, offset);
+#line 597 "test.dasc"
         }
     }
 
@@ -662,65 +670,42 @@ public:
 
     void emit_movi32(const DecompiledVar& dst, RegGuard& reg_src)
     {
-        // Don't try to use a cached register because of emit_flush calling this.
-        // (Hmm, could we work around this?)
-
         if(dst.global)
         {
             //| mov dword[(global_vars + dst.offset)], Rd(reg_src->id)
             dasm_put(Dst, 22, (reg_src->id), (global_vars + dst.offset));
-#line 628 "test.dasc"
+#line 632 "test.dasc"
         }
         else
         {
             auto offset = offsetof(CRunningScript, tls) + dst.offset;
             //| mov dword[ebp + offset], Rd(reg_src->id)
             dasm_put(Dst, 28, (reg_src->id), offset);
-#line 633 "test.dasc"
-        }
-
-        if(!reg_src->is_storing_something())
-        {
-            // Don't flush!
-            //  1. if reg->is_storing_something() is false, there's nothing to flush;
-            //  2. this is called by a overload of emit_movi32 that be called from emit_flush(), we don't want a infinite recursion.
-            Expects(reg_src->is_dirty == false);
-            reg_src->set_storage(dst);
+#line 637 "test.dasc"
         }
     }
 
     void emit_movi32(RegGuard& reg_dst, int32_t imm32)
     {
-        if(!reg_dst->is_storage(imm32))
-        {
-            emit_flush(reg_dst);
-            //| mov Rd(reg_dst->id), imm32
-            dasm_put(Dst, 35, (reg_dst->id), imm32);
-#line 651 "test.dasc"
-            reg_dst->set_storage(imm32);
-        }
+        //| mov Rd(reg_dst->id), imm32
+        dasm_put(Dst, 35, (reg_dst->id), imm32);
+#line 643 "test.dasc"
     }
 
     void emit_movi32(RegGuard& reg_dst, const DecompiledVar& src)
     {
-        if(!reg_dst->is_storage(src))
+        if(src.global)
         {
-            emit_flush(reg_dst);
-            if(src.global)
-            {
-                //| mov Rd(reg_dst->id), dword[(global_vars + src.offset)]
-                dasm_put(Dst, 40, (reg_dst->id), (global_vars + src.offset));
-#line 663 "test.dasc"
-                reg_dst->set_storage(src);
-            }
-            else
-            {
-                auto offset = offsetof(CRunningScript, tls) + src.offset;
-                //| mov Rd(reg_dst->id), dword[ebp + offset]
-                dasm_put(Dst, 46, (reg_dst->id), offset);
-#line 669 "test.dasc"
-                reg_dst->set_storage(src);
-            }
+            //| mov Rd(reg_dst->id), dword[(global_vars + src.offset)]
+            dasm_put(Dst, 40, (reg_dst->id), (global_vars + src.offset));
+#line 650 "test.dasc"
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + src.offset;
+            //| mov Rd(reg_dst->id), dword[ebp + offset]
+            dasm_put(Dst, 46, (reg_dst->id), offset);
+#line 655 "test.dasc"
         }
     }
 
@@ -764,29 +749,18 @@ public:
 
     void emit_movi32(const DecompiledVar& var_dst, int32_t imm32)
     {
-        if(auto opt_reg_dst = regcached(var_dst))
+        if(var_dst.global)
         {
-            auto& reg_dst = *opt_reg_dst;
-            //| mov Rd(reg_dst->id), imm32
-            dasm_put(Dst, 35, (reg_dst->id), imm32);
-#line 718 "test.dasc"
-            reg_dst->set_dirty();
+            //| mov dword[(global_vars + var_dst.offset)], imm32
+            dasm_put(Dst, 53, (global_vars + var_dst.offset), imm32);
+#line 701 "test.dasc"
         }
         else
         {
-            if(var_dst.global)
-            {
-                //| mov dword[(global_vars + var_dst.offset)], imm32
-                dasm_put(Dst, 53, (global_vars + var_dst.offset), imm32);
-#line 725 "test.dasc"
-            }
-            else
-            {
-                auto offset = offsetof(CRunningScript, tls) + var_dst.offset;
-                //| mov dword[ebp + offset], imm32
-                dasm_put(Dst, 58, offset, imm32);
-#line 730 "test.dasc"
-            }
+            auto offset = offsetof(CRunningScript, tls) + var_dst.offset;
+            //| mov dword[ebp + offset], imm32
+            dasm_put(Dst, 58, offset, imm32);
+#line 706 "test.dasc"
         }
     }
 
@@ -814,11 +788,117 @@ public:
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+    void emit_addi32(const ArgVariant2& dst, const ArgVariant2& src)
+    {
+        if(is<DecompiledVar>(dst))
+        {
+            emit_addi32(get<DecompiledVar>(dst), src);
+        }
+        else if(is<DecompiledVarArray>(dst))
+        {
+            // TODO
+            NotImplementedYet();
+        }
+        else
+        {
+            throw DynarecUnexpectedValue(dst.which());
+        }
+    }
+
+    void emit_addi32(const DecompiledVar& var_dst, const ArgVariant2& src)
+    {
+        if(auto opt_imm32 = get_imm32(src, *this))
+        {
+            emit_addi32(var_dst, *opt_imm32);
+        }
+        else
+        {
+            auto rx = this->regalloc(purposes_temp);
+            emit_movi32(rx, src);
+            emit_addi32(var_dst, rx);
+        }
+    }
+
+    void emit_addi32(const DecompiledVar& var_dst, int32_t imm32)
+    {
+        if(var_dst.global)
+        {
+            //| add dword[(global_vars + var_dst.offset)], imm32
+            dasm_put(Dst, 63, (global_vars + var_dst.offset), imm32);
+#line 781 "test.dasc"
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + var_dst.offset;
+            //| add dword[ebp + offset], imm32
+            dasm_put(Dst, 69, offset, imm32);
+#line 786 "test.dasc"
+        }
+    }
+
+    void emit_addi32(const DecompiledVar& dst, RegGuard& reg_src)
+    {
+        if(dst.global)
+        {
+            //| add dword[(global_vars + dst.offset)], Rd(reg_src->id)
+            dasm_put(Dst, 74, (reg_src->id), (global_vars + dst.offset));
+#line 794 "test.dasc"
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + dst.offset;
+            //| add dword[ebp + offset], Rd(reg_src->id)
+            dasm_put(Dst, 80, (reg_src->id), offset);
+#line 799 "test.dasc"
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     void emit_push(tag_CRunningScript_t)
     {
         //| push ebp
-        dasm_put(Dst, 63);
-#line 761 "test.dasc"
+        dasm_put(Dst, 87);
+#line 834 "test.dasc"
     }
 
     void emit_push(const ArgVariant2& varg)
@@ -835,8 +915,8 @@ public:
         this->emit_flush_before_call();
         //| call &target_ptr
         //| add esp, (sizeof...(args) * 4)
-        dasm_put(Dst, 65, (ptrdiff_t)(target_ptr), (sizeof...(args) * 4));
-#line 777 "test.dasc"
+        dasm_put(Dst, 89, (ptrdiff_t)(target_ptr), (sizeof...(args) * 4));
+#line 850 "test.dasc"
     }
 
     template<typename... Args>
@@ -848,8 +928,8 @@ public:
         this->emit_flush_before_call();
         //| mov ecx, this_ptr     // TODO abstract the mov
         //| call &target_ptr
-        dasm_put(Dst, 71, this_ptr, (ptrdiff_t)(target_ptr));
-#line 788 "test.dasc"
+        dasm_put(Dst, 95, this_ptr, (ptrdiff_t)(target_ptr));
+#line 861 "test.dasc"
         // callee cleanup
     }
 
@@ -861,8 +941,8 @@ public:
         this->emit_rpushes(std::forward<Args>(args)...);
         this->emit_flush_before_call();
         //| call &target_ptr
-        dasm_put(Dst, 73, (ptrdiff_t)(target_ptr));
-#line 799 "test.dasc"
+        dasm_put(Dst, 97, (ptrdiff_t)(target_ptr));
+#line 872 "test.dasc"
         // callee cleanup
     }
 
@@ -910,8 +990,8 @@ auto generate_code(const DecompiledLabelDef& def, CodeGeneratorIA32::IterData it
     // flush context, the beggining of label should have all the context in CRunningScript
     codegen.emit_flush();
     //| =>(label_id):
-    dasm_put(Dst, 76, (label_id));
-#line 846 "test.dasc"
+    dasm_put(Dst, 100, (label_id));
+#line 919 "test.dasc"
 
     return ++it;
 }
@@ -1011,8 +1091,8 @@ void CodeGeneratorIA32::init_generators()
         codegen.emit_flush();
         //| jmp =>(label_id)
         //| .align 16 // nice place to put Intel's recommended alignment
-        dasm_put(Dst, 78, (label_id));
-#line 945 "test.dasc"
+        dasm_put(Dst, 102, (label_id));
+#line 1018 "test.dasc"
 
         return ++it;
     });
@@ -1042,6 +1122,13 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x04AF, opgen_set);
     }
 
+    // NOTICE: FLOATHING ADD IS DIFFERENT FROM INT ADD!
+    this->add_generator(0x000A, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        Expects(ccmd.args.size() == 2);
+        codegen.emit_addi32(ccmd.args[0], ccmd.args[1]);
+        return ++it;
+    });
 
 
 }
