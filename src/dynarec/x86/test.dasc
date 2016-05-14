@@ -14,7 +14,7 @@ static int32_t resolve_extern(Dst_DECL, unsigned char* addr, const char* extern_
 
 #define Dst &codegen.dstate
 
-#define NotImplementedYet() __debugbreak()
+#define NotImplementedYet() (throw DynarecError("NotImplementedYet"))
 
 | .arch x86
 | .actionlist actions
@@ -47,7 +47,8 @@ static optional<int32_t> get_imm32(const ArgVariant2&, CodeGeneratorIA32& codege
 
 using DynarecError = CompilerError;
 
-#define DynarecExpects Expects
+#define DynarecUnexpectedValue(value) DynarecError("Unexpected {} at {}; {} == {}", #value, __func__, #value, value)
+
 
 using DWORD = uint32_t;
 using WORD = uint16_t;
@@ -99,7 +100,9 @@ using CRunningScript = CScriptThread;
 struct tag_CRunningScript_t {};
 constexpr tag_CRunningScript_t tag_CRunningScript;
 
-// label 9: is used in emit_ccall
+
+#undef Dst
+#define Dst &this->dstate
 
 struct CodeGeneratorIA32
 {
@@ -122,6 +125,21 @@ public://TODO priv
     friend auto generate_code(const DecompiledData& data, CodeGeneratorIA32::IterData, CodeGeneratorIA32& codegen)->CodeGeneratorIA32::IterData;
 
 public:
+    enum class Reg : uint8_t
+    {
+        // Ids must match the rN pattern of x86-64.
+        // See https://corsix.github.io/dynasm-doc/instructions.html
+        Eax = 0,
+        Ecx = 1,
+        Edx = 2,
+        Ebx = 3,
+        Esp = 4,
+        Ebp = 5,
+        Esi = 6,
+        Edi = 7,
+        Max_,
+    };
+
     CodeGeneratorIA32(const Commands& commands, std::vector<DecompiledData> decompiled)
         : commands(commands), decompiled(std::move(decompiled))
     {
@@ -181,6 +199,10 @@ public:
     }
 
 
+
+
+
+
     void test()
     {
         auto& codegen = *this;
@@ -215,26 +237,41 @@ public:
         // flush CRunningScript context/variables
     }
 
+
+
+
+
+
+
+
+
+    void emit_pushi32(int32_t imm32)
+    {
+        | push imm32
+    }
+
+    void emit_pushi32(const DecompiledVar& var)
+    {
+        if(var.global)
+        {
+            | push dword [(global_vars + var.offset)]
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + (var.offset * 4);
+            | push dword [ebp + offset]
+        }
+    }
+
     void emit_pushi32(const ArgVariant2& varg)
     {
-        auto& codegen = *this;
-
-        if(auto opt_imm32 = get_imm32(varg, codegen))
+        if(auto opt_imm32 = get_imm32(varg, *this))
         {
-            | push opt_imm32.value()
+            emit_pushi32(*opt_imm32);
         }
         else if(is<DecompiledVar>(varg))
         {
-            auto& var = get<DecompiledVar>(varg);
-            if(var.global)
-            {
-                | push (global_vars + var.offset)
-            }
-            else
-            {
-                auto offset = offsetof(CRunningScript, tls) + (var.offset * 4);
-                | push dword [ebp+offset]
-            }
+            emit_pushi32(get<DecompiledVar>(varg));
         }
         else if(is<DecompiledVarArray>(varg))
         {
@@ -243,13 +280,115 @@ public:
         }
         else
         {
-            throw DynarecError("Unexpected ArgVariant2 on emit_pushi32; varg.which() == {}", varg.which());
+            throw DynarecUnexpectedValue(varg.which());
         }
     }
 
+
+
+
+
+
+
+    void emit_movi32(Reg reg_dst, int32_t imm32)
+    {
+        int id_dst = static_cast<int>(reg_dst);
+        | mov Rd(id_dst), imm32
+    }
+
+    void emit_movi32(Reg reg_dst, const DecompiledVar& src)
+    {
+        int id_dst = static_cast<int>(reg_dst);
+        if(src.global)
+        {
+            | mov Rd(id_dst), dword[(global_vars + src.offset)]
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + (src.offset * 4);
+            | mov Rd(id_dst), dword[ebp + offset]
+        }
+    }
+
+    void emit_movi32(Reg reg_dst, const ArgVariant2& src)
+    {
+        int id_dst = static_cast<int>(reg_dst);
+
+        if(auto opt_imm32 = get_imm32(src, *this))
+        {
+            emit_movi32(reg_dst, *opt_imm32);
+        }
+        else if(is<DecompiledVar>(src))
+        {
+            emit_movi32(reg_dst, get<DecompiledVar>(src));
+        }
+        else if(is<DecompiledVarArray>(src))
+        {
+            // TODO
+            NotImplementedYet();
+        }
+        else
+        {
+            throw DynarecUnexpectedValue(src.which());
+        }
+    }
+
+    void emit_movi32(const ArgVariant2& dst, const ArgVariant2& src)
+    {
+        if(is<DecompiledVar>(dst))
+        {
+            emit_movi32(get<DecompiledVar>(dst), src);
+        }
+        else if(is<DecompiledVarArray>(dst))
+        {
+            // TODO
+            NotImplementedYet();
+        }
+        else
+        {
+            throw DynarecUnexpectedValue(dst.which());
+        }
+    }
+
+    void emit_movi32(const DecompiledVar& var_dst, int32_t imm32)
+    {
+        if(var_dst.global)
+        {
+            | mov dword[(global_vars + var_dst.offset)], imm32
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + (var_dst.offset * 4);
+            | mov dword[ebp + offset], imm32
+        }
+    }
+
+    void emit_movi32(const DecompiledVar& var_dst, const ArgVariant2& src)
+    {
+        if(auto opt_imm32 = get_imm32(src, *this))
+        {
+            emit_movi32(var_dst, *opt_imm32);
+        }
+        else
+        {
+            // TODO do proper register allocation
+            //emit_movi32(Reg::Eax, src);
+            //| mov 
+            // TODO
+        }
+    }
+
+
+
+
+
+
+
+
+
+
     void emit_push(tag_CRunningScript_t)
     {
-        auto& codegen = *this;
         | push ebp
     }
 
@@ -301,6 +440,10 @@ private:
     {
     }
 };
+
+#undef Dst
+#define Dst &codegen.dstate
+
 
 int32_t resolve_extern(dasm_State **dstate, unsigned char* addr, unsigned int eidx, bool is_rel)
 {
@@ -402,13 +545,15 @@ optional<int32_t> get_imm32(const ArgVariant2& varg, CodeGeneratorIA32& codegen)
 void CodeGeneratorIA32::init_generators()
 {
     auto& codegen = *this;
-
+    
+    // NOP
     this->add_generator(0x0000, [&](const DecompiledCommand& ccmd, IterData it)
     {
         // TODO, this op should only appear on the top of a script!?!?
         return ++it;
     });
 
+    // WAIT
     this->add_generator(0x0001, [&](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 1);
@@ -416,6 +561,7 @@ void CodeGeneratorIA32::init_generators()
         return ++it;
     });
 
+    // GOTO
     this->add_generator(0x0002, [&](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 1);
@@ -429,7 +575,13 @@ void CodeGeneratorIA32::init_generators()
         return ++it;
     });
 
-
+    // 0@ = int
+    this->add_generator(0x0006, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        Expects(ccmd.args.size() == 2);
+        codegen.emit_movi32(ccmd.args[0], ccmd.args[1]);
+        return ++it;
+    });
 
 }
 

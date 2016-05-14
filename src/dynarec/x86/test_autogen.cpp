@@ -22,7 +22,7 @@ static int32_t resolve_extern(Dst_DECL, unsigned char* addr, const char* extern_
 
 #define Dst &codegen.dstate
 
-#define NotImplementedYet() __debugbreak()
+#define NotImplementedYet() (throw DynarecError("NotImplementedYet"))
 
 //| .arch x86
 #if DASM_VERSION != 10400
@@ -30,9 +30,11 @@ static int32_t resolve_extern(Dst_DECL, unsigned char* addr, const char* extern_
 #endif
 #line 20 "test.dasc"
 //| .actionlist actions
-static const unsigned char actions[34] = {
-  144,144,144,144,255,104,237,255,252,255,181,233,255,85,255,232,243,129,196,
-  239,255,185,237,232,243,255,249,255,252,233,245,250,15,255
+static const unsigned char actions[67] = {
+  144,144,144,144,255,104,237,255,252,255,53,237,255,252,255,181,233,255,184,
+  240,32,237,255,139,5,240,129,237,255,139,133,253,240,129,233,255,199,5,237,
+  237,255,199,133,233,237,255,85,255,232,243,129,196,239,255,185,237,232,243,
+  255,249,255,252,233,245,250,15,255
 };
 
 #line 21 "test.dasc"
@@ -77,7 +79,8 @@ static optional<int32_t> get_imm32(const ArgVariant2&, CodeGeneratorIA32& codege
 
 using DynarecError = CompilerError;
 
-#define DynarecExpects Expects
+#define DynarecUnexpectedValue(value) DynarecError("Unexpected {} at {}; {} == {}", #value, __func__, #value, value)
+
 
 using DWORD = uint32_t;
 using WORD = uint16_t;
@@ -129,7 +132,9 @@ using CRunningScript = CScriptThread;
 struct tag_CRunningScript_t {};
 constexpr tag_CRunningScript_t tag_CRunningScript;
 
-// label 9: is used in emit_ccall
+
+#undef Dst
+#define Dst &this->dstate
 
 struct CodeGeneratorIA32
 {
@@ -152,6 +157,20 @@ public://TODO priv
     friend auto generate_code(const DecompiledData& data, CodeGeneratorIA32::IterData, CodeGeneratorIA32& codegen)->CodeGeneratorIA32::IterData;
 
 public:
+    enum class Reg
+    {
+        // Ids must match the rN pattern of x86-64.
+        // See https://corsix.github.io/dynasm-doc/instructions.html
+        Eax = 0,
+        Ecx = 1,
+        Edx = 2,
+        Ebx = 3,
+        Esp = 4,
+        Ebp = 5,
+        Esi = 6,
+        Edi = 7,
+    };
+
     CodeGeneratorIA32(const Commands& commands, std::vector<DecompiledData> decompiled)
         : commands(commands), decompiled(std::move(decompiled))
     {
@@ -225,7 +244,7 @@ public:
         //| nop
         //| nop
         dasm_put(Dst, 0);
-#line 197 "test.dasc"
+#line 214 "test.dasc"
 
         size_t code_size;
         dasm_link(&dstate, &code_size);
@@ -247,32 +266,47 @@ public:
         // flush CRunningScript context/variables
     }
 
+
+
+
+
+
+
+
+
+    void emit_pushi32(int32_t imm32)
+    {
+        //| push imm32
+        dasm_put(Dst, 5, imm32);
+#line 246 "test.dasc"
+    }
+
+    void emit_pushi32(const DecompiledVar& var)
+    {
+        if(var.global)
+        {
+            //| push dword [(global_vars + var.offset)]
+            dasm_put(Dst, 8, (global_vars + var.offset));
+#line 253 "test.dasc"
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + (var.offset * 4);
+            //| push dword [ebp + offset]
+            dasm_put(Dst, 13, offset);
+#line 258 "test.dasc"
+        }
+    }
+
     void emit_pushi32(const ArgVariant2& varg)
     {
-        auto& codegen = *this;
-
-        if(auto opt_imm32 = get_imm32(varg, codegen))
+        if(auto opt_imm32 = get_imm32(varg, *this))
         {
-            //| push opt_imm32.value()
-            dasm_put(Dst, 5, opt_imm32.value());
-#line 225 "test.dasc"
+            emit_pushi32(*opt_imm32);
         }
         else if(is<DecompiledVar>(varg))
         {
-            auto& var = get<DecompiledVar>(varg);
-            if(var.global)
-            {
-                //| push (global_vars + var.offset)
-                dasm_put(Dst, 5, (global_vars + var.offset));
-#line 232 "test.dasc"
-            }
-            else
-            {
-                auto offset = offsetof(CRunningScript, tls) + (var.offset * 4);
-                //| push dword [ebp+offset]
-                dasm_put(Dst, 8, offset);
-#line 237 "test.dasc"
-            }
+            emit_pushi32(get<DecompiledVar>(varg));
         }
         else if(is<DecompiledVarArray>(varg))
         {
@@ -281,16 +315,128 @@ public:
         }
         else
         {
-            throw DynarecError("Unexpected ArgVariant2 on emit_pushi32; varg.which() == {}", varg.which());
+            throw DynarecUnexpectedValue(varg.which());
         }
     }
 
+
+
+
+
+
+
+    void emit_movi32(Reg reg_dst, int32_t imm32)
+    {
+        int id_dst = static_cast<int>(reg_dst);
+        //| mov Rd(id_dst), imm32
+        dasm_put(Dst, 18, (id_dst), imm32);
+#line 292 "test.dasc"
+    }
+
+    void emit_movi32(Reg reg_dst, const DecompiledVar& src)
+    {
+        int id_dst = static_cast<int>(reg_dst);
+        if(src.global)
+        {
+            //| mov Rd(id_dst), dword[(global_vars + src.offset)]
+            dasm_put(Dst, 23, (id_dst), (global_vars + src.offset));
+#line 300 "test.dasc"
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + (src.offset * 4);
+            //| mov Rd(id_dst), dword[ebp + offset]
+            dasm_put(Dst, 29, (id_dst), offset);
+#line 305 "test.dasc"
+        }
+    }
+
+    void emit_movi32(Reg reg_dst, const ArgVariant2& src)
+    {
+        int id_dst = static_cast<int>(reg_dst);
+
+        if(auto opt_imm32 = get_imm32(src, *this))
+        {
+            emit_movi32(reg_dst, *opt_imm32);
+        }
+        else if(is<DecompiledVar>(src))
+        {
+            emit_movi32(reg_dst, get<DecompiledVar>(src));
+        }
+        else if(is<DecompiledVarArray>(src))
+        {
+            // TODO
+            NotImplementedYet();
+        }
+        else
+        {
+            throw DynarecUnexpectedValue(src.which());
+        }
+    }
+
+    void emit_movi32(const ArgVariant2& dst, const ArgVariant2& src)
+    {
+        if(is<DecompiledVar>(dst))
+        {
+            emit_movi32(get<DecompiledVar>(dst), src);
+        }
+        else if(is<DecompiledVarArray>(dst))
+        {
+            // TODO
+            NotImplementedYet();
+        }
+        else
+        {
+            throw DynarecUnexpectedValue(dst.which());
+        }
+    }
+
+    void emit_movi32(const DecompiledVar& var_dst, int32_t imm32)
+    {
+        if(var_dst.global)
+        {
+            //| mov dword[(global_vars + var_dst.offset)], imm32
+            dasm_put(Dst, 36, (global_vars + var_dst.offset), imm32);
+#line 353 "test.dasc"
+        }
+        else
+        {
+            auto offset = offsetof(CRunningScript, tls) + (var_dst.offset * 4);
+            //| mov dword[ebp + offset], imm32
+            dasm_put(Dst, 41, offset, imm32);
+#line 358 "test.dasc"
+        }
+    }
+
+    void emit_movi32(const DecompiledVar& var_dst, const ArgVariant2& src)
+    {
+        if(auto opt_imm32 = get_imm32(src, *this))
+        {
+            emit_movi32(var_dst, *opt_imm32);
+        }
+        else
+        {
+            // TODO do proper register allocation
+            //emit_movi32(Reg::Eax, src);
+            //| mov 
+            // TODO
+        }
+    }
+
+
+
+
+
+
+
+
+
+
     void emit_push(tag_CRunningScript_t)
     {
-        auto& codegen = *this;
         //| push ebp
-        dasm_put(Dst, 13);
-#line 254 "test.dasc"
+        dasm_put(Dst, 46);
+#line 388 "test.dasc"
     }
 
     void emit_push(const ArgVariant2& varg)
@@ -306,8 +452,8 @@ public:
         this->emit_rpushes(std::forward<Args>(args)...);
         //| call &target_ptr
         //| add esp, (sizeof...(args) * 4)
-        dasm_put(Dst, 15, (ptrdiff_t)(target_ptr), (sizeof...(args) * 4));
-#line 269 "test.dasc"
+        dasm_put(Dst, 48, (ptrdiff_t)(target_ptr), (sizeof...(args) * 4));
+#line 403 "test.dasc"
     }
 
     template<typename... Args>
@@ -318,8 +464,8 @@ public:
         this->emit_rpushes(std::forward<Args>(args)...);
         //| mov ecx, this_ptr     // TODO abstract the mov
         //| call &target_ptr
-        dasm_put(Dst, 21, this_ptr, (ptrdiff_t)(target_ptr));
-#line 279 "test.dasc"
+        dasm_put(Dst, 54, this_ptr, (ptrdiff_t)(target_ptr));
+#line 413 "test.dasc"
         // callee cleanup
     }
 
@@ -330,8 +476,8 @@ public:
         auto target_ptr = resolve_extern(&this->dstate, nullptr, extern_name, false);
         this->emit_rpushes(std::forward<Args>(args)...);
         //| call &target_ptr
-        dasm_put(Dst, 23, (ptrdiff_t)(target_ptr));
-#line 289 "test.dasc"
+        dasm_put(Dst, 56, (ptrdiff_t)(target_ptr));
+#line 423 "test.dasc"
         // callee cleanup
     }
 
@@ -347,6 +493,10 @@ private:
     {
     }
 };
+
+#undef Dst
+#define Dst &codegen.dstate
+
 
 int32_t resolve_extern(dasm_State **dstate, unsigned char* addr, unsigned int eidx, bool is_rel)
 {
@@ -375,8 +525,8 @@ auto generate_code(const DecompiledLabelDef& def, CodeGeneratorIA32::IterData it
     // flush context, the beggining of label should have all the context in CRunningScript
     codegen.emit_flush();
     //| =>(label_id):
-    dasm_put(Dst, 26, (label_id));
-#line 332 "test.dasc"
+    dasm_put(Dst, 59, (label_id));
+#line 470 "test.dasc"
 
     return ++it;
 }
@@ -450,13 +600,15 @@ optional<int32_t> get_imm32(const ArgVariant2& varg, CodeGeneratorIA32& codegen)
 void CodeGeneratorIA32::init_generators()
 {
     auto& codegen = *this;
-
+    
+    // NOP
     this->add_generator(0x0000, [&](const DecompiledCommand& ccmd, IterData it)
     {
         // TODO, this op should only appear on the top of a script!?!?
         return ++it;
     });
 
+    // WAIT
     this->add_generator(0x0001, [&](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 1);
@@ -464,6 +616,7 @@ void CodeGeneratorIA32::init_generators()
         return ++it;
     });
 
+    // GOTO
     this->add_generator(0x0002, [&](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 1);
@@ -473,13 +626,19 @@ void CodeGeneratorIA32::init_generators()
         codegen.emit_flush();
         //| jmp =>(label_id)
         //| .align 16 // nice place to put Intel's recommended alignment
-        dasm_put(Dst, 28, (label_id));
-#line 428 "test.dasc"
+        dasm_put(Dst, 61, (label_id));
+#line 569 "test.dasc"
 
         return ++it;
     });
 
-
+    // 0@ = int
+    this->add_generator(0x0006, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        Expects(ccmd.args.size() == 2);
+        codegen.emit_movi32(ccmd.args[0], ccmd.args[1]);
+        return ++it;
+    });
 
 }
 
