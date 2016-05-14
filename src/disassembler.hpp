@@ -3,6 +3,8 @@
 #pragma once
 #include "stdinc.h"
 #include "defs/game.hpp"
+#include "commands.hpp"
+#include "compiler.hpp" // for Compiled* types
 
 //using EOAL = EOAL;
 
@@ -36,6 +38,7 @@ struct DecompiledCommand
 // constrat to CompiledLabelDef
 struct DecompiledLabelDef
 {
+    size_t offset;
 };
 
 // constrat to CompiledHex
@@ -44,19 +47,20 @@ using DecompiledHex = CompiledHex;
 // constrat to CompiledData
 struct DecompiledData
 {
+    size_t                                                        offset;
     variant<DecompiledLabelDef, DecompiledCommand, DecompiledHex> data;
 
-    DecompiledData(DecompiledCommand x)
-        : data(std::move(x))
+    DecompiledData(size_t offset, DecompiledCommand x)
+        : offset(offset), data(std::move(x))
     {}
 
-    DecompiledData(std::vector<uint8_t> x)
-        : data(DecompiledHex{ std::move(x) })
+    DecompiledData(size_t offset, std::vector<uint8_t> x)
+        : offset(offset), data(DecompiledHex{ std::move(x) })
     {}
 
-    /*CompiledData(shared_ptr<Label> x)
-        : data(CompiledLabelDef{ std::move(x) })
-    {}*/
+    DecompiledData(DecompiledLabelDef x)
+        : offset(x.offset), data(std::move(x))
+    {}
 };
 
 
@@ -70,6 +74,8 @@ private:
     size_t          bytecode_size;
 
     dynamic_bitset      offset_explored;
+
+    std::set<size_t> label_offsets;
 
     // must be LIFO
     std::stack<size_t>  to_explore;
@@ -130,6 +136,11 @@ public:
 
         for(size_t offset = 0; offset < bytecode_size; )
         {
+            if(this->label_offsets.count(offset))
+            {
+                output.emplace_back(DecompiledLabelDef{ offset });
+            }
+
             if(this->offset_explored[offset])
             {
                 output.emplace_back(opcode_to_data(offset));
@@ -140,10 +151,14 @@ public:
                 auto begin_offset = offset;
                 for(size_t count = 0; offset < bytecode_size; ++count, ++offset)
                 {
-                    // repeat this loop until a explored offset is found, then break.
-                    if(this->offset_explored[offset])
+                    // repeat this loop until a label offset or a explored offset is found, then break.
+                    //
+                    // if a label offset is found, it'll be added at the beggining of the outer for loop,
+                    // and then (maybe) this loop will continue.
+
+                    if(this->offset_explored[offset] || this->label_offsets.count(offset))
                     {
-                        output.emplace_back(std::vector<uint8_t>(this->bytecode + begin_offset, this->bytecode + offset));
+                        output.emplace_back(begin_offset, std::vector<uint8_t>(this->bytecode + begin_offset, this->bytecode + offset));
                         break;
                     }
                 }
@@ -212,6 +227,7 @@ private:
             {
                 // TODO treat negative offsets properly (relative to mission base, etc)
                 interesting_offsets.push(value < 0? -value : value);
+                label_offsets.emplace(value < 0? -value : value);
             }
         };
 
@@ -351,6 +367,7 @@ private:
         DecompiledCommand ccmd;
         ccmd.id = cmdid;
 
+        auto start_offset = offset;
         offset = offset + 2;
 
         for(auto it = command.args.begin();
@@ -446,7 +463,7 @@ private:
             }
         }
 
-        return DecompiledData(std::move(ccmd));
+        return DecompiledData(start_offset, std::move(ccmd));
     }
 
 

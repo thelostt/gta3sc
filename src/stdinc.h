@@ -7,6 +7,7 @@
 #include <vector>
 #include <stack>
 #include <map>
+#include <set>
 #include <algorithm>
 #include <cppformat/format.h>
 #include "cpp/any.hpp"

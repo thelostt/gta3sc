@@ -8,6 +8,8 @@
 ///
 #pragma once
 #include "stdinc.h"
+#include "symtable.hpp"
+#include "commands.hpp"
 
 /// IR for end of argument list used in variadic argument commands.
 struct EOAL

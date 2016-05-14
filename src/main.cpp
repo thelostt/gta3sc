@@ -13,6 +13,7 @@ extern void convert();
 
 int test_compiler(const GameConfig& gta3_config, const Commands& commands);
 int test_decompiler(const GameConfig& gta3_config, const Commands& commands);
+int test_dasc0(const GameConfig& gta3_config, const Commands& commands);
 
 int main()
 {
@@ -24,7 +25,7 @@ int main()
 
     Commands commands = gta3_commands();
 
-    return test_decompiler(gta3_config, commands);
+    return test_dasc0(gta3_config, commands);
 }
 
 int test_compiler(const GameConfig& gta3_config, const Commands& commands)
@@ -118,6 +119,19 @@ int test_decompiler(const GameConfig& gta3_config, const Commands& commands)
     printf("%d\n", data.size());
 
     puts(DecompilerContext(commands, std::move(data)).decompile().c_str());
+
+    return 0;
+}
+
+extern int test_dasc(const Commands& commands, std::vector<DecompiledData> decompiled);
+
+int test_dasc0(const GameConfig& gta3_config, const Commands& commands)
+{
+    auto decomp = Disassembler::from_file(gta3_config, commands, "output.cs");
+
+    decomp.run_analyzer();
+
+    test_dasc(commands, decomp.get_data());
 
     return 0;
 }
