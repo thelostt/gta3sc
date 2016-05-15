@@ -25,5 +25,67 @@ Commands gta3_commands()
     cmd_arg("MARK_MODEL_AS_NO_LONGER_NEEDED", 0).enums.emplace_back(gta3_models_enum);
     cmd_arg("CREATE_CAR", 0).enums.emplace_back(gta3_models_enum);
 
+    /////////////// CLEO2
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "CALL",
+        {
+            true,
+            0x0AB1,
+            {
+                { ArgType::Label, false, true, false, false, {} },
+                { ArgType::Integer, false, true, false, false, {} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+            }
+        }
+    });
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "RET",
+        {
+            true,
+            0x0AB2,
+            {
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+            }
+        }
+    });
+
+
+    mgr.update();
     return mgr;
 }

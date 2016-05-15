@@ -157,7 +157,8 @@ void CodeGeneratorIA32::init_generators()
     this->add_generator(0x0001, [&](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 1);
-        codegen.emit_ccall("DYNAREC_RTL_Wait", tag_CRunningScript, ccmd.args[0]);
+        codegen.emit_flush(); // flush context before going into another script
+        codegen.emit_fastcall("DYNAREC_RTL_Wait", tag_CRunningScript, ccmd.args[0]);
         return ++it;
     });
 
@@ -169,7 +170,7 @@ void CodeGeneratorIA32::init_generators()
 
         codegen.emit_flush(); // flush before branch
         | jmp =>(label_id)
-        | .align 16 // nice place to put Intel's recommended alignment
+        | .align 16
 
         return ++it;
     });
@@ -192,6 +193,7 @@ void CodeGeneratorIA32::init_generators()
 
         codegen.emit_flush(); // flush before branch
         | ret
+        | .align 16
         return ++it;
     });
 
@@ -267,25 +269,30 @@ void CodeGeneratorIA32::init_generators()
     {
         auto opgen_terminate = [&](const DecompiledCommand& ccmd, IterData it)
         {
+            // before terminating, flush context
+            codegen.emit_flush();
+
             switch(ccmd.id)
             {
                 case 0x004E: // TERMINATE_THIS_SCRIPT
                     Expects(ccmd.args.size() == 0);
-                    codegen.emit_ccall("DYNAREC_RTL_Terminate", tag_CRunningScript);
-                    | .align 16 // nice place to put Intel's recommended alignment
+                    codegen.emit_fastcall("DYNAREC_RTL_Terminate", tag_CRunningScript);
+                    | .align 16
                     break;
                 case 0x0A93: // TERMINATE_THIS_CUSTOM_SCRIPT
+                case 0x05DC:
                     Expects(ccmd.args.size() == 0);
-                    codegen.emit_ccall("DYNAREC_RTL_TerminateCs", tag_CRunningScript);
-                    | .align 16 // nice place to put Intel's recommended alignment
+                    codegen.emit_fastcall("DYNAREC_RTL_TerminateCs", tag_CRunningScript);
+                    | .align 16
                     break;
                 case 0x0459: // TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME
                     Expects(ccmd.args.size() == 1);
-                    codegen.emit_ccall("DYNAREC_RTL_TerminateNamed", tag_CRunningScript, ccmd.args[0]);
+                    codegen.emit_fastcall("DYNAREC_RTL_TerminateNamed", tag_CRunningScript, ccmd.args[0]);
                     break;
                 case 0x0ABA: // TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME
+                case 0x05DD:
                     Expects(ccmd.args.size() == 1);
-                    codegen.emit_ccall("DYNAREC_RTL_TerminateCsNamed", tag_CRunningScript, ccmd.args[0]);
+                    codegen.emit_fastcall("DYNAREC_RTL_TerminateCsNamed", tag_CRunningScript, ccmd.args[0]);
                     break;
             }
             return ++it;
@@ -295,6 +302,8 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x0A93, opgen_terminate); // TERMINATE_THIS_CUSTOM_SCRIPT (TODO CLEO ONLY)
         this->add_generator(0x0459, opgen_terminate); // TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME
         this->add_generator(0x0ABA, opgen_terminate); // TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME (TODO CLEO ONLY)
+        this->add_generator(0x05DC, opgen_terminate); // TERMINATE_THIS_CUSTOM_SCRIPT (TODO III/VC CLEO ONLY)
+        this->add_generator(0x05DD, opgen_terminate); // TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME (TODO III/VC CLEO ONLY)
     }
 
     // SET
@@ -462,6 +471,134 @@ void CodeGeneratorIA32::init_generators()
         return it;
     });
 
+    // CALL
+    {
+        auto opgen_call = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            // TODO try to improve this, oh man...
+            // CALL is this fucking terrible because of the nature of SCM for those long years.
+            // i.e. we kept writing low-level code directly, so we may have weirdd label indirections
+            // local variable access from outer scripts, and lots of weird shit :(
+
+            Expects(ccmd.args.size() >= 2 + 1); //+1 for null terminating argument
+            Expects(is<EOAL>(ccmd.args.back()));
+
+            auto label_id = codegen.add_label(ccmd.args[0]);
+            size_t num_input_args__;
+
+            if(auto opt_narg = get_imm32(ccmd.args[1], codegen))
+                num_input_args__ = *opt_narg;
+            else
+                throw DynarecError("CALL num arguments is not constant");
+
+            size_t num_inputs = num_input_args__;
+            size_t num_outputs = (ccmd.args.size() - (2 + 1)) - num_inputs;
+
+            if(num_inputs > (ccmd.args.size() - (2 + 1)) || ((2 + 1) + num_inputs + num_outputs) != ccmd.args.size())
+            {
+                throw DynarecError("CALL num arguments is wrong");
+            }
+
+
+            auto& esp = codegen.get_esp();
+            auto  rx = codegen.regalloc(purposes_store);
+
+            // make output zone
+            codegen.emit_subi32(esp, (num_outputs * 4));
+            codegen.emit_movi32(rx, esp);
+
+            // save vars
+            codegen.emit_savelocals();
+
+            for(size_t k = 0; k < num_inputs; ++k) // back to front
+            {
+                auto i = 2 + (k);
+                auto lvar_dst = ArgVariant2{ DecompiledVar{ false, k * 4 } };
+                codegen.emit_movi32(lvar_dst, ccmd.args[i]);
+                // TODO things will go bad above because we're doing a overlapped mov if args[i] is a local var!
+                // maybe fetch the args[i] local inputs from savelocals, i dunno.
+            }
+
+            // flush before branching and after assigning local vars
+            codegen.emit_flush();
+
+            codegen.emit_pushi32(rx); // output zone
+            | call =>(label_id)
+            codegen.emit_addi32(esp, 4);
+
+            // restore vars
+            codegen.emit_restorelocals();
+
+            // take things out of the output zone
+            {
+                auto rz = codegen.regalloc(purposes_temp);
+                for(size_t k = 0; k < num_outputs; ++k) // back to front
+                {
+                    auto i = 2 + num_inputs + (k);
+                    auto& lvar_dst = ccmd.args[i];
+                    if(is<DecompiledVar>(lvar_dst))
+                    {
+                        auto offset = (k * 4);
+                        | mov Rd(rz->id), dword [Rd(rx->id)+offset] // TODO abstract access
+                        codegen.emit_movi32(lvar_dst, rz);
+                    }
+                    else
+                        throw DynarecUnexpectedValue(lvar_dst.which());
+                }
+            }
+
+            codegen.emit_addi32(esp, (num_outputs * 4));
+
+            return ++it;
+        };
+
+        this->add_generator(0x05F5, opgen_call);    // TODO III/VC CLEO ONLY
+        this->add_generator(0x0AB1, opgen_call);    // TODO CLEO ONLY
+    }
+
+    // RET
+    {
+        auto opgen_ret = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() >= 1 + 1); //+1 for null terminating argument
+            Expects(is<EOAL>(ccmd.args.back()));
+
+            size_t num_outputs;
+            
+            if(auto opt_narg = get_imm32(ccmd.args[0], codegen))
+                num_outputs = *opt_narg;
+            else
+                throw DynarecError("RET num arguments is not constant");
+
+            if(((1+1) + num_outputs) != ccmd.args.size())
+            {
+                throw DynarecError("CALL num arguments is wrong");
+            }
+
+            // Don't use EAX as temp storage! It may contain a boolean result.
+            auto eax_dont_use = codegen.regalloc(Reg::Eax);
+
+            {
+                auto rz = codegen.regalloc(purposes_temp);
+                for(size_t k = 0; k < num_outputs; ++k)
+                {
+                    auto i = 1+k;
+                    auto offset = (k * 4) + 4/*retptr*/;;
+                    codegen.emit_movi32(rz, ccmd.args[i]);
+                    | mov [esp+offset], Rd(rz->id) // TODO abstract access
+                }
+            }
+
+            | ret
+            | .align 16
+
+            return ++it;
+        };
+
+        this->add_generator(0x05F6, opgen_ret);    // TODO III/VC CLEO ONLY
+        this->add_generator(0x0AB2, opgen_ret);    // TODO CLEO ONLY
+    }
+
 
 
 /*
@@ -481,7 +618,7 @@ void CodeGeneratorIA32::init_generators()
         }
 
         codegen.emit_pushi32(esp);
-        codegen.emit_pushi32(codegen.get_ctx());
+        codegen.emit_pushi32(tag_CRunningScript);
         codegen.emit_ccall("native");
         codegen.emit_addi32(esp, 4);
 
@@ -516,6 +653,49 @@ void CodeGeneratorIA32::emit_call(int32_t target_ptr)
     | call &target_ptr
 }
 
+void CodeGeneratorIA32::emit_rep()
+{
+    // TODO when we implement reg caches, remember this modifies ECX
+    | rep
+}
+
+void CodeGeneratorIA32::emit_movsb()
+{
+    // TODO when we implement reg caches, remember this modifies ESI,EDI
+    | movsb
+}
+
+void CodeGeneratorIA32::emit_movsw()
+{
+    // TODO when we implement reg caches, remember this modifies ESI,EDI
+    | movsw
+}
+
+void CodeGeneratorIA32::emit_movsd()
+{
+    // TODO when we implement reg caches, remember this modifies ESI,EDI
+    | movsd
+}
+
+
+
+void CodeGeneratorIA32::emit_savelocals()
+{
+    const auto size_bytes = sizeof(CRunningScript::tls);
+    auto src_begin = ArgVariant2 { DecompiledVar { false, 0*4 } };
+    emit_subi32(get_esp(), size_bytes); 
+    // TODO lea src_begin!
+    emit_memcpy(lea(src_begin), get_esp(), size_bytes);
+}
+
+void CodeGeneratorIA32::emit_restorelocals()
+{
+    const auto size_bytes = sizeof(CRunningScript::tls);
+    auto dst_begin = ArgVariant2{ DecompiledVar{ false, 0*4 } };
+    // TODO lea dst_begin!
+    emit_memcpy(get_esp(), lea(dst_begin), size_bytes);
+    emit_addi32(get_esp(), size_bytes);
+}
 
 
 
@@ -568,6 +748,42 @@ void CodeGeneratorIA32::emit_pushi32(const ArgVariant2& varg)
 
 
 /////////////////////
+// LEA
+
+void CodeGeneratorIA32::emit_lea(RegGuard& reg_dst, const DecompiledVar& src)
+{
+    if(src.global)
+    {
+        | mov Rd(reg_dst->id), (global_vars + src.offset)
+        // ^ yes, this is a mov, not a lea
+    }
+    else
+    {
+        auto offset = offsetof(CRunningScript, tls) + src.offset;
+        | lea Rd(reg_dst->id), dword[ebp + offset]
+    }
+}
+
+void CodeGeneratorIA32::emit_lea(RegGuard& reg_dst, const ArgVariant2& src)
+{
+    if(is<DecompiledVar>(src))
+    {
+        emit_lea(reg_dst, get<DecompiledVar>(src));
+    }
+    else if(is<DecompiledVarArray>(src))
+    {
+        // TODO
+        NotImplementedYet();
+    }
+    else
+    {
+        throw DynarecUnexpectedValue(src.which());
+    }
+}
+
+
+
+/////////////////////
 // MOVI32
 
 void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, int32_t imm32)
@@ -578,6 +794,11 @@ void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, int32_t imm32)
 void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, RegGuard& reg_src)
 {
     | mov Rd(reg_dst->id), Rd(reg_src->id)
+}
+
+void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, tag_CRunningScript_t)
+{
+    return emit_movi32(reg_dst, this->get_ctx());
 }
 
 void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, const DecompiledVar& src)
@@ -627,23 +848,6 @@ void CodeGeneratorIA32::emit_movi32(const DecompiledVar& dst, RegGuard& reg_src)
     }
 }
 
-void CodeGeneratorIA32::emit_movi32(const ArgVariant2& dst, const ArgVariant2& src)
-{
-    if(is<DecompiledVar>(dst))
-    {
-        emit_movi32(get<DecompiledVar>(dst), src);
-    }
-    else if(is<DecompiledVarArray>(dst))
-    {
-        // TODO
-        NotImplementedYet();
-    }
-    else
-    {
-        throw DynarecUnexpectedValue(dst.which());
-    }
-}
-
 void CodeGeneratorIA32::emit_movi32(const DecompiledVar& var_dst, int32_t imm32)
 {
     if(var_dst.global)
@@ -656,7 +860,6 @@ void CodeGeneratorIA32::emit_movi32(const DecompiledVar& var_dst, int32_t imm32)
         | mov dword[ebp + offset], imm32
     }
 }
-
 
 void CodeGeneratorIA32::emit_movi32(const DecompiledVar& var_dst, const ArgVariant2& src)
 {

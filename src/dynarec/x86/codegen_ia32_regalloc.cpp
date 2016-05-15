@@ -44,9 +44,9 @@ auto CodeGeneratorIA32::regalloc_base(int purposes) -> optional<Reg>
     else if(purposes == purposes_store)
     {
         // Try allocating only from the non-generic registers.
-        for(size_t k = std::size(this->regstates); k > static_cast<size_t>(Reg::Ebx); --k)
+        for(size_t k = static_cast<size_t>(Reg::Ebx); k < static_cast<size_t>(Reg::Max_); --k)
         {
-            auto reg = static_cast<Reg>(k - 1);
+            auto reg = static_cast<Reg>(k);
             if(xalloc_try(reg))
                 return reg;
         }

@@ -345,7 +345,9 @@ private:
         // TODO would be nice if this was actually configurable.
         if(&command != &this->commands.goto_()
         && &command != &this->commands.return_()
+        && &command != &this->commands.ret()
         && &command != &this->commands.terminate_this_script())
+        // TODO more
         {
             this->to_explore.emplace(offset);
         }

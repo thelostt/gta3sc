@@ -18,6 +18,8 @@ public:
     // Forwarding
     struct RegGuard;
     struct RegState;
+    template<typename T>
+    struct AddressOf;
 
     // Tag to use the CRunningScript context in a instruction.
     struct tag_CRunningScript_t {};
@@ -147,7 +149,8 @@ public:
         Expects(this->regstates[static_cast<size_t>(Reg::Edx)].is_allocated == false);
     }
 
-
+    void emit_savelocals();
+    void emit_restorelocals();
 
 
     ///////////////////////////////////////////
@@ -157,11 +160,17 @@ public:
     // See also emit_flush
     // See also emit_flush_temp_regs
 
-    /// Emits a call into the specified absolute target.
-    ///
-    /// \warning This simply emits a call instruction, it doesn't flush any temp register or cleanup the stack.
-    /// Please see `emit_ccall`, `emit_stdcall` and `emit_thiscall` for *better* alternatives.
+    /// Emits some code equivalent to std::memcpy(dst, src, count)
+    template<typename TDst, typename TSrc, typename TCount>
+    void emit_memcpy(TDst&& dst, TSrc&& src, TCount&& count);
+
+    // Literal emitters:
+    // They do NOTHING but emit the specified instruction.
     void emit_call(int32_t target_ptr);
+    void emit_rep();
+    void emit_movsb();
+    void emit_movsw();
+    void emit_movsd();
 
     // x86 PUSH
     void emit_pushi32(int32_t imm32);
@@ -169,25 +178,33 @@ public:
     void emit_pushi32(const DecompiledVar& var);
     void emit_pushi32(const ArgVariant2& varg);
 
+    // x86 LEA
+    void emit_lea(RegGuard& dst, const DecompiledVar& src);
+    void emit_lea(RegGuard& dst, const ArgVariant2& src);
+
     // x86 MOV
-    void emit_movi32(RegGuard& reg_dst, int32_t imm32);
-    void emit_movi32(RegGuard& reg_dst, RegGuard& reg_src);
-    void emit_movi32(RegGuard& reg_dst, const DecompiledVar& src);
-    void emit_movi32(RegGuard& reg_dst, const ArgVariant2& src);
-    void emit_movi32(const DecompiledVar& dst, RegGuard& reg_src);
+    void emit_movi32(RegGuard& dst, int32_t imm32);
+    void emit_movi32(RegGuard& dst, tag_CRunningScript_t);
+    void emit_movi32(RegGuard& dst, RegGuard& reg_src);
+    void emit_movi32(RegGuard& dst, const DecompiledVar& src);
+    void emit_movi32(RegGuard& dst, const ArgVariant2& src);
     void emit_movi32(const DecompiledVar& dst, int32_t imm32);
+    void emit_movi32(const DecompiledVar& dst, RegGuard& src);
     void emit_movi32(const DecompiledVar& dst, const ArgVariant2& src);
-    void emit_movi32(const ArgVariant2& dst, const ArgVariant2& src);
+    template<typename TSrc>
+    void emit_movi32(const ArgVariant2& dst, TSrc& src);
+    template<typename TSrcAddr>
+    void emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr>& src);
 
     // x86 ADD
-    void emit_addi32(RegGuard& reg_dst, int32_t imm32);
-    void emit_addi32(const DecompiledVar& var_dst, const ArgVariant2& src);
-    void emit_addi32(const DecompiledVar& var_dst, int32_t imm32);
+    void emit_addi32(RegGuard& dst, int32_t imm32);
+    void emit_addi32(const DecompiledVar& dst, const ArgVariant2& src);
+    void emit_addi32(const DecompiledVar& dst, int32_t imm32);
     void emit_addi32(const DecompiledVar& dst, RegGuard& reg_src);
     void emit_addi32(const ArgVariant2& dst, const ArgVariant2& src);
 
     // x86 SUB
-    void emit_subi32(RegGuard& reg_dst, int32_t imm32);
+    void emit_subi32(RegGuard& dst, int32_t imm32);
 
     // x86 CMP
     void emit_cmpi32(RegGuard& a, int32_t b);
@@ -197,10 +214,10 @@ public:
     void emit_cmpi32(const ArgVariant2& a, const ArgVariant2& b);
 
     // x86 AND
-    void emit_andi32(RegGuard& reg_dst, RegGuard& reg_src);
+    void emit_andi32(RegGuard& dst, RegGuard& src);
 
     // x86 OR
-    void emit_ori32(RegGuard& reg_dst, RegGuard& reg_src);
+    void emit_ori32(RegGuard& dst, RegGuard& src);
 
     /// Generic PUSH.
     void emit_push(const ArgVariant2& varg)
@@ -243,8 +260,8 @@ public:
 
     /// Emits a call to a __thiscall function.
     /// This emitter pushes all arguments and flushes temporary registers.
-    template<typename... Args>
-    void emit_thiscall(const char* extern_name, void* this_ptr, Args&&... args)
+    template<typename TEcx, typename... Args>
+    void emit_thiscall(const char* extern_name, TEcx&& ecx, Args&&... args)
     {
         auto target_ptr = resolve_extern(nullptr, extern_name, false);
 
@@ -252,10 +269,36 @@ public:
         emit_flush_temp_regs();
         {
             auto reg_ecx = regalloc(Reg::Ecx);
-            emit_movi32(reg_ecx, static_cast<int32_t>(this_ptr));
+            emit_movi32(reg_ecx, std::forward<TEcx>(ecx));
             emit_call(target_ptr);
         }
         // callee cleanup
+    }
+
+    /// Emits a call to a __fastcall function.
+    /// This emitter pushes all arguments and flushes temporary registers.
+    template<typename TEcx, typename TEdx, typename... Args>
+    void emit_fastcall(const char* extern_name, TEcx&& ecx, TEdx&& edx, Args&&... args)
+    {
+        auto target_ptr = resolve_extern(nullptr, extern_name, false);
+
+        emit_rpushes(std::forward<Args>(args)...);
+        emit_flush_temp_regs();
+        {
+            auto reg_ecx = regalloc(Reg::Ecx);
+            auto reg_edx = regalloc(Reg::Edx);
+            emit_movi32(reg_edx, std::forward<TEdx>(edx));
+            emit_movi32(reg_ecx, std::forward<TEcx>(ecx));
+            emit_call(target_ptr);
+        }
+        // callee cleanup
+    }
+
+    template<typename TEcx>
+    void emit_fastcall(const char* extern_name, TEcx&& ecx)
+    {
+        // fastcall with ecx only is equivalent to thiscall
+        return emit_thiscall(extern_name, std::forward<TEcx>(ecx));
     }
 
     ///////////////////////////////////////////
@@ -288,6 +331,23 @@ private:
     friend IterData generate_code(const DecompiledData& data, IterData, CodeGeneratorIA32& codegen);
 
 public:
+
+    /// Tells movi32 to load effective address.
+    template<typename T>
+    struct AddressOf
+    {
+        // If this asserts, simply remove the check.
+        // We're just checking, no reason at all.
+        static_assert(std::is_same<std::remove_cv_t<T>, const ArgVariant2&>::value, "");
+        T value;
+    };
+
+    /// Tells movi32 to load effective address of value.
+    auto lea(/* non const! */ ArgVariant2& x) -> AddressOf<const ArgVariant2&>
+    {
+        //                   ^ argument is non const to specify the object lifetime must be long enough
+        return AddressOf<const ArgVariant2&> { x };
+    }
 
     /// The state of a x86 register.
     struct RegState
@@ -431,4 +491,94 @@ inline optional<int32_t> get_imm32(const float& flt, CodeGeneratorIA32& codegen)
 inline optional<int32_t> get_imm32(const ArgVariant2& varg, CodeGeneratorIA32& codegen)
 {
     return visit_one(varg, [&](const auto& arg) { return ::get_imm32(arg, codegen); });
+}
+
+// Other overloads
+
+inline optional<int32_t> get_imm32(const uint32_t& u32, CodeGeneratorIA32& codegen)
+{
+    return static_cast<int32_t>(u32);
+}
+
+
+
+
+
+template<typename TSrcAddr> inline
+void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr>& src)
+{
+    emit_lea(reg_dst, src.value);
+}
+
+template<typename TSrc> inline
+void CodeGeneratorIA32::emit_movi32(const ArgVariant2& dst, TSrc& src)
+{
+    if(is<DecompiledVar>(dst))
+    {
+        emit_movi32(get<DecompiledVar>(dst), src);
+    }
+    else if(is<DecompiledVarArray>(dst))
+    {
+        // TODO
+        throw DynarecError("Not imple yet");
+    }
+    else
+    {
+        throw DynarecUnexpectedValue(dst.which());
+    }
+}
+
+template<typename TDst, typename TSrc, typename TCount> inline
+void CodeGeneratorIA32::emit_memcpy(TDst&& dst, TSrc&& src, TCount&& count_)
+{
+    // TODO optimization techniques
+
+    if(auto opt_count_imm32 = get_imm32(count_, *this))
+    {
+        size_t count = static_cast<size_t>(*opt_count_imm32);
+
+        // we're flushing just because we'll use ECX/EDI/ESI, anything else we can do?
+        this->emit_flush();
+        {
+            auto reg_ecx = this->regalloc(Reg::Ecx);
+            auto reg_edi = this->regalloc(Reg::Edi);
+            auto reg_esi = this->regalloc(Reg::Esi);
+
+            emit_movi32(reg_esi, std::forward<TSrc>(src));
+            emit_movi32(reg_edi, std::forward<TDst>(dst));
+
+            if((count % 4) == 0)
+            {
+                emit_movi32(reg_ecx, count / 4);
+                emit_rep(); emit_movsd();
+            }
+            else if((count % 2) == 0)
+            {
+                emit_movi32(reg_ecx, count / 2);
+                emit_rep(); emit_movsw();
+            }
+            else
+            {
+                emit_movi32(reg_ecx, count);
+                emit_rep(); emit_movsb();
+            }
+        }
+    }
+    else
+    {
+        auto& count = count_;
+
+        // we're flushing just because we'll use ECX/EDI/ESI, anything else we can do?
+        this->emit_flush();
+        {
+            auto reg_ecx = this->regalloc(Reg::Ecx);
+            auto reg_edi = this->regalloc(Reg::Edi);
+            auto reg_esi = this->regalloc(Reg::Esi);
+
+            emit_movi32(reg_esi, std::forward<TSrc>(src));
+            emit_movi32(reg_edi, std::forward<TDst>(dst));
+            emit_movi32(reg_ecx, std::forward<TCount>(count));
+            emit_rep(); emit_movsb();
+        }
+    }
 }
