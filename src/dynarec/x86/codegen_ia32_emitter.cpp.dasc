@@ -229,12 +229,45 @@ void CodeGeneratorIA32::init_generators()
             return ++it;
         };
 
-        this->add_generator(0x00C5, opgen_setcond); // RETURN_TRUE (TODO III/VC ONLY)
-        this->add_generator(0x00C6, opgen_setcond); // RETURN_FALSE (TODO III/VC ONLY)
-        this->add_generator(0x0485, opgen_setcond); // IS_PC_VERSION / RETURN_TRUE (TODO VC?/SA ONLY)
-        this->add_generator(0x059A, opgen_setcond); // IS_AUSTRALIAN_GAME / RETURN_FALSE (TODO VC?/SA ONLY)
+        this->add_generator(0x00C5, opgen_setcond); // RETURN_TRUE (TODO III ONLY)
+        this->add_generator(0x00C6, opgen_setcond); // RETURN_FALSE (TODO III ONLY)
+        this->add_generator(0x0485, opgen_setcond); // IS_PC_VERSION / RETURN_TRUE (TODO VC?/SA ONLY - III with CLEO2)
+        this->add_generator(0x059A, opgen_setcond); // IS_AUSTRALIAN_GAME / RETURN_FALSE (TODO VC?/SA ONLY - III with CLEO2)
     }
 
+    // TERMINATE_THIS_SCRIPT / TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME / and such
+    {
+        auto opgen_terminate = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            switch(ccmd.id)
+            {
+                case 0x004E: // TERMINATE_THIS_SCRIPT
+                    Expects(ccmd.args.size() == 0);
+                    codegen.emit_ccall("DYNAREC_RTL_Terminate", tag_CRunningScript);
+                    | .align 16 // nice place to put Intel's recommended alignment
+                    break;
+                case 0x0A93: // TERMINATE_THIS_CUSTOM_SCRIPT
+                    Expects(ccmd.args.size() == 0);
+                    codegen.emit_ccall("DYNAREC_RTL_TerminateCs", tag_CRunningScript);
+                    | .align 16 // nice place to put Intel's recommended alignment
+                    break;
+                case 0x0459: // TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME
+                    Expects(ccmd.args.size() == 1);
+                    codegen.emit_ccall("DYNAREC_RTL_TerminateNamed", tag_CRunningScript, ccmd.args[0]);
+                    break;
+                case 0x0ABA: // TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME
+                    Expects(ccmd.args.size() == 1);
+                    codegen.emit_ccall("DYNAREC_RTL_TerminateCsNamed", tag_CRunningScript, ccmd.args[0]);
+                    break;
+            }
+            return ++it;
+        };
+
+        this->add_generator(0x004E, opgen_terminate); // TERMINATE_THIS_SCRIPT
+        this->add_generator(0x0A93, opgen_terminate); // TERMINATE_THIS_CUSTOM_SCRIPT (TODO CLEO ONLY)
+        this->add_generator(0x0459, opgen_terminate); // TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME
+        this->add_generator(0x0ABA, opgen_terminate); // TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME (TODO CLEO ONLY)
+    }
 
     // SET
     {

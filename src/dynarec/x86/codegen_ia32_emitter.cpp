@@ -283,12 +283,49 @@ void CodeGeneratorIA32::init_generators()
             return ++it;
         };
 
-        this->add_generator(0x00C5, opgen_setcond); // RETURN_TRUE (TODO III/VC ONLY)
-        this->add_generator(0x00C6, opgen_setcond); // RETURN_FALSE (TODO III/VC ONLY)
-        this->add_generator(0x0485, opgen_setcond); // IS_PC_VERSION / RETURN_TRUE (TODO VC?/SA ONLY)
-        this->add_generator(0x059A, opgen_setcond); // IS_AUSTRALIAN_GAME / RETURN_FALSE (TODO VC?/SA ONLY)
+        this->add_generator(0x00C5, opgen_setcond); // RETURN_TRUE (TODO III ONLY)
+        this->add_generator(0x00C6, opgen_setcond); // RETURN_FALSE (TODO III ONLY)
+        this->add_generator(0x0485, opgen_setcond); // IS_PC_VERSION / RETURN_TRUE (TODO VC?/SA ONLY - III with CLEO2)
+        this->add_generator(0x059A, opgen_setcond); // IS_AUSTRALIAN_GAME / RETURN_FALSE (TODO VC?/SA ONLY - III with CLEO2)
     }
 
+    // TERMINATE_THIS_SCRIPT / TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME / and such
+    {
+        auto opgen_terminate = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            switch(ccmd.id)
+            {
+                case 0x004E: // TERMINATE_THIS_SCRIPT
+                    Expects(ccmd.args.size() == 0);
+                    codegen.emit_ccall("DYNAREC_RTL_Terminate", tag_CRunningScript);
+                    //| .align 16 // nice place to put Intel's recommended alignment
+                    dasm_put(Dst, 5);
+#line 248 "codegen_ia32_emitter.cpp.dasc"
+                    break;
+                case 0x0A93: // TERMINATE_THIS_CUSTOM_SCRIPT
+                    Expects(ccmd.args.size() == 0);
+                    codegen.emit_ccall("DYNAREC_RTL_TerminateCs", tag_CRunningScript);
+                    //| .align 16 // nice place to put Intel's recommended alignment
+                    dasm_put(Dst, 5);
+#line 253 "codegen_ia32_emitter.cpp.dasc"
+                    break;
+                case 0x0459: // TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME
+                    Expects(ccmd.args.size() == 1);
+                    codegen.emit_ccall("DYNAREC_RTL_TerminateNamed", tag_CRunningScript, ccmd.args[0]);
+                    break;
+                case 0x0ABA: // TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME
+                    Expects(ccmd.args.size() == 1);
+                    codegen.emit_ccall("DYNAREC_RTL_TerminateCsNamed", tag_CRunningScript, ccmd.args[0]);
+                    break;
+            }
+            return ++it;
+        };
+
+        this->add_generator(0x004E, opgen_terminate); // TERMINATE_THIS_SCRIPT
+        this->add_generator(0x0A93, opgen_terminate); // TERMINATE_THIS_CUSTOM_SCRIPT (TODO CLEO ONLY)
+        this->add_generator(0x0459, opgen_terminate); // TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME
+        this->add_generator(0x0ABA, opgen_terminate); // TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME (TODO CLEO ONLY)
+    }
 
     // SET
     {
@@ -353,7 +390,7 @@ void CodeGeneratorIA32::init_generators()
             auto reg_eax = regalloc(Reg::Eax);
             //| setz Rb(reg_eax->id)
             dasm_put(Dst, 38, (reg_eax->id));
-#line 301 "codegen_ia32_emitter.cpp.dasc"
+#line 334 "codegen_ia32_emitter.cpp.dasc"
 
             return ++it;
         };
@@ -485,7 +522,7 @@ void CodeGeneratorIA32::init_generators()
         auto ry  = regalloc(purposes_temp);
         //| mov Rd(ry->id), [esp+0] // TODO mov abstraction
         dasm_put(Dst, 44, (ry->id));
-#line 431 "codegen_ia32_emitter.cpp.dasc"
+#line 464 "codegen_ia32_emitter.cpp.dasc"
 
         if(!is<DecompiledVar>(ccmd.args[5]))
             throw DynarecUnexpectedValue(ccmd.args[5].which());
@@ -512,7 +549,7 @@ void CodeGeneratorIA32::emit_call(int32_t target_ptr)
 {
     //| call &target_ptr
     dasm_put(Dst, 50, (ptrdiff_t)(target_ptr));
-#line 456 "codegen_ia32_emitter.cpp.dasc"
+#line 489 "codegen_ia32_emitter.cpp.dasc"
 }
 
 
@@ -525,14 +562,14 @@ void CodeGeneratorIA32::emit_pushi32(int32_t imm32)
 {
     //| push imm32
     dasm_put(Dst, 53, imm32);
-#line 467 "codegen_ia32_emitter.cpp.dasc"
+#line 500 "codegen_ia32_emitter.cpp.dasc"
 }
 
 void CodeGeneratorIA32::emit_pushi32(RegGuard& reg)
 {
     //| push Rd(reg->id)
     dasm_put(Dst, 56, (reg->id));
-#line 472 "codegen_ia32_emitter.cpp.dasc"
+#line 505 "codegen_ia32_emitter.cpp.dasc"
 }
 
 void CodeGeneratorIA32::emit_pushi32(const DecompiledVar& var)
@@ -541,14 +578,14 @@ void CodeGeneratorIA32::emit_pushi32(const DecompiledVar& var)
     {
         //| push dword[(global_vars + var.offset)]
         dasm_put(Dst, 60, (global_vars + var.offset));
-#line 479 "codegen_ia32_emitter.cpp.dasc"
+#line 512 "codegen_ia32_emitter.cpp.dasc"
     }
     else
     {
         auto offset = offsetof(CRunningScript, tls) + var.offset;
         //| push dword[ebp + offset]
         dasm_put(Dst, 65, offset);
-#line 484 "codegen_ia32_emitter.cpp.dasc"
+#line 517 "codegen_ia32_emitter.cpp.dasc"
     }
 }
 
@@ -581,14 +618,14 @@ void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, int32_t imm32)
 {
     //| mov Rd(reg_dst->id), imm32
     dasm_put(Dst, 70, (reg_dst->id), imm32);
-#line 515 "codegen_ia32_emitter.cpp.dasc"
+#line 548 "codegen_ia32_emitter.cpp.dasc"
 }
 
 void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, RegGuard& reg_src)
 {
     //| mov Rd(reg_dst->id), Rd(reg_src->id)
     dasm_put(Dst, 75, (reg_src->id), (reg_dst->id));
-#line 520 "codegen_ia32_emitter.cpp.dasc"
+#line 553 "codegen_ia32_emitter.cpp.dasc"
 }
 
 void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, const DecompiledVar& src)
@@ -597,14 +634,14 @@ void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, const DecompiledVar& src)
     {
         //| mov Rd(reg_dst->id), dword[(global_vars + src.offset)]
         dasm_put(Dst, 82, (reg_dst->id), (global_vars + src.offset));
-#line 527 "codegen_ia32_emitter.cpp.dasc"
+#line 560 "codegen_ia32_emitter.cpp.dasc"
     }
     else
     {
         auto offset = offsetof(CRunningScript, tls) + src.offset;
         //| mov Rd(reg_dst->id), dword[ebp + offset]
         dasm_put(Dst, 88, (reg_dst->id), offset);
-#line 532 "codegen_ia32_emitter.cpp.dasc"
+#line 565 "codegen_ia32_emitter.cpp.dasc"
     }
 }
 
@@ -635,14 +672,14 @@ void CodeGeneratorIA32::emit_movi32(const DecompiledVar& dst, RegGuard& reg_src)
     {
         //| mov dword[(global_vars + dst.offset)], Rd(reg_src->id)
         dasm_put(Dst, 95, (reg_src->id), (global_vars + dst.offset));
-#line 561 "codegen_ia32_emitter.cpp.dasc"
+#line 594 "codegen_ia32_emitter.cpp.dasc"
     }
     else
     {
         auto offset = offsetof(CRunningScript, tls) + dst.offset;
         //| mov dword[ebp + offset], Rd(reg_src->id)
         dasm_put(Dst, 101, (reg_src->id), offset);
-#line 566 "codegen_ia32_emitter.cpp.dasc"
+#line 599 "codegen_ia32_emitter.cpp.dasc"
     }
 }
 
@@ -669,14 +706,14 @@ void CodeGeneratorIA32::emit_movi32(const DecompiledVar& var_dst, int32_t imm32)
     {
         //| mov dword[(global_vars + var_dst.offset)], imm32
         dasm_put(Dst, 108, (global_vars + var_dst.offset), imm32);
-#line 591 "codegen_ia32_emitter.cpp.dasc"
+#line 624 "codegen_ia32_emitter.cpp.dasc"
     }
     else
     {
         auto offset = offsetof(CRunningScript, tls) + var_dst.offset;
         //| mov dword[ebp + offset], imm32
         dasm_put(Dst, 113, offset, imm32);
-#line 596 "codegen_ia32_emitter.cpp.dasc"
+#line 629 "codegen_ia32_emitter.cpp.dasc"
     }
 }
 
@@ -703,7 +740,7 @@ void CodeGeneratorIA32::emit_addi32(RegGuard& reg_dst, int32_t imm32)
 {
     //| add Rd(reg_dst->id), imm32
     dasm_put(Dst, 118, (reg_dst->id), imm32);
-#line 621 "codegen_ia32_emitter.cpp.dasc"
+#line 654 "codegen_ia32_emitter.cpp.dasc"
 }
 
 void CodeGeneratorIA32::emit_addi32(const DecompiledVar& var_dst, int32_t imm32)
@@ -712,14 +749,14 @@ void CodeGeneratorIA32::emit_addi32(const DecompiledVar& var_dst, int32_t imm32)
     {
         //| add dword[(global_vars + var_dst.offset)], imm32
         dasm_put(Dst, 124, (global_vars + var_dst.offset), imm32);
-#line 628 "codegen_ia32_emitter.cpp.dasc"
+#line 661 "codegen_ia32_emitter.cpp.dasc"
     }
     else
     {
         auto offset = offsetof(CRunningScript, tls) + var_dst.offset;
         //| add dword[ebp + offset], imm32
         dasm_put(Dst, 130, offset, imm32);
-#line 633 "codegen_ia32_emitter.cpp.dasc"
+#line 666 "codegen_ia32_emitter.cpp.dasc"
     }
 }
 
@@ -729,14 +766,14 @@ void CodeGeneratorIA32::emit_addi32(const DecompiledVar& dst, RegGuard& reg_src)
     {
         //| add dword[(global_vars + dst.offset)], Rd(reg_src->id)
         dasm_put(Dst, 135, (reg_src->id), (global_vars + dst.offset));
-#line 641 "codegen_ia32_emitter.cpp.dasc"
+#line 674 "codegen_ia32_emitter.cpp.dasc"
     }
     else
     {
         auto offset = offsetof(CRunningScript, tls) + dst.offset;
         //| add dword[ebp + offset], Rd(reg_src->id)
         dasm_put(Dst, 141, (reg_src->id), offset);
-#line 646 "codegen_ia32_emitter.cpp.dasc"
+#line 679 "codegen_ia32_emitter.cpp.dasc"
     }
 }
 
@@ -780,7 +817,7 @@ void CodeGeneratorIA32::emit_cmpi32(RegGuard& a, int32_t b)
 {
     //| cmp Rd(a->id), b
     dasm_put(Dst, 148, (a->id), b);
-#line 688 "codegen_ia32_emitter.cpp.dasc"
+#line 721 "codegen_ia32_emitter.cpp.dasc"
 }
 
 void CodeGeneratorIA32::emit_cmpi32(const DecompiledVar& a, int32_t b)
@@ -789,14 +826,14 @@ void CodeGeneratorIA32::emit_cmpi32(const DecompiledVar& a, int32_t b)
     {
         //| cmp dword[(global_vars + a.offset)], b
         dasm_put(Dst, 155, (global_vars + a.offset), b);
-#line 695 "codegen_ia32_emitter.cpp.dasc"
+#line 728 "codegen_ia32_emitter.cpp.dasc"
     }
     else
     {
         auto offset = offsetof(CRunningScript, tls) + a.offset;
         //| cmp dword[ebp + offset], b
         dasm_put(Dst, 161, offset, b);
-#line 700 "codegen_ia32_emitter.cpp.dasc"
+#line 733 "codegen_ia32_emitter.cpp.dasc"
     }
 }
 
@@ -806,14 +843,14 @@ void CodeGeneratorIA32::emit_cmpi32(const DecompiledVar& a, RegGuard& b)
     {
         //| cmp dword[(global_vars + a.offset)], Rd(b->id)
         dasm_put(Dst, 166, (b->id), (global_vars + a.offset));
-#line 708 "codegen_ia32_emitter.cpp.dasc"
+#line 741 "codegen_ia32_emitter.cpp.dasc"
     }
     else
     {
         auto offset = offsetof(CRunningScript, tls) + a.offset;
         //| cmp dword[ebp + offset], Rd(b->id)
         dasm_put(Dst, 172, (b->id), offset);
-#line 713 "codegen_ia32_emitter.cpp.dasc"
+#line 746 "codegen_ia32_emitter.cpp.dasc"
     }
 }
 
@@ -857,7 +894,7 @@ void CodeGeneratorIA32::emit_subi32(RegGuard& reg_dst, int32_t imm32)
 {
     //| sub Rd(reg_dst->id), imm32
     dasm_put(Dst, 179, (reg_dst->id), imm32);
-#line 755 "codegen_ia32_emitter.cpp.dasc"
+#line 788 "codegen_ia32_emitter.cpp.dasc"
 }
 
 /////////////////////
@@ -867,7 +904,7 @@ void CodeGeneratorIA32::emit_andi32(RegGuard& reg_dst, RegGuard& reg_src)
 {
     //| and Rd(reg_dst->id), Rd(reg_src->id)
     dasm_put(Dst, 185, (reg_src->id), (reg_dst->id));
-#line 763 "codegen_ia32_emitter.cpp.dasc"
+#line 796 "codegen_ia32_emitter.cpp.dasc"
 }
 
 /////////////////////
@@ -877,5 +914,5 @@ void CodeGeneratorIA32::emit_ori32(RegGuard& reg_dst, RegGuard& reg_src)
 {
     //| or Rd(reg_dst->id), Rd(reg_src->id)
     dasm_put(Dst, 192, (reg_src->id), (reg_dst->id));
-#line 771 "codegen_ia32_emitter.cpp.dasc"
+#line 804 "codegen_ia32_emitter.cpp.dasc"
 }
