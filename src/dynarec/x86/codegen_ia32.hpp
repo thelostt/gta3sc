@@ -170,24 +170,37 @@ public:
     void emit_pushi32(const ArgVariant2& varg);
 
     // x86 MOV
-    void emit_movi32(const DecompiledVar& dst, RegGuard& reg_src);
     void emit_movi32(RegGuard& reg_dst, int32_t imm32);
+    void emit_movi32(RegGuard& reg_dst, RegGuard& reg_src);
     void emit_movi32(RegGuard& reg_dst, const DecompiledVar& src);
     void emit_movi32(RegGuard& reg_dst, const ArgVariant2& src);
+    void emit_movi32(const DecompiledVar& dst, RegGuard& reg_src);
+    void emit_movi32(const DecompiledVar& dst, int32_t imm32);
+    void emit_movi32(const DecompiledVar& dst, const ArgVariant2& src);
     void emit_movi32(const ArgVariant2& dst, const ArgVariant2& src);
-    void emit_movi32(const DecompiledVar& var_dst, int32_t imm32);
-    void emit_movi32(const DecompiledVar& var_dst, const ArgVariant2& src);
 
     // x86 ADD
     void emit_addi32(RegGuard& reg_dst, int32_t imm32);
-    void emit_addi32(const ArgVariant2& dst, const ArgVariant2& src);
     void emit_addi32(const DecompiledVar& var_dst, const ArgVariant2& src);
     void emit_addi32(const DecompiledVar& var_dst, int32_t imm32);
     void emit_addi32(const DecompiledVar& dst, RegGuard& reg_src);
+    void emit_addi32(const ArgVariant2& dst, const ArgVariant2& src);
 
     // x86 SUB
     void emit_subi32(RegGuard& reg_dst, int32_t imm32);
 
+    // x86 CMP
+    void emit_cmpi32(RegGuard& a, int32_t b);
+    void emit_cmpi32(const DecompiledVar& a, const ArgVariant2& b);
+    void emit_cmpi32(const DecompiledVar& a, int32_t b);
+    void emit_cmpi32(const DecompiledVar& a, RegGuard& b);
+    void emit_cmpi32(const ArgVariant2& a, const ArgVariant2& b);
+
+    // x86 AND
+    void emit_andi32(RegGuard& reg_dst, RegGuard& reg_src);
+
+    // x86 OR
+    void emit_ori32(RegGuard& reg_dst, RegGuard& reg_src);
 
     /// Generic PUSH.
     void emit_push(const ArgVariant2& varg)

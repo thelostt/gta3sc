@@ -37,6 +37,12 @@ void CodeGeneratorIA32::free_dasm()
 #undef Dst
 #define Dst &this->dstate
 
+static bool is_branch(uint16_t id)
+{
+    // TODO more
+    return id == 0x004C || id == 0x004D;
+}
+
 void CodeGeneratorIA32::test()
 {
     auto& codegen = *this;
@@ -44,8 +50,8 @@ void CodeGeneratorIA32::test()
     for(auto it = decompiled.begin(); it != decompiled.end(); )
     {
         it = generate_code(*it, it, codegen);
-        | nop
-        | nop
+        //| nop
+        //| nop
     }
 
     size_t code_size;
@@ -106,6 +112,10 @@ auto generate_code(const DecompiledCommand& ccmd, CodeGeneratorIA32::IterData it
 
 auto generate_code(const DecompiledLabelDef& def, CodeGeneratorIA32::IterData it, CodeGeneratorIA32& codegen) -> CodeGeneratorIA32::IterData
 {
+    // End of script mark?
+    if(def.offset == SIZE_MAX)
+        return ++it;
+
     auto label_id = codegen.add_label(-def.offset);
 
     // flush context, the beggining of label should have all the context in CRunningScript
@@ -157,13 +167,74 @@ void CodeGeneratorIA32::init_generators()
         Expects(ccmd.args.size() == 1);
         auto label_id = codegen.add_label(ccmd.args[0]);
 
-        // flush context before jumping into label
+        // flush before branching
         codegen.emit_flush();
+        
         | jmp =>(label_id)
         | .align 16 // nice place to put Intel's recommended alignment
 
-            return ++it;
+        return ++it;
     });
+
+    // GOTO_IF_FALSE / GOTO_IF_TRUE / GOSUB_IF_FALSE
+    {
+        auto opgen_branchif = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() == 1);
+            auto label_id = codegen.add_label(ccmd.args[0]);
+
+            // flush before branching
+            codegen.emit_flush();
+
+            // Use byte test since cmp operations only sets a single byte.
+            auto reg_eax = regalloc(Reg::Eax);
+            | test Rb(reg_eax->id), Rb(reg_eax->id) // TODO abstract access?
+
+            if(ccmd.id == 0x004D) // GOTO_IF_FALSE
+            {
+                | jz =>(label_id)
+            }
+            else if(ccmd.id == 0x004C) // GOTO_IF_TRUE
+            {
+                | jnz =>(label_id)
+            }
+            else if(ccmd.id == 0x0AA0) // GOSUB_IF_FALSE
+            {
+                | jnz >1
+                | call =>(label_id)
+                | 1:
+            }
+            
+            return ++it;
+        };
+
+        this->add_generator(0x004D, opgen_branchif); // GOTO_IF_FALSE
+        this->add_generator(0x004C, opgen_branchif); // GOTO_IF_TRUE (TODO GTA3 only)
+        this->add_generator(0x0AA0, opgen_branchif); // GOSUB_IF_FALSE (TODO GTASA+CLEO only)
+    }
+
+    // RETURN_TRUE / RETURN_FALSE
+    {
+        auto opgen_setcond = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() == 0);
+            if(ccmd.id == 0x00C5 || ccmd.id == 0x0485) // RETURN_TRUE
+            {
+                | mov al, 1  // TODO abstract
+            }
+            else if(ccmd.id == 0x00C6 || ccmd.id == 0x059A) // RETURN_FALSE
+            {
+                | mov al, 0  // TODO abstract
+            }
+            return ++it;
+        };
+
+        this->add_generator(0x00C5, opgen_setcond); // RETURN_TRUE (TODO III/VC ONLY)
+        this->add_generator(0x00C6, opgen_setcond); // RETURN_FALSE (TODO III/VC ONLY)
+        this->add_generator(0x0485, opgen_setcond); // IS_PC_VERSION / RETURN_TRUE (TODO VC?/SA ONLY)
+        this->add_generator(0x059A, opgen_setcond); // IS_AUSTRALIAN_GAME / RETURN_FALSE (TODO VC?/SA ONLY)
+    }
+
 
     // SET
     {
@@ -190,14 +261,145 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x04AF, opgen_set);
     }
 
-    // NOTICE: FLOATHING ADD IS DIFFERENT FROM INT ADD!
-    this->add_generator(0x000A, [&](const DecompiledCommand& ccmd, IterData it)
+    // ADD_THING_TO_THING
     {
-        Expects(ccmd.args.size() == 2);
-        codegen.emit_addi32(ccmd.args[0], ccmd.args[1]);
-        return ++it;
-    });
+        // TODO opgen_addf
 
+        auto opgen_addi = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() == 2);
+            codegen.emit_addi32(ccmd.args[0], ccmd.args[1]);
+            return ++it;
+        };
+
+        this->add_generator(0x0008, opgen_addi);
+        this->add_generator(0x0009, opgen_addi);
+        this->add_generator(0x000A, opgen_addi);
+        this->add_generator(0x000B, opgen_addi);
+        this->add_generator(0x0058, opgen_addi);
+        this->add_generator(0x0059, opgen_addi);
+        this->add_generator(0x005A, opgen_addi);
+        this->add_generator(0x005B, opgen_addi);
+        this->add_generator(0x005C, opgen_addi);
+        this->add_generator(0x005D, opgen_addi);
+        this->add_generator(0x005E, opgen_addi);
+        this->add_generator(0x005F, opgen_addi);
+    }
+
+    // IS_THING_EQUAL_TO_THING
+    {
+        // TODO opgen_equf
+
+        auto opgen_equi = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() == 2);
+            codegen.emit_cmpi32(ccmd.args[0], ccmd.args[1]);
+
+            // TODO abstract access
+            auto reg_eax = regalloc(Reg::Eax);
+            | setz Rb(reg_eax->id)
+
+            return ++it;
+        };
+
+        this->add_generator(0x0038, opgen_equi);
+        this->add_generator(0x0039, opgen_equi);
+        this->add_generator(0x003A, opgen_equi);
+        this->add_generator(0x003B, opgen_equi);
+        this->add_generator(0x003C, opgen_equi);
+        this->add_generator(0x0042, opgen_equi);
+        this->add_generator(0x0043, opgen_equi);
+        this->add_generator(0x0044, opgen_equi);
+        this->add_generator(0x0045, opgen_equi);
+        this->add_generator(0x0046, opgen_equi);
+        this->add_generator(0x04A3, opgen_equi);
+        this->add_generator(0x04A4, opgen_equi);
+    }
+
+    
+
+    // ANDOR
+    this->add_generator(0x00D6, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        Expects(ccmd.args.size() == 1);
+
+        bool is_and;
+        size_t num_conds;
+
+        // Find the values for is_and and num_conds...
+        if(auto opt_arg = get_imm32(ccmd.args[0], codegen))
+        {
+            auto arg = *opt_arg;
+            if(arg == 0)
+            {
+                is_and = false;
+                num_conds = 1;
+            }
+            else if(arg >= 1 && arg <= 8)
+            {
+                is_and = true;
+                num_conds = arg + 1;
+            }
+            else if(arg >= 21 && arg <= 28)
+            {
+                is_and = false;
+                num_conds = (arg - 20) + 1;
+            }
+            else
+            {
+                throw DynarecError("ANDOR argument is not zero, 1-8 or 21-28.");
+            }
+        }
+        else
+        {
+            throw DynarecError("ANDOR argument is not constant");
+        }
+
+        // Do nothing if a single condition, let GOTO_IF_FALSE take care of the rest.
+        if(num_conds == 1)
+            return ++it;
+        else
+            ++it;
+
+        auto rz = codegen.regalloc(purposes_store);
+        Expects(static_cast<Reg>(rz->id) != Reg::Eax);
+
+        for(size_t i = 0; i < num_conds; ++i)
+        {
+            // Ensure we didn't reach the end of the script, or some other garbage (HEX?)
+            if(!is<DecompiledCommand>(it->data))
+                throw DynarecUnexpectedValue(it->data.which());
+
+            auto& curr_ccmd = get<DecompiledCommand>(it->data);
+
+            if(is_branch(curr_ccmd.id))
+                throw DynarecError("Unexpected branch on ANDOR conditions.");
+
+            if(codegen.run_generator(curr_ccmd, it) != it+1)
+                throw DynarecError("ANDOR didn't expect run_generator generating more than one command.");
+
+            auto eax = codegen.regalloc(Reg::Eax);
+
+            if(i == 0)
+                codegen.emit_movi32(rz, eax);
+            else if(is_and)
+                codegen.emit_andi32(rz, eax);
+            else
+                codegen.emit_ori32(rz, eax);
+
+            ++it;
+        }
+
+        // Ensure this next instruction is a branch.
+        if(!is<DecompiledCommand>(it->data) || !is_branch(get<DecompiledCommand>(it->data).id))
+            throw DynarecError("Expected branch after ANDOR conditions.");
+
+        // Put resulting flags into eax.
+        // TODO optimize, when (i+1 == num_conds), use dst=eax!
+        codegen.emit_movi32(codegen.regalloc(Reg::Eax), rz);
+
+        return it;
+    });
 
 
 
@@ -225,7 +427,7 @@ void CodeGeneratorIA32::init_generators()
         {
         auto eax__ = regalloc(Reg::Eax);
         auto ry  = regalloc(purposes_temp);
-        | mov Rd(ry->id), [esp+0]
+        | mov Rd(ry->id), [esp+0] // TODO mov abstraction
 
         if(!is<DecompiledVar>(ccmd.args[5]))
             throw DynarecUnexpectedValue(ccmd.args[5].which());
@@ -310,6 +512,11 @@ void CodeGeneratorIA32::emit_pushi32(const ArgVariant2& varg)
 void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, int32_t imm32)
 {
     | mov Rd(reg_dst->id), imm32
+}
+
+void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, RegGuard& reg_src)
+{
+    | mov Rd(reg_dst->id), Rd(reg_src->id)
 }
 
 void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, const DecompiledVar& src)
@@ -471,10 +678,94 @@ void CodeGeneratorIA32::emit_addi32(const ArgVariant2& dst, const ArgVariant2& s
     }
 }
 
+
+/////////////////////
+// CMPI32
+
+void CodeGeneratorIA32::emit_cmpi32(RegGuard& a, int32_t b)
+{
+    | cmp Rd(a->id), b
+}
+
+void CodeGeneratorIA32::emit_cmpi32(const DecompiledVar& a, int32_t b)
+{
+    if(a.global)
+    {
+        | cmp dword[(global_vars + a.offset)], b
+    }
+    else
+    {
+        auto offset = offsetof(CRunningScript, tls) + a.offset;
+        | cmp dword[ebp + offset], b
+    }
+}
+
+void CodeGeneratorIA32::emit_cmpi32(const DecompiledVar& a, RegGuard& b)
+{
+    if(a.global)
+    {
+        | cmp dword[(global_vars + a.offset)], Rd(b->id)
+    }
+    else
+    {
+        auto offset = offsetof(CRunningScript, tls) + a.offset;
+        | cmp dword[ebp + offset], Rd(b->id)
+    }
+}
+
+
+void CodeGeneratorIA32::emit_cmpi32(const DecompiledVar& a, const ArgVariant2& b)
+{
+    if(auto opt_imm32 = get_imm32(b, *this))
+    {
+        emit_cmpi32(a, *opt_imm32);
+    }
+    else
+    {
+        auto rx = this->regalloc(purposes_temp);
+        emit_movi32(rx, b);
+        emit_cmpi32(a, rx);
+    }
+}
+
+void CodeGeneratorIA32::emit_cmpi32(const ArgVariant2& a, const ArgVariant2& b)
+{
+    if(is<DecompiledVar>(a))
+    {
+        emit_cmpi32(get<DecompiledVar>(a), b);
+    }
+    else if(is<DecompiledVarArray>(a))
+    {
+        // TODO
+        NotImplementedYet();
+    }
+    else
+    {
+        throw DynarecUnexpectedValue(a.which());
+    }
+}
+
+
 /////////////////////
 // SUBI32
 
 void CodeGeneratorIA32::emit_subi32(RegGuard& reg_dst, int32_t imm32)
 {
     | sub Rd(reg_dst->id), imm32
+}
+
+/////////////////////
+// ANDI32
+
+void CodeGeneratorIA32::emit_andi32(RegGuard& reg_dst, RegGuard& reg_src)
+{
+    | and Rd(reg_dst->id), Rd(reg_src->id)
+}
+
+/////////////////////
+// ORI32
+
+void CodeGeneratorIA32::emit_ori32(RegGuard& reg_dst, RegGuard& reg_src)
+{
+    | or Rd(reg_dst->id), Rd(reg_src->id)
 }

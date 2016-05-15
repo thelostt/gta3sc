@@ -12,6 +12,9 @@ CodeGeneratorIA32::CodeGeneratorIA32(const Commands& commands, std::vector<Decom
 {
     this->init_dasm();
 
+    // Signal end of script
+    decompiled.emplace_back(DecompiledLabelDef { SIZE_MAX });
+
     this->reg_ctx = this->regalloc(Reg::Ebp);
     this->reg_esp = this->regalloc(Reg::Esp);
     this->global_vars = nullptr;
