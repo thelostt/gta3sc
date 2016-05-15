@@ -36,22 +36,6 @@ Commands gta3_commands()
                 { ArgType::Label, false, true, false, false, {} },
                 { ArgType::Integer, false, true, false, false, {} },
                 { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
             }
         }
     });
@@ -65,26 +49,83 @@ Commands gta3_commands()
             {
                 { ArgType::Integer, false, true, false, false,{} },
                 { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
-                { ArgType::Any, true, true, true, true,{} },
+            }
+        }
+    });
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "CALL_FUNCTION",
+        {
+            true,
+            0x0AA5,
+            {
+                { ArgType::Integer, false, true, true, true, {} },
+                { ArgType::Integer, false, true, true, true, {} },
+                { ArgType::Integer, false, true, true, true, {} },
+                { ArgType::Any, true, true, true, true, {} },
+            }
+        }
+    });
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "CALL_METHOD",
+        {
+            true,
+            0x0AA6,
+            {
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Integer, false, true, true, true,{} },
                 { ArgType::Any, true, true, true, true,{} },
             }
         }
     });
 
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "CALL_FUNCTION_RETURN",
+        {
+            true,
+            0x0AA7,
+            {
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+            }
+        }
+    });
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "CALL_METHOD_RETURN",
+        {
+            true,
+            0x0AA8,
+            {
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Integer, false, true, true, true,{} },
+                { ArgType::Any, true, true, true, true,{} },
+            }
+        }
+    });
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "POP_FLOAT",
+        {
+            true,
+            0x0AE9,
+            {
+                { ArgType::Float, false, false, true, true,{} },
+            }
+        }
+    });
 
     mgr.update();
     return mgr;

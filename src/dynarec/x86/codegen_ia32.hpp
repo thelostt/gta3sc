@@ -166,11 +166,17 @@ public:
 
     // Literal emitters:
     // They do NOTHING but emit the specified instruction.
-    void emit_call(int32_t target_ptr);
     void emit_rep();
     void emit_movsb();
     void emit_movsw();
     void emit_movsd();
+    void emit_fstp(const DecompiledVar& var);
+
+    // x86 CALL
+    void emit_call(int32_t target_ptr);
+    void emit_call(RegGuard& reg);
+    void emit_call(const DecompiledVar& var);
+    void emit_call(const ArgVariant2& varg);
 
     // x86 PUSH
     void emit_pushi32(int32_t imm32);

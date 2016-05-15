@@ -599,6 +599,124 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x0AB2, opgen_ret);    // TODO CLEO ONLY
     }
 
+    // CALL_ASM
+    {
+        auto opgen_callasm = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            ArgVariant2 none_arg;
+            size_t curr_param = 0;
+            bool has_return;
+            bool is_method;
+            
+            switch(ccmd.id)
+            {
+                case 0x0AA5: // CALL_FUNCTION
+                case 0x05E1:
+                    has_return = false;
+                    is_method  = false;
+                    break;
+                case 0x0AA6: // CALL_METHOD
+                case 0x05E3:
+                    has_return = false;
+                    is_method  = true;
+                    break;
+                case 0x0AA7: // CALL_FUNCTION_RETURN
+                case 0x05E2:
+                    has_return = true;
+                    is_method  = false;
+                    break;
+                case 0x0AA8: // CALL_METHOD_RETURN
+                case 0x05E4:
+                    has_return = true;
+                    is_method  = true;
+                    break;
+                default:
+                    Unreachable();
+            }
+
+            size_t min_params = is_method? 4 : 3;
+            Expects(ccmd.args.size() >= min_params+1); // +1 for null argument
+            Expects(is<EOAL>(ccmd.args.back()));
+
+            size_t num_push, num_pop;
+            auto& arg_func_ptr = ccmd.args[curr_param++];
+            auto& arg_this_ptr = is_method? ccmd.args[curr_param++] : none_arg;
+            auto& opt_num_push = get_imm32(ccmd.args[curr_param++], codegen);
+            auto& opt_num_pop  = get_imm32(ccmd.args[curr_param++], codegen);
+
+            if(!opt_num_push || !opt_num_pop)
+                throw DynarecError("CALL_ASM push/pop arguments is not constant");
+           
+            num_push = *opt_num_push;
+            num_pop  = *opt_num_pop;
+
+            if(ccmd.args.size() != (min_params+1) + num_push + (has_return? 1 : 0))
+                throw DynarecError("CALL_ASM num arguments is wrong");
+
+            for(size_t k = 0; k < num_push; ++k)
+            {
+                codegen.emit_pushi32(ccmd.args[curr_param++]);
+            }
+
+            if(is_method)
+            {
+                auto reg_ecx = codegen.regalloc(Reg::Ecx);
+                codegen.emit_movi32(reg_ecx, arg_this_ptr);
+                codegen.emit_call(arg_func_ptr);
+            }
+            else
+            {
+                codegen.emit_call(arg_func_ptr);
+            }
+
+            if(has_return)
+            {
+                auto  reg_eax = codegen.regalloc(Reg::Eax);
+                auto& arg_out = ccmd.args[curr_param++];
+                if(is<DecompiledVar>(arg_out))
+                    codegen.emit_movi32(arg_out, reg_eax);
+                else
+                    throw DynarecUnexpectedValue(arg_out.which());
+            }
+
+            codegen.emit_addi32(codegen.get_esp(), num_pop * 4);
+
+            return ++it;
+        };
+
+        this->add_generator(0x0AA5, opgen_callasm);    // TODO CLEO ONLY 
+        this->add_generator(0x05E1, opgen_callasm);    // TODO III/VC CLEO ONLY
+        this->add_generator(0x0AA6, opgen_callasm);    // TODO CLEO ONLY
+        this->add_generator(0x05E3, opgen_callasm);    // TODO III/VC CLEO ONLY
+        this->add_generator(0x0AA7, opgen_callasm);    // TODO CLEO ONLY
+        this->add_generator(0x05E2, opgen_callasm);    // TODO III/VC CLEO ONLY
+        this->add_generator(0x0AA8, opgen_callasm);    // TODO CLEO ONLY
+        this->add_generator(0x05E4, opgen_callasm);    // TODO III/VC CLEO ONLY
+    }
+
+    // POP_FLOAT
+    {
+        auto opgen_fstp = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() == 1);
+
+            if(is<DecompiledVar>(ccmd.args[0]))
+            {
+                auto& var = get<DecompiledVar>(ccmd.args[0]);
+                codegen.emit_fstp(var);
+            }
+            else
+            {
+                throw DynarecUnexpectedValue(ccmd.args[0].which());
+            }
+
+            return ++it;
+        };
+
+        this->add_generator(0x05F2, opgen_fstp);    // TODO III/VC CLEO ONLY
+        this->add_generator(0x0AE9, opgen_fstp);    // TODO CLEO ONLY
+    }
+
 
 
 /*
@@ -648,11 +766,6 @@ void CodeGeneratorIA32::init_generators()
 #undef Dst
 #define Dst &this->dstate
 
-void CodeGeneratorIA32::emit_call(int32_t target_ptr)
-{
-    | call &target_ptr
-}
-
 void CodeGeneratorIA32::emit_rep()
 {
     // TODO when we implement reg caches, remember this modifies ECX
@@ -677,6 +790,19 @@ void CodeGeneratorIA32::emit_movsd()
     | movsd
 }
 
+void CodeGeneratorIA32::emit_fstp(const DecompiledVar& var)
+{
+    if(var.global)
+    {
+        | fstp dword[(global_vars + var.offset)]
+    }
+    else
+    {
+        auto offset = offsetof(CRunningScript, tls) + var.offset;
+        | fstp dword[ebp + offset]
+    }
+}
+
 
 
 void CodeGeneratorIA32::emit_savelocals()
@@ -697,6 +823,52 @@ void CodeGeneratorIA32::emit_restorelocals()
     emit_addi32(get_esp(), size_bytes);
 }
 
+/////////////////////
+// CALL
+
+void CodeGeneratorIA32::emit_call(int32_t target_ptr)
+{
+    | call &target_ptr
+}
+
+void CodeGeneratorIA32::emit_call(RegGuard& reg)
+{
+    | call Rd(reg->id)
+}
+
+void CodeGeneratorIA32::emit_call(const DecompiledVar& var)
+{
+    if(var.global)
+    {
+        | call dword [(global_vars + var.offset)]
+    }
+    else
+    {
+        auto offset = offsetof(CRunningScript, tls) + var.offset;
+        | call dword [ebp + offset]
+    }
+}
+
+void CodeGeneratorIA32::emit_call(const ArgVariant2& varg)
+{
+    if(auto opt_imm32 = get_imm32(varg, *this))
+    {
+        emit_call(*opt_imm32);
+    }
+    else if(is<DecompiledVar>(varg))
+    {
+        emit_call(get<DecompiledVar>(varg));
+    }
+    else if(is<DecompiledVarArray>(varg))
+    {
+        // TODO
+        NotImplementedYet();
+    }
+    else
+    {
+        throw DynarecUnexpectedValue(varg.which());
+    }
+}
 
 
 /////////////////////
