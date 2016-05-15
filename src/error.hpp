@@ -20,6 +20,8 @@ private:
 
 using DecompilerError = CompilerError;
 
+using DynarecError = DecompilerError;
+
 class BadAlternator : public CompilerError
 {
 public:
@@ -28,3 +30,8 @@ public:
         : CompilerError(msg, std::forward<Args>(args)...)
     {}
 };
+
+#ifndef DynarecUnexpectedValue
+#define DynarecUnexpectedValue(value) DynarecError("Unexpected {} at {}; {} == {}", #value, __func__, #value, value)
+#endif
+
