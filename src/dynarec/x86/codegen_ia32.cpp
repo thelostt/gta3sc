@@ -1,6 +1,9 @@
 #include "../../stdinc.h"
 #include "codegen_ia32.hpp"
 
+bool native(struct OpCtx& context);
+
+
 CodeGeneratorIA32::CodeGeneratorIA32(const Commands& commands, std::vector<DecompiledData> decompiled) :
     commands(commands), decompiled(std::move(decompiled)),
     dstate{ *this, nullptr },
@@ -38,12 +41,21 @@ auto CodeGeneratorIA32::run_generator(const DecompiledCommand& ccmd, IterData it
 
 int32_t CodeGeneratorIA32::resolve_extern(unsigned char* addr, const char* extern_name, bool is_rel)
 {
+    unsigned char* extern_ptr = nullptr;
+
     if(!strcmp("DYNAREC_RTL_Wait", extern_name))
+        extern_ptr = (unsigned char*)0x7000;
+    else if(!strcmp("native", extern_name))
+        extern_ptr = (unsigned char*)&native;
+
+    if(extern_ptr)
     {
-        auto extern_ptr = (unsigned char*)0x7000;
         return is_rel? int32_t(extern_ptr - (addr + 4)) : int32_t(extern_ptr);
     }
-    Unreachable();
+    else
+    {
+        Unreachable();
+    }
 }
 
 
@@ -62,3 +74,27 @@ int test_dasc(const Commands& commands, std::vector<DecompiledData> decompiled)
     return 0;
 }
 
+
+struct OpCtx{
+    int pop() {return 0;}
+    void store(int) {}
+};
+
+
+bool native2(int32_t pedtype, int32_t model, float x, float y, float z, int32_t* out_player)
+{
+    return true;
+}
+
+bool native(OpCtx& context)
+{
+    int32_t a = context.pop();
+    int32_t b = context.pop();
+    float x = context.pop();
+    float y = context.pop();
+    float z = context.pop();
+    int32_t out;
+    bool result = native2(a, b, x, y, z, &out);
+    context.store(out);
+    return result;
+}

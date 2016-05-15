@@ -112,6 +112,18 @@ public:
     /// Forces the allocates of the specified register.
     RegGuard regalloc(Reg reg);
 
+    /// Gets the ESP register.
+    RegGuard& get_esp()
+    {
+        return this->reg_esp;
+    }
+
+    /// Gets the register that stores the CRunningScript context.
+    RegGuard& get_ctx()
+    {
+        return this->reg_ctx;
+    }
+
     /// Flushes the CRunningScript context.
     ///
     /// All variables cached in registers will be put back into their original locations.
@@ -172,6 +184,10 @@ public:
     void emit_addi32(const DecompiledVar& var_dst, const ArgVariant2& src);
     void emit_addi32(const DecompiledVar& var_dst, int32_t imm32);
     void emit_addi32(const DecompiledVar& dst, RegGuard& reg_src);
+
+    // x86 SUB
+    void emit_subi32(RegGuard& reg_dst, int32_t imm32);
+
 
     /// Generic PUSH.
     void emit_push(const ArgVariant2& varg)

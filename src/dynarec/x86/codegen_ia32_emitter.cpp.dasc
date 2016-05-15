@@ -34,6 +34,9 @@ void CodeGeneratorIA32::free_dasm()
     dasm_free(&dstate);
 }
 
+#undef Dst
+#define Dst &this->dstate
+
 void CodeGeneratorIA32::test()
 {
     auto& codegen = *this;
@@ -41,14 +44,9 @@ void CodeGeneratorIA32::test()
     for(auto it = decompiled.begin(); it != decompiled.end(); )
     {
         it = generate_code(*it, it, codegen);
+        | nop
+        | nop
     }
-
-    /*
-    | nop
-    | nop
-    | nop
-    | nop
-    */
 
     size_t code_size;
     dasm_link(&dstate, &code_size);
@@ -133,6 +131,7 @@ auto generate_code(const DecompiledData&, CodeGeneratorIA32::IterData it, CodeGe
 // Generators
 ///////////////////////////////
 
+
 void CodeGeneratorIA32::init_generators()
 {
     auto& codegen = *this;
@@ -200,6 +199,45 @@ void CodeGeneratorIA32::init_generators()
     });
 
 
+
+
+/*
+    // CREATE_CHAR
+    this->add_generator(0x009A, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        static const auto num_rets = 1;
+
+        Expects(ccmd.args.size() == 6);
+        auto& esp = codegen.get_esp();
+        codegen.emit_subi32(esp, (num_rets * 4));
+
+        for(auto arg = ccmd.args.rbegin() + num_rets, end = ccmd.args.rend();
+            arg != end; ++arg)
+        {
+            codegen.emit_push(*arg);
+        }
+
+        codegen.emit_pushi32(esp);
+        codegen.emit_pushi32(codegen.get_ctx());
+        codegen.emit_ccall("native");
+        codegen.emit_addi32(esp, 4);
+
+        {
+        auto eax__ = regalloc(Reg::Eax);
+        auto ry  = regalloc(purposes_temp);
+        | mov Rd(ry->id), [esp+0]
+
+        if(!is<DecompiledVar>(ccmd.args[5]))
+            throw DynarecUnexpectedValue(ccmd.args[5].which());
+
+        codegen.emit_movi32(get<DecompiledVar>(ccmd.args[5]), ry);
+        }
+
+        codegen.emit_addi32(esp, ccmd.args.size() * 4);
+
+        return ++it;
+    });
+*/
 }
 
 
@@ -372,7 +410,7 @@ void CodeGeneratorIA32::emit_movi32(const DecompiledVar& var_dst, const ArgVaria
 
 void CodeGeneratorIA32::emit_addi32(RegGuard& reg_dst, int32_t imm32)
 {
-    | mov Rd(reg_dst->id), imm32
+    | add Rd(reg_dst->id), imm32
 }
 
 void CodeGeneratorIA32::emit_addi32(const DecompiledVar& var_dst, int32_t imm32)
@@ -433,3 +471,10 @@ void CodeGeneratorIA32::emit_addi32(const ArgVariant2& dst, const ArgVariant2& s
     }
 }
 
+/////////////////////
+// SUBI32
+
+void CodeGeneratorIA32::emit_subi32(RegGuard& reg_dst, int32_t imm32)
+{
+    | sub Rd(reg_dst->id), imm32
+}
