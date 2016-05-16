@@ -48,6 +48,8 @@ int32_t CodeGeneratorIA32::resolve_extern(unsigned char* addr, const char* exter
 
     if(!strcmp("DYNAREC_RTL_Wait", extern_name))
         extern_ptr = (unsigned char*)0x7000;
+    if(!strcmp("DYNAREC_RTL_WriteMemory", extern_name))
+        extern_ptr = (unsigned char*)0x8000;
     else if(!strcmp("native", extern_name))
         extern_ptr = (unsigned char*)&native;
 

@@ -717,6 +717,47 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x0AE9, opgen_fstp);    // TODO CLEO ONLY
     }
 
+    // WRITE_MEMORY
+    {
+        auto op_pwrite = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() == 4);
+
+            auto& dest    = ccmd.args[0];
+            auto& value   = ccmd.args[2];
+            auto vp_imm32 = get_imm32(ccmd.args[3], codegen);
+            auto size_imm32 = get_imm32(ccmd.args[1], codegen);
+
+            if(!size_imm32 || vp_imm32.value_or(1) != 0)
+            {
+                // Either size isn't constant, vp isn't constant, or vp=false
+                codegen.emit_ccall("DYNAREC_RTL_WriteMemory", ccmd.args[0], ccmd.args[1], ccmd.args[2], ccmd.args[3]);
+            }
+            else
+            {
+                // If we are here, vp=false and and size is a constant.
+                switch(*size_imm32)
+                {
+                    case 4:
+                        // TODO ptr()
+                        codegen.emit_movi32(ptr(dest), value);
+                        break;
+                    case 2:
+                        codegen.emit_movu16_from_u32(ptr(dest), value); // treat as unsigned
+                        break;
+                    default:
+                        codegen.emit_memset(dest, *size_imm32, value);
+                        break;
+                }
+            }
+
+            return ++it;
+        };
+
+        this->add_generator(0x05DF, op_pwrite);    // TODO III/VC CLEO ONLY
+        this->add_generator(0x0A8C, op_pwrite);    // TODO CLEO ONLY
+    }
+
 
 
 /*
@@ -766,6 +807,29 @@ void CodeGeneratorIA32::init_generators()
 #undef Dst
 #define Dst &this->dstate
 
+
+
+void CodeGeneratorIA32::emit_savelocals()
+{
+    const auto size_bytes = sizeof(CRunningScript::tls);
+    auto src_begin = ArgVariant2{ DecompiledVar{ false, 0 * 4 } };
+    emit_subi32(get_esp(), size_bytes);
+    // TODO lea src_begin!
+    emit_memcpy(lea(src_begin), get_esp(), size_bytes);
+}
+
+void CodeGeneratorIA32::emit_restorelocals()
+{
+    const auto size_bytes = sizeof(CRunningScript::tls);
+    auto dst_begin = ArgVariant2{ DecompiledVar{ false, 0 * 4 } };
+    // TODO lea dst_begin!
+    emit_memcpy(get_esp(), lea(dst_begin), size_bytes);
+    emit_addi32(get_esp(), size_bytes);
+}
+
+
+
+
 void CodeGeneratorIA32::emit_rep()
 {
     // TODO when we implement reg caches, remember this modifies ECX
@@ -790,6 +854,12 @@ void CodeGeneratorIA32::emit_movsd()
     | movsd
 }
 
+void CodeGeneratorIA32::emit_stosb()
+{
+    // TODO when we implement reg caches, remember this modifies EDI
+    | stosb
+}
+
 void CodeGeneratorIA32::emit_fstp(const DecompiledVar& var)
 {
     if(var.global)
@@ -805,23 +875,6 @@ void CodeGeneratorIA32::emit_fstp(const DecompiledVar& var)
 
 
 
-void CodeGeneratorIA32::emit_savelocals()
-{
-    const auto size_bytes = sizeof(CRunningScript::tls);
-    auto src_begin = ArgVariant2 { DecompiledVar { false, 0*4 } };
-    emit_subi32(get_esp(), size_bytes); 
-    // TODO lea src_begin!
-    emit_memcpy(lea(src_begin), get_esp(), size_bytes);
-}
-
-void CodeGeneratorIA32::emit_restorelocals()
-{
-    const auto size_bytes = sizeof(CRunningScript::tls);
-    auto dst_begin = ArgVariant2{ DecompiledVar{ false, 0*4 } };
-    // TODO lea dst_begin!
-    emit_memcpy(get_esp(), lea(dst_begin), size_bytes);
-    emit_addi32(get_esp(), size_bytes);
-}
 
 /////////////////////
 // CALL
@@ -953,6 +1006,94 @@ void CodeGeneratorIA32::emit_lea(RegGuard& reg_dst, const ArgVariant2& src)
     }
 }
 
+/////////////////////
+// MOVU16_FROM_U32
+
+
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src)
+{
+    | mov word [p_dst.value], Rw(reg_src->id)
+}
+
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, uint32_t imm32)
+{
+    | mov word [p_dst.value], imm32
+}
+
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src)
+{
+    if(auto xsrc_imm32 = get_imm32(src, *this))
+    {
+        emit_movu16_from_u32(p_dst, *xsrc_imm32);
+    }
+    else
+    {
+        auto rx = this->regalloc(purposes_temp);
+        emit_movi32(rx, src);
+        emit_movu16_from_u32(p_dst, rx);
+    }
+}
+
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, uint32_t imm32)
+{
+    | mov word [Rd(p_reg_dst.value->id)], imm32
+}
+
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src)
+{
+    | mov word [Rd(p_reg_dst.value->id)], Rw(reg_src->id)
+}
+
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src)
+{
+    if(auto opt_imm32 = get_imm32(src, *this))
+    {
+        emit_movu16_from_u32(p_reg_dst, *opt_imm32);
+    }
+    else
+    {
+        auto rx = this->regalloc(purposes_temp);
+        emit_movi32(rx, src);
+        emit_movu16_from_u32(p_reg_dst, rx);
+    }
+}
+
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src)
+{
+    if(auto xdst_imm32 = get_imm32(p_dst.value, *this))
+    {
+        emit_movu16_from_u32(ptr(*xdst_imm32), src);
+    }
+    else
+    {
+        auto rp = this->regalloc(purposes_temp);
+        emit_movi32(rp, p_dst.value);
+        emit_movu16_from_u32(ptr(rp), src);
+    }
+}
+
+
+/////////////////////
+// MOVI32_FROM_U8
+
+void CodeGeneratorIA32::emit_movi32_from_u8(RegGuard& reg_dst, RegGuard& reg_src)
+{
+    | movzx Rd(reg_dst->id), Rb(reg_src->id)
+}
+
+void CodeGeneratorIA32::emit_movi32_from_u8(RegGuard& reg_dst, const ArgVariant2& src)
+{
+    if(auto opt_imm32 = get_imm32(src, *this))
+    {
+        emit_movi32(reg_dst, *opt_imm32);
+    }
+    else
+    {
+        auto rx = this->regalloc(purposes_temp);
+        emit_movi32(rx, src);
+        emit_movi32_from_u8(reg_dst, rx);
+    }
+}
 
 
 /////////////////////
@@ -1046,6 +1187,72 @@ void CodeGeneratorIA32::emit_movi32(const DecompiledVar& var_dst, const ArgVaria
         emit_movi32(var_dst, rx);
     }
 }
+
+//-- PointedBy
+
+void CodeGeneratorIA32::emit_movi32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src)
+{
+    | mov dword [p_dst.value], Rd(reg_src->id)
+}
+
+void CodeGeneratorIA32::emit_movi32(PointedBy<uintptr_t> p_dst, int32_t src)
+{
+    | mov dword [p_dst.value], src
+}
+
+void CodeGeneratorIA32::emit_movi32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src)
+{
+    | mov dword[Rd(p_reg_dst.value->id)], Rd(reg_src->id)
+}
+
+void CodeGeneratorIA32::emit_movi32(PointedBy<RegGuard&> p_reg_dst, int32_t imm32)
+{
+    | mov dword[Rd(p_reg_dst.value->id)], imm32
+}
+
+void CodeGeneratorIA32::emit_movi32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src)
+{
+    if(auto opt_xsrc_imm32 = get_imm32(src, *this))
+    {
+        emit_movi32(p_dst, *opt_xsrc_imm32);
+    }
+    else
+    {
+        auto ry = regalloc(purposes_temp);
+        emit_movi32(ry, src);
+        emit_movi32(p_dst, ry);
+    }
+}
+
+void CodeGeneratorIA32::emit_movi32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src)
+{
+    if(auto opt_src_imm32 = get_imm32(src, *this))
+    {
+        emit_movi32(p_reg_dst, *opt_src_imm32);
+    }
+    else
+    {
+        auto ry = regalloc(purposes_temp);
+        emit_movi32(ry, src);
+        emit_movi32(p_reg_dst, ry);
+    }
+}
+
+void CodeGeneratorIA32::emit_movi32(PointedBy<const ArgVariant2&> p_var_dst, const ArgVariant2& src)
+{
+    if(auto opt_dst_imm32 = get_imm32(p_var_dst.value, *this))
+    {
+        emit_movi32(ptr(*opt_dst_imm32), src);
+    }
+    else
+    {
+        auto rx = regalloc(purposes_temp);
+        emit_movi32(rx, p_var_dst.value);
+        emit_movi32(ptr(rx), src);
+    }
+}
+
+
 
 
 /////////////////////

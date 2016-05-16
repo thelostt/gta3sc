@@ -18,8 +18,12 @@ public:
     // Forwarding
     struct RegGuard;
     struct RegState;
+    
     template<typename T>
     struct AddressOf;
+
+    template<typename T>
+    struct PointedBy;
 
     // Tag to use the CRunningScript context in a instruction.
     struct tag_CRunningScript_t {};
@@ -160,9 +164,16 @@ public:
     // See also emit_flush
     // See also emit_flush_temp_regs
 
-    /// Emits some code equivalent to std::memcpy(dst, src, count)
+    // Abstracted functionalities:
+
+    /// Emits code equivalent to C++'s std::memcpy(dst, src, count)
     template<typename TDst, typename TSrc, typename TCount>
     void emit_memcpy(TDst&& dst, TSrc&& src, TCount&& count);
+
+    /// Emits code equivalent to C++'s std::memset(dst, value, count), including
+    /// using only the first 8 bits of value.
+    template<typename TDst, typename TValue, typename TCount>
+    void emit_memset(TDst&& dst, TValue&& value, TCount&& count);
 
     // Literal emitters:
     // They do NOTHING but emit the specified instruction.
@@ -170,6 +181,7 @@ public:
     void emit_movsb();
     void emit_movsw();
     void emit_movsd();
+    void emit_stosb();
     void emit_fstp(const DecompiledVar& var);
 
     // x86 CALL
@@ -188,6 +200,19 @@ public:
     void emit_lea(RegGuard& dst, const DecompiledVar& src);
     void emit_lea(RegGuard& dst, const ArgVariant2& src);
 
+    // abstract MOVU16_FROM_U32 (TODO if this gets too bloated remove and simplifyyyyy)
+    void emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
+    void emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, uint32_t imm32);
+    void emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src);
+    void emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, uint32_t imm32);
+    void emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src);
+    void emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
+    void emit_movu16_from_u32(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src);
+
+    // abstract MOVI32_FROM_U8 (TODO if this gets too bloated remove and simplifyyyyy)
+    void emit_movi32_from_u8(RegGuard& reg_dst, RegGuard& reg_src);
+    void emit_movi32_from_u8(RegGuard& reg_dst, const ArgVariant2& src);
+
     // x86 MOV
     void emit_movi32(RegGuard& dst, int32_t imm32);
     void emit_movi32(RegGuard& dst, tag_CRunningScript_t);
@@ -200,7 +225,16 @@ public:
     template<typename TSrc>
     void emit_movi32(const ArgVariant2& dst, TSrc& src);
     template<typename TSrcAddr>
-    void emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr>& src);
+    void emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr> src);
+    //
+    void emit_movi32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
+    void emit_movi32(PointedBy<uintptr_t> p_dst, int32_t src);
+    void emit_movi32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src);
+    void emit_movi32(PointedBy<RegGuard&> p_reg_dst, int32_t imm32);
+    void emit_movi32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src);
+    void emit_movi32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
+    void emit_movi32(PointedBy<const ArgVariant2&> p_var_dst, const ArgVariant2& src);
+
 
     // x86 ADD
     void emit_addi32(RegGuard& dst, int32_t imm32);
@@ -344,7 +378,13 @@ public:
     {
         // If this asserts, simply remove the check.
         // We're just checking, no reason at all.
-        static_assert(std::is_same<std::remove_cv_t<T>, const ArgVariant2&>::value, "");
+        static_assert(std::is_same<T, const ArgVariant2&>::value, "");
+        T value;
+    };
+
+    template<typename T>
+    struct PointedBy
+    {
         T value;
     };
 
@@ -354,6 +394,25 @@ public:
         //                   ^ argument is non const to specify the object lifetime must be long enough
         return AddressOf<const ArgVariant2&> { x };
     }
+
+    auto ptr(const ArgVariant2& x) -> PointedBy<const ArgVariant2&>
+    {
+        return PointedBy<const ArgVariant2&> { x };
+    }
+
+    auto ptr(RegGuard& x) -> PointedBy<RegGuard&>
+    {
+        return PointedBy<RegGuard&> { x };
+    }
+
+    auto ptr(uintptr_t x) -> PointedBy<uintptr_t>
+    {
+        return PointedBy<uintptr_t> { x };
+    }
+
+
+
+
 
     /// The state of a x86 register.
     struct RegState
@@ -511,7 +570,7 @@ inline optional<int32_t> get_imm32(const uint32_t& u32, CodeGeneratorIA32& codeg
 
 
 template<typename TSrcAddr> inline
-void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr>& src)
+void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr> src)
 {
     emit_lea(reg_dst, src.value);
 }
@@ -534,10 +593,51 @@ void CodeGeneratorIA32::emit_movi32(const ArgVariant2& dst, TSrc& src)
     }
 }
 
+/*
+template<typename PTDst>
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<PTDst> p_dst, const ArgVariant2& src)
+{
+    if(auto opt_imm32 = get_imm32(src, *this))
+    {
+        emit_movu16_from_u32(p_var_dst, *opt_imm32);
+    }
+    else
+    {
+        auto rx = this->regalloc(purposes_temp);
+        emit_movi32(rx, src);
+        emit_movu16_from_u32(p_var_dst, rx);
+    }
+}
+
+template<typename TSrc>
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<const ArgVariant2&> p_dst, TSrc& src)
+{
+    auto& dst_value = p_dst.value;
+
+    if(auto opt_dst_imm32 = get_imm32(dst_value, *this))
+    {
+        emit_movu16_from_u32(*opt_dst_imm32, src);
+    }
+    else if(is<DecompiledVar>(dst))
+    {
+        emit_movu16_from_u32(get<DecompiledVar>(dst), src);
+    }
+    else if(is<DecompiledVarArray>(dst))
+    {
+        // TODO
+        throw DynarecError("Not imple yet");
+    }
+    else
+    {
+        throw DynarecUnexpectedValue(dst.which());
+    }
+}*/
+
 template<typename TDst, typename TSrc, typename TCount> inline
 void CodeGeneratorIA32::emit_memcpy(TDst&& dst, TSrc&& src, TCount&& count_)
 {
     // TODO optimization techniques
+    // maybe forwarding to the optimized CRT would be a better idea?
 
     if(auto opt_count_imm32 = get_imm32(count_, *this))
     {
@@ -586,5 +686,31 @@ void CodeGeneratorIA32::emit_memcpy(TDst&& dst, TSrc&& src, TCount&& count_)
             emit_movi32(reg_ecx, std::forward<TCount>(count));
             emit_rep(); emit_movsb();
         }
+    }
+}
+
+/// Emits code equivalent to C++'s std::memset(dst, value, count), including
+/// using only the first 8 bits of value.
+template<typename TDst, typename TValue, typename TCount>
+void CodeGeneratorIA32::emit_memset(TDst&& dst, TValue&& value, TCount&& count_)
+{
+    // TODO optimization techniques
+    // * check if count == 1, if so do a simple mov
+    // * maybe forwarding to the optimized CRT would be a better idea?
+    // * MORE
+
+    auto& count = count_;
+
+    // we're flushing just because we'll use EAX/ECX/EDI, anything else we can do?
+    this->emit_flush();
+    {
+        auto reg_eax = this->regalloc(Reg::Eax);
+        auto reg_ecx = this->regalloc(Reg::Ecx);
+        auto reg_edi = this->regalloc(Reg::Edi);
+
+        emit_movi32(reg_edi, std::forward<TDst>(dst));
+        emit_movi32_from_u8(reg_eax, std::forward<TValue>(value));
+        emit_movi32(reg_ecx, std::forward<TCount>(count));
+        emit_rep(); emit_stosb();
     }
 }

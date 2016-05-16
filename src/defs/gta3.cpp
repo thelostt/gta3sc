@@ -127,6 +127,21 @@ Commands gta3_commands()
         }
     });
 
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "WRITE_MEMORY",
+        {
+            true,
+            0x0A8C,
+            {
+                { ArgType::Integer, false, true, true, true, {} },
+                { ArgType::Integer, false, true, true, true, {} },
+                { ArgType::Integer, false, true, true, true, {} },
+                { ArgType::Integer, false, true, true, true, {} },
+            }
+        }
+    });
+
     mgr.update();
     return mgr;
 }
