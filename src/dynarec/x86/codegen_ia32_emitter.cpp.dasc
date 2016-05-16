@@ -1366,7 +1366,10 @@ void CodeGeneratorIA32::emit_movi32(const DecompiledVar& dst, PointedBy<RegGuard
 {
     // To access DecompiledVar we'll use a pointer, we can't have two operand pointers, so
     // reduce the complexity of p_src (p_src -> src)
-    auto ry = this->regalloc(purposes_temp);
+
+    RegGuard  guard_ry = !p_src.reg_can_override? this->regalloc(purposes_temp) : RegGuard();
+    RegGuard& ry       = !p_src.reg_can_override? guard_ry : p_src.value;
+
     emit_movi32(ry, p_src);
     emit_movi32(dst, ry);
 }
@@ -1381,7 +1384,7 @@ void CodeGeneratorIA32::emit_movi32(const DecompiledVar& dst, PointedBy<const Ar
     {
         auto rx = this->regalloc(purposes_temp);
         emit_movi32(rx, p_src.value);
-        emit_movi32(dst, ptr(rx));
+        emit_movi32(dst, ptr(rx, true));  // can override rx
     }
 }
 
@@ -1430,7 +1433,10 @@ void CodeGeneratorIA32::emit_movi32_from_u8(const DecompiledVar& dst, PointedBy<
 {
     // To access DecompiledVar we'll use a pointer, we can't have two operand pointers, so
     // reduce the complexity of p_src (p_src -> src)
-    auto ry = this->regalloc(purposes_temp);
+
+    RegGuard  guard_ry = !p_src.reg_can_override? this->regalloc(purposes_temp) : RegGuard();
+    RegGuard& ry       = !p_src.reg_can_override? guard_ry : p_src.value;
+
     emit_movi32_from_u8(ry, p_src);
     emit_movi32(dst, ry);
 }
@@ -1445,7 +1451,7 @@ void CodeGeneratorIA32::emit_movi32_from_u8(const DecompiledVar& dst, PointedBy<
     {
         auto rx = this->regalloc(purposes_temp);
         emit_movi32(rx, p_src.value);
-        emit_movi32_from_u8(dst, ptr(rx));
+        emit_movi32_from_u8(dst, ptr(rx, true)); // can override rx
     }
 }
 
@@ -1475,7 +1481,10 @@ void CodeGeneratorIA32::emit_movi32_from_u16(const DecompiledVar& dst, PointedBy
 {
     // To access DecompiledVar we'll use a pointer, we can't have two operand pointers, so
     // reduce the complexity of p_src (p_src -> src)
-    auto ry = this->regalloc(purposes_temp);
+
+    RegGuard  guard_ry = !p_src.reg_can_override? this->regalloc(purposes_temp) : RegGuard();
+    RegGuard& ry       = !p_src.reg_can_override? guard_ry : p_src.value;
+
     emit_movi32_from_u16(ry, p_src);
     emit_movi32(dst, ry);
 }
@@ -1490,7 +1499,7 @@ void CodeGeneratorIA32::emit_movi32_from_u16(const DecompiledVar& dst, PointedBy
     {
         auto rx = this->regalloc(purposes_temp);
         emit_movi32(rx, p_src.value);
-        emit_movi32_from_u16(dst, ptr(rx));
+        emit_movi32_from_u16(dst, ptr(rx, true)); // can override rx
     }
 }
 

@@ -422,6 +422,10 @@ public:
                     || std::is_same<T, uintptr_t>::value, "Wrong T");
 
         T value;
+
+        /// Only valid when T=RegGuard&.
+        /// This means you can override whatever value the register have, allowing some degree of optimization.
+        const bool reg_can_override;
     };
 
     /// Tells movi32 to load effective address of value.
@@ -433,17 +437,17 @@ public:
 
     static auto ptr(const ArgVariant2& x) -> PointedBy<const ArgVariant2&>
     {
-        return PointedBy<const ArgVariant2&> { x };
-    }
-
-    static auto ptr(RegGuard& x) -> PointedBy<RegGuard&>
-    {
-        return PointedBy<RegGuard&> { x };
+        return PointedBy<const ArgVariant2&> { x, false };
     }
 
     static auto ptr(uintptr_t x) -> PointedBy<uintptr_t>
     {
-        return PointedBy<uintptr_t> { x };
+        return PointedBy<uintptr_t> { x, false };
+    }
+
+    static auto ptr(RegGuard& x, bool can_override = false) -> PointedBy<RegGuard&>
+    {
+        return PointedBy<RegGuard&> { x, can_override };
     }
 
 
