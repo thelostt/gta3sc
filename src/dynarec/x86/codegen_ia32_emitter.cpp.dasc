@@ -739,14 +739,13 @@ void CodeGeneratorIA32::init_generators()
                 switch(*size_imm32)
                 {
                     case 4:
-                        // TODO ptr()
                         codegen.emit_movi32(ptr(dest), value);
                         break;
                     case 2:
                         codegen.emit_movu16_from_u32(ptr(dest), value); // treat as unsigned
                         break;
                     default:
-                        codegen.emit_memset(dest, *size_imm32, value);
+                        codegen.emit_memset(dest, value, *size_imm32);
                         break;
                 }
             }
@@ -1020,6 +1019,16 @@ void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, uint32_
     | mov word [p_dst.value], imm32
 }
 
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, uint32_t imm32)
+{
+    | mov word[Rd(p_reg_dst.value->id)], imm32
+}
+
+void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src)
+{
+    | mov word[Rd(p_reg_dst.value->id)], Rw(reg_src->id)
+}
+
 void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src)
 {
     if(auto xsrc_imm32 = get_imm32(src, *this))
@@ -1032,16 +1041,6 @@ void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, const A
         emit_movi32(rx, src);
         emit_movu16_from_u32(p_dst, rx);
     }
-}
-
-void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, uint32_t imm32)
-{
-    | mov word [Rd(p_reg_dst.value->id)], imm32
-}
-
-void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src)
-{
-    | mov word [Rd(p_reg_dst.value->id)], Rw(reg_src->id)
 }
 
 void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src)
@@ -1069,6 +1068,73 @@ void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<const ArgVariant2&> p_dst
         auto rp = this->regalloc(purposes_temp);
         emit_movi32(rp, p_dst.value);
         emit_movu16_from_u32(ptr(rp), src);
+    }
+}
+
+
+/////////////////////
+// MOVU8_FROM_U32
+
+
+void CodeGeneratorIA32::emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src)
+{
+    | mov byte[p_dst.value], Rb(reg_src->id)
+}
+
+void CodeGeneratorIA32::emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, uint32_t imm32)
+{
+    | mov byte[p_dst.value], imm32
+}
+
+void CodeGeneratorIA32::emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, uint32_t imm32)
+{
+    | mov byte[Rd(p_reg_dst.value->id)], imm32
+}
+
+void CodeGeneratorIA32::emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src)
+{
+    | mov byte[Rd(p_reg_dst.value->id)], Rb(reg_src->id)
+}
+
+void CodeGeneratorIA32::emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src)
+{
+    if(auto xsrc_imm32 = get_imm32(src, *this))
+    {
+        emit_movu8_from_u32(p_dst, *xsrc_imm32);
+    }
+    else
+    {
+        auto rx = this->regalloc(purposes_temp);
+        emit_movi32(rx, src);
+        emit_movu8_from_u32(p_dst, rx);
+    }
+}
+
+void CodeGeneratorIA32::emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src)
+{
+    if(auto opt_imm32 = get_imm32(src, *this))
+    {
+        emit_movu8_from_u32(p_reg_dst, *opt_imm32);
+    }
+    else
+    {
+        auto rx = this->regalloc(purposes_temp);
+        emit_movi32(rx, src);
+        emit_movu8_from_u32(p_reg_dst, rx);
+    }
+}
+
+void CodeGeneratorIA32::emit_movu8_from_u32(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src)
+{
+    if(auto xdst_imm32 = get_imm32(p_dst.value, *this))
+    {
+        emit_movu8_from_u32(ptr(*xdst_imm32), src);
+    }
+    else
+    {
+        auto rp = this->regalloc(purposes_temp);
+        emit_movi32(rp, p_dst.value);
+        emit_movu8_from_u32(ptr(rp), src);
     }
 }
 

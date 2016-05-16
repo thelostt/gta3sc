@@ -200,6 +200,8 @@ public:
     void emit_lea(RegGuard& dst, const DecompiledVar& src);
     void emit_lea(RegGuard& dst, const ArgVariant2& src);
 
+    /// If the following gets too bloated, simplify it out (tag & templates would help)
+
     // abstract MOVU16_FROM_U32 (TODO if this gets too bloated remove and simplifyyyyy)
     void emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
     void emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, uint32_t imm32);
@@ -209,7 +211,16 @@ public:
     void emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
     void emit_movu16_from_u32(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src);
 
-    // abstract MOVI32_FROM_U8 (TODO if this gets too bloated remove and simplifyyyyy)
+    // abstract MOVU8_FROM_U32 (if this gets too bloated remove and simplify)
+    void emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
+    void emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, uint32_t imm32);
+    void emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src);
+    void emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, uint32_t imm32);
+    void emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src);
+    void emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
+    void emit_movu8_from_u32(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src);
+
+    // abstract MOVI32_FROM_U8 (if this gets too bloated remove and simplify)
     void emit_movi32_from_u8(RegGuard& reg_dst, RegGuard& reg_src);
     void emit_movi32_from_u8(RegGuard& reg_dst, const ArgVariant2& src);
 
@@ -692,14 +703,19 @@ void CodeGeneratorIA32::emit_memcpy(TDst&& dst, TSrc&& src, TCount&& count_)
 /// Emits code equivalent to C++'s std::memset(dst, value, count), including
 /// using only the first 8 bits of value.
 template<typename TDst, typename TValue, typename TCount>
-void CodeGeneratorIA32::emit_memset(TDst&& dst, TValue&& value, TCount&& count_)
+void CodeGeneratorIA32::emit_memset(TDst&& dest, TValue&& value, TCount&& count_)
 {
     // TODO optimization techniques
-    // * check if count == 1, if so do a simple mov
     // * maybe forwarding to the optimized CRT would be a better idea?
     // * MORE
 
     auto& count = count_;
+
+    // If count == 1, perform a simple mov.
+    if(get_imm32(count, *this).value_or(9) == 1)
+    {
+        return emit_movu8_from_u32(ptr(dest), value);
+    }
 
     // we're flushing just because we'll use EAX/ECX/EDI, anything else we can do?
     this->emit_flush();
@@ -708,7 +724,7 @@ void CodeGeneratorIA32::emit_memset(TDst&& dst, TValue&& value, TCount&& count_)
         auto reg_ecx = this->regalloc(Reg::Ecx);
         auto reg_edi = this->regalloc(Reg::Edi);
 
-        emit_movi32(reg_edi, std::forward<TDst>(dst));
+        emit_movi32(reg_edi, std::forward<TDst>(dest));
         emit_movi32_from_u8(reg_eax, std::forward<TValue>(value));
         emit_movi32(reg_ecx, std::forward<TCount>(count));
         emit_rep(); emit_stosb();
