@@ -202,29 +202,29 @@ public:
 
     /// If the following gets too bloated, simplify it out (tag & templates would help)
 
-    // abstract MOVU16_FROM_U32 (TODO if this gets too bloated remove and simplifyyyyy)
-    void emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
-    void emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, uint32_t imm32);
-    void emit_movu16_from_u32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src);
-    void emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, uint32_t imm32);
-    void emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src);
-    void emit_movu16_from_u32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
-    void emit_movu16_from_u32(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src);
+    // abstract MOVU16 (if this gets too bloated remove and simplify)
+    void emit_movu16(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
+    void emit_movu16(PointedBy<uintptr_t> p_dst, uint16_t imm16);
+    void emit_movu16(PointedBy<uintptr_t> p_dst, const ArgVariant2& src);
+    void emit_movu16(PointedBy<RegGuard&> p_reg_dst, uint16_t imm16);
+    void emit_movu16(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src);
+    void emit_movu16(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
+    void emit_movu16(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src);
 
-    // abstract MOVU8_FROM_U32 (if this gets too bloated remove and simplify)
-    void emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
-    void emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, uint32_t imm32);
-    void emit_movu8_from_u32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src);
-    void emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, uint32_t imm32);
-    void emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src);
-    void emit_movu8_from_u32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
-    void emit_movu8_from_u32(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src);
-
-    // abstract MOVI32_FROM_U8 (if this gets too bloated remove and simplify)
-    void emit_movi32_from_u8(RegGuard& reg_dst, RegGuard& reg_src);
-    void emit_movi32_from_u8(RegGuard& reg_dst, const ArgVariant2& src);
+    // abstract MOVU8 (if this gets too bloated remove and simplify)
+    void emit_movu8(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
+    void emit_movu8(PointedBy<uintptr_t> p_dst, uint8_t imm8);
+    void emit_movu8(PointedBy<uintptr_t> p_dst, const ArgVariant2& src);
+    void emit_movu8(PointedBy<RegGuard&> p_reg_dst, uint8_t imm8);
+    void emit_movu8(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src);
+    void emit_movu8(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
+    void emit_movu8(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src);
 
     // x86 MOV
+    template<typename TSrc>     // Templated because ArgVariant2's destination must be a variable.
+    void emit_movi32(const ArgVariant2& dst, TSrc& src);
+    template<typename TSrcAddr> // Templated because AddressOf<> destination must be a variable.
+    void emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr> src);
     void emit_movi32(RegGuard& dst, int32_t imm32);
     void emit_movi32(RegGuard& dst, tag_CRunningScript_t);
     void emit_movi32(RegGuard& dst, RegGuard& reg_src);
@@ -233,18 +233,38 @@ public:
     void emit_movi32(const DecompiledVar& dst, int32_t imm32);
     void emit_movi32(const DecompiledVar& dst, RegGuard& src);
     void emit_movi32(const DecompiledVar& dst, const ArgVariant2& src);
-    template<typename TSrc>
-    void emit_movi32(const ArgVariant2& dst, TSrc& src);
-    template<typename TSrcAddr>
-    void emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr> src);
-    //
     void emit_movi32(PointedBy<uintptr_t> p_dst, RegGuard& reg_src);
     void emit_movi32(PointedBy<uintptr_t> p_dst, int32_t src);
     void emit_movi32(PointedBy<uintptr_t> p_dst, const ArgVariant2& src);
     void emit_movi32(PointedBy<RegGuard&> p_reg_dst, int32_t imm32);
     void emit_movi32(PointedBy<RegGuard&> p_reg_dst, RegGuard& reg_src);
     void emit_movi32(PointedBy<RegGuard&> p_reg_dst, const ArgVariant2& src);
-    void emit_movi32(PointedBy<const ArgVariant2&> p_var_dst, const ArgVariant2& src);
+    void emit_movi32(PointedBy<const ArgVariant2&> p_dst, const ArgVariant2& src);
+    void emit_movi32(RegGuard& reg_dst,        PointedBy<RegGuard&> p_reg_src);
+    void emit_movi32(RegGuard& reg_dst,        PointedBy<uintptr_t> p_src);
+    void emit_movi32(const DecompiledVar& dst, PointedBy<uintptr_t> p_src);
+    void emit_movi32(const DecompiledVar& dst, PointedBy<RegGuard&> p_src);
+    void emit_movi32(const DecompiledVar& dst, PointedBy<const ArgVariant2&> p_src);
+    
+    // x86 MOVZX (i32 <- u16)
+    void emit_movi32_from_u16(RegGuard& reg_dst,        PointedBy<uintptr_t> p_src);
+    void emit_movi32_from_u16(RegGuard& reg_dst,        PointedBy<RegGuard&> p_reg_src);
+    void emit_movi32_from_u16(const DecompiledVar& dst, PointedBy<uintptr_t> p_src);
+    void emit_movi32_from_u16(const DecompiledVar& dst, PointedBy<RegGuard&> p_src);
+    void emit_movi32_from_u16(const DecompiledVar& dst, PointedBy<const ArgVariant2&> p_src);
+    template<typename TSrc>     // Templated because ArgVariant2's destination must be a variable.
+    void emit_movi32_from_u16(const ArgVariant2& dst, TSrc& src);
+
+    // x86 MOVZX (i32 <- u8)
+    void emit_movi32_from_u8(RegGuard& reg_dst, RegGuard& reg_src);
+    void emit_movi32_from_u8(RegGuard& reg_dst, const ArgVariant2& src);
+    void emit_movi32_from_u8(RegGuard& reg_dst,       PointedBy<uintptr_t> p_src);
+    void emit_movi32_from_u8(RegGuard& reg_dst,       PointedBy<RegGuard&> p_reg_src);
+    void emit_movi32_from_u8(const DecompiledVar& dst, PointedBy<uintptr_t> p_src);
+    void emit_movi32_from_u8(const DecompiledVar& dst, PointedBy<RegGuard&> p_src);
+    void emit_movi32_from_u8(const DecompiledVar& dst, PointedBy<const ArgVariant2&> p_src);
+    template<typename TSrc>     // Templated because ArgVariant2's destination must be a variable.
+    void emit_movi32_from_u8(const ArgVariant2& dst, TSrc& src);
 
 
     // x86 ADD
@@ -383,40 +403,45 @@ private:
 
 public:
 
-    /// Tells movi32 to load effective address.
+    /// Tells movi32 and such to load effective address (like &tls[i] instead of tls[i])
     template<typename T>
     struct AddressOf
     {
         // If this asserts, simply remove the check.
         // We're just checking, no reason at all.
-        static_assert(std::is_same<T, const ArgVariant2&>::value, "");
+        static_assert(std::is_same<T, const ArgVariant2&>::value, "Wrong T");
         T value;
     };
 
+    /// Tells movi32 and such to use value pointed by as operand (like [eax] instead of eax)
     template<typename T>
     struct PointedBy
     {
+        static_assert( std::is_same<T, const ArgVariant2&>::value
+                    || std::is_same<T, RegGuard&>::value
+                    || std::is_same<T, uintptr_t>::value, "Wrong T");
+
         T value;
     };
 
     /// Tells movi32 to load effective address of value.
-    auto lea(/* non const! */ ArgVariant2& x) -> AddressOf<const ArgVariant2&>
+    static auto lea(/* non const! */ ArgVariant2& x) -> AddressOf<const ArgVariant2&>
     {
         //                   ^ argument is non const to specify the object lifetime must be long enough
         return AddressOf<const ArgVariant2&> { x };
     }
 
-    auto ptr(const ArgVariant2& x) -> PointedBy<const ArgVariant2&>
+    static auto ptr(const ArgVariant2& x) -> PointedBy<const ArgVariant2&>
     {
         return PointedBy<const ArgVariant2&> { x };
     }
 
-    auto ptr(RegGuard& x) -> PointedBy<RegGuard&>
+    static auto ptr(RegGuard& x) -> PointedBy<RegGuard&>
     {
         return PointedBy<RegGuard&> { x };
     }
 
-    auto ptr(uintptr_t x) -> PointedBy<uintptr_t>
+    static auto ptr(uintptr_t x) -> PointedBy<uintptr_t>
     {
         return PointedBy<uintptr_t> { x };
     }
@@ -604,34 +629,12 @@ void CodeGeneratorIA32::emit_movi32(const ArgVariant2& dst, TSrc& src)
     }
 }
 
-/*
-template<typename PTDst>
-void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<PTDst> p_dst, const ArgVariant2& src)
+template<typename TSrc> inline
+void CodeGeneratorIA32::emit_movi32_from_u16(const ArgVariant2& dst, TSrc& src)
 {
-    if(auto opt_imm32 = get_imm32(src, *this))
+    if(is<DecompiledVar>(dst))
     {
-        emit_movu16_from_u32(p_var_dst, *opt_imm32);
-    }
-    else
-    {
-        auto rx = this->regalloc(purposes_temp);
-        emit_movi32(rx, src);
-        emit_movu16_from_u32(p_var_dst, rx);
-    }
-}
-
-template<typename TSrc>
-void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<const ArgVariant2&> p_dst, TSrc& src)
-{
-    auto& dst_value = p_dst.value;
-
-    if(auto opt_dst_imm32 = get_imm32(dst_value, *this))
-    {
-        emit_movu16_from_u32(*opt_dst_imm32, src);
-    }
-    else if(is<DecompiledVar>(dst))
-    {
-        emit_movu16_from_u32(get<DecompiledVar>(dst), src);
+        emit_movi32_from_u16(get<DecompiledVar>(dst), src);
     }
     else if(is<DecompiledVarArray>(dst))
     {
@@ -642,7 +645,25 @@ void CodeGeneratorIA32::emit_movu16_from_u32(PointedBy<const ArgVariant2&> p_dst
     {
         throw DynarecUnexpectedValue(dst.which());
     }
-}*/
+}
+
+template<typename TSrc> inline
+void CodeGeneratorIA32::emit_movi32_from_u8(const ArgVariant2& dst, TSrc& src)
+{
+    if(is<DecompiledVar>(dst))
+    {
+        emit_movi32_from_u8(get<DecompiledVar>(dst), src);
+    }
+    else if(is<DecompiledVarArray>(dst))
+    {
+        // TODO
+        throw DynarecError("Not imple yet");
+    }
+    else
+    {
+        throw DynarecUnexpectedValue(dst.which());
+    }
+}
 
 template<typename TDst, typename TSrc, typename TCount> inline
 void CodeGeneratorIA32::emit_memcpy(TDst&& dst, TSrc&& src, TCount&& count_)
@@ -714,7 +735,7 @@ void CodeGeneratorIA32::emit_memset(TDst&& dest, TValue&& value, TCount&& count_
     // If count == 1, perform a simple mov.
     if(get_imm32(count, *this).value_or(9) == 1)
     {
-        return emit_movu8_from_u32(ptr(dest), value);
+        return emit_movu8(ptr(dest), value);
     }
 
     // we're flushing just because we'll use EAX/ECX/EDI, anything else we can do?
