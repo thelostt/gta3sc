@@ -136,7 +136,7 @@ Commands gta3_commands()
             {
                 { ArgType::Integer, false, true, true, true, {} },
                 { ArgType::Integer, false, true, true, true, {} },
-                { ArgType::Integer, false, true, true, true, {} },
+                { ArgType::Any, false, true, true, true, {} },
                 { ArgType::Integer, false, true, true, true, {} },
             }
         }
@@ -152,7 +152,20 @@ Commands gta3_commands()
                 { ArgType::Integer, false, true, true, true, {} },
                 { ArgType::Integer, false, true, true, true, {} },
                 { ArgType::Integer, false, true, true, true, {} },
-                { ArgType::Integer, false, false, true, true, {} },
+                { ArgType::Any, false, false, true, true, {} },
+            }
+        }
+    });
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "GET_VAR_POINTER",
+        {
+            true,
+            0x0AC7,
+            {
+                { ArgType::Any, false, true, true, true,{} },
+                { ArgType::Integer, false, false, true, true,{} },
             }
         }
     });

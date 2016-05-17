@@ -198,7 +198,13 @@ public:
 
     // x86 LEA
     void emit_lea(RegGuard& dst, const DecompiledVar& src);
-    void emit_lea(RegGuard& dst, const ArgVariant2& src);
+    void emit_lea(const DecompiledVar& dst, const DecompiledVar& src);
+
+    template<typename TSrc> 
+    void emit_lea(const ArgVariant2& dst, TSrc&& src);
+    template<typename TDst, // Templated because ArgVariant2's source must be a variable.
+             typename = std::enable_if_t<!std::is_same<std::decay_t<TDst>, ArgVariant2>::value>>
+    void emit_lea(TDst&& dst, const ArgVariant2& src);
 
     /// If the following gets too bloated, simplify it out (tag & templates would help)
 
@@ -223,8 +229,9 @@ public:
     // x86 MOV
     template<typename TSrc>     // Templated because ArgVariant2's destination must be a variable.
     void emit_movi32(const ArgVariant2& dst, TSrc& src);
-    template<typename TSrcAddr> // Templated because AddressOf<> destination must be a variable.
-    void emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr> src);
+    template<typename TDst, typename TSrcAddr> // Templated because AddressOf<> destination must be a variable.
+    void emit_movi32(TDst&& dst, AddressOf<TSrcAddr> src);
+    void emit_movi32(const DecompiledVar& dst, AddressOf<const DecompiledVar&> src);
     void emit_movi32(RegGuard& dst, int32_t imm32);
     void emit_movi32(RegGuard& dst, tag_CRunningScript_t);
     void emit_movi32(RegGuard& dst, RegGuard& reg_src);
@@ -407,9 +414,9 @@ public:
     template<typename T>
     struct AddressOf
     {
-        // If this asserts, simply remove the check.
-        // We're just checking, no reason at all.
-        static_assert(std::is_same<T, const ArgVariant2&>::value, "Wrong T");
+        // Add more types if needed.
+        static_assert(std::is_same<T, const ArgVariant2&>::value
+                   || std::is_same<T, const DecompiledVar&>::value, "Wrong T");
         T value;
     };
 
@@ -417,6 +424,7 @@ public:
     template<typename T>
     struct PointedBy
     {
+        // Add more types if needed.
         static_assert( std::is_same<T, const ArgVariant2&>::value
                     || std::is_same<T, RegGuard&>::value
                     || std::is_same<T, uintptr_t>::value, "Wrong T");
@@ -429,9 +437,8 @@ public:
     };
 
     /// Tells movi32 to load effective address of value.
-    static auto lea(/* non const! */ ArgVariant2& x) -> AddressOf<const ArgVariant2&>
+    static auto lea(const ArgVariant2& x) -> AddressOf<const ArgVariant2&>
     {
-        //                   ^ argument is non const to specify the object lifetime must be long enough
         return AddressOf<const ArgVariant2&> { x };
     }
 
@@ -608,11 +615,49 @@ inline optional<int32_t> get_imm32(const uint32_t& u32, CodeGeneratorIA32& codeg
 
 
 
-
-template<typename TSrcAddr> inline
-void CodeGeneratorIA32::emit_movi32(RegGuard& reg_dst, AddressOf<TSrcAddr> src)
+template<typename TDst, typename>
+inline void CodeGeneratorIA32::emit_lea(TDst&& dst, const ArgVariant2& src)
 {
-    emit_lea(reg_dst, src.value);
+    if(is<DecompiledVar>(src))
+    {
+        emit_lea(std::forward<TDst>(dst), get<DecompiledVar>(src));
+    }
+    else if(is<DecompiledVarArray>(src))
+    {
+        // TODO
+        throw DynarecError("Not imple yet");
+    }
+    else
+    {
+        throw DynarecUnexpectedValue(src.which());
+    }
+}
+
+template<typename TSrc>
+inline void CodeGeneratorIA32::emit_lea(const ArgVariant2& dst, TSrc&& src)
+{
+    if(is<DecompiledVar>(dst))
+    {
+        emit_lea(get<DecompiledVar>(dst), std::forward<TSrc>(src));
+    }
+    else if(is<DecompiledVarArray>(dst))
+    {
+        // TODO
+        throw DynarecError("Not imple yet");
+    }
+    else
+    {
+        throw DynarecUnexpectedValue(dst.which());
+    }
+}
+
+
+
+
+template<typename TDst, typename TSrcAddr> inline
+void CodeGeneratorIA32::emit_movi32(TDst&& dst, AddressOf<TSrcAddr> src)
+{
+    emit_lea(std::forward<TDst>(dst), src.value);
 }
 
 template<typename TSrc> inline

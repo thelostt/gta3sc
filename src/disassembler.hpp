@@ -153,7 +153,7 @@ public:
             }
             else
             {
-                auto begin_offset = offset;
+                auto begin_offset = offset++;
                 for(size_t count = 0; offset < bytecode_size; ++count, ++offset)
                 {
                     // repeat this loop until a label offset or a explored offset is found, then break.

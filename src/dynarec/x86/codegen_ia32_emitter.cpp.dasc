@@ -127,7 +127,22 @@ auto generate_code(const DecompiledLabelDef& def, CodeGeneratorIA32::IterData it
 
 auto generate_code(const DecompiledHex& hex, CodeGeneratorIA32::IterData it, CodeGeneratorIA32& codegen) -> CodeGeneratorIA32::IterData
 {
-    // TODO
+    // TODO more elaborated, taking care of other possibly ways of using HEX...END
+    // remember tha this might be unknown opcodes, in this case we shouldn't recompile.
+
+    // TODO move this check into pre-recompilation step.
+
+    // TODO optimize this loop.
+
+    for(auto& byte : hex.data)
+    {
+        if(byte != 0)
+        {
+            throw DynarecError("Found HEX...END section that isn't filled with zeroes."
+                               "Possibly a unknown command.");
+        }
+    }
+
     return ++it;
 }
 
@@ -820,6 +835,34 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x0A8D, op_pread);    // TODO CLEO ONLY
     }
 
+    // GET_LABEL_POINTER
+    {
+        auto op_labelptr = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            // TODO, should point to original script data
+            // also check for self-modifying code?
+            NotImplementedYet();
+            return ++it;
+        };
+
+        this->add_generator(0x05F7, op_labelptr); // TODO III/VC CLEO ONLY
+        this->add_generator(0x0AC6, op_labelptr); // TODO CLEO ONLY
+    }
+
+    // GET_VAR_POINTER
+    {
+        auto op_varptr = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            // TODO what to do when we have a reg cache? disable such caching?
+            Expects(ccmd.args.size() == 2);
+            emit_movi32(ccmd.args[1], lea(ccmd.args[0]));
+            return ++it;
+        };
+
+        // TODO there's no GET_VAR_POINTER on III/VC CLEO1?
+        this->add_generator(0x0AC7, op_varptr); // TODO CLEO ONLY
+    }
+
 
 
 /*
@@ -1041,8 +1084,7 @@ void CodeGeneratorIA32::emit_lea(RegGuard& reg_dst, const DecompiledVar& src)
 {
     if(src.global)
     {
-        | mov Rd(reg_dst->id), (global_vars + src.offset)
-        // ^ yes, this is a mov, not a lea
+        emit_movi32(reg_dst, reinterpret_cast<int32_t>(global_vars + src.offset));
     }
     else
     {
@@ -1051,22 +1093,21 @@ void CodeGeneratorIA32::emit_lea(RegGuard& reg_dst, const DecompiledVar& src)
     }
 }
 
-void CodeGeneratorIA32::emit_lea(RegGuard& reg_dst, const ArgVariant2& src)
+void CodeGeneratorIA32::emit_lea(const DecompiledVar& dst, const DecompiledVar& src)
 {
-    if(is<DecompiledVar>(src))
+    if(src.global)
     {
-        emit_lea(reg_dst, get<DecompiledVar>(src));
-    }
-    else if(is<DecompiledVarArray>(src))
-    {
-        // TODO
-        NotImplementedYet();
+        emit_movi32(dst, reinterpret_cast<int32_t>(global_vars + src.offset));
     }
     else
     {
-        throw DynarecUnexpectedValue(src.which());
+        auto rx = this->regalloc(purposes_temp);
+        emit_lea(rx, src);
+        emit_movi32(dst, rx);
     }
 }
+
+
 
 /////////////////////
 // MOVU16

@@ -9,6 +9,7 @@
 #include <map>
 #include <set>
 #include <algorithm>
+#include <iterator>
 #include <cppformat/format.h>
 #include "cpp/any.hpp"
 #include "cpp/variant.hpp"

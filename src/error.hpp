@@ -32,6 +32,6 @@ public:
 };
 
 #ifndef DynarecUnexpectedValue
-#define DynarecUnexpectedValue(value) DynarecError("Unexpected {} at {}; {} == {}", #value, __func__, #value, value)
+#define DynarecUnexpectedValue(value) DynarecError("Unexpected {} at {}:{}; {} == {}", #value, __FILE__, __LINE__, #value, value)
 #endif
 
