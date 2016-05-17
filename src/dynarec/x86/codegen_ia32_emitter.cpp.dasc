@@ -175,16 +175,21 @@ void CodeGeneratorIA32::init_generators()
         return ++it;
     });
 
-    // GOSUB
-    this->add_generator(0x0050, [&](const DecompiledCommand& ccmd, IterData it)
+    // GOSUB / GOSUB_FILE
     {
-        Expects(ccmd.args.size() == 1);
-        auto label_id = codegen.add_label(ccmd.args[0]);
+        auto opgen_gosub = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            Expects(ccmd.args.size() == (ccmd.id == 0x0050? 1 : 2));
+            auto label_id = codegen.add_label(ccmd.args[0]);
 
-        codegen.emit_flush(); // flush before branch
-        | call =>(label_id)
-        return ++it;
-    });
+            codegen.emit_flush(); // flush before branch
+            | call =>(label_id)
+            return ++it;
+        };
+
+        this->add_generator(0x0050, opgen_gosub); // GOSUB
+        this->add_generator(0x02CD, opgen_gosub); // GOSUB_FILE (TODO III/VC? ONLY)
+    }
 
     // RETURN
     this->add_generator(0x0051, [&](const DecompiledCommand& ccmd, IterData it)
@@ -305,6 +310,21 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x05DC, opgen_terminate); // TERMINATE_THIS_CUSTOM_SCRIPT (TODO III/VC CLEO ONLY)
         this->add_generator(0x05DD, opgen_terminate); // TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME (TODO III/VC CLEO ONLY)
     }
+
+    // START_NEW_SCRIPT
+    this->add_generator(0x004F, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        throw DynarecError("START_NEW_SCRIPT is not currently supported.");
+        return ++it;
+    });
+
+    // LAUNCH_MISSION
+    this->add_generator(0x00D7, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        throw DynarecError("LAUNCH_MISSION is not currently supported.");
+        return ++it;
+    });
+
 
     // SET
     {
