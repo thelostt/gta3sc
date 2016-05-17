@@ -863,6 +863,19 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x0AC7, op_varptr); // TODO CLEO ONLY
     }
 
+    // GET_THIS_SCRIPT_STRUCT / GET_SCRIPT_STRUCT_NAMED
+    {
+        auto op_scptr = [&](const DecompiledCommand& ccmd, IterData it)
+        {
+            throw DynarecError("Scripts using GET_THIS_SCRIPT_STRUCT or GET_SCRIPT_STRUCT_NAMED aren't supported");
+            return ++it;
+        };
+
+        this->add_generator(0x05EC, op_scptr); // TODO III/VC CLEO ONLY
+        this->add_generator(0x0A9F, op_scptr); // TODO CLEO ONLY
+        this->add_generator(0x05ED, op_scptr); // TODO III/VC CLEO ONLY
+        this->add_generator(0x0AAA, op_scptr); // TODO CLEO ONLY
+    }
 
 
 /*
