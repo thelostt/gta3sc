@@ -3,13 +3,19 @@
 
 struct CodeGeneratorIA32;
 
-/// Gets the immediate 32 bits value of the value inside the variant, or nullopt if not possible.
-///
-/// This function should be overloaded/specialized for each possible value in ArgVariant2.
-///
+//
+// Some overloads for get_imm32 (TODO should we remove those in favor of get_imm32(x)? They seem quite useless)
+//
 template<typename T>
-static optional<int32_t> get_imm32(const T&, CodeGeneratorIA32& codegen);
-static optional<int32_t> get_imm32(const ArgVariant2&, CodeGeneratorIA32& codegen);
+inline optional<int32_t> get_imm32(const T& arg, CodeGeneratorIA32& codegen)
+{
+    return get_imm32(arg);
+}
+inline optional<int32_t> get_imm32(const uint32_t& u32, CodeGeneratorIA32& codegen)
+{
+    return static_cast<int32_t>(u32);
+}
+
 
 /// Converts intermediate representation (given by `Disassembler`) into x86.
 struct CodeGeneratorIA32
@@ -51,6 +57,14 @@ public:
         Max_,
     };
 
+    ///
+    struct SwitchEntry
+    {
+        int32_t case_value;
+        int32_t target_label;
+        unsigned int label_id;
+    };
+
 private:
     // Inputs
     const Commands&             commands;
@@ -90,6 +104,9 @@ public:
     ///
     /// Returns the next command to generate, usually simply `++it`.
     IterData run_generator(const DecompiledCommand& ccmd, IterData it);
+
+    /// Adds a DASM label unrelated to any SCM label to be used by some code emitter.
+    unsigned int add_label();
 
     /// Adds, or finds if already added, a DASM label id associated with the `label_param`.
     /// `label_param` is the label offset as given in a SCM script.
@@ -174,6 +191,12 @@ public:
     /// using only the first 8 bits of value.
     template<typename TDst, typename TValue, typename TCount>
     void emit_memset(TDst&& dst, TValue&& value, TCount&& count);
+
+    /// Emits a switch(value). May use a binary search or a jump table depending on some heuristics.
+    /// `cases` **must** be sorted in ascending order according to `SwitchEntry::case_value`. 
+    ///
+    /// Unlike the other branch emitters, this will do a emit_flush() automatically.
+    void emit_switch(const ArgVariant2& value, const std::vector<SwitchEntry>& cases, unsigned int default_label_id);
 
     // Literal emitters:
     // They do NOTHING but emit the specified instruction.
@@ -476,7 +499,8 @@ public:
 
         bool is_allocated : 1;  //< Is this register allocated by some one else?
         bool is_dirty     : 1;  //< Currently unused since we don't have a cache.
-        uint8_t id;             //< Id of this register.      
+    public:
+        const uint8_t id;       //< Id of this register.      
     };
 
     /// Guard for a allocated register.
@@ -544,6 +568,7 @@ public:
         CodeGeneratorIA32*  codegen;
     };
 
+
 private:
     /// CRunningScript Context (EBP).
     RegGuard reg_ctx;
@@ -557,60 +582,6 @@ private:
     std::map<uint16_t, opgen_func_t> generators;
 };
 
-
-
-inline optional<int32_t> get_imm32(const EOAL&, CodeGeneratorIA32& codegen)
-{
-    return nullopt;
-}
-
-inline optional<int32_t> get_imm32(const DecompiledVar&, CodeGeneratorIA32& codegen)
-{
-    return nullopt;
-}
-
-inline optional<int32_t> get_imm32(const DecompiledVarArray&, CodeGeneratorIA32& codegen)
-{
-    return nullopt;
-}
-
-inline optional<int32_t> get_imm32(const DecompiledString&, CodeGeneratorIA32& codegen)
-{
-    return nullopt;
-}
-
-inline optional<int32_t> get_imm32(const int8_t& i8, CodeGeneratorIA32& codegen)
-{
-    return static_cast<int32_t>(i8);
-}
-
-inline optional<int32_t> get_imm32(const int16_t& i16, CodeGeneratorIA32& codegen)
-{
-    return static_cast<int32_t>(i16);
-}
-
-inline optional<int32_t> get_imm32(const int32_t& i32, CodeGeneratorIA32& codegen)
-{
-    return static_cast<int32_t>(i32);
-}
-
-inline optional<int32_t> get_imm32(const float& flt, CodeGeneratorIA32& codegen)
-{
-    // TODO floating point format static assert
-    return reinterpret_cast<const int32_t&>(flt);
-}
-
-inline optional<int32_t> get_imm32(const ArgVariant2& varg, CodeGeneratorIA32& codegen)
-{
-    return visit_one(varg, [&](const auto& arg) { return ::get_imm32(arg, codegen); });
-}
-
-// Other overloads
-
-inline optional<int32_t> get_imm32(const uint32_t& u32, CodeGeneratorIA32& codegen)
-{
-    return static_cast<int32_t>(u32);
-}
 
 
 

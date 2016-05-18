@@ -18,9 +18,12 @@
 
 static constexpr CodeGeneratorIA32::tag_CRunningScript_t tag_CRunningScript{};
 
+// TODO on addi32/subi32/[muli32] do a lea?
+// TODO addi32/subi32 to inc/dec
+// TODO GET_LABEL_POINTER at disassembler shouldn't add to interesting list
+
 void CodeGeneratorIA32::init_dasm()
 {
-    //static_assert(std::size(this->dlabels) >= lbl__MAX, "");
     static_assert(sizeof(this->dlabels) / sizeof(*this->dlabels) >= lbl__MAX, "");
 
     dstate_maxpc = 0;
@@ -43,6 +46,22 @@ static bool is_branch(uint16_t id)
     return id == 0x004C || id == 0x004D;
 }
 
+static bool operator<(const CodeGeneratorIA32::SwitchEntry& lhs, const CodeGeneratorIA32::SwitchEntry& rhs)
+{
+    return lhs.case_value < rhs.case_value;
+}
+
+static bool operator<(const CodeGeneratorIA32::SwitchEntry& lhs, int32_t rhs)
+{
+    return lhs.case_value < rhs;
+}
+
+static bool operator<(int32_t lhs, const CodeGeneratorIA32::SwitchEntry& rhs)
+{
+    return lhs < rhs.case_value;
+}
+
+
 void CodeGeneratorIA32::test()
 {
     auto& codegen = *this;
@@ -50,8 +69,6 @@ void CodeGeneratorIA32::test()
     for(auto it = decompiled.begin(); it != decompiled.end(); )
     {
         it = generate_code(*it, it, codegen);
-        //| nop
-        //| nop
     }
 
     size_t code_size;
@@ -79,16 +96,22 @@ static int32_t dasm_resolve_extern(CodeGeneratorIA32::Dst_DECL_t* dstate, unsign
 // Labels
 ///////////////////////////////////////////////
 
+unsigned int CodeGeneratorIA32::add_label()
+{
+    ++dstate_maxpc;
+    dasm_growpc(&this->dstate, dstate_maxpc);
+    return dstate_maxpc - 1;
+}
+
 unsigned int CodeGeneratorIA32::add_label(int32_t label_param)
 {
     auto it = pcmap.find(label_param);
     if(it != pcmap.end())
         return it->second;
 
-    ++dstate_maxpc;
-    dasm_growpc(&this->dstate, dstate_maxpc);
-    pcmap.emplace(label_param, dstate_maxpc - 1);
-    return dstate_maxpc - 1;
+    auto id = this->add_label();
+    pcmap.emplace(label_param, id);
+    return id;
 }
 
 unsigned int CodeGeneratorIA32::add_label(const ArgVariant2& varg)
@@ -155,7 +178,6 @@ auto generate_code(const DecompiledData&, CodeGeneratorIA32::IterData it, CodeGe
 ///////////////////////////////
 // Generators
 ///////////////////////////////
-
 
 void CodeGeneratorIA32::init_generators()
 {
@@ -877,6 +899,80 @@ void CodeGeneratorIA32::init_generators()
         this->add_generator(0x0AAA, op_scptr); // TODO CLEO ONLY
     }
 
+    // SWITCH_START / SWITCH_CONTINUED
+    this->add_generator(0x0871, [&](const DecompiledCommand& switch_start, IterData it)
+    {
+        std::vector<SwitchEntry> cases;
+
+        auto& arg_value   = switch_start.args[0];
+        auto& opt_ncases  = get_imm32(switch_start.args[1], codegen);
+        // switch_start.args[2] is has_default, however the game doesn't care, nor should we.
+        auto& opt_default = get_imm32(switch_start.args[3], codegen);
+        
+        if(!opt_ncases || !opt_default)
+            throw DynarecError("SWITCH_START amount of cases or default label is not constant");
+
+        int32_t default_label = *opt_default;
+        size_t cases_left = *opt_ncases;
+        
+        // Populate the SwitchEntry vector.
+        cases.reserve(*opt_ncases);
+        for(auto curr_it = it; cases_left > 0; curr_it = ++it)
+        {
+            if(!is<DecompiledCommand>(curr_it->data))
+                throw DynarecUnexpectedValue(curr_it->data.which());
+
+            size_t index_case, cases_left_this_cmd;
+            auto& curr_cmd = get<DecompiledCommand>(curr_it->data);
+
+            if(curr_cmd.id == 0x0871 &&
+                std::addressof(curr_cmd) == std::addressof(switch_start))
+            {
+                Expects(curr_cmd.args.size() == 18);
+                cases_left_this_cmd = (18 - 4) / 2;
+                index_case = 4;
+            }
+            else if(curr_cmd.id == 0x0872)
+            {
+                Expects(curr_cmd.args.size() == 18);
+                cases_left_this_cmd = (18 - 0) / 2;
+                index_case = 0;
+            }
+            else
+            {
+                throw DynarecError("Missing SWITCH_CONTINUE");
+            }
+
+            
+            for(; cases_left && cases_left_this_cmd;
+                  cases_left--, cases_left_this_cmd--, index_case += 2)
+            {
+                auto opt_case  = get_imm32(curr_cmd.args[index_case + 0], codegen);
+                auto opt_label = get_imm32(curr_cmd.args[index_case + 1], codegen);
+
+                if(!opt_case || !opt_label)
+                    throw DynarecError("SWITCH_* case value or case target label is not constant");
+
+                cases.emplace_back(SwitchEntry { *opt_case, *opt_label, codegen.add_label(*opt_label) });
+            }
+        }
+
+        // TODO the game has a limitation of 75 cases, should we enforce this limitation?
+
+        // No need to sort -- the game already requires the arguments to be sorted.
+        //std::sort(cases.begin(), cases.end());
+        
+        codegen.emit_switch(arg_value, cases, codegen.add_label(default_label));
+        return it;
+    });
+
+    this->add_generator(0x0872, [&](const DecompiledCommand& ccmd, IterData it)
+    {
+        // See SWITCH_START for actual implementation.
+        throw DynarecError("SWITCH_CONTINUED without SWITCH_START");
+        return ++it;
+    });
+
 
 /*
     // CREATE_CHAR
@@ -926,7 +1022,6 @@ void CodeGeneratorIA32::init_generators()
 #define Dst &this->dstate
 
 
-
 void CodeGeneratorIA32::emit_savelocals()
 {
     const auto size_bytes = sizeof(CRunningScript::tls);
@@ -944,6 +1039,204 @@ void CodeGeneratorIA32::emit_restorelocals()
     emit_memcpy(get_esp(), lea(dst_begin), size_bytes);
     emit_addi32(get_esp(), size_bytes);
 }
+
+void CodeGeneratorIA32::emit_switch(
+    const ArgVariant2& arg_value,
+    const std::vector<SwitchEntry>& cases,
+    unsigned int default_label_id)
+{
+    // Some useful resources regarding how a switch is built on compilers around (from most useful resource to least useful):
+    //  + http://lazarenko.me/switch/ (nice non-internal overview)
+    //  + http://llvm.org/pubs/2007-05-31-Switch-Lowering.pdf (goes into the internals)
+    //  + https://github.com/llvm-mirror/llvm/blob/cd41a78559cdbee7f590a3ee7c81a59de8c3b3b3/lib/CodeGen/SelectionDAG/SelectionDAGBuilder.cpp (LLVM source)
+    //  + https://github.com/gcc-mirror/gcc/blob/edd716b6b1caa1a5cb320a8cd7f626f30198e098/gcc/stmt.c (GCC source)
+    //  + https://github.com/CRogers/obc/blob/master/compiler/switch.ml (Random source. In OCaml, but well commented.)
+    //  + http://cellperformance.beyond3d.com/articles/2006/04/branch-patterns-using-gcc.html (@Switch Statements, old but still)
+    //  + http://www.codeproject.com/Articles/100473/Something-You-May-Not-Know-About-the-Switch-Statem
+    //
+
+    using iterator = std::vector<SwitchEntry>::const_iterator;
+
+    std::function<void(iterator begin, iterator end)> emit_binary_search;
+
+    struct JumpTable
+    {
+        unsigned int              label_id; //< label id where the jump table should start
+        std::vector<unsigned int> entries;  //< jump table entries, in DASM label ids
+
+        JumpTable(unsigned int label_id)
+            : label_id(label_id)
+        {}
+    };
+
+    // Ratio used to verify whether cases are dense enough to generate a jump table
+    // instead of a binary search. See `is_sparse`.
+    //
+    // Ratio based on GCC -Os level.
+    static constexpr size_t sparse_ratio = 4;
+
+    // Minimum number of cases (inclusive) to generate a jump table, otherwise
+    // generates a binary search.
+    static constexpr size_t min_cases_jt = 4;
+
+    // Delay emission of the jump tables.
+    // We may have more than one table (emit_binary_search is allowed to do that),
+    // and we don't want to polute the cache with tables instead of the selection code.
+    std::vector<JumpTable> jump_tables;
+
+    // Cached `arg_value` in a register.
+    RegGuard reg_value;
+
+    /// Checks whether the switch cases are too sparse, thus making a jump table not being a good idea.
+    /// The higher `max_ratio` is, the more permissive this function is (allow bigger jump tables).
+    auto is_sparse = [](size_t ncases, int32_t low, int32_t high, size_t max_ratio)
+    {
+        assert(high >= low);
+        size_t range = high - low;
+        return range >  ncases * max_ratio;
+    };
+
+    /// Emits a jump table for cases in the sorted range (begin, end).
+    auto emit_jump_table = [&](iterator begin, iterator end)
+    {
+        size_t num_cases = std::distance(begin, end);
+        iterator last    = std::next(begin, num_cases? num_cases - 1 : 0);
+
+        auto start   = begin->case_value;
+        size_t range = (last->case_value - begin->case_value);
+
+        jump_tables.emplace_back(JumpTable { this->add_label() });
+        auto& jt = jump_tables.back();
+        jt.entries.reserve(range);
+
+        emit_subi32(reg_value, start);
+        emit_cmpi32(reg_value, range);
+        | ja =>(default_label_id)
+        | jmp dword [Rd(reg_value->id)*4 + =>(jt.label_id)]
+
+        auto next_case = begin;
+        for(size_t i = 0; i <= range; ++i)
+        {
+            if(i == (next_case->case_value - start))
+            {
+                jt.entries.emplace_back(next_case->label_id);
+                ++next_case;
+            }
+            else
+            {
+                jt.entries.emplace_back(default_label_id);
+            }
+        }
+
+        Ensures(next_case == end);
+    };
+
+    /// Emits a binary search [or a jump table] for cases in the sorted range (begin, end).
+    emit_binary_search = [&](iterator begin, iterator end)
+    {
+        size_t num_cases = std::distance(begin, end);
+
+        if(num_cases == 0)
+        {
+            | jmp =>(default_label_id)
+        }
+        else if(num_cases <= 3)
+        {
+            // The amount of jl/jge we'd produce by doing a bsearch on 3 cases is the same (actually more)
+            //  as if we put direct comparisions.
+            emit_cmpi32(reg_value, begin->case_value);
+            | je =>(begin->label_id)
+            emit_binary_search(begin + 1, end);
+        }
+        else
+        {
+            // Pivot of the binary tree that the vector(begin, end) is.
+            auto pivot = std::next(begin, num_cases / 2);
+            auto last  = std::next(begin, num_cases - 1);
+
+            if(num_cases > min_cases_jt 
+                && !is_sparse(num_cases, begin->case_value, last->case_value, sparse_ratio))
+            {
+                emit_jump_table(begin, end);
+                return;
+            }
+
+            // This odd/even check helps us not emit unecessary `jmp`s since this algorithm is recursive.
+            if(num_cases & 1)
+            {
+                auto left_label_id = this->add_label();
+
+                emit_cmpi32(reg_value, pivot->case_value);
+                | jl =>(left_label_id)              // branch to search left
+                emit_binary_search(pivot, end);     // search pivot and right
+                | =>(left_label_id):
+                emit_binary_search(begin, pivot);   // search left
+            }
+            else
+            {
+                auto right_label_id = this->add_label();
+
+                emit_cmpi32(reg_value, pivot->case_value);
+                | jge =>(right_label_id)             // branch to search pivot and right
+                emit_binary_search(begin, pivot);    // search left
+                | =>(right_label_id):
+                emit_binary_search(pivot, end);      // search pivot and right
+            }
+        }
+    };
+
+
+    //---------
+
+    assert(std::is_sorted(cases.begin(), cases.end()));
+
+    /// Flush context/variables before braching.
+    this->emit_flush();
+
+    if(auto const_value = get_imm32(arg_value, *this))
+    {
+        // If the switching value is constant, just match the switch right now.
+        auto lower_it = std::lower_bound(cases.begin(), cases.end(), *const_value);
+        if(lower_it != cases.end() && lower_it->case_value == *const_value)
+        {
+            | jmp =>(lower_it->label_id)
+        }
+        else
+        {
+            | jmp =>(default_label_id)
+        }
+    }
+    else
+    {
+        // Avoid acessing the variable every iteration of the bsearch by moving it to a register.
+        reg_value = this->regalloc(purposes_temp);
+        emit_movi32(reg_value, arg_value);
+
+        // Call emit_binary_search directly, it'll by itself identify if it is better
+        // to do a binary search or use a jump table.
+        emit_binary_search(cases.begin(), cases.end());
+    }
+
+    // We may have [automatically] cached something on the code above.
+    // We shouldn't have anything cached after a branch, ensure that by flushing context.
+    this->emit_flush();
+
+    // Emit the possibly jump tables generated by the emit_jump_table functor.
+    for(auto& jt : jump_tables)
+    {
+        // TODO should we generate the jump table in .code (as we're doing now) or .rodata?
+        // does such locality matters on cache performance and everything?
+
+        | .align 4
+        | =>(jt.label_id):
+        for(auto& target_id : jt.entries)
+        {
+            | .dword =>(target_id)
+        }
+    }
+}
+
+
 
 
 

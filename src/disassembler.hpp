@@ -69,6 +69,16 @@ struct DecompiledData
 };
 
 
+/// Gets the immediate 32 bits value of the value inside the variant, or nullopt if not possible.
+///
+/// This function should be overloaded/specialized for each possible value in ArgVariant2.
+///
+template<typename T>
+static optional<int32_t> get_imm32(const T&);
+static optional<int32_t> get_imm32(const ArgVariant2&);
+
+
+
 struct Disassembler
 {
 private:
@@ -89,6 +99,8 @@ private:
     std::vector<uint8_t>    bytecode_buffer_;
 
     size_t hint_num_ops = 0;
+
+    size_t switch_cases_left = 0;
 
 public:
     // undefined behaviour is invoked if data inside `bytecode` is changed while
@@ -154,7 +166,7 @@ public:
             else
             {
                 auto begin_offset = offset++;
-                for(size_t count = 0; offset < bytecode_size; ++count, ++offset)
+                for(; offset < bytecode_size; ++offset)
                 {
                     // repeat this loop until a label offset or a explored offset is found, then break.
                     //
@@ -162,11 +174,10 @@ public:
                     // and then (maybe) this loop will continue.
 
                     if(this->offset_explored[offset] || this->label_offsets.count(offset))
-                    {
-                        output.emplace_back(begin_offset, std::vector<uint8_t>(this->bytecode + begin_offset, this->bytecode + offset));
                         break;
-                    }
                 }
+
+                output.emplace_back(begin_offset, std::vector<uint8_t>(this->bytecode + begin_offset, this->bytecode + offset));
             }
         }
 
@@ -226,21 +237,47 @@ private:
 
         bool stop_it = false;
 
-        auto check_for_label = [&](auto value, const Command::Arg& arg)
+        bool is_switch_start     = (&command == &this->commands.switch_start());
+        bool is_switch_continued = (&command == &this->commands.switch_continued());
+
+        size_t argument_id = 0;
+
+        auto check_for_imm32 = [&](auto value, const Command::Arg& arg)
         {
+            if(is_switch_start && argument_id == 1)
+            {
+                this->switch_cases_left = value;
+            }
+
             if(arg.type == ArgType::Label)
             {
+                if(is_switch_start || is_switch_continued)
+                {
+                    if(this->switch_cases_left == 0)
+                        return; // don't take offset
+                    
+                    if(is_switch_start && argument_id != 3) // not default label
+                        --this->switch_cases_left;
+                }
+
                 // TODO treat negative offsets properly (relative to mission base, etc)
                 interesting_offsets.push(value < 0? -value : value);
                 label_offsets.emplace(value < 0? -value : value);
             }
         };
 
+        if(is_switch_start)
+        {
+            // We need this set to 0 since the switch cases argument mayn't
+            // be a constant (ill-formed, but game executes).
+            this->switch_cases_left = 0;
+        }
+
         // TODO optimize out fetches here to just check offset + N
 
         for(auto it = command.args.begin();
             !stop_it && it != command.args.end();
-            it->optional? it : ++it)
+            (it->optional? it : ++it), ++argument_id)
         {
             if(it->type == ArgType::Buffer128)
             {
@@ -266,7 +303,7 @@ private:
                 case 0x01: // Int32
                     if(auto opt = fetch_i32(offset))
                     {
-                        check_for_label(*opt, *it);
+                        check_for_imm32(*opt, *it);
                         offset += sizeof(int32_t);
                         break;
                     }
@@ -275,7 +312,7 @@ private:
                 case 0x04: // Int8
                     if(auto opt = fetch_i8(offset))
                     {
-                        check_for_label(*opt, *it);
+                        check_for_imm32(*opt, *it);
                         offset += sizeof(int8_t);
                         break;
                     }
@@ -284,7 +321,7 @@ private:
                 case 0x05: // Int16
                     if(auto opt = fetch_i16(offset))
                     {
-                        check_for_label(*opt, *it);
+                        check_for_imm32(*opt, *it);
                         offset += sizeof(int16_t);
                         break;
                     }
@@ -349,7 +386,14 @@ private:
         && &command != &this->commands.terminate_this_script())
         // TODO more
         {
-            this->to_explore.emplace(offset);
+            if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)
+            {
+                // we are at the last SWITCH_START/SWITCH_CONTINUED command, after this, the game will take a branch.
+            }
+            else
+            {
+                this->to_explore.emplace(offset);
+            }
         }
 
         // mark this area as explored
@@ -560,3 +604,50 @@ private:
     }
 };
 
+
+
+inline optional<int32_t> get_imm32(const EOAL&)
+{
+    return nullopt;
+}
+
+inline optional<int32_t> get_imm32(const DecompiledVar&)
+{
+    return nullopt;
+}
+
+inline optional<int32_t> get_imm32(const DecompiledVarArray&)
+{
+    return nullopt;
+}
+
+inline optional<int32_t> get_imm32(const DecompiledString&)
+{
+    return nullopt;
+}
+
+inline optional<int32_t> get_imm32(const int8_t& i8)
+{
+    return static_cast<int32_t>(i8);
+}
+
+inline optional<int32_t> get_imm32(const int16_t& i16)
+{
+    return static_cast<int32_t>(i16);
+}
+
+inline optional<int32_t> get_imm32(const int32_t& i32)
+{
+    return static_cast<int32_t>(i32);
+}
+
+inline optional<int32_t> get_imm32(const float& flt)
+{
+    // TODO floating point format static assert
+    return reinterpret_cast<const int32_t&>(flt);
+}
+
+inline optional<int32_t> get_imm32(const ArgVariant2& varg)
+{
+    return visit_one(varg, [&](const auto& arg) { return ::get_imm32(arg); });
+}

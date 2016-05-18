@@ -154,6 +154,18 @@ public:
 
     // --- Important Commands ---
 
+    const Command& switch_start() const
+    {
+        // TODO cached
+        return commands.find("SWITCH_START")->second;
+    }
+
+    const Command& switch_continued() const
+    {
+        // TODO cached
+        return commands.find("SWITCH_CONTINUED")->second;
+    }
+
     const Command& gosub_file() const
     {
         // TODO cached

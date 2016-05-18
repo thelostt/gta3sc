@@ -25,6 +25,69 @@ Commands gta3_commands()
     cmd_arg("MARK_MODEL_AS_NO_LONGER_NEEDED", 0).enums.emplace_back(gta3_models_enum);
     cmd_arg("CREATE_CAR", 0).enums.emplace_back(gta3_models_enum);
 
+    /////////////// SA SPECIFIC
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "SWITCH_START",
+        {
+            true,
+            0x0871,
+            {
+                { ArgType::Integer, false, true, true, true, {} },
+                { ArgType::Integer, false, true, true, true, {} },
+                // Default
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                // Cases
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+            }
+        }
+    });
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "SWITCH_CONTINUED",
+        {
+            true,
+            0x0872,
+            {
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+                { ArgType::Integer, false, true, false, false,{} },
+                { ArgType::Label,   false, true, false, false,{} },
+            }
+        }
+    });
+
+
     /////////////// CLEO2
     commands.emplace(decltype(mgr.commands)::value_type
     {
