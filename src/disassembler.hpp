@@ -380,10 +380,11 @@ private:
         // add next instruction as the next thing to be explored, if this isn't a instruction that
         // terminates execution or jumps unconditionally to another offset.
         // TODO would be nice if this was actually configurable.
-        if(&command != &this->commands.goto_()
-        && &command != &this->commands.return_()
-        && &command != &this->commands.ret()
-        && &command != &this->commands.terminate_this_script())
+        if(!this->commands.equal(command, this->commands.goto_())
+        && !this->commands.equal(command, this->commands.return_())
+        && !this->commands.equal(command, this->commands.ret())
+        && !this->commands.equal(command, this->commands.terminate_this_script())
+        && !this->commands.equal(command, this->commands.terminate_this_custom_script()))
         // TODO more
         {
             if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)

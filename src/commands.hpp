@@ -151,6 +151,23 @@ public:
         return nullopt;
     }
 
+    bool equal(const Command& rhs, const Command& lhs) const
+    {
+        return &rhs == &lhs;
+    }
+
+    bool equal(const Command& rhs, alternator_pair lhs) const
+    {
+        for(auto it = lhs.first; it != lhs.second; ++it)
+        {
+            if(this->equal(rhs, it->second))
+                return true;
+        }
+        return false;
+    }
+
+
+
 
     // --- Important Commands ---
 
@@ -194,6 +211,11 @@ public:
     {
         // TODO cached
         return commands.find("TERMINATE_THIS_SCRIPT")->second;
+    }
+
+    alternator_pair terminate_this_custom_script() const
+    {
+        return commands.equal_range("TERMINATE_THIS_CUSTOM_SCRIPT");
     }
 
     const Command& return_() const    // can't be named purely return() because of the C keyword

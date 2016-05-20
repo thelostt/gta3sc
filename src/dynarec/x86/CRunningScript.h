@@ -1,3 +1,4 @@
+#pragma once
 #include <cstddef>
 
 using DWORD = uint32_t;

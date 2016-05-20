@@ -89,6 +89,18 @@ Commands gta3_commands()
 
 
     /////////////// CLEO2
+
+    commands.emplace(decltype(mgr.commands)::value_type
+    {
+        "TERMINATE_THIS_CUSTOM_SCRIPT",
+        {
+            true,
+            0x0A93,
+            {
+            }
+        }
+    });
+
     commands.emplace(decltype(mgr.commands)::value_type
     {
         "CALL",

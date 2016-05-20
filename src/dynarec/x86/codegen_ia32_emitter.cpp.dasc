@@ -86,6 +86,25 @@ void CodeGeneratorIA32::test()
     //__debugbreak();
 }
 
+void CodeGeneratorIA32::generate()
+{
+    for(auto it = decompiled.begin(); it != decompiled.end(); )
+    {
+        it = generate_code(*it, it, *this);
+    }
+}
+
+auto CodeGeneratorIA32::assemble() -> std::pair<std::unique_ptr<uint8_t>, size_t>
+{
+    size_t size;
+    dasm_link(&this->dstate, &size);
+
+    std::unique_ptr<uint8_t> ptr(new uint8_t[size]);
+    dasm_encode(&this->dstate, ptr.get());
+
+    return std::make_pair(std::move(ptr), size);
+}
+
 static int32_t dasm_resolve_extern(CodeGeneratorIA32::Dst_DECL_t* dstate, unsigned char* addr, unsigned int eidx, bool is_rel)
 {
     return dstate->codegen.resolve_extern(addr, extern_table[eidx], is_rel);
@@ -1055,6 +1074,10 @@ void CodeGeneratorIA32::emit_switch(
     //  + http://www.codeproject.com/Articles/100473/Something-You-May-Not-Know-About-the-Switch-Statem
     //
 
+    // TODO this can be improved, see "Current LLVM switch lowering algorithm" on the PDF above.
+    // We also need to check the benefit versus cost of the LLVM approach.
+    // Currently we only use either the binary search or the jump table, depending on the density of the cases.
+
     using iterator = std::vector<SwitchEntry>::const_iterator;
 
     std::function<void(iterator begin, iterator end)> emit_binary_search;
@@ -1087,13 +1110,13 @@ void CodeGeneratorIA32::emit_switch(
     // Cached `arg_value` in a register.
     RegGuard reg_value;
 
-    /// Checks whether the switch cases are too sparse, thus making a jump table not being a good idea.
-    /// The higher `max_ratio` is, the more permissive this function is (allow bigger jump tables).
-    auto is_sparse = [](size_t ncases, int32_t low, int32_t high, size_t max_ratio)
+    /// Checks whether the switch cases are dense enough to emit a jump table.
+    /// The higher `max_ratio` is, the more permissive this function is (allows bigger jump tables).
+    auto is_dense = [](size_t ncases, int32_t low, int32_t high, size_t max_ratio)
     {
         assert(high >= low);
         size_t range = high - low;
-        return range >  ncases * max_ratio;
+        return !(range >  ncases * max_ratio); // !(is sparse)
     };
 
     /// Emits a jump table for cases in the sorted range (begin, end).
@@ -1154,13 +1177,6 @@ void CodeGeneratorIA32::emit_switch(
             auto pivot = std::next(begin, num_cases / 2);
             auto last  = std::next(begin, num_cases - 1);
 
-            if(num_cases > min_cases_jt 
-                && !is_sparse(num_cases, begin->case_value, last->case_value, sparse_ratio))
-            {
-                emit_jump_table(begin, end);
-                return;
-            }
-
             // This odd/even check helps us not emit unecessary `jmp`s since this algorithm is recursive.
             if(num_cases & 1)
             {
@@ -1212,9 +1228,15 @@ void CodeGeneratorIA32::emit_switch(
         reg_value = this->regalloc(purposes_temp);
         emit_movi32(reg_value, arg_value);
 
-        // Call emit_binary_search directly, it'll by itself identify if it is better
-        // to do a binary search or use a jump table.
-        emit_binary_search(cases.begin(), cases.end());
+        if(cases.size() > min_cases_jt
+            && is_dense(cases.size(), cases.front().case_value, cases.back().case_value, sparse_ratio))
+        {
+            emit_jump_table(cases.begin(), cases.end());
+        }
+        else
+        {
+            emit_binary_search(cases.begin(), cases.end());
+        }
     }
 
     // We may have [automatically] cached something on the code above.

@@ -96,6 +96,12 @@ public:
     CodeGeneratorIA32(CodeGeneratorIA32&&) = default;
     ~CodeGeneratorIA32();
 
+    ///
+    void generate();
+
+    ///
+    auto assemble() -> std::pair<std::unique_ptr<uint8_t>, size_t>;
+
     /// Returns the address to the external symbol named `extern_name`.
     /// If `is_rel` is true, returns a address relative from `addr+4`, otherwise absolute address.
     int32_t resolve_extern(unsigned char* addr, const char* extern_name, bool is_rel);
