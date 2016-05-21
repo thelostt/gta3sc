@@ -292,6 +292,20 @@ private:
             if(!opt_argtype)
                 return nullopt;
 
+            // Handle III/VC string arguments
+            if(*opt_argtype > 0x06 && !this->config.has_text_label_prefix)
+            {
+                if(it->type == ArgType::TextLabel)
+                {
+                    offset = offset - 1; // there was no data type, remove one byte
+                    if(!fetch_chars(offset, 8))
+                        return nullopt;
+                    offset += 8;
+                    continue;
+                }
+                return nullopt;
+            }
+
             switch(*opt_argtype)
             {
                 case 0x00: // EOA (end of args)
@@ -349,24 +363,38 @@ private:
                     }
                     break;
 
-                default: // TODO add rest of data types SA specific
-                    if(!this->config.has_text_label_prefix)
-                    {
-                        if(it->type == ArgType::TextLabel)
-                        {
-                            offset = offset - 1; // there was no data type, remove one byte
-                            if(!fetch_chars(offset, 8))
-                                return nullopt;
-                            offset += 8;
-                            break;
-                        }
+                //
+                // The following cases will not get to run on III/VC
+                //
+
+                case 0x09: // Immediate 8-byte string
+                    if(!fetch_chars(offset, 8))
                         return nullopt;
-                    }
-                    else
-                    {
-                        return nullopt;
-                    }
+                    offset += 8;
                     break;
+
+                case 0x0F: // Immediate 16-byte string
+                    if(!fetch_chars(offset, 16))
+                        return nullopt;
+                    offset += 16;
+                    break;
+
+                case 0x0E: // Immediate variable-length string
+                {
+                    if(auto opt_count = fetch_u8(offset))
+                    {
+                        if(!fetch_chars(offset+1, *opt_count))
+                            return nullopt;
+                        offset += *opt_count+1;
+                        break;
+                    }
+                    return nullopt;
+                }
+
+                // TODO add rest of data types SA specific
+
+                default:
+                    return nullopt;
             }
         }
 
@@ -433,7 +461,23 @@ private:
                 continue;
             }
 
-            switch(*fetch_u8(offset++))
+            auto datatype = *fetch_u8(offset++);
+
+            // Handle III/VC string arguments
+            if(datatype > 0x06 && !this->config.has_text_label_prefix)
+            {
+                if(it->type == ArgType::TextLabel)
+                {
+                    offset = offset - 1; // there was no data type, remove one byte
+                    ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
+                    offset += 8;
+                    continue;
+                }
+                // code was already analyzed by explore_opcode and it went fine, so...
+                Unreachable();
+            }
+
+            switch(datatype)
             {
                 case 0x00:
                     ccmd.args.emplace_back(EOAL{});
@@ -495,23 +539,33 @@ private:
                     }
                     break;
 
-                default: // TODO add rest of data types SA specific
-                    if(!this->config.has_text_label_prefix)
-                    {
-                        if(it->type == ArgType::TextLabel)
-                        {
-                            offset = offset - 1; // there was no data type, remove one byte
-                            ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
-                            offset += 8;
-                            break;
-                        }
-                        Unreachable();
-                    }
-                    else
-                    {
-                        Unreachable();
-                    }
+
+                //
+                // The following cases will not get to run on III/VC
+                //
+
+                case 0x09: // Immediate 8-byte string
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
+                    offset += 8;
                     break;
+
+                case 0x0F: // Immediate 16-byte string
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 16)) });
+                    offset += 16;
+                    break;
+
+                case 0x0E: // Immediate variable-length string
+                {
+                    auto count = *fetch_u8(offset);
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset+1, count)) });
+                    offset += count + 1;
+                    break;
+                }
+
+                // TODO add rest of data types SA specific
+
+                default:
+                    Unreachable();
             }
         }
 

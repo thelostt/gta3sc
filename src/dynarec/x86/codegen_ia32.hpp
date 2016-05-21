@@ -106,6 +106,9 @@ public:
     /// If `is_rel` is true, returns a address relative from `addr+4`, otherwise absolute address.
     int32_t resolve_extern(unsigned char* addr, const char* extern_name, bool is_rel);
 
+    ///
+    bool has_generator(int16_t opcode);
+
     /// Runs generator for the specified command.
     ///
     /// Returns the next command to generate, usually simply `++it`.
@@ -204,6 +207,9 @@ public:
     /// Unlike the other branch emitters, this will do a emit_flush() automatically.
     void emit_switch(const ArgVariant2& value, const std::vector<SwitchEntry>& cases, unsigned int default_label_id);
 
+    ///
+    void emit_bytes(const void* data, size_t size);
+    
     // Literal emitters:
     // They do NOTHING but emit the specified instruction.
     void emit_rep();
@@ -330,6 +336,12 @@ public:
     void emit_push(const ArgVariant2& varg)
     {
         return emit_pushi32(varg);
+    }
+
+    /// Generic PUSH.
+    void emit_push(RegGuard& reg)
+    {
+        return emit_pushi32(reg);
     }
 
     /// Generic PUSH.

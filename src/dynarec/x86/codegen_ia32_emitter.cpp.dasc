@@ -11,7 +11,7 @@
 | .arch x86
 | .actionlist actions
 | .globals lbl_
-| .section code
+| .section code, rodata
 | .externnames extern_table
 
 #define NotImplementedYet() (throw DynarecError("NotImplementedYet"))
@@ -203,14 +203,14 @@ void CodeGeneratorIA32::init_generators()
     auto& codegen = *this;
 
     // NOP
-    this->add_generator(0x0000, [&](const DecompiledCommand& ccmd, IterData it)
+    this->add_generator(0x0000, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
     {
         // TODO, this op should only appear on the top of a script!?!?
         return ++it;
     });
 
     // WAIT
-    this->add_generator(0x0001, [&](const DecompiledCommand& ccmd, IterData it)
+    this->add_generator(0x0001, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 1);
         codegen.emit_flush(); // flush context before going into another script
@@ -219,7 +219,7 @@ void CodeGeneratorIA32::init_generators()
     });
 
     // GOTO
-    this->add_generator(0x0002, [&](const DecompiledCommand& ccmd, IterData it)
+    this->add_generator(0x0002, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 1);
         auto label_id = codegen.add_label(ccmd.args[0]);
@@ -233,7 +233,7 @@ void CodeGeneratorIA32::init_generators()
 
     // GOSUB / GOSUB_FILE
     {
-        auto opgen_gosub = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_gosub = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == (ccmd.id == 0x0050? 1 : 2));
             auto label_id = codegen.add_label(ccmd.args[0]);
@@ -248,7 +248,7 @@ void CodeGeneratorIA32::init_generators()
     }
 
     // RETURN
-    this->add_generator(0x0051, [&](const DecompiledCommand& ccmd, IterData it)
+    this->add_generator(0x0051, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 0);
 
@@ -260,7 +260,7 @@ void CodeGeneratorIA32::init_generators()
 
     // GOTO_IF_FALSE / GOTO_IF_TRUE / GOSUB_IF_FALSE / RETURN_IF_FALSE
     {
-        auto opgen_branchif = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_branchif = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == 1);
             auto label_id = codegen.add_label(ccmd.args[0]);
@@ -306,7 +306,7 @@ void CodeGeneratorIA32::init_generators()
 
     // RETURN_TRUE / RETURN_FALSE
     {
-        auto opgen_setcond = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_setcond = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == 0);
             if(ccmd.id == 0x00C5 || ccmd.id == 0x0485) // RETURN_TRUE
@@ -328,7 +328,7 @@ void CodeGeneratorIA32::init_generators()
 
     // TERMINATE_THIS_SCRIPT / TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME / and such
     {
-        auto opgen_terminate = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_terminate = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             // before terminating, flush context
             codegen.emit_flush();
@@ -368,14 +368,14 @@ void CodeGeneratorIA32::init_generators()
     }
 
     // START_NEW_SCRIPT
-    this->add_generator(0x004F, [&](const DecompiledCommand& ccmd, IterData it)
+    this->add_generator(0x004F, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
     {
         throw DynarecError("START_NEW_SCRIPT is not currently supported.");
         return ++it;
     });
 
     // LAUNCH_MISSION
-    this->add_generator(0x00D7, [&](const DecompiledCommand& ccmd, IterData it)
+    this->add_generator(0x00D7, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
     {
         throw DynarecError("LAUNCH_MISSION is not currently supported.");
         return ++it;
@@ -384,7 +384,7 @@ void CodeGeneratorIA32::init_generators()
 
     // SET
     {
-        auto opgen_set = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_set = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == 2);
             codegen.emit_movi32(ccmd.args[0], ccmd.args[1]);
@@ -411,7 +411,7 @@ void CodeGeneratorIA32::init_generators()
     {
         // TODO opgen_addf
 
-        auto opgen_addi = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_addi = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == 2);
             codegen.emit_addi32(ccmd.args[0], ccmd.args[1]);
@@ -436,7 +436,7 @@ void CodeGeneratorIA32::init_generators()
     {
         // TODO opgen_equf
 
-        auto opgen_equi = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_equi = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == 2);
             codegen.emit_cmpi32(ccmd.args[0], ccmd.args[1]);
@@ -465,7 +465,7 @@ void CodeGeneratorIA32::init_generators()
     
 
     // ANDOR
-    this->add_generator(0x00D6, [&](const DecompiledCommand& ccmd, IterData it)
+    this->add_generator(0x00D6, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
     {
         Expects(ccmd.args.size() == 1);
 
@@ -549,7 +549,7 @@ void CodeGeneratorIA32::init_generators()
 
     // CALL
     {
-        auto opgen_call = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_call = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             // TODO try to improve this, oh man...
             // CALL is this fucking terrible because of the nature of SCM for those long years.
@@ -634,7 +634,7 @@ void CodeGeneratorIA32::init_generators()
 
     // RET
     {
-        auto opgen_ret = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_ret = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() >= 1 + 1); //+1 for null terminating argument
             Expects(is<EOAL>(ccmd.args.back()));
@@ -677,7 +677,7 @@ void CodeGeneratorIA32::init_generators()
 
     // CALL_ASM
     {
-        auto opgen_callasm = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_callasm = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             ArgVariant2 none_arg;
             size_t curr_param = 0;
@@ -772,7 +772,7 @@ void CodeGeneratorIA32::init_generators()
 
     // POP_FLOAT
     {
-        auto opgen_fstp = [&](const DecompiledCommand& ccmd, IterData it)
+        auto opgen_fstp = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == 1);
 
@@ -795,7 +795,7 @@ void CodeGeneratorIA32::init_generators()
 
     // WRITE_MEMORY
     {
-        auto op_pwrite = [&](const DecompiledCommand& ccmd, IterData it)
+        auto op_pwrite = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == 4);
 
@@ -835,7 +835,7 @@ void CodeGeneratorIA32::init_generators()
 
     // READ_MEMORY
     {
-        auto op_pread = [&](const DecompiledCommand& ccmd, IterData it)
+        auto op_pread = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             Expects(ccmd.args.size() == 4);
 
@@ -878,7 +878,7 @@ void CodeGeneratorIA32::init_generators()
 
     // GET_LABEL_POINTER
     {
-        auto op_labelptr = [&](const DecompiledCommand& ccmd, IterData it)
+        auto op_labelptr = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             // TODO, should point to original script data
             // also check for self-modifying code?
@@ -892,7 +892,7 @@ void CodeGeneratorIA32::init_generators()
 
     // GET_VAR_POINTER
     {
-        auto op_varptr = [&](const DecompiledCommand& ccmd, IterData it)
+        auto op_varptr = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             // TODO what to do when we have a reg cache? disable such caching?
             Expects(ccmd.args.size() == 2);
@@ -906,7 +906,7 @@ void CodeGeneratorIA32::init_generators()
 
     // GET_THIS_SCRIPT_STRUCT / GET_SCRIPT_STRUCT_NAMED
     {
-        auto op_scptr = [&](const DecompiledCommand& ccmd, IterData it)
+        auto op_scptr = [=, &codegen](const DecompiledCommand& ccmd, IterData it)
         {
             throw DynarecError("Scripts using GET_THIS_SCRIPT_STRUCT or GET_SCRIPT_STRUCT_NAMED aren't supported");
             return ++it;
@@ -985,13 +985,89 @@ void CodeGeneratorIA32::init_generators()
         return it;
     });
 
-    this->add_generator(0x0872, [&](const DecompiledCommand& ccmd, IterData it)
+    this->add_generator(0x0872, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
     {
         // See SWITCH_START for actual implementation.
         throw DynarecError("SWITCH_CONTINUED without SWITCH_START");
         return ++it;
     });
 
+
+    {
+        auto opid = 0x00BC; // PRINT_BIG
+        auto& command  = *this->commands.find_command(opid);
+
+        this->add_generator(opid, [=, &codegen](const DecompiledCommand& ccmd, IterData it)
+        {
+            // TODO can't
+            if(command.args.size() && command.args.back().optional)
+                throw DynarecError("Can't handle valen arguments yet");
+
+            Expects(command.args.size() == ccmd.args.size());
+
+            size_t used_stack = 0;
+
+            for(size_t k = ccmd.args.size(); k > 0; --k)
+            {
+                size_t i = k - 1;
+
+                switch(command.args[i].type)
+                {
+                    case ArgType::Label:
+                    case ArgType::Integer:
+                    case ArgType::Float:
+                        emit_pushi32(ccmd.args[i]);
+                        used_stack += 4;
+                        break;
+                    case ArgType::Buffer128:
+                    case ArgType::TextLabel:
+                        if(is<DecompiledString>(ccmd.args[i]))
+                        {
+                            auto& arg_string = get<DecompiledString>(ccmd.args[i]);
+                            switch(arg_string.type)
+                            {
+                                case DecompiledString::Type::String128:
+                                    // TODO
+                                    throw DynarecError("TODO");
+                                    break;
+                                case DecompiledString::Type::StringVar:
+                                case DecompiledString::Type::TextLabel16:
+                                case DecompiledString::Type::TextLabel8:
+                                    // TODO
+                                    | .rodata
+                                    | 1:
+                                    codegen.emit_bytes(arg_string.storage.data(), arg_string.storage.size());
+                                    | .byte 0x0
+                                    |.code
+                                    | push <1
+                                    | push (arg_string.storage.size())
+                                    break;
+                                default:
+                                    Unreachable();
+                            }
+                        }
+                        else
+                        {
+                            // TODO
+                            __debugbreak();
+                            throw DynarecError("TODO");
+                        }
+                        used_stack += 8;
+                        break;
+                    default:
+                        Unreachable();
+                }
+            }
+
+            | push (opid)
+            used_stack += 4;
+
+            codegen.emit_fastcall("DYNAREC_RTL_InvokeOp", codegen.get_ctx(), codegen.get_esp());
+            | add esp, (used_stack)
+
+            return ++it;
+        });
+    }
 
 /*
     // CREATE_CHAR
@@ -1261,7 +1337,25 @@ void CodeGeneratorIA32::emit_switch(
 
 
 
+void CodeGeneratorIA32::emit_bytes(const void* data_, size_t size)
+{
+    auto* data = static_cast<const uint8_t*>(data_);
 
+    for(; size && (size % 4) == 0; size -= 4, data += 4)
+    {
+        | .dword (*reinterpret_cast<const uint32_t*>(data))
+    }
+
+    for(; size && (size % 2) == 0; size -= 2, data += 2)
+    {
+        | .word (*reinterpret_cast<const uint16_t*>(data))
+    }
+
+    for(; size; size -= 1, data += 1)
+    {
+        | .byte (*reinterpret_cast<const uint8_t*>(data))
+    }
+}
 
 void CodeGeneratorIA32::emit_rep()
 {

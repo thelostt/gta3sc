@@ -7,6 +7,7 @@ bool native(struct OpCtx& context);
 
 static void __fastcall DYNAREC_RTL_Wait(CRunningScript* script, int32_t time);
 static void __fastcall DYNAREC_RTL_Resume(CRunningScript* script, struct DynarecScriptData* script_data);
+static void __fastcall DYNAREC_RTL_InvokeOp(CRunningScript* script, int32_t* stack);
 
 
 CodeGeneratorIA32::CodeGeneratorIA32(const Commands& commands, std::vector<DecompiledData> decompiled) :
@@ -39,6 +40,11 @@ void CodeGeneratorIA32::add_generator(int16_t opcode, opgen_func_t gen)
     Ensures(inpair.second == true); // first time inserting
 }
 
+bool CodeGeneratorIA32::has_generator(int16_t opcode)
+{
+    return generators.find(opcode & 0x7FFF) != generators.end();
+}
+
 auto CodeGeneratorIA32::run_generator(const DecompiledCommand& ccmd, IterData it) -> IterData
 {
     auto genit = generators.find(ccmd.id & 0x7FFF);
@@ -59,6 +65,8 @@ int32_t CodeGeneratorIA32::resolve_extern(unsigned char* addr, const char* exter
         extern_ptr = (unsigned char*)0x8200;
     else if(!strcmp("DYNAREC_RTL_TerminateCs", extern_name))
         extern_ptr = (unsigned char*)0x8300;
+    else if(!strcmp("DYNAREC_RTL_InvokeOp", extern_name))
+        extern_ptr = (unsigned char*)&DYNAREC_RTL_InvokeOp;//////////////////////////
     else if(!strcmp("native", extern_name))
         extern_ptr = (unsigned char*)&native;
 
@@ -115,6 +123,7 @@ bool native(OpCtx& context)
 }
 
 #include "CRunningScript.h"
+#include <injector/hooking.hpp>
 
 struct DynarecScriptData
 {
@@ -124,6 +133,8 @@ struct DynarecScriptData
     std::unique_ptr<uint8_t> baseip;
 
     CRunningScript* script;
+
+    int32_t* param_stack;
 
 #ifndef NDEBUG
     uint32_t old_esp;
@@ -179,7 +190,7 @@ bool DYNAREC_LoadScript(CRunningScript* script, const uint8_t* bytecode, size_t 
         codegen.generate();
         drc.baseip = codegen.assemble().first;
     }
-    catch(const DynarecError&)
+    catch(const DynarecError& ex)
     {
         __debugbreak();
         return false;
@@ -233,6 +244,8 @@ bool DYNAREC_ProcessScript(CRunningScript* script)
 
 static DynarecScriptData* current_script_data = nullptr;
 
+// TODO esp can actually get modified!
+
 void __declspec(naked) __fastcall DYNAREC_RTL_Wait(CRunningScript* script, int32_t time)
 {
     _asm
@@ -240,7 +253,7 @@ void __declspec(naked) __fastcall DYNAREC_RTL_Wait(CRunningScript* script, int32
         // ecx=script, edx=time
 
         // Save wakeTime
-        add edx, dword ptr [0xB7CB84] // CTimer::TimeInMilliseconds, TODO different address per game
+        add edx, dword ptr ds:[0xB7CB84] // CTimer::TimeInMilliseconds, TODO different address per game
         mov [ecx+CRunningScript::wakeTime], edx
 
         // ecx=script, edx=free
@@ -285,7 +298,7 @@ void __declspec(naked) __fastcall DYNAREC_RTL_Resume(CRunningScript* script, Dyn
         // ecx=script
         // edx=script_data
 
-        mov eax, dword ptr[0xB7CB84] // CTimer::TimeInMilliseconds, TODO different address per game
+        mov eax, dword ptr ds:[0xB7CB84] // CTimer::TimeInMilliseconds, TODO different address per game
         cmp eax, [ecx+CRunningScript::wakeTime]
         jb _ScriptSleeping
 
@@ -313,4 +326,48 @@ void __declspec(naked) __fastcall DYNAREC_RTL_Resume(CRunningScript* script, Dyn
     _ScriptSleeping:
         ret
     }
+}
+
+void __fastcall CollectParameters(CRunningScript* script, int, uint16_t count)
+{
+    int32_t* CollectiveArray = (int32_t*)(0xA43C78); // TODO addr
+    int32_t* param_stack = current_script_data->param_stack;
+    while(count--)
+    {
+        *CollectiveArray++ = *param_stack++;
+    }
+    current_script_data->param_stack = param_stack;
+}
+
+void __fastcall CollectStringParameter(CRunningScript* script, int, char* buffer, uint8_t bufsize)
+{
+    int32_t* param_stack = current_script_data->param_stack;
+
+    auto source_length  = static_cast<size_t>(*param_stack++);
+    auto source_pointer = reinterpret_cast<const char*>(*param_stack++);
+
+    std::strncpy(buffer, source_pointer, (std::min)(source_length+1, size_t(bufsize)));
+
+    current_script_data->param_stack = param_stack;
+}
+
+void __fastcall DYNAREC_RTL_InvokeOp(CRunningScript* script, int32_t* stack)
+{
+   typedef char(__fastcall *opcode_handler_t)(CRunningScript*, int, uint16_t opcode);
+
+   // TODO move this to init phrase
+   injector::scoped_jmp patch1(0x464080, &CollectParameters, false);
+   injector::scoped_jmp patch2(0x463D50, &CollectStringParameter, false);
+
+    // TODO use patched ref
+   opcode_handler_t* handlers = (opcode_handler_t*)(0x8A6168);
+
+    uint16_t opcode = static_cast<uint16_t>(*stack++);
+    current_script_data->param_stack = stack;
+
+    script->notFlag = (opcode & 0x8000) != 0;
+    opcode &= 0x7FFF;
+    auto should_wait = handlers[opcode / 100](script, 0, opcode);
+    
+    assert(should_wait == false);
 }
