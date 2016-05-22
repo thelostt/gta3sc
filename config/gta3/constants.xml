@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='utf-8'?>
+<GTA3Script>
+  <Constants>
+    <Enum Name="BOOL" Global="true">
+      <Constant Name="FALSE"/>
+      <Constant Name="TRUE"/>
+    </Enum>
+    <Enum Name="ONOFF" Global="true">
+      <Constant Name="OFF"/>
+      <Constant Name="ON"/>
+    </Enum>
+    <Enum Name="DAYNIGHT" Global="true">
+      <Constant Name="NIGHT"/>
+      <Constant Name="DAY"/>
+    </Enum>
+	<!-- TODO GTA3 CONSTANTS -->
+  </Constants>
+</GTA3Script>

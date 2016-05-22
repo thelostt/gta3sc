@@ -921,8 +921,8 @@
     </Command>
     <Command ID="0x9a" Name="CREATE_CHAR" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDTYPE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -1003,7 +1003,7 @@
     </Command>
     <Command ID="0xa5" Name="CREATE_CAR" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -1063,13 +1063,13 @@
     <Command ID="0xae" Name="SET_CAR_DRIVING_STYLE" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="DRIVINGMODE"/>
       </Args>
     </Command>
     <Command ID="0xaf" Name="SET_CAR_MISSION" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="MISSION"/>
       </Args>
     </Command>
     <Command ID="0xb0" Name="IS_CAR_IN_AREA_2D" Supported="true">
@@ -1192,13 +1192,13 @@
     <Command ID="0xdd" Name="IS_CHAR_IN_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
     <Command ID="0xde" Name="IS_PLAYER_IN_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
     <Command ID="0xdf" Name="IS_CHAR_IN_ANY_CAR" Supported="true">
@@ -1213,14 +1213,14 @@
     </Command>
     <Command ID="0xe1" Name="IS_BUTTON_PRESSED" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Button ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT" Enum="PAD"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Button ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="BUTTON"/>
       </Args>
     </Command>
     <Command ID="0xe2" Name="GET_PAD_STATE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Pad ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Button ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Pad ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="PAD"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Button ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="BUTTON"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -1604,7 +1604,7 @@
     </Command>
     <Command ID="0x107" Name="CREATE_OBJECT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -1675,21 +1675,21 @@
     <Command ID="0x113" Name="ADD_AMMO_TO_PLAYER" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x114" Name="ADD_AMMO_TO_CHAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x115" Name="ADD_AMMO_TO_CAR" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -1716,7 +1716,7 @@
     <Command ID="0x11a" Name="SET_CHAR_THREAT_SEARCH" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="THREAT"/>
       </Args>
     </Command>
     <Command ID="0x11b" Name="SET_CHAR_THREAT_REACTION" Supported="false">
@@ -1804,8 +1804,8 @@
     <Command ID="0x129" Name="CREATE_CHAR_INSIDE_CAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDTYPE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="true" Ref="false" Type="INT" Entity="CHAR"/>
       </Args>
     </Command>
@@ -1878,7 +1878,7 @@
     <Command ID="0x135" Name="CHANGE_CAR_LOCK" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARLOCK"/>
       </Args>
     </Command>
     <Command ID="0x136" Name="SHAKE_CAM_WITH_POINT" Supported="true">
@@ -1892,7 +1892,7 @@
     <Command ID="0x137" Name="IS_CAR_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
     <Command ID="0x138" Name="IS_CAR_REMAP" Supported="false">
@@ -2004,7 +2004,7 @@
     </Command>
     <Command ID="0x14a" Name="CREATE_GANG_CAR" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -2017,9 +2017,9 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Angle" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARCOLOUR"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARCOLOUR"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -2055,7 +2055,7 @@
     <Command ID="0x150" Name="DISPLAY_ONSCREEN_COUNTER" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="true" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="COUNTER_DISPLAY"/>
       </Args>
     </Command>
     <Command ID="0x151" Name="CLEAR_ONSCREEN_COUNTER" Supported="true">
@@ -2107,28 +2107,28 @@
     <Command ID="0x157" Name="POINT_CAMERA_AT_PLAYER" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Camera mode ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Camera mode ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CAMMODE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CHANGECAMMODE"/>
       </Args>
     </Command>
     <Command ID="0x158" Name="POINT_CAMERA_AT_CAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Camera mode ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Camera mode ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CAMMODE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CHANGECAMMODE"/>
       </Args>
     </Command>
     <Command ID="0x159" Name="POINT_CAMERA_AT_CHAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Camera mode ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Camera mode ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CAMMODE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CHANGECAMMODE"/>
       </Args>
     </Command>
     <Command ID="0x15a" Name="RESTORE_CAMERA" Supported="true"/>
     <Command ID="0x15b" Name="SHAKE_PAD" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT" Enum="PAD"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
@@ -2173,30 +2173,30 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CHANGECAMMODE"/>
       </Args>
     </Command>
     <Command ID="0x161" Name="ADD_BLIP_FOR_CAR_OLD" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIPCOLOUR"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIP_DISPLAY"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
     <Command ID="0x162" Name="ADD_BLIP_FOR_CHAR_OLD" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIPCOLOUR"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIP_DISPLAY"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
     <Command ID="0x163" Name="ADD_BLIP_FOR_OBJECT_OLD" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="OBJECT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIPCOLOUR"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIP_DISPLAY"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
@@ -2208,7 +2208,7 @@
     <Command ID="0x165" Name="CHANGE_BLIP_COLOUR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip" Optional="false" Out="false" Ref="false" Type="INT" Entity="BLIP"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIPCOLOUR"/>
       </Args>
     </Command>
     <Command ID="0x166" Name="DIM_BLIP" Supported="true">
@@ -2222,8 +2222,8 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIPCOLOUR"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIP_DISPLAY"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
@@ -2243,7 +2243,7 @@
     <Command ID="0x16a" Name="DO_FADE" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="INT" Enum="FADE"/>
       </Args>
     </Command>
     <Command ID="0x16b" Name="GET_FADING_STATUS" Supported="true"/>
@@ -2273,7 +2273,7 @@
     </Command>
     <Command ID="0x16f" Name="DRAW_SHADOW" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="SHADOW"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -2348,21 +2348,21 @@
     <Command ID="0x17a" Name="SET_PLAYER_AMMO" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x17b" Name="SET_CHAR_AMMO" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x17c" Name="SET_CAR_AMMO" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -2373,7 +2373,7 @@
     </Command>
     <Command ID="0x17e" Name="MOVE_CAMERA_ALONG_SPLINE" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CHANGECAMMODE"/>
       </Args>
     </Command>
     <Command ID="0x17f" Name="GET_CAMERA_POSITION_ALONG_SPLINE" Supported="false">
@@ -2388,13 +2388,13 @@
     </Command>
     <Command ID="0x181" Name="DECLARE_MISSION_FLAG_FOR_CONTACT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CONTACT"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="true" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x182" Name="DECLARE_BASE_BRIEF_ID_FOR_CONTACT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CONTACT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -2453,7 +2453,7 @@
     <Command ID="0x18b" Name="CHANGE_BLIP_DISPLAY" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip" Optional="false" Out="false" Ref="false" Type="INT" Entity="BLIP"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIP_DISPLAY"/>
       </Args>
     </Command>
     <Command ID="0x18c" Name="ADD_ONE_OFF_SOUND" Supported="true">
@@ -2461,7 +2461,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="SOUND"/>
       </Args>
     </Command>
     <Command ID="0x18d" Name="ADD_CONTINUOUS_SOUND" Supported="true">
@@ -2469,7 +2469,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="SOUND"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="SOUND"/>
       </Args>
     </Command>
@@ -2814,7 +2814,7 @@
     <Command ID="0x1b1" Name="GIVE_WEAPON_TO_PLAYER" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -2840,31 +2840,31 @@
     </Command>
     <Command ID="0x1b5" Name="FORCE_WEATHER" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEATHER"/>
       </Args>
     </Command>
     <Command ID="0x1b6" Name="FORCE_WEATHER_NOW" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weather ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weather ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEATHER"/>
       </Args>
     </Command>
     <Command ID="0x1b7" Name="RELEASE_WEATHER" Supported="true"/>
     <Command ID="0x1b8" Name="SET_CURRENT_PLAYER_WEAPON" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x1b9" Name="SET_CURRENT_CHAR_WEAPON" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x1ba" Name="SET_CURRENT_CAR_WEAPON" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x1bb" Name="GET_OBJECT_COORDINATES" Supported="true">
@@ -2948,8 +2948,8 @@
     <Command ID="0x1c8" Name="CREATE_CHAR_AS_PASSENGER" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDTYPE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="true" Ref="false" Type="INT" Entity="CHAR"/>
       </Args>
@@ -3099,7 +3099,7 @@
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="FOLLOW_ROUTE"/>
       </Args>
     </Command>
     <Command ID="0x1e2" Name="ADD_ROUTE_POINT" Supported="true">
@@ -3250,13 +3250,13 @@
     <Command ID="0x1f9" Name="START_KILL_FRENZY" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="GXT entry" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -3402,7 +3402,7 @@
     <Command ID="0x20a" Name="LOCK_CAR_DOORS" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARLOCK"/>
       </Args>
     </Command>
     <Command ID="0x20b" Name="EXPLODE_CAR" Supported="true">
@@ -3415,7 +3415,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Explosion ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Explosion ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="EXPLOSION"/>
       </Args>
     </Command>
     <Command ID="0x20d" Name="IS_CAR_UPRIGHT" Supported="true">
@@ -3455,8 +3455,8 @@
     </Command>
     <Command ID="0x213" Name="CREATE_PICKUP" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="PICKUP"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -3516,8 +3516,8 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="GARAGE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="GARAGE"/>
       </Args>
     </Command>
@@ -3545,7 +3545,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="POWERPOINT"/>
       </Args>
     </Command>
     <Command ID="0x21f" Name="SET_ALL_TAXI_LIGHTS" Supported="true">
@@ -3603,14 +3603,14 @@
     <Command ID="0x228" Name="IS_CAR_ARMED_WITH_BOMB" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARBOMB"/>
       </Args>
     </Command>
     <Command ID="0x229" Name="CHANGE_CAR_COLOUR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARCOLOUR"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARCOLOUR"/>
       </Args>
     </Command>
     <Command ID="0x22a" Name="SWITCH_PED_ROADS_ON" Supported="true">
@@ -3668,48 +3668,48 @@
     </Command>
     <Command ID="0x232" Name="SET_GANG_ATTITUDE" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="GANG"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
       </Args>
     </Command>
     <Command ID="0x233" Name="SET_GANG_GANG_ATTITUDE" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="GANG"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="GANG"/>
       </Args>
     </Command>
     <Command ID="0x234" Name="SET_GANG_PLAYER_ATTITUDE" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="GANG"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ATTITUDE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
       </Args>
     </Command>
     <Command ID="0x235" Name="SET_GANG_PED_MODELS" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Gang ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Gang ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="GANG"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
     <Command ID="0x236" Name="SET_GANG_CAR_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Gang ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Gang ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="GANG"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
     <Command ID="0x237" Name="SET_GANG_WEAPONS" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Gang ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Gang ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="GANG"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x238" Name="SET_CHAR_OBJ_RUN_TO_AREA" Supported="true">
@@ -3777,13 +3777,13 @@
     <Command ID="0x242" Name="ARM_CAR_WITH_BOMB" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARBOMB"/>
       </Args>
     </Command>
     <Command ID="0x243" Name="SET_CHAR_PERSONALITY" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDSTAT"/>
       </Args>
     </Command>
     <Command ID="0x244" Name="SET_CUTSCENE_OFFSET" Supported="true">
@@ -3796,28 +3796,28 @@
     <Command ID="0x245" Name="SET_ANIM_GROUP_FOR_CHAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ANIM"/>
       </Args>
     </Command>
     <Command ID="0x246" Name="SET_ANIM_GROUP_FOR_PLAYER" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="ANIM"/>
       </Args>
     </Command>
     <Command ID="0x247" Name="REQUEST_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x248" Name="HAS_MODEL_LOADED" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x249" Name="MARK_MODEL_AS_NO_LONGER_NEEDED" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x24a" Name="GRAB_PHONE" Supported="true">
@@ -3855,8 +3855,8 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CORONATYPE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT" Enum="FLARETYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Red (0-255)" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Green (0-255)" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blue (0-255)" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -4351,7 +4351,7 @@
     <Command ID="0x297" Name="RESET_NUM_OF_MODELS_KILLED_BY_PLAYER" Supported="true"/>
     <Command ID="0x298" Name="GET_NUM_OF_MODELS_KILLED_BY_PLAYER" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -4367,7 +4367,7 @@
     </Command>
     <Command ID="0x29b" Name="CREATE_OBJECT_NO_OFFSET" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -4415,7 +4415,7 @@
     </Command>
     <Command ID="0x2a2" Name="ADD_PARTICLE_EFFECT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="POBJECT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -4430,21 +4430,21 @@
     <Command ID="0x2a4" Name="ADD_SPRITE_BLIP_FOR_CAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="RADAR_SPRITE"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
     <Command ID="0x2a5" Name="ADD_SPRITE_BLIP_FOR_CHAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="RADAR_SPRITE"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
     <Command ID="0x2a6" Name="ADD_SPRITE_BLIP_FOR_OBJECT" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="OBJECT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="RADAR_SPRITE"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
@@ -4453,7 +4453,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip sprite ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip sprite ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="RADAR_SPRITE"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
@@ -4462,7 +4462,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip sprite ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip sprite ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="RADAR_SPRITE"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Blip" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
@@ -4823,7 +4823,7 @@
     <Command ID="0x2d7" Name="IS_CURRENT_PLAYER_WEAPON" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x2d8" Name="IS_CURRENT_CHAR_WEAPON" Supported="true">
@@ -4907,7 +4907,7 @@
     </Command>
     <Command ID="0x2e5" Name="CREATE_CUTSCENE_OBJECT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="true" Ref="false" Type="INT" Entity="OBJECT"/>
       </Args>
     </Command>
@@ -4975,19 +4975,19 @@
     <Command ID="0x2f2" Name="IS_CHAR_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
     <Command ID="0x2f3" Name="LOAD_SPECIAL_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x2f4" Name="CREATE_CUTSCENE_HEAD" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="OBJECT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="OBJECT"/>
       </Args>
     </Command>
@@ -5024,7 +5024,7 @@
     <Command ID="0x2fa" Name="CHANGE_GARAGE_TYPE" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="GARAGE"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="GARAGE"/>
       </Args>
     </Command>
     <Command ID="0x2fb" Name="ACTIVATE_CRUSHER_CRANE" Supported="true">
@@ -5210,7 +5210,7 @@
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="FORMATION"/>
       </Args>
     </Command>
     <Command ID="0x30c" Name="PLAYER_MADE_PROGRESS" Supported="true">
@@ -5276,25 +5276,25 @@
     <Command ID="0x31b" Name="IS_FIRST_CAR_COLOUR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARCOLOUR"/>
       </Args>
     </Command>
     <Command ID="0x31c" Name="IS_SECOND_CAR_COLOUR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARCOLOUR"/>
       </Args>
     </Command>
     <Command ID="0x31d" Name="HAS_CHAR_BEEN_DAMAGED_BY_WEAPON" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x31e" Name="HAS_CAR_BEEN_DAMAGED_BY_WEAPON" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x31f" Name="IS_CHAR_IN_CHARS_GROUP" Supported="true">
@@ -5329,7 +5329,7 @@
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDGRP"/>
       </Args>
     </Command>
     <Command ID="0x325" Name="START_CAR_FIRE" Supported="true">
@@ -5350,14 +5350,14 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="true" Ref="false" Type="INT" Entity="CAR"/>
       </Args>
     </Command>
     <Command ID="0x328" Name="GET_RANDOM_CAR_OF_TYPE_IN_ZONE" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="CAR"/>
       </Args>
     </Command>
@@ -5368,13 +5368,13 @@
     </Command>
     <Command ID="0x32a" Name="SET_CAMERA_ZOOM" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CAM_ZOOM"/>
       </Args>
     </Command>
     <Command ID="0x32b" Name="CREATE_PICKUP_WITH_AMMO" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="PICKUP"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -5546,7 +5546,7 @@
     </Command>
     <Command ID="0x349" Name="SET_TEXT_FONT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="FONT"/>
       </Args>
     </Command>
     <Command ID="0x34a" Name="INDUSTRIAL_PASSED" Supported="true"/>
@@ -5603,7 +5603,7 @@
     <Command ID="0x355" Name="STOP_CHASE_SCENE" Supported="true"/>
     <Command ID="0x356" Name="IS_EXPLOSION_IN_AREA" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Explosion ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Explosion ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="EXPLOSION"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -5614,7 +5614,7 @@
     </Command>
     <Command ID="0x357" Name="IS_EXPLOSION_IN_ZONE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Explosion ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Explosion ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="EXPLOSION"/>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="Area name" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
@@ -5685,7 +5685,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -5708,13 +5708,13 @@
     <Command ID="0x367" Name="START_KILL_FRENZY_HEADSHOT" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="GXT entry" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -5812,14 +5812,14 @@
     <Command ID="0x372" Name="SET_CHAR_WAIT_STATE" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="WAITSTATE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x373" Name="SET_CAMERA_BEHIND_PLAYER" Supported="true"/>
     <Command ID="0x374" Name="SET_MOTION_BLUR" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="MOTION_BLUR"/>
       </Args>
     </Command>
     <Command ID="0x375" Name="PRINT_STRING_IN_STRING" Supported="true">
@@ -6129,7 +6129,7 @@
     </Command>
     <Command ID="0x39d" Name="ADD_MOVING_PARTICLE_EFFECT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="POBJECT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -6174,7 +6174,7 @@
     <Command ID="0x3a2" Name="SET_CAR_STATUS" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="STATUS"/>
       </Args>
     </Command>
     <Command ID="0x3a3" Name="IS_CHAR_MALE" Supported="true">
@@ -6190,8 +6190,8 @@
     <Command ID="0x3a5" Name="CHANGE_GARAGE_TYPE_WITH_CAR_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="GARAGE"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="GARAGE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
     <Command ID="0x3a6" Name="FIND_DRUG_PLANE_COORDINATES" Supported="true">
@@ -6270,8 +6270,8 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x3b7" Name="SWITCH_WORLD_PROCESSING" Supported="true">
@@ -6345,14 +6345,14 @@
     <Command ID="0x3c3" Name="DISPLAY_ONSCREEN_TIMER_WITH_STRING" Supported="true">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="Global timer storage" Optional="false" Out="false" Ref="true" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="TIMER"/>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="GXT entry" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x3c4" Name="DISPLAY_ONSCREEN_COUNTER_WITH_STRING" Supported="true">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="true" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT" Enum="COUNTER_DISPLAY"/>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="GXT entry" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
@@ -6366,7 +6366,7 @@
     </Command>
     <Command ID="0x3c6" Name="IS_COLLISION_IN_MEMORY" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="LEVEL"/>
       </Args>
     </Command>
     <Command ID="0x3c7" Name="SET_WANTED_MULTIPLIER" Supported="true">
@@ -6461,8 +6461,8 @@
     <Command ID="0x3db" Name="ADD_BLIP_FOR_PICKUP_OLD" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PICKUP"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIPCOLOUR"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="BLIP_DISPLAY"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
@@ -6475,7 +6475,7 @@
     <Command ID="0x3dd" Name="ADD_SPRITE_BLIP_FOR_PICKUP" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="PICKUP"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="RADAR_SPRITE"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="BLIP"/>
       </Args>
     </Command>
@@ -6486,7 +6486,7 @@
     </Command>
     <Command ID="0x3df" Name="FORCE_RANDOM_PED_TYPE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDTYPE"/>
       </Args>
     </Command>
     <Command ID="0x3e0" Name="SET_TEXT_DRAW_BEFORE_FADE" Supported="true">
@@ -6522,7 +6522,7 @@
     <Command ID="0x3e6" Name="CLEAR_HELP" Supported="true"/>
     <Command ID="0x3e7" Name="FLASH_HUD_OBJECT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="HUD_FLASH"/>
       </Args>
     </Command>
     <Command ID="0x3e8" Name="FLASH_RADAR_BLIP" Supported="false">
@@ -6565,14 +6565,14 @@
     </Command>
     <Command ID="0x3f1" Name="SET_THREAT_FOR_PED_TYPE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDTYPE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="THREAT"/>
       </Args>
     </Command>
     <Command ID="0x3f2" Name="CLEAR_THREAT_FOR_PED_TYPE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDTYPE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="THREAT"/>
       </Args>
     </Command>
     <Command ID="0x3f3" Name="GET_CAR_COLOURS" Supported="true">
@@ -6600,7 +6600,7 @@
     </Command>
     <Command ID="0x3f7" Name="LOAD_COLLISION" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="LEVEL"/>
       </Args>
     </Command>
     <Command ID="0x3f8" Name="GET_BODY_CAST_HEALTH" Supported="true">
@@ -6701,7 +6701,7 @@
     </Command>
     <Command ID="0x410" Name="SET_GANG_PED_MODEL_PREFERENCE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="GANG"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -6732,7 +6732,7 @@
     <Command ID="0x415" Name="IS_CAR_DOOR_CLOSED" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="DOOR"/>
       </Args>
     </Command>
     <Command ID="0x417" Name="LOAD_AND_LAUNCH_MISSION" Supported="true">
@@ -6749,14 +6749,14 @@
     <Command ID="0x419" Name="GET_AMMO_IN_PLAYER_WEAPON" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Entity="PLAYER"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x41a" Name="GET_AMMO_IN_CHAR_WEAPON" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -6764,7 +6764,7 @@
     <Command ID="0x41c" Name="SET_CHAR_SAY" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="SOUND"/>
       </Args>
     </Command>
     <Command ID="0x41d" Name="SET_NEAR_CLIP" Supported="true">
@@ -6774,18 +6774,18 @@
     </Command>
     <Command ID="0x41e" Name="SET_RADIO_CHANNEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="RADIO"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x41f" Name="OVERRIDE_HOSPITAL_LEVEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="LEVEL"/>
       </Args>
     </Command>
     <Command ID="0x420" Name="OVERRIDE_POLICE_STATION_LEVEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="LEVEL"/>
       </Args>
     </Command>
     <Command ID="0x421" Name="FORCE_RAIN" Supported="true">
@@ -6846,8 +6846,8 @@
     </Command>
     <Command ID="0x42a" Name="IS_THREAT_FOR_PED_TYPE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDTYPE"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="THREAT"/>
       </Args>
     </Command>
     <Command ID="0x42b" Name="CLEAR_AREA_OF_CHARS" Supported="true">
@@ -6914,7 +6914,7 @@
     <Command ID="0x436" Name="ARE_CREDITS_FINISHED" Supported="true"/>
     <Command ID="0x437" Name="CREATE_SINGLE_PARTICLE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="PARTICLE"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -7018,7 +7018,7 @@
     </Command>
     <Command ID="0x44c" Name="LOAD_COLLISION_WITH_SCREEN" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="LEVEL"/>
       </Args>
     </Command>
     <Command ID="0x44d" Name="LOAD_SPLASH_SCREEN" Supported="true">
@@ -7113,7 +7113,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT" Entity="OBJECT"/>
       </Args>
     </Command>
@@ -7177,9 +7177,9 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X offset" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y offset" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z offset" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="FACING"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Angle" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x465" Name="DETACH_CHAR_FROM_CAR" Supported="true">
@@ -7253,7 +7253,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Angle" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
     <Command ID="0x46f" Name="GET_CURRENT_PLAYER_WEAPON" Supported="true">
@@ -7328,7 +7328,7 @@
     <Command ID="0x477" Name="SET_CAR_TEMP_ACTION" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT" Entity="CAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Vehicle action ID" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Vehicle action ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="TEMPACT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -7371,7 +7371,7 @@
     </Command>
     <Command ID="0x47d" Name="GET_NUMBER_OF_SEATS_IN_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT" Enum="CARPEDMODEL"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -7388,7 +7388,7 @@
     <Command ID="0x480" Name="CAN_CHAR_SEE_DEAD_CHAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT" Entity="CHAR"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT" Enum="PEDTYPE"/>
       </Args>
     </Command>
     <Command ID="0x481" Name="SET_ENTER_CAR_RANGE_MULTIPLIER" Supported="true">

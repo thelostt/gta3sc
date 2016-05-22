@@ -17,6 +17,3 @@
 0x40d,
 0x3e2, # arg0 is 'char handle' in VC but 'int' in III
 # not needed to change 0x181, 0x45d: just Supported=False on VC
-
-TODO check http://www.gtamodding.com/wiki/List_of_unsupported_opcodes
-
