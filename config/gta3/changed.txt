@@ -1,0 +1,24 @@
+0x9e
+0x152
+0x15c
+0x219
+0x14e
+0x2dd
+0x3cf
+0x3d0
+0x3d1
+0x3d2
+0x3d7
+0x3fd (even command name)
+0x3fe (even command name)
+0x3ff (even command name)
+0x400 (even command name)
+0x407 (even command name)
+0x40d
+0x3e2, arg0 is 'char handle' in VC but 'int' in III
+not needed to change 0x181, 0x45d: just Supported=False on VC
+
+TODO find commands that are III only (Supported=False on VC) and changed name
+TODO find commands that are SUpported=True on VC but Supported=False on III
+
+TODO check 59c
