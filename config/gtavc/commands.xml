@@ -1219,7 +1219,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Button ID" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0xe2" Name="GET_PAD_STATE" Supported="true">
+    <Command ID="0xe2" Name="GET_PAD_STATE" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Pad ID" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Button ID" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -2055,7 +2055,7 @@
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="Global timer storage" Optional="false" Out="false" Ref="true" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x150" Name="DISPLAY_ONSCREEN_COUNTER" Supported="false">
+    <Command ID="0x150" Name="DISPLAY_ONSCREEN_COUNTER" Supported="true">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="true" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -2346,7 +2346,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x179" Name="IS_CHAR_TOUCHING_OBJECT" Supported="true">
+    <Command ID="0x179" Name="IS_CHAR_TOUCHING_OBJECT" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -4411,7 +4411,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x2a0" Name="IS_CHAR_STOPPED" Supported="true">
+    <Command ID="0x2a0" Name="IS_CHAR_STOPPED" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
@@ -7331,7 +7331,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x473" Name="LOCATE_CHAR_IN_CAR_OBJECT_2D" Supported="false">
+    <Command ID="0x473" Name="LOCATE_CHAR_IN_CAR_OBJECT_2D" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -7340,17 +7340,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x474" Name="LOCATE_CHAR_ANY_MEANS_OBJECT_3D" Supported="false">
-      <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
-      </Args>
-    </Command>
-    <Command ID="0x475" Name="LOCATE_CHAR_ON_FOOT_OBJECT_3D" Supported="false">
+    <Command ID="0x474" Name="LOCATE_CHAR_ANY_MEANS_OBJECT_3D" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -7360,7 +7350,17 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x476" Name="LOCATE_CHAR_IN_CAR_OBJECT_3D" Supported="false">
+    <Command ID="0x475" Name="LOCATE_CHAR_ON_FOOT_OBJECT_3D" Supported="true">
+      <Args>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0x476" Name="LOCATE_CHAR_IN_CAR_OBJECT_3D" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
