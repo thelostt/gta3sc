@@ -891,22 +891,22 @@
     </Command>
     <Command ID="0x94" Name="ABS" Supported="true">
       <Args>
-        <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="true" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x95" Name="ABS" Supported="true">
       <Args>
-        <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="true" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x96" Name="ABS" Supported="true">
       <Args>
-        <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="true" Type="FLOAT"/>
       </Args>
     </Command>
     <Command ID="0x97" Name="ABS" Supported="true">
       <Args>
-        <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="true" Type="FLOAT"/>
       </Args>
     </Command>
     <Command ID="0x98" Name="GENERATE_RANDOM_FLOAT" Supported="true">

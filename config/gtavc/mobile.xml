@@ -64,20 +64,20 @@
     <Command ID="0x5b9" Name="IS_TEXT_LABEL_LVAR_EQUAL_TO_TEXT_LABEL_LVAR" Supported="true">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
-        <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
+        <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x5ba" Name="IS_TEXT_LABEL_VAR_EQUAL_TO_TEXT_LABEL_LVAR" Supported="true">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
-        <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
+        <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x5bb" Name="DO_2D_LINES_INTERSECT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -87,8 +87,8 @@
     </Command>
     <Command ID="0x5bc" Name="GET_2D_LINES_INTERSECT_POINT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -101,8 +101,8 @@
     </Command>
     <Command ID="0x5bd" Name="IS_2D_POINT_IN_TRIANGLE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -113,7 +113,7 @@
     </Command>
     <Command ID="0x5be" Name="IS_2D_POINT_IN_RECTANGLE_ON_LEFT_SIDE_OF_LINE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -123,9 +123,9 @@
     </Command>
     <Command ID="0x5bf" Name="IS_2D_POINT_ON_LEFT_SIDE_OF_2D_LINE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -133,13 +133,13 @@
     </Command>
     <Command ID="0x5c0" Name="CHAR_LOOK_AT_OBJECT_ALWAYS" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x5c1" Name="APPLY_COLLISION_ON_OBJECT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -147,7 +147,7 @@
     </Command>
     <Command ID="0x5c2" Name="SAVE_STRING_TO_DEBUG_FILE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="BUFFER"/>
+        <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="Buffer" Optional="false" Out="false" Ref="false" Type="BUFFER"/>
       </Args>
     </Command>
   </Commands>
