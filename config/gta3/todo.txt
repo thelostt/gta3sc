@@ -1,3 +1,4 @@
 TODO check if matches SCM.ini
 TODO check http://www.gtamodding.com/wiki/List_of_unsupported_opcodes
 TODO find constants values, easier way is probably with a decompiler.
+TODO CLEO defs
