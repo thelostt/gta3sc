@@ -13,6 +13,6 @@
       <Constant Name="NIGHT"/>
       <Constant Name="DAY"/>
     </Enum>
-	<!-- TODO GTA3 CONSTANTS, FIND WITH A DECOMPILER -->
+	<!-- TODO GTASA CONSTANTS, FIND WITH A DECOMPILER -->
   </Constants>
 </GTA3Script>

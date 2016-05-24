@@ -484,7 +484,7 @@
     </Command>
     <Command ID="0x53" Name="CREATE_PLAYER" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -922,7 +922,7 @@
     <Command ID="0x9a" Name="CREATE_CHAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -1005,7 +1005,7 @@
     </Command>
     <Command ID="0xa5" Name="CREATE_CAR" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -1194,7 +1194,7 @@
     <Command ID="0xdd" Name="IS_CHAR_IN_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0xde" Name="IS_PLAYER_IN_MODEL" Supported="false">
@@ -1606,7 +1606,7 @@
     </Command>
     <Command ID="0x107" Name="CREATE_OBJECT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -1805,7 +1805,7 @@
     <Command ID="0x129" Name="CREATE_CHAR_INSIDE_CAR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
@@ -1893,7 +1893,7 @@
     <Command ID="0x137" Name="IS_CAR_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x138" Name="IS_CAR_REMAP" Supported="false">
@@ -2018,7 +2018,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Angle" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -2924,7 +2924,7 @@
     <Command ID="0x1c8" Name="CREATE_CHAR_AS_PASSENGER" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="true" Ref="false" Type="INT"/>
@@ -3224,10 +3224,10 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Time (ms)" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -3426,7 +3426,7 @@
     </Command>
     <Command ID="0x213" Name="CREATE_PICKUP" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -3666,14 +3666,14 @@
     <Command ID="0x235" Name="SET_GANG_PED_MODELS" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Gang ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x236" Name="SET_GANG_CAR_MODEL" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Gang ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x237" Name="SET_GANG_WEAPONS" Supported="true">
@@ -3779,17 +3779,17 @@
     </Command>
     <Command ID="0x247" Name="REQUEST_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x248" Name="HAS_MODEL_LOADED" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x249" Name="MARK_MODEL_AS_NO_LONGER_NEEDED" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x24a" Name="GRAB_PHONE" Supported="false">
@@ -4328,7 +4328,7 @@
     <Command ID="0x298" Name="GET_NUM_OF_MODELS_KILLED_BY_PLAYER" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -4344,7 +4344,7 @@
     </Command>
     <Command ID="0x29b" Name="CREATE_OBJECT_NO_OFFSET" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -4877,7 +4877,7 @@
     </Command>
     <Command ID="0x2e5" Name="CREATE_CUTSCENE_OBJECT" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -4945,12 +4945,12 @@
     <Command ID="0x2f2" Name="IS_CHAR_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x2f3" Name="LOAD_SPECIAL_MODEL" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
@@ -5319,7 +5319,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -5342,7 +5342,7 @@
     </Command>
     <Command ID="0x32b" Name="CREATE_PICKUP_WITH_AMMO" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -5655,7 +5655,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -5681,10 +5681,10 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -6171,8 +6171,8 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x3b7" Name="SWITCH_WORLD_PROCESSING" Supported="true">
@@ -6401,7 +6401,7 @@
     </Command>
     <Command ID="0x3df" Name="FORCE_RANDOM_PED_TYPE" Supported="false">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x3e0" Name="SET_TEXT_DRAW_BEFORE_FADE" Supported="true">
@@ -6632,7 +6632,7 @@
     <Command ID="0x410" Name="SET_GANG_PED_MODEL_PREFERENCE" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x411" Name="SET_CHAR_USE_PEDNODE_SEEK" Supported="false">
@@ -6866,7 +6866,7 @@
     <Command ID="0x441" Name="GET_CAR_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x442" Name="IS_PLAYER_SITTING_IN_CAR" Supported="false">
@@ -7142,7 +7142,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Angle" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x46f" Name="GET_CURRENT_PLAYER_WEAPON" Supported="false">
@@ -7316,7 +7316,7 @@
     <Command ID="0x487" Name="IS_REPLAY_PLAYING" Supported="false"/>
     <Command ID="0x488" Name="IS_MODEL_AVAILABLE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x489" Name="SHUT_CHAR_UP" Supported="true">
@@ -7610,7 +7610,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Weapon ID" Optional="false" Out="true" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x4b9" Name="GET_CLOSEST_STRAIGHT_ROAD" Supported="true">
@@ -8099,7 +8099,7 @@
     <Command ID="0x503" Name="CREATE_SWAT_ROPE" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -8117,7 +8117,7 @@
     </Command>
     <Command ID="0x506" Name="SET_CAR_MODEL_COMPONENTS" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
@@ -8426,7 +8426,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -8478,8 +8478,8 @@
     <Command ID="0x548" Name="CHECK_FOR_PED_MODEL_AROUND_PLAYER" Supported="false">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -9667,7 +9667,7 @@
     <Command ID="0x621" Name="CREATE_CHAR_AT_ATTRACTOR" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Ped type" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Handle" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Task ID" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="true" Ref="false" Type="INT"/>
@@ -9981,7 +9981,7 @@
     <Command ID="0x665" Name="GET_CHAR_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x666" Name="IS_CHAR_TOUCHING_ANY_OBJECT" Supported="true"/>
@@ -10097,7 +10097,7 @@
     </Command>
     <Command ID="0x674" Name="CUSTOM_PLATE_FOR_NEXT_CAR" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="STRING"/>
       </Args>
     </Command>
@@ -10751,19 +10751,19 @@
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x6e6" Name="GET_VEHICLE_MOD_TYPE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x6e7" Name="ADD_VEHICLE_MOD" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Handle" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -10775,17 +10775,17 @@
     </Command>
     <Command ID="0x6e9" Name="REQUEST_VEHICLE_MOD" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x6ea" Name="HAS_VEHICLE_MOD_LOADED" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x6eb" Name="MARK_VEHICLE_MOD_AS_NO_LONGER_NEEDED" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x6ec" Name="GET_NUM_AVAILABLE_PAINTJOBS" Supported="true">
@@ -11024,7 +11024,7 @@
     </Command>
     <Command ID="0x716" Name="IS_CLOSEST_OBJECT_OF_TYPE_SMASHED_OR_DAMAGED" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -11043,7 +11043,7 @@
     <Command ID="0x71a" Name="IS_CONVERSATION_AT_NODE" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="STRING"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x71b" Name="CLEAR_ALL_CONVERSATIONS" Supported="true"/>
@@ -11166,12 +11166,12 @@
     </Command>
     <Command ID="0x732" Name="SUPPRESS_CAR_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x733" Name="DONT_SUPPRESS_CAR_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x734" Name="DONT_SUPPRESS_ANY_CAR_MODELS" Supported="true"/>
@@ -11473,7 +11473,7 @@
     </Command>
     <Command ID="0x771" Name="CUSTOM_PLATE_DESIGN_FOR_NEXT_CAR" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -11962,7 +11962,7 @@
     </Command>
     <Command ID="0x7de" Name="IS_MODEL_IN_CDIMAGE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x7df" Name="REMOVE_OIL_PUDDLES_IN_AREA" Supported="true">
@@ -11979,7 +11979,7 @@
     <Command ID="0x7e3" Name="GET_BEAT_INFO_FOR_CURRENT_TRACK" Supported="true"/>
     <Command ID="0x7e4" Name="GET_MODEL_DIMENSIONS" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="true" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="true" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="true" Ref="false" Type="FLOAT"/>
@@ -12042,7 +12042,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x7f1" Name="IS_PLAYER_PERFORMING_WHEELIE" Supported="true">
@@ -12300,17 +12300,17 @@
     </Command>
     <Command ID="0x81e" Name="IS_THIS_MODEL_A_BOAT" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x81f" Name="IS_THIS_MODEL_A_PLANE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x820" Name="IS_THIS_MODEL_A_HELI" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x821" Name="IS_3D_COORD_IN_ZONE" Supported="true"/>
@@ -12577,7 +12577,7 @@
     </Command>
     <Command ID="0x85a" Name="CREATE_EMERGENCY_SERVICES_CAR" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -12851,7 +12851,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -12920,7 +12920,7 @@
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="X offset" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y offset" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z offset" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -13326,7 +13326,7 @@
     </Command>
     <Command ID="0x8e8" Name="ATTACH_ANIMS_TO_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
       </Args>
     </Command>
@@ -13591,7 +13591,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="STRING"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
@@ -13665,14 +13665,14 @@
     <Command ID="0x928" Name="ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Script ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x929" Name="ALLOCATE_STREAMED_SCRIPT_TO_OBJECT" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Script ID" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -14031,7 +14031,7 @@
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car/vehicle" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x96e" Name="IS_CAR_LOW_RIDER" Supported="true">
@@ -14137,7 +14137,7 @@
     <Command ID="0x984" Name="GET_OBJECT_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x985" Name="SET_CHAR_USES_COLLISION_CLOSEST_OBJECT_OF_TYPE" Supported="true">
@@ -14146,7 +14146,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Radius" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Character/ped" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
@@ -14378,7 +14378,7 @@
     <Command ID="0x9b2" Name="GET_RANDOM_CAR_MODEL_IN_MEMORY" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="true" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="true" Ref="false" Type="INT"/>
       </Args>
     </Command>
@@ -14459,7 +14459,7 @@
     <Command ID="0x9be" Name="IS_MINIGAME_IN_PROGRESS" Supported="true"/>
     <Command ID="0x9bf" Name="SET_FORCE_RANDOM_CAR_MODEL" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x9c0" Name="GET_RANDOM_CAR_OF_TYPE_IN_ANGLED_AREA_NO_SAVE" Supported="true">
@@ -14504,7 +14504,7 @@
     <Command ID="0x9c7" Name="SET_PLAYER_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x9c8" Name="ARE_SUBTITLES_SWITCHED_ON" Supported="true"/>
@@ -14533,7 +14533,7 @@
     <Command ID="0x9cc" Name="DOES_OBJECT_HAVE_THIS_MODEL" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Object" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0x9cd" Name="IS_ITALIAN_GAME" Supported="false"/>
@@ -14626,7 +14626,7 @@
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Y Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Z Coord" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Angle" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Car colour ID" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Boolean true/false" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -14705,7 +14705,7 @@
     </Command>
     <Command ID="0x9ef" Name="SET_VEHICLE_CAMERA_TWEAK" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -14781,7 +14781,7 @@
     <Command ID="0xa00" Name="IS_THIS_MODEL_A_BIKE" Supported="true"/>
     <Command ID="0xa01" Name="IS_THIS_MODEL_A_CAR" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0xa02" Name="SWITCH_ON_GROUND_SEARCHLIGHT" Supported="true">
@@ -15077,7 +15077,7 @@
     <Command ID="0xa3a" Name="IS_LAST_BUILDING_MODEL_SHOT_BY_PLAYER" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Player" Optional="false" Out="false" Ref="false" Type="INT"/>
-        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="MODEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="Model ID" Optional="false" Out="false" Ref="false" Type="INT" Enum="MODEL"/>
       </Args>
     </Command>
     <Command ID="0xa3b" Name="CLEAR_LAST_BUILDING_MODEL_SHOT_BY_PLAYER" Supported="true">

@@ -359,31 +359,31 @@
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x3d" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x3d" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x3e" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x3e" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x3f" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x3f" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x40" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x40" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x41" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x41" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
@@ -419,31 +419,31 @@
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x47" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x47" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x48" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x48" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x49" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x49" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x4a" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x4a" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x4b" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="true">
+    <Command ID="0x4b" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
       <Args>
         <Arg AllowConst="false" AllowGlobalVar="true" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
         <Arg AllowConst="false" AllowGlobalVar="false" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="FLOAT"/>
@@ -2066,6 +2066,12 @@
     <Command ID="0x152" Name="SET_ZONE_CAR_INFO" Supported="true">
       <Args>
         <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="" Optional="false" Out="false" Ref="false" Type="TEXT_LABEL"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
+        <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
         <Arg AllowConst="true" AllowGlobalVar="true" AllowLocalVar="true" Desc="" Optional="false" Out="false" Ref="false" Type="INT"/>
