@@ -3,6 +3,8 @@
 #pragma once
 #include "stdinc.h"
 #include "defs/game.hpp"
+#include "commands.hpp"
+#include "compiler.hpp" // for Compiled* types
 
 //using EOAL = EOAL;
 
@@ -11,6 +13,11 @@ struct DecompiledVar
 {
     bool               global;
     uint32_t           offset; // if global, i*1, if local, i*4;
+
+    bool operator==(const DecompiledVar& rhs) const
+    {
+        return this->global == rhs.global && this->offset == rhs.offset;
+    }
 };
 
 // constrats to CompiledVar
@@ -36,6 +43,7 @@ struct DecompiledCommand
 // constrat to CompiledLabelDef
 struct DecompiledLabelDef
 {
+    size_t offset;
 };
 
 // constrat to CompiledHex
@@ -44,20 +52,31 @@ using DecompiledHex = CompiledHex;
 // constrat to CompiledData
 struct DecompiledData
 {
+    size_t                                                        offset;
     variant<DecompiledLabelDef, DecompiledCommand, DecompiledHex> data;
 
-    DecompiledData(DecompiledCommand x)
-        : data(std::move(x))
+    DecompiledData(size_t offset, DecompiledCommand x)
+        : offset(offset), data(std::move(x))
     {}
 
-    DecompiledData(std::vector<uint8_t> x)
-        : data(DecompiledHex{ std::move(x) })
+    DecompiledData(size_t offset, std::vector<uint8_t> x)
+        : offset(offset), data(DecompiledHex{ std::move(x) })
     {}
 
-    /*CompiledData(shared_ptr<Label> x)
-        : data(CompiledLabelDef{ std::move(x) })
-    {}*/
+    DecompiledData(DecompiledLabelDef x)
+        : offset(x.offset), data(std::move(x))
+    {}
 };
+
+
+/// Gets the immediate 32 bits value of the value inside the variant, or nullopt if not possible.
+///
+/// This function should be overloaded/specialized for each possible value in ArgVariant2.
+///
+template<typename T>
+static optional<int32_t> get_imm32(const T&);
+static optional<int32_t> get_imm32(const ArgVariant2&);
+
 
 
 struct Disassembler
@@ -71,6 +90,8 @@ private:
 
     dynamic_bitset      offset_explored;
 
+    std::set<size_t> label_offsets;
+
     // must be LIFO
     std::stack<size_t>  to_explore;
 
@@ -78,6 +99,8 @@ private:
     std::vector<uint8_t>    bytecode_buffer_;
 
     size_t hint_num_ops = 0;
+
+    size_t switch_cases_left = 0;
 
 public:
     // undefined behaviour is invoked if data inside `bytecode` is changed while
@@ -130,6 +153,11 @@ public:
 
         for(size_t offset = 0; offset < bytecode_size; )
         {
+            if(this->label_offsets.count(offset))
+            {
+                output.emplace_back(DecompiledLabelDef{ offset });
+            }
+
             if(this->offset_explored[offset])
             {
                 output.emplace_back(opcode_to_data(offset));
@@ -137,16 +165,19 @@ public:
             }
             else
             {
-                auto begin_offset = offset;
-                for(size_t count = 0; offset < bytecode_size; ++count, ++offset)
+                auto begin_offset = offset++;
+                for(; offset < bytecode_size; ++offset)
                 {
-                    // repeat this loop until a explored offset is found, then break.
-                    if(this->offset_explored[offset])
-                    {
-                        output.emplace_back(std::vector<uint8_t>(this->bytecode + begin_offset, this->bytecode + offset));
+                    // repeat this loop until a label offset or a explored offset is found, then break.
+                    //
+                    // if a label offset is found, it'll be added at the beggining of the outer for loop,
+                    // and then (maybe) this loop will continue.
+
+                    if(this->offset_explored[offset] || this->label_offsets.count(offset))
                         break;
-                    }
                 }
+
+                output.emplace_back(begin_offset, std::vector<uint8_t>(this->bytecode + begin_offset, this->bytecode + offset));
             }
         }
 
@@ -206,20 +237,47 @@ private:
 
         bool stop_it = false;
 
-        auto check_for_label = [&](auto value, const Command::Arg& arg)
+        bool is_switch_start     = (&command == &this->commands.switch_start());
+        bool is_switch_continued = (&command == &this->commands.switch_continued());
+
+        size_t argument_id = 0;
+
+        auto check_for_imm32 = [&](auto value, const Command::Arg& arg)
         {
+            if(is_switch_start && argument_id == 1)
+            {
+                this->switch_cases_left = value;
+            }
+
             if(arg.type == ArgType::Label)
             {
+                if(is_switch_start || is_switch_continued)
+                {
+                    if(this->switch_cases_left == 0)
+                        return; // don't take offset
+                    
+                    if(is_switch_start && argument_id != 3) // not default label
+                        --this->switch_cases_left;
+                }
+
                 // TODO treat negative offsets properly (relative to mission base, etc)
                 interesting_offsets.push(value < 0? -value : value);
+                label_offsets.emplace(value < 0? -value : value);
             }
         };
+
+        if(is_switch_start)
+        {
+            // We need this set to 0 since the switch cases argument mayn't
+            // be a constant (ill-formed, but game executes).
+            this->switch_cases_left = 0;
+        }
 
         // TODO optimize out fetches here to just check offset + N
 
         for(auto it = command.args.begin();
             !stop_it && it != command.args.end();
-            it->optional? it : ++it)
+            (it->optional? it : ++it), ++argument_id)
         {
             if(it->type == ArgType::Buffer128)
             {
@@ -234,6 +292,20 @@ private:
             if(!opt_argtype)
                 return nullopt;
 
+            // Handle III/VC string arguments
+            if(*opt_argtype > 0x06 && !this->config.has_text_label_prefix)
+            {
+                if(it->type == ArgType::TextLabel)
+                {
+                    offset = offset - 1; // there was no data type, remove one byte
+                    if(!fetch_chars(offset, 8))
+                        return nullopt;
+                    offset += 8;
+                    continue;
+                }
+                return nullopt;
+            }
+
             switch(*opt_argtype)
             {
                 case 0x00: // EOA (end of args)
@@ -245,7 +317,7 @@ private:
                 case 0x01: // Int32
                     if(auto opt = fetch_i32(offset))
                     {
-                        check_for_label(*opt, *it);
+                        check_for_imm32(*opt, *it);
                         offset += sizeof(int32_t);
                         break;
                     }
@@ -254,7 +326,7 @@ private:
                 case 0x04: // Int8
                     if(auto opt = fetch_i8(offset))
                     {
-                        check_for_label(*opt, *it);
+                        check_for_imm32(*opt, *it);
                         offset += sizeof(int8_t);
                         break;
                     }
@@ -263,7 +335,7 @@ private:
                 case 0x05: // Int16
                     if(auto opt = fetch_i16(offset))
                     {
-                        check_for_label(*opt, *it);
+                        check_for_imm32(*opt, *it);
                         offset += sizeof(int16_t);
                         break;
                     }
@@ -291,24 +363,38 @@ private:
                     }
                     break;
 
-                default: // TODO add rest of data types SA specific
-                    if(!this->config.has_text_label_prefix)
-                    {
-                        if(it->type == ArgType::TextLabel)
-                        {
-                            offset = offset - 1; // there was no data type, remove one byte
-                            if(!fetch_chars(offset, 8))
-                                return nullopt;
-                            offset += 8;
-                            break;
-                        }
+                //
+                // The following cases will not get to run on III/VC
+                //
+
+                case 0x09: // Immediate 8-byte string
+                    if(!fetch_chars(offset, 8))
                         return nullopt;
-                    }
-                    else
-                    {
-                        return nullopt;
-                    }
+                    offset += 8;
                     break;
+
+                case 0x0F: // Immediate 16-byte string
+                    if(!fetch_chars(offset, 16))
+                        return nullopt;
+                    offset += 16;
+                    break;
+
+                case 0x0E: // Immediate variable-length string
+                {
+                    if(auto opt_count = fetch_u8(offset))
+                    {
+                        if(!fetch_chars(offset+1, *opt_count))
+                            return nullopt;
+                        offset += *opt_count+1;
+                        break;
+                    }
+                    return nullopt;
+                }
+
+                // TODO add rest of data types SA specific
+
+                default:
+                    return nullopt;
             }
         }
 
@@ -322,11 +408,21 @@ private:
         // add next instruction as the next thing to be explored, if this isn't a instruction that
         // terminates execution or jumps unconditionally to another offset.
         // TODO would be nice if this was actually configurable.
-        if(&command != &this->commands.goto_()
-        && &command != &this->commands.return_()
-        && &command != &this->commands.terminate_this_script())
+        if(!this->commands.equal(command, this->commands.goto_())
+        && !this->commands.equal(command, this->commands.return_())
+        && !this->commands.equal(command, this->commands.ret())
+        && !this->commands.equal(command, this->commands.terminate_this_script())
+        && !this->commands.equal(command, this->commands.terminate_this_custom_script()))
+        // TODO more
         {
-            this->to_explore.emplace(offset);
+            if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)
+            {
+                // we are at the last SWITCH_START/SWITCH_CONTINUED command, after this, the game will take a branch.
+            }
+            else
+            {
+                this->to_explore.emplace(offset);
+            }
         }
 
         // mark this area as explored
@@ -351,6 +447,7 @@ private:
         DecompiledCommand ccmd;
         ccmd.id = cmdid;
 
+        auto start_offset = offset;
         offset = offset + 2;
 
         for(auto it = command.args.begin();
@@ -364,7 +461,23 @@ private:
                 continue;
             }
 
-            switch(*fetch_u8(offset++))
+            auto datatype = *fetch_u8(offset++);
+
+            // Handle III/VC string arguments
+            if(datatype > 0x06 && !this->config.has_text_label_prefix)
+            {
+                if(it->type == ArgType::TextLabel)
+                {
+                    offset = offset - 1; // there was no data type, remove one byte
+                    ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
+                    offset += 8;
+                    continue;
+                }
+                // code was already analyzed by explore_opcode and it went fine, so...
+                Unreachable();
+            }
+
+            switch(datatype)
             {
                 case 0x00:
                     ccmd.args.emplace_back(EOAL{});
@@ -426,27 +539,37 @@ private:
                     }
                     break;
 
-                default: // TODO add rest of data types SA specific
-                    if(!this->config.has_text_label_prefix)
-                    {
-                        if(it->type == ArgType::TextLabel)
-                        {
-                            offset = offset - 1; // there was no data type, remove one byte
-                            ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
-                            offset += 8;
-                            break;
-                        }
-                        Unreachable();
-                    }
-                    else
-                    {
-                        Unreachable();
-                    }
+
+                //
+                // The following cases will not get to run on III/VC
+                //
+
+                case 0x09: // Immediate 8-byte string
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
+                    offset += 8;
                     break;
+
+                case 0x0F: // Immediate 16-byte string
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 16)) });
+                    offset += 16;
+                    break;
+
+                case 0x0E: // Immediate variable-length string
+                {
+                    auto count = *fetch_u8(offset);
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset+1, count)) });
+                    offset += count + 1;
+                    break;
+                }
+
+                // TODO add rest of data types SA specific
+
+                default:
+                    Unreachable();
             }
         }
 
-        return DecompiledData(std::move(ccmd));
+        return DecompiledData(start_offset, std::move(ccmd));
     }
 
 
@@ -536,3 +659,50 @@ private:
     }
 };
 
+
+
+inline optional<int32_t> get_imm32(const EOAL&)
+{
+    return nullopt;
+}
+
+inline optional<int32_t> get_imm32(const DecompiledVar&)
+{
+    return nullopt;
+}
+
+inline optional<int32_t> get_imm32(const DecompiledVarArray&)
+{
+    return nullopt;
+}
+
+inline optional<int32_t> get_imm32(const DecompiledString&)
+{
+    return nullopt;
+}
+
+inline optional<int32_t> get_imm32(const int8_t& i8)
+{
+    return static_cast<int32_t>(i8);
+}
+
+inline optional<int32_t> get_imm32(const int16_t& i16)
+{
+    return static_cast<int32_t>(i16);
+}
+
+inline optional<int32_t> get_imm32(const int32_t& i32)
+{
+    return static_cast<int32_t>(i32);
+}
+
+inline optional<int32_t> get_imm32(const float& flt)
+{
+    // TODO floating point format static assert
+    return reinterpret_cast<const int32_t&>(flt);
+}
+
+inline optional<int32_t> get_imm32(const ArgVariant2& varg)
+{
+    return visit_one(varg, [&](const auto& arg) { return ::get_imm32(arg); });
+}

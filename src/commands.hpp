@@ -82,10 +82,7 @@ public:
              std::initializer_list<decltype(enums)::value_type> init_enums) :
         commands(std::move(init_cmds)), enums(std::move(init_enums))
     {
-        for(auto& pair : this->commands)
-        {
-            this->commands_by_id.emplace(pair.second.id, &pair.second);
-        }
+        this->update();
     }
 
     /// Matches the best command based on the alternators with the command name and arguments given a COMMAND node in the AST.
@@ -154,8 +151,37 @@ public:
         return nullopt;
     }
 
+    bool equal(const Command& rhs, const Command& lhs) const
+    {
+        return &rhs == &lhs;
+    }
+
+    bool equal(const Command& rhs, alternator_pair lhs) const
+    {
+        for(auto it = lhs.first; it != lhs.second; ++it)
+        {
+            if(this->equal(rhs, it->second))
+                return true;
+        }
+        return false;
+    }
+
+
+
 
     // --- Important Commands ---
+
+    const Command& switch_start() const
+    {
+        // TODO cached
+        return commands.find("SWITCH_START")->second;
+    }
+
+    const Command& switch_continued() const
+    {
+        // TODO cached
+        return commands.find("SWITCH_CONTINUED")->second;
+    }
 
     const Command& gosub_file() const
     {
@@ -187,10 +213,21 @@ public:
         return commands.find("TERMINATE_THIS_SCRIPT")->second;
     }
 
+    alternator_pair terminate_this_custom_script() const
+    {
+        return commands.equal_range("TERMINATE_THIS_CUSTOM_SCRIPT");
+    }
+
     const Command& return_() const    // can't be named purely return() because of the C keyword
     {
         // TODO cached
         return commands.find("RETURN")->second;
+    }
+
+    const Command& ret() const
+    {
+        // TODO cached
+        return commands.find("RET")->second;
     }
 
     const Command& goto_() const    // can't be named purely goto() because of the C keyword
@@ -275,6 +312,19 @@ public:
     {
         // TODO cached
         return commands.equal_range("IS_THING_GREATER_OR_EQUAL_TO_THING");
+    }
+
+protected:
+    friend Commands gta3_commands();
+    friend Commands gtavc_commands();
+
+    void update()
+    {
+        this->commands_by_id.clear();
+        for(auto& pair : this->commands)
+        {
+            this->commands_by_id.emplace(pair.second.id, &pair.second);
+        }
     }
 
 private:
