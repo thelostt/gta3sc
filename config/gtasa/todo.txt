@@ -1,4 +1,0 @@
-TODO check if matches SASCM.ini
-TODO check http://www.gtamodding.com/wiki/List_of_unsupported_opcodes and also NOPs? to set Supported=False
-TODO find constants values, easier way is probably with a decompiler.
-TODO CLEO defs

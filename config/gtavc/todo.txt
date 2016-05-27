@@ -1,2 +1,0 @@
-TODO check if matches VCSCM.ini
-TODO CLEO defs
