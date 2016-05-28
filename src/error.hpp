@@ -20,6 +20,8 @@ private:
 
 using DecompilerError = CompilerError;
 
+using ConfigError = CompilerError;
+
 class BadAlternator : public CompilerError
 {
 public:

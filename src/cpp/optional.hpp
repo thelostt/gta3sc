@@ -11,10 +11,12 @@
 #     include <optional>
 #     define _CXX17_OPTIONAL_TYPE    std::optional
 #     define _CXX17_NULLOPT_OBJECT   std::nullopt
+#     define _CXX17_BADACCESS_TYPE   std::bad_optional_access
 #    elif __has_include(<experimental/optional>) // Check for an experimental version
 #     include <experimental/optional>
 #     define _CXX17_OPTIONAL_TYPE    std::experimental::optional
 #     define _CXX17_NULLOPT_OBJECT   std::experimental::nullopt
+#     define _CXX17_BADACCESS_TYPE   std::experimental::bad_optional_access
 /*
 #    elif __has_include(<boost/optional.hpp>)    // Try with boost library..... No no no...
 #     include <boost/optional.hpp>               // ...Let the user be explicit about using boost instead!
@@ -28,8 +30,10 @@
 #    include <optional/optional.hpp>
 #    define _CXX17_OPTIONAL_TYPE    std::experimental::optional
 #    define _CXX17_NULLOPT_OBJECT   std::experimental::nullopt
+#    define _CXX17_BADACCESS_TYPE   std::experimental::bad_optional_access
 #  endif
 #endif
 
 template<typename T> using optional = _CXX17_OPTIONAL_TYPE<T>;
 constexpr decltype(_CXX17_NULLOPT_OBJECT) nullopt = _CXX17_NULLOPT_OBJECT;
+using bad_optional_access = _CXX17_BADACCESS_TYPE;

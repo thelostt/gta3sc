@@ -67,10 +67,6 @@ struct Command
 struct Commands
 {
 protected:
-    friend Commands gta3_commands();
-    friend Commands gtavc_commands();
-    friend Commands gtasa_commands();
-
     std::multimap<std::string, Command> commands;
     std::multimap<uint16_t, const Command*> commands_by_id; // TODO use shared_ptr<Command>!?
     std::map<std::string, shared_ptr<Enum>> enums; // [""] stores enums allowed on every context
@@ -78,12 +74,15 @@ protected:
 public:
     using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
 
-    Commands(std::initializer_list<decltype(commands)::value_type> init_cmds,
-             std::initializer_list<decltype(enums)::value_type> init_enums) :
-        commands(std::move(init_cmds)), enums(std::move(init_enums))
+    Commands(std::multimap<std::string, Command> commands, std::map<std::string, shared_ptr<Enum>> enums)
+        : commands(std::move(commands)), enums(std::move(enums))
     {
         this->update();
     }
+
+    ///
+    static Commands from_xml(const std::vector<fs::path>& xml_list);
+
 
     /// Matches the best command based on the alternators with the command name and arguments given a COMMAND node in the AST.
     ///

@@ -1,6 +1,9 @@
 #include "commands.hpp"
 #include "symtable.hpp"
 #include "error.hpp"
+#include "system.hpp"
+#include <rapidxml.hpp>
+#include <rapidxml_utils.hpp>
 
 static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg& arg, const SymTable& symbols)
 {
@@ -297,4 +300,232 @@ optional<int32_t> Commands::find_constant_for_arg(const std::string& value, cons
     else if(auto opt_const = this->find_constant(value, true))
         return opt_const;
     return nullopt;
+}
+
+/////////////
+
+static int xml_stoi(const char* string)
+{
+    try
+    {
+        return std::stoi(string, nullptr, 0);
+    }
+    catch(const std::exception& e)
+    {
+        throw ConfigError("Couldn't convert string to int: {}", e.what());
+    }
+}
+
+static bool xml_to_bool(const char* string)
+{
+    if(!strcmp(string, "true"))
+        return true;
+    else if(!strcmp(string, "false"))
+        return false;
+    else
+        throw ConfigError("Boolean is not 'true' or 'false', it is '{}'", string);
+}
+
+static bool xml_to_bool(const rapidxml::xml_attribute<>* attrib, bool default_value)
+{
+    return attrib? xml_to_bool(attrib->value()) : default_value;
+}
+
+static ArgType xml_to_argtype(const char* string)
+{
+    if(!strcmp(string, "INT"))
+        return ArgType::Integer;
+    else if(!strcmp(string, "FLOAT"))
+        return ArgType::Float;
+    else if(!strcmp(string, "TEXT_LABEL"))
+        return ArgType::TextLabel;
+    else if(!strcmp(string, "ANY"))
+        return ArgType::Any;
+    else if(!strcmp(string, "LABEL"))
+        return ArgType::Label;
+    else if(!strcmp(string, "BUFFER"))
+        return ArgType::Buffer128;
+    else
+        throw ConfigError("Unexpected Type attribute: {}", string);
+}
+
+static std::pair<std::string, shared_ptr<Enum>>
+  parse_enum_node(const rapidxml::xml_node<>* enum_node)
+{
+    using namespace rapidxml;
+
+    xml_attribute<>* enum_name_attrib   = enum_node->first_attribute("Name");
+    xml_attribute<>* enum_global_attrib = enum_node->first_attribute("Global");
+
+    if(!enum_name_attrib)
+        throw ConfigError("Missing Name attrib on <Enum> node");
+
+    std::map<std::string, int32_t> constant_map;
+    int32_t current_value = 0;
+
+    for(auto value_node = enum_node->first_node(); value_node; value_node = value_node->next_sibling())
+    {
+        assert(!strcmp(value_node->name(), "Constant"));
+
+        xml_attribute<>* value_name_attrib = value_node->first_attribute("Name");
+        xml_attribute<>* value_value_attrib = value_node->first_attribute("Value");
+
+        if(!value_name_attrib)
+            throw ConfigError("Missing Name attrib on <Constant> node");
+
+        if(value_value_attrib)
+            current_value = xml_stoi(value_value_attrib->value());
+
+        constant_map.emplace(value_name_attrib->value(), current_value);
+
+        ++current_value;
+    }
+
+    // TODO GLOBAL STUFF
+    return {
+        enum_name_attrib->value(),
+        std::make_shared<Enum>(Enum { std::move(constant_map) })
+    };
+}
+
+static std::pair<std::string, Command>
+  parse_command_node(const rapidxml::xml_node<>* cmd_node, const std::map<std::string, shared_ptr<Enum>>& enums)
+{
+    using namespace rapidxml;
+
+    xml_attribute<>* id_attrib   = cmd_node->first_attribute("ID");
+    xml_attribute<>* name_attrib = cmd_node->first_attribute("Name");
+    xml_attribute<>* support_attrib = cmd_node->first_attribute("Supported");
+    xml_node<>*      args_node   = cmd_node->first_node("Args");
+
+    if(!id_attrib || !name_attrib)
+        throw ConfigError("Missing ID or Name attrib on <Command> node");
+
+    std::vector<Command::Arg> args;
+
+    if(args_node)
+    {
+        size_t num_args = 0;
+
+        // Avoid realocations, find out the number of args beforehand.
+        for(auto x = args_node->first_node(); x; x = x->next_sibling())
+            ++num_args;
+
+        args.reserve(num_args);
+
+        for(auto arg_node = args_node->first_node("Arg"); arg_node; arg_node = arg_node->next_sibling("Arg"))
+        {
+            auto type_attrib         = arg_node->first_attribute("Type");
+            auto out_attrib          = arg_node->first_attribute("Out");
+            auto ref_attrib          = arg_node->first_attribute("Ref");
+            auto optional_attrib     = arg_node->first_attribute("Optional");
+            auto allow_const_attrib  = arg_node->first_attribute("AllowConst");
+            auto allow_gvar_attrib   = arg_node->first_attribute("AllowGlobalVar");
+            auto allow_lvar_attrib   = arg_node->first_attribute("AllowLocalVar");
+            auto entity_attrib       = arg_node->first_attribute("Entity");
+            auto enum_attrib         = arg_node->first_attribute("Enum");
+
+            if(!type_attrib)
+                throw ConfigError("Missing Type attrib on <Arg> node");
+
+            // TODO OUT
+            // TODO REF
+            // TODO ENTITY
+            // Cannot build with a initializer list, VS goes mad :(
+            Command::Arg arg;
+            arg.type = xml_to_argtype(type_attrib->value());
+            arg.optional = xml_to_bool(optional_attrib, false);
+            arg.allow_constant = xml_to_bool(allow_const_attrib, true);
+            arg.allow_global_var= xml_to_bool(allow_gvar_attrib, true);
+            arg.allow_local_var = xml_to_bool(allow_lvar_attrib, true);
+
+            if(enum_attrib)
+            {
+                auto eit = enums.find(enum_attrib->value());
+                if(eit != enums.end())
+                {
+                    arg.enums.emplace_back(eit->second);
+                    arg.enums.shrink_to_fit();
+                }
+            }
+            
+            args.emplace_back(std::move(arg));
+        }
+    }
+    
+    return {
+        name_attrib->value(),
+        Command {
+            xml_to_bool(support_attrib, true),               // supported
+            uint16_t(xml_stoi(id_attrib->value()) & 0x7FFF), // id
+            std::move(args),                                 // args
+        }
+    };
+}
+
+Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
+{
+    using namespace rapidxml;
+
+    std::multimap<std::string, Command>     commands;
+    std::map<std::string, shared_ptr<Enum>> enums;
+
+    fs::path conf_path = config_path();
+
+    for(auto& xml_path : xml_list)
+    {
+        std::string xml_data;
+        xml_document<> doc;   // xml_data should be alive as long as doc
+
+        fs::path full_xml_path(conf_path / xml_path);
+        try
+        {
+            xml_data = read_file_utf8(full_xml_path).value();
+
+            if(xml_data.empty())
+                continue;
+
+            doc.parse<0>(&xml_data[0]); // xml_data will get modified here
+        }
+        catch(const rapidxml::parse_error& e)
+        {
+            throw ConfigError("Failed to parse XML {}: {}", full_xml_path.generic_u8string(), e.what());
+        }
+        catch(const bad_optional_access& e)
+        {
+            throw ConfigError("Failed to read XML {}: {}", full_xml_path.generic_u8string(), e.what());
+        }
+
+        if(xml_node<>* root_node = doc.first_node("GTA3Script"))
+        {
+            for(auto node = root_node->first_node(); node; node = node->next_sibling())
+            {
+                if(!strcmp(node->name(), "Commands"))
+                {
+                    for(auto cmd_node = node->first_node(); cmd_node; cmd_node = cmd_node->next_sibling())
+                    {
+                        if(!strcmp(cmd_node->name(), "Command"))
+                        {
+                            auto cmd_pair = parse_command_node(cmd_node, enums);
+                            commands.emplace(std::move(cmd_pair));
+                        }
+                    }
+                }
+                else if(!strcmp(node->name(), "Constants"))
+                {
+                    for(auto const_node = node->first_node(); const_node; const_node = const_node->next_sibling())
+                    {
+                        if(!strcmp(const_node->name(), "Enum"))
+                        {
+                            auto enum_pair = parse_enum_node(const_node);
+                            enums.emplace(std::move(enum_pair));
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    return Commands(std::move(commands), std::move(enums));
 }

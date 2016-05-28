@@ -7,9 +7,6 @@
 #include "disassembler.hpp"
 #include "decompiler.hpp"
 #include "codegen.hpp"
-#include "defs/defs.hpp"
-
-extern void convert();
 
 int test_compiler(const GameConfig& gta3_config, const Commands& commands);
 int test_decompiler(const GameConfig& gta3_config, const Commands& commands);
@@ -22,9 +19,9 @@ int main()
     gta3_config.has_text_label_prefix = false;
     gta3_config.use_half_float = true;
 
-    Commands commands = gta3_commands();
+    Commands commands = Commands::from_xml({ "gta3/constants.xml", "gta3/commands.xml" });
 
-    return test_decompiler(gta3_config, commands);
+    return test_compiler(gta3_config, commands);
 }
 
 int test_compiler(const GameConfig& gta3_config, const Commands& commands)
