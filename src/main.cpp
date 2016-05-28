@@ -28,7 +28,7 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
 {
     std::vector<shared_ptr<Script>> scripts;
 
-    auto main = Script::create("test.sc", ScriptType::Main);
+    auto main = Script::create(/*"test.sc"*/"main.sc", ScriptType::Main);
     auto symbols = SymTable::from_script(*main);
     symbols.apply_offset_to_vars(2);
 

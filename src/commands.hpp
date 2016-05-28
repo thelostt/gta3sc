@@ -17,6 +17,11 @@ struct Enum
 {
     // TODO pendantically, only ints are allowed, but maybe later we can add floats and strings.
     std::map<std::string, int32_t> values;
+    bool is_global = false;
+
+    Enum(std::map<std::string, int32_t> values, bool is_global) :
+        values(std::move(values)), is_global(is_global)
+    {}
 
     optional<int32_t> find(const std::string& value) const
     {
@@ -69,16 +74,16 @@ struct Commands
 protected:
     std::multimap<std::string, Command> commands;
     std::multimap<uint16_t, const Command*> commands_by_id; // TODO use shared_ptr<Command>!?
-    std::map<std::string, shared_ptr<Enum>> enums; // [""] stores enums allowed on every context
+    std::map<std::string, shared_ptr<Enum>> enums;
+
+    shared_ptr<Enum> enum_models;       // may be null
+    shared_ptr<Enum> enum_carpedmodels; // may be null
 
 public:
     using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
 
-    Commands(std::multimap<std::string, Command> commands, std::map<std::string, shared_ptr<Enum>> enums)
-        : commands(std::move(commands)), enums(std::move(enums))
-    {
-        this->update();
-    }
+    Commands(std::multimap<std::string, Command> commands,
+             std::map<std::string, shared_ptr<Enum>> enums);
 
     ///
     static Commands from_xml(const std::vector<fs::path>& xml_list);
@@ -314,17 +319,6 @@ public:
     }
 
 protected:
-    friend Commands gta3_commands();
-    friend Commands gtavc_commands();
-
-    void update()
-    {
-        this->commands_by_id.clear();
-        for(auto& pair : this->commands)
-        {
-            this->commands_by_id.emplace(pair.second.id, &pair.second);
-        }
-    }
 
 private:
 
@@ -341,7 +335,9 @@ inline bool argtype_matches(ArgType type1, ArgType type2)
     return type1 == type2 || type1 == ArgType::Any || type2 == ArgType::Any;
 }
 
-inline shared_ptr<Enum> make_enum(std::initializer_list<decltype(Enum::values)::value_type> init)
+/*
+inline shared_ptr<Enum> make_enum(std::map<std::string, int32_t> init)
 {
-    return std::make_shared<Enum>(Enum { init });
+    return std::make_shared<Enum>(Enum { std::move(init), false });
 }
+*/

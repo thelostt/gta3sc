@@ -5,6 +5,24 @@
 #include <rapidxml.hpp>
 #include <rapidxml_utils.hpp>
 
+Commands::Commands(std::multimap<std::string, Command> commands_, std::map<std::string, shared_ptr<Enum>> enums_)
+    : commands(std::move(commands_)), enums(std::move(enums_))
+{
+    auto it_carpedmodel = this->enums.find("CARPEDMODEL");
+    auto it_model       = this->enums.find("MODEL");
+
+    if(it_carpedmodel != this->enums.end())
+        this->enum_carpedmodels = it_carpedmodel->second;
+
+    if(it_model != this->enums.end())
+        this->enum_models = it_model->second;
+
+    for(auto& pair : this->commands)
+    {
+        this->commands_by_id.emplace(pair.second.id, &pair.second);
+    }
+}
+
 static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg& arg, const SymTable& symbols)
 {
     bool is_good = false;
@@ -276,29 +294,35 @@ void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope
 
 optional<int32_t> Commands::find_constant(const std::string& value, bool context_free_only) const
 {
-    if(context_free_only)
+    // TODO mayyybe speed up this? we didn't profile or anything.
+    for(auto& enum_pair : enums)
     {
-        auto it = enums.find("");
-        if(it != enums.end())
+        if(enum_pair.second->is_global == context_free_only)
         {
-            if(it->second != nullptr)
-                return it->second->find(value);
+            if(auto opt = enum_pair.second->find(value))
+                return opt;
         }
-        return nullopt;
     }
-    else
-    {
-        // TODO
-        return nullopt;
-    }
+    return nullopt;
 }
 
 optional<int32_t> Commands::find_constant_for_arg(const std::string& value, const Command::Arg& arg) const
 {
-    if(auto opt_const = arg.find_constant(value))
+    if(auto opt_const = arg.find_constant(value)) // constants stricly related to this Arg
         return opt_const;
-    else if(auto opt_const = this->find_constant(value, true))
+
+    // If the enum that the argument accepts is MODEL, and the above didn't find a match,
+    // also try on the CARPEDMODEL enum.
+    if(this->enum_models && this->enum_carpedmodels
+     && std::find(arg.enums.begin(), arg.enums.end(), this->enum_models) != arg.enums.end())
+    {
+        if(auto opt_const = enum_carpedmodels->find(value))
+            return opt_const;
+    }
+
+    if(auto opt_const = this->find_constant(value, true)) // global constants
         return opt_const;
+
     return nullopt;
 }
 
@@ -381,11 +405,12 @@ static std::pair<std::string, shared_ptr<Enum>>
         ++current_value;
     }
 
-    // TODO GLOBAL STUFF
-    return {
-        enum_name_attrib->value(),
-        std::make_shared<Enum>(Enum { std::move(constant_map) })
-    };
+    auto enump = std::make_shared<Enum>(Enum {
+        std::move(constant_map),
+        xml_to_bool(enum_global_attrib, false),
+    });
+
+    return { enum_name_attrib->value(), std::move(enump) };
 }
 
 static std::pair<std::string, Command>

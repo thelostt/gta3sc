@@ -170,15 +170,25 @@ private:
                 // group of anything, usually group of statements
                 compile_statements(node);
                 break;
+            case NodeType::Command:
+                compile_command(node, not_flag);
+                break;
             case NodeType::NOT:
                 throw CompilerError("XXX NOT outside of a condition block");
                 break;
-            case NodeType::Command:
-                compile_command(node, not_flag);
+            case NodeType::Greater:
+            case NodeType::GreaterEqual:
+            case NodeType::Lesser:
+            case NodeType::LesserEqual:
+                throw CompilerError("XXX conditional expression outside of a condition block");
                 break;
             case NodeType::Equal:
             case NodeType::Cast:
                 compile_expr(node, not_flag);
+                break;
+            case NodeType::Increment:
+            case NodeType::Decrement:
+                compile_incdec(node, not_flag);
                 break;
             case NodeType::Label:
                 compile_label(node);
@@ -268,7 +278,7 @@ private:
     {
         // PERF if performance is needed, get_arg(var) can be cached in the stack
 
-        auto& annotation = repeat_node.annotation<const RepeatAnnotation>();
+        auto& annotation = repeat_node.annotation<const RepeatAnnotation&>();
         auto& times = repeat_node.child(0);
         auto& var = repeat_node.child(1);
 
@@ -309,6 +319,13 @@ private:
         }
     }
 
+    void compile_incdec(const SyntaxTree& op_node, bool not_flag = false)
+    {
+        auto& annotation = op_node.annotation<const IncDecAnnotation&>();
+        auto& var = op_node.child(0);
+        compile_command(annotation.op_var_with_one, { get_arg(var), get_arg(*annotation.number_one) });
+    }
+
     void compile_command(const SyntaxTree& command_node, bool not_flag = false)
     {
         const Command& command = command_node.annotation<std::reference_wrapper<const Command>>();
@@ -317,8 +334,11 @@ private:
 
     void compile_condition(const SyntaxTree& node, bool not_flag = false)
     {
+        // also see compile_conditions
         switch(node.type())
         {
+            case NodeType::NOT:
+                return compile_condition(node.child(0), !not_flag);
             case NodeType::Command:
                 return compile_command(node, not_flag);
             case NodeType::Equal:
@@ -328,8 +348,6 @@ private:
             case NodeType::Lesser:
             case NodeType::LesserEqual:
                 return compile_expr(node, !not_flag);
-            case NodeType::NOT:
-                return compile_condition(node.child(0), !not_flag);
             default:
                 Unreachable();
         }
@@ -347,7 +365,8 @@ private:
 
         switch(conds_node.type())
         {
-            // single condition
+            // single condition (also see compile_condition)
+            case NodeType::NOT:
             case NodeType::Command:
             case NodeType::Equal:
             case NodeType::Greater:

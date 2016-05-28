@@ -196,6 +196,7 @@ struct SymTable
         return nullopt;
     }
 
+
     /// \throws CompilerError if label already exists.
     shared_ptr<Label> add_label(const std::string& name, shared_ptr<const Scope> scope, shared_ptr<const Script> script)
     {

@@ -10,3 +10,9 @@ struct RepeatAnnotation
     shared_ptr<SyntaxTree> number_zero;
     shared_ptr<SyntaxTree> number_one;
 };
+
+struct IncDecAnnotation
+{
+    const Command& op_var_with_one;
+    shared_ptr<SyntaxTree> number_one;
+};

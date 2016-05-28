@@ -563,6 +563,41 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 return false;
             }
 
+            case NodeType::Increment:
+            case NodeType::Decrement:
+            {
+                const char* opkind     = node.type() == NodeType::Increment? "increment" : "decrement";
+                auto& alternator_thing = node.type() == NodeType::Increment? commands.add_thing_to_thing() : commands.sub_thing_from_thing();
+
+                auto& var_ident = node.child(0);
+
+                if(var_ident.type() != NodeType::Identifier)
+                    throw CompilerError("XXX {} argument is not a identifier", opkind);
+
+                auto opt_varinfo = symbols.find_var(var_ident.text(), current_scope);
+                if(!opt_varinfo)
+                    throw CompilerError("XXX {} is not a variable", var_ident.text());
+
+                auto varinfo = std::move(*opt_varinfo);
+
+                // TODO cache this or dunno?
+                SyntaxTree number_one = (varinfo->type == VarType::Int? SyntaxTree::temporary(NodeType::Integer, "1") :
+                                         varinfo->type == VarType::Float? SyntaxTree::temporary(NodeType::Float, "1.0") :
+                                         throw CompilerError("XXX {} must be int or float", opkind));
+
+
+                const Command& op_var_with_one = commands.match_args(symbols, current_scope, alternator_thing, var_ident, number_one);
+                
+                commands.annotate_args(symbols, current_scope, op_var_with_one, var_ident, number_one);
+
+                node.set_annotation(IncDecAnnotation {
+                    op_var_with_one,
+                    std::make_shared<SyntaxTree>(std::move(number_one)),
+                });
+
+                return false;
+            }
+
             
 
             default:

@@ -13,6 +13,53 @@
       <Constant Name="NIGHT"/>
       <Constant Name="DAY"/>
     </Enum>
-	<!-- TODO GTA3 CONSTANTS, FIND WITH A DECOMPILER -->
+    <Enum Name="FADE">
+      <Constant Name="FADE_OUT"/>
+      <Constant Name="FADE_IN"/>
+    </Enum>
+    <Enum Name="PAD">
+      <Constant Name="PAD1"/>
+      <Constant Name="PAD2"/>
+    </Enum>
+    <Enum Name="BUTTON">
+      <Constant Name="LEFTSTICKX"/>
+      <Constant Name="LEFTSTICKY"/>
+      <Constant Name="RIGHTSTICKX"/>
+      <Constant Name="RIGHTSTICKY"/>
+      <Constant Name="LEFTSHOULDER1"/>
+      <Constant Name="LEFTSHOULDER2"/>
+      <Constant Name="RIGHTSHOULDER1"/>
+      <Constant Name="RIGHTSHOULDER2"/>
+      <Constant Name="DPADUP"/>
+      <Constant Name="DPADDOWN"/>
+      <Constant Name="DPADLEFT"/>
+      <Constant Name="DPADRIGHT"/>
+      <Constant Name="START"/>
+      <Constant Name="SELECT"/>
+      <Constant Name="SQUARE"/>
+      <Constant Name="TRIANGLE"/>
+      <Constant Name="CROSS"/>
+      <Constant Name="CIRCLE"/>
+      <Constant Name="LEFTSHOCK"/>
+      <Constant Name="RIGHTSHOCK"/>
+    </Enum>
+    <Enum Name="CARLOCK">
+      <Constant Name="CARLOCK_NONE"/>
+      <Constant Name="CARLOCK_UNLOCKED"/>
+      <Constant Name="CARLOCK_LOCKED"/>
+      <Constant Name="CARLOCK_LOCKOUT_PLAYER_ONLY"/>
+      <Constant Name="CARLOCK_LOCKED_PLAYER_INSIDE"/>
+      <Constant Name="CARLOCK_LOCKED_INITIALLY"/>
+      <Constant Name="CARLOCK_FORCE_SHUT_DOORS"/>
+      <Constant Name="CARLOCK_LOCKED_BUT_CAN_BE_DAMAGED"/>
+    </Enum>
+    <Enum Name="CARPEDMODEL">
+      <!-- Automatically populated? -->
+      <Constant Name="CAR_CHEETAH" Value="105"/>
+    </Enum>
+    <Enum Name="MODEL">
+      <!-- Automatically populated? -->
+    </Enum>
+    <!-- TODO GTA3 CONSTANTS, FIND WITH A DECOMPILER -->
   </Constants>
 </GTA3Script>
