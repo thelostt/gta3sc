@@ -31,6 +31,7 @@ token_map = {
     "OP_DEC": "Decrement",
     ##
     "IDENTIFIER": "Identifier",
+    "FILENAME": "Filename",
     "INTEGER": "Integer",
     "FLOAT": "Float",
     "LONG_STRING": "LongString",

@@ -323,8 +323,9 @@ VAR_TEXT_LABEL16   	:	 V A R '_' T E X T '_' L A B E L '16' ;
 LVAR_TEXT_LABEL16  	:	 L V A R '_' T E X T '_' L A B E L '16' ;
 
 
-IDENTIFIER  :	('a'..'z'|'A'..'Z'|'_'|'$') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'$'|'.')*
-    		;
+IDENTIFIER  :	('a'..'z'|'A'..'Z'|'_'|'$') ('a'..'z'|'A'..'Z'|'0'..'9'|'_'|'$'|'.'|'@'|'&')*  // TODO any char...
+			|   ('0'..'9'|'a'..'z'|'A'..'Z'|'_'|'$')+ '.' S C                                  // ...as R* compiler does
+			;
 
 
 INTEGER     :   ('-'|'+')? (HEX_LITERAL|OCT_LITERAL|DEC_LITERAL)	
