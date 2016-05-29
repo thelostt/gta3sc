@@ -24,22 +24,64 @@ struct GameConfig
     bool has_text_label_prefix = false;
 };
 
+template<typename... Args>
+inline std::string format_error(const char* type, optional<const SyntaxTree&> context, const char* msg, Args&&... args)
+{
+    std::string prefix;
+    std::string suffix;
+    if(context)
+    {
+        // Let's do a bit of magic on context first.
+        ///
+        // If the supplied context has no text data associated with it, it's not very useful. It's likely that
+        // its column is at the start of the line. So, find the first child (not too deep) that contains text data.
+        if(!context->has_text())
+        {
+            for(auto it = context->begin(); it != context->end(); ++it)
+            {
+                if((*it)->has_text())
+                {
+                    context.emplace(**it);
+                    break;
+                }
+            }
+        }
+
+        if(type)
+            prefix = fmt::format("{}:{}:{}: {}: ", context->filename(), context->line(), context->column(), type);
+        else
+            prefix = fmt::format("{}:{}:{}: ", context->filename(), context->line(), context->column());
+
+        if(auto tstream_ptr = context->token_stream().lock())
+        {
+            suffix = fmt::format("\n {}\n {:>{}}", tstream_ptr->get_line(context->line()), "^", context->column());
+        }
+    }
+    else
+    {
+        if(type)
+            prefix = fmt::format("{}: ", type);
+        else
+            /* prefix is empty */;
+    }
+    return fmt::format("{}{}{}\n", prefix, fmt::format(msg, std::forward<Args>(args)...), suffix);
+}
+
 class ProgramError
 {
 public:
     template<typename... Args>
     ProgramError(const SyntaxTree& context, const char* msg, Args&&... args)
-        : message_(fmt::format("{}:{}:{}: error: {}\n", context.filename(), context.line(), context.column(),
-                                                     fmt::format(msg, std::forward<Args>(args)...)))
+        : message_(format_error("error", context, msg, std::forward<Args>(args)...))
     {}
 
     template<typename... Args>
     ProgramError(tag_nocontext_t, const char* msg, Args&&... args)
-        : message_(fmt::format("error: {}\n", fmt::format(msg, std::forward<Args>(args)...)))
+        : message_(format_error("error", nullopt, msg, std::forward<Args>(args)...))
     {}
 
     ProgramError(const SyntaxTree& context, const ProgramError& nocontext_error)
-        : message_(fmt::format("{}:{}:{}: {}\n", context.filename(), context.line(), context.column(), nocontext_error.message()))
+        : message_(format_error(nullptr, context, nocontext_error.message().c_str()))
     {}
 
     const std::string& message() const
@@ -72,7 +114,7 @@ public:
     void error(const ProgramError& pg_error)
     {
         ++error_count;
-        this->print(pg_error.message().c_str());
+        this->puts(pg_error.message().c_str());
     }
 
     template<typename... Args>
@@ -91,14 +133,14 @@ public:
     void warning(const SyntaxTree& context, const char* msg, Args&&... args)
     {
         ++warn_count;
-        this->print4(context, "{}:{}:{}: warning: {}\n", fmt::format(msg, std::forward<Args>(args)...));
+        this->puts(format_error("warning", context, msg, std::forward<Args>(args)...));
     }
 
     template<typename... Args>
     void fatal_error [[noreturn]] (const SyntaxTree& context, const char* msg, Args&&... args)
     {
         ++fatal_count;
-        this->print4(context, "{}:{}:{}: fatal error: {}\n", fmt::format(msg, std::forward<Args>(args)...));
+        this->puts(format_error("fatal error", context, msg, std::forward<Args>(args)...));
         throw HaltJobException();
     }
 
@@ -106,23 +148,14 @@ public:
     void fatal_error [[noreturn]](tag_nocontext_t, const char* msg, Args&&... args)
     {
         ++fatal_count;
-        this->print("fatal error: {}\n", fmt::format(msg, std::forward<Args>(args)...));
+        this->puts(format_error("fatal error", nullopt, msg, std::forward<Args>(args)...));
         throw HaltJobException();
     }
 
 private:
-    template<typename... Args>
-    static void print(const char* msg, Args&&... args)
+    static void puts(const std::string& msg)
     {
-        // TODO lock stderr for thread-safe print? maybe standard already mandates that?
-        fmt::fprintf(stderr, msg, std::forward<Args>(args)...);
-    }
-
-    template<typename... Args>
-    static void print4(const SyntaxTree& context, const char* msg, Args&&... args)
-    {
-        // TODO lock stderr for thread-safe print? maybe standard already mandates that?
-        fmt::fprintf(stderr, msg, context.filename(), context.line(), context.column(), std::forward<Args>(args)...);
+        std::fputs(msg.c_str(), stderr);
     }
 
 private:

@@ -60,6 +60,7 @@ struct Script : std::enable_shared_from_this<Script>
 
     fs::path                path;
     ScriptType              type;
+    shared_ptr<TokenStream> tstream;        // may be nullptr
     shared_ptr<SyntaxTree>  tree;
 
     shared_ptr<Label>       top_label;      // the label on the very very top of the script
@@ -82,8 +83,12 @@ public:
         : type(type)
     {
         this->path = std::move(path_);
-        this->tree = SyntaxTree::compile(TokenStream(this->path));
+        this->tstream.reset(new TokenStream(this->path)); // use new instead of make_shared,
+                                                          // we don't want weak_ptr to leave the TokenStream on memory.
+        this->tree = SyntaxTree::compile(*this->tstream);
     }
+
+    // TODO a flag to not use tstream (free up memory)?
 };
 
 /// Information about a previosly declared variable.

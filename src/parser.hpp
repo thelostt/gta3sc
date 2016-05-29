@@ -12,7 +12,7 @@ struct ANTLR3_BASE_TREE_struct;
 #include "grammar/autogen/gta3scriptsTokens.hpp"
 using NodeType = Token;
 
-class TokenStream
+class TokenStream : public std::enable_shared_from_this<TokenStream>
 {
 public:
     explicit TokenStream(const fs::path& path);
@@ -24,6 +24,34 @@ public:
     TokenStream& operator=(const TokenStream&) = delete;
     TokenStream& operator=(TokenStream&&);
 
+    const std::string& name() const
+    {
+        return this->sname;
+    }
+
+    const std::string& text() const
+    {
+        return this->data;
+    }
+
+    /// Gets the byte offset in this->text() that the specified line number (1-based) is in.
+    ///
+    /// \throws std::logic_error if lineno does not exist.
+    size_t offset_for_line(size_t lineno) const
+    {
+        size_t i = (lineno - 1);
+        if(i < line_offset.size())
+            return line_offset[i];
+        else
+            throw std::logic_error("Bad `lineno` in TokenStream::offset_for_line");
+    }
+
+    /// (1-based)
+    ///
+    /// \throws std::logic_error if lineno does not exist.
+    std::string get_line(size_t lineno) const;
+
+
 protected:
     friend class SyntaxTree;
 
@@ -32,12 +60,19 @@ protected:
     }
 
 private:
-    std::string data;
+    // My stuff.
+    std::string             sname;
+    std::string             data;
+    std::vector<size_t>     line_offset;
+
+    // ANTLR stuff.
     ANTLR3_INPUT_STREAM_struct* istream;
     gta3scriptLexer_Ctx_struct* lexer;
     ANTLR3_COMMON_TOKEN_STREAM_struct* tokstream;
 
     explicit TokenStream(optional<std::string> data, const char* stream_name);
+
+    void calc_lines();
 };
 
 class SyntaxTree : public std::enable_shared_from_this<SyntaxTree>
@@ -51,8 +86,6 @@ public:
     SyntaxTree& operator=(SyntaxTree&&);
     
     static std::shared_ptr<SyntaxTree> compile(const TokenStream& tstream);
-
-    static std::shared_ptr<SyntaxTree> from_raw_tree(ANTLR3_BASE_TREE_struct*, const shared_ptr<std::string>& filename = nullptr);
 
     const_iterator begin() const
     {
@@ -73,7 +106,12 @@ public:
 
     std::string filename() const
     {
-        return this->filenam->empty()? "" : *this->filenam;
+        return this->instream? *this->instream->filename : "";
+    }
+
+    weak_ptr<const TokenStream> token_stream() const
+    {
+        return this->instream? this->instream->tstream : weak_ptr<const TokenStream>();
     }
 
     uint32_t line() const
@@ -90,6 +128,11 @@ public:
     const std::string& text() const
     {
         return this->data;
+    }
+
+    bool has_text() const
+    {
+        return !this->text().empty();
     }
 
     size_t SyntaxTree::child_count() const
@@ -193,7 +236,20 @@ public:
         return SyntaxTree((int)type, std::move(data));
     }
 
+protected:
+    friend class TokenStream;
+
+    struct InputStream
+    {
+        shared_ptr<std::string>     filename;   //< Name of the input file. Stored also here because tstream may get deallocated.
+        weak_ptr<const TokenStream> tstream;    //< Input token stream, if still allocated.
+    };
+
+    static std::shared_ptr<SyntaxTree> from_raw_tree(ANTLR3_BASE_TREE_struct*,
+                                                     const shared_ptr<InputStream>& instream = nullptr);
+
 private:
+
     // This data structure assumes all those members are constant for the entire lifetime of this object!
     // ...except for udata
     NodeType                                    type_;
@@ -201,7 +257,7 @@ private:
     std::vector<std::shared_ptr<SyntaxTree>>    childs;
     optional<std::weak_ptr<SyntaxTree>>         parent_;
     any                                         udata;
-    shared_ptr<std::string>                     filenam;    //< File name
+    shared_ptr<InputStream>                     instream;   //<
     uint32_t                                    lineno;     //< Line number (starting from 1)
     uint32_t                                    colno;      //< Column number (starting from 1)
     

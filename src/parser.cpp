@@ -16,7 +16,7 @@
 // SyntaxTree
 //
 
-std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node, const shared_ptr<std::string>& filenam)
+std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node, const shared_ptr<InputStream>& instream)
 {
     std::string data;
     int type = node->getType(node);
@@ -47,7 +47,7 @@ std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node, co
     }
 
     std::shared_ptr<SyntaxTree> tree(new SyntaxTree(type, data));
-    tree->filenam= filenam;
+    tree->instream = instream;
     tree->lineno = node->getLine(node);
     tree->colno  = node->getCharPositionInLine(node) + 1;
     tree->childs.reserve(child_count);
@@ -57,8 +57,8 @@ std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node, co
         auto node_child = (pANTLR3_BASE_TREE)(node->getChild(node, i));
         if(node_child->getType(node_child) != SKIPS) // newline statements
         {
-            auto my_child = from_raw_tree(node_child, filenam);
-            my_child->parent_ = std::weak_ptr<SyntaxTree>(tree);
+            auto my_child = from_raw_tree(node_child, instream);
+            my_child->parent_  = std::weak_ptr<SyntaxTree>(tree);
             tree->childs.emplace_back(std::move(my_child));
         }
     }
@@ -68,7 +68,8 @@ std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node, co
 
 SyntaxTree::SyntaxTree(SyntaxTree&& rhs)
     : type_(rhs.type_), data(std::move(rhs.data)), childs(std::move(rhs.childs)), parent_(std::move(rhs.parent_)),
-      udata(std::move(rhs.udata))
+      udata(std::move(rhs.udata)),
+      instream(std::move(rhs.instream)), lineno(rhs.lineno), colno(rhs.colno)
 {
     rhs.type_ = NodeType::Ignore;
     rhs.parent_ = nullopt;
@@ -81,6 +82,9 @@ SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
     this->type_ = rhs.type_;
     this->parent_ = std::move(rhs.parent_);
     this->udata = std::move(udata);
+    this->instream = std::move(rhs.instream);
+    this->lineno = rhs.lineno;
+    this->colno = rhs.colno;
     rhs.type_ = NodeType::Ignore;
     rhs.parent_ = nullopt;
     return *this;
@@ -95,8 +99,19 @@ std::shared_ptr<SyntaxTree> SyntaxTree::compile(const TokenStream& tstream)
 
         if(start_tree.tree)
         {
-            auto filenam = std::make_shared<std::string>((const char*) tstream.istream->fileName->chars);
-            return SyntaxTree::from_raw_tree(start_tree.tree, filenam);
+            auto instream = std::make_shared<InputStream>();
+            instream->filename = std::make_shared<std::string>(tstream.name());
+
+            try
+            {
+                instream->tstream = tstream.shared_from_this();
+            }
+            catch(const std::bad_weak_ptr&)
+            {
+                // cannot get instream->tstream, well, it'll be nullptr then :/
+            }
+
+            return SyntaxTree::from_raw_tree(start_tree.tree, instream);
         }
     }
 
@@ -116,7 +131,7 @@ std::string SyntaxTree::to_string() const
 //
 
 TokenStream::TokenStream(std::string data_, const char* stream_name)
-    : data(std::move(data_))
+    : data(std::move(data_)), sname(stream_name)
 {
     this->istream = antlr3StringStreamNew((pANTLR3_UINT8)(data.c_str()), ANTLR3_ENC_UTF8, data.size(), (pANTLR3_UINT8)(stream_name));
 
@@ -126,6 +141,7 @@ TokenStream::TokenStream(std::string data_, const char* stream_name)
         {
             if(this->tokstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(lexer)))
             {
+                this->calc_lines(); // TODO maybe make this call optional?
                 return;
             }
         }
@@ -135,7 +151,7 @@ TokenStream::TokenStream(std::string data_, const char* stream_name)
 }
 
 TokenStream::TokenStream(optional<std::string> data_, const char* stream_name)
-    : TokenStream((data_? std::move(data_.value()) : throw std::runtime_error("")), stream_name)
+    : TokenStream((data_? std::move(data_.value()) : throw std::runtime_error("")), stream_name) // TODO simplify this line
 {
 }
 
@@ -159,7 +175,10 @@ TokenStream& TokenStream::operator=(TokenStream&& rhs)
     this->tokstream = rhs.tokstream;
     this->lexer = rhs.lexer;
     this->istream = rhs.istream;
+
+    this->sname = std::move(rhs.sname);
     this->data = std::move(rhs.data);
+    this->line_offset = std::move(rhs.line_offset);
 
     rhs.tokstream = nullptr;
     rhs.lexer = nullptr;
@@ -173,4 +192,39 @@ TokenStream::~TokenStream()
     if(this->tokstream) this->tokstream->free(this->tokstream);
     if(this->lexer) this->lexer->free(this->lexer);
     if(this->istream) this->istream->free(this->istream);
+}
+
+void TokenStream::calc_lines()
+{
+    if(this->data.empty() || !this->line_offset.empty())
+        return;
+
+    // Assumes an average of 100 characters per line at first.
+    this->line_offset.reserve(this->data.size() / 100);
+
+    // pushes first line offset
+    this->line_offset.emplace_back(0);
+
+    for(const char* it = this->data.c_str(); *it; ++it)
+    {
+        if(*it == '\n')
+        {
+            size_t pos = (it - this->data.c_str());
+            this->line_offset.emplace_back(pos+1);
+        }
+    }
+
+    this->line_offset.shrink_to_fit();
+}
+
+std::string TokenStream::get_line(size_t lineno) const
+{
+    size_t offset = offset_for_line(lineno);
+
+    const char* start = this->data.c_str() + offset;
+    const char* end;
+
+    for(end = start; *end && *end != '\n'; ++end) {}
+
+    return std::string(start, end);
 }
