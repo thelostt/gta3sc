@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import sys, os, subprocess
 
 # Anything not on this dictionary will be converted as-is.

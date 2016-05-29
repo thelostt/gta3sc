@@ -188,8 +188,8 @@ expressionStatement
 		->  ^(OP_EQ $id ^($opa2 $id $a))
 	|	(id=identifier WS* '=' a=argument opb=binaryOperators b=argument newLine)
 		->  ^(OP_EQ $id ^($opb $a $b))
-	|	(id=identifier opr=relationalOperators a=argument newLine)
-		->  ^($opr $id $a)
+	|	(a=argument opr=relationalOperators b=argument newLine)
+		->  ^($opr $a $b)
 	|   ((unaryOperators identifier | identifier unaryOperators) newLine)
 		->  ^(unaryOperators identifier)
 	;
@@ -241,6 +241,14 @@ relationalOperators
 	 	|'>'  -> OP_GE
 	 	|'>=' -> OP_GEQ
 	 	|'<=' -> OP_LEQ))
+	;
+
+relationalOperatorsInverse
+	: ((WS*)!
+	   ( '<'  -> OP_GEQ	// NOTed
+	 	|'>'  -> OP_LEQ	// NOTed
+	 	|'>=' -> OP_LE	// NOTed
+	 	|'<=' -> OP_GE))// NOTed
 	;
 
 unaryOperators
