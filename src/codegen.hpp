@@ -6,7 +6,7 @@
 ///
 #pragma once
 #include "stdinc.h"
-#include "defs/game.hpp"
+#include "program.hpp"
 
 /// Generates bytecode from the intermediate representation T.
 ///
@@ -30,7 +30,7 @@ size_t compiled_size(const CompiledData&, const CodeGenerator&);
 /// Converts intermediate representation (given by `CompilerContext`) into SCM bytecode.
 struct CodeGenerator
 {
-    const GameConfig                config;
+    ProgramContext&                 program;
 
     const shared_ptr<const Script>  script;
     std::vector<CompiledData>       compiled;
@@ -39,13 +39,13 @@ struct CodeGenerator
     std::unique_ptr<uint8_t[]>      bytecode; // size == script->size
     size_t                          offset;
 
-    CodeGenerator(GameConfig config, shared_ptr<const Script> script_, std::vector<CompiledData> compiled, const SymTable& symbols) :
-        config(std::move(config)), script(std::move(script_)), compiled(std::move(compiled)), symbols(symbols)
+    CodeGenerator(shared_ptr<const Script> script_, std::vector<CompiledData> compiled, const SymTable& symbols, ProgramContext& program) :
+        program(program), script(std::move(script_)), compiled(std::move(compiled)), symbols(symbols)
     {
     }
 
-    CodeGenerator(GameConfig config, CompilerContext context) : // consumes the context (faster)
-        CodeGenerator(std::move(config), std::move(context.script), std::move(context.compiled), context.symbols)
+    CodeGenerator(CompilerContext context, ProgramContext& program) : // consumes the context (faster)
+        CodeGenerator(std::move(context.script), std::move(context.compiled), context.symbols, program)
     {}
 
     /*
@@ -166,7 +166,7 @@ inline size_t compiled_size(const int32_t&, const CodeGenerator&)
 
 inline size_t compiled_size(const float&, const CodeGenerator& codegen)
 {
-    if(codegen.config.use_half_float)
+    if(codegen.program.opt.use_half_float)
         return 1 + sizeof(int16_t);
     else
         return 1 + sizeof(float);
@@ -190,7 +190,7 @@ inline size_t compiled_size(const CompiledString& s, const CodeGenerator& codege
     switch(s.type)
     {
         case CompiledString::Type::TextLabel8:
-            return (codegen.config.has_text_label_prefix? 1 : 0) + 8;
+            return (codegen.program.opt.has_text_label_prefix? 1 : 0) + 8;
         case CompiledString::Type::TextLabel16:
             return 1 + 16;
         case CompiledString::Type::StringVar:
@@ -252,7 +252,7 @@ inline void generate_code(const int32_t& value, CodeGenerator& codegen)
 
 inline void generate_code(const float& value, CodeGenerator& codegen)
 {
-    if(codegen.config.use_half_float)
+    if(codegen.program.opt.use_half_float)
     {
         auto to_half = [](float value) -> int16_t {
             // from Wesser
@@ -285,7 +285,7 @@ inline void generate_code(const CompiledString& str, CodeGenerator& codegen)
     switch(str.type)
     {
         case CompiledString::Type::TextLabel8:
-            if(codegen.config.has_text_label_prefix)
+            if(codegen.program.opt.has_text_label_prefix)
                 codegen.emplace_u8(9);
             codegen.emplace_chars(8, str.storage.c_str());
             break;

@@ -3,6 +3,7 @@
 #include "annotation.hpp"
 #include "parser.hpp"
 #include "error.hpp"
+#include "program.hpp"
 
 /// Declared type of a variable.
 enum class VarType
@@ -45,7 +46,7 @@ struct Script : std::enable_shared_from_this<Script>
     /// For example, annotates whether a identifier is a variable, enum, label, etc.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void annotate_tree(const SymTable& symbols, const Commands& commands);
+    void annotate_tree(const SymTable& symbols, const Commands& commands, ProgramContext& program);
 
     /// Scans the subdirectory (recursively) named after the name of this script file.
     /// \returns map of (filename, filepath) to all script files found.
@@ -149,17 +150,17 @@ struct SymTable
     std::vector<std::string>    mission;    /// LOAD_AND_LAUNCH_MISSION scripts
 
     /// Construts a SymTable from the symbols in `script`.
-    static SymTable from_script(Script& script)
+    static SymTable from_script(Script& script, ProgramContext& program)
     {
         SymTable symbols;
-        symbols.scan_symbols(script);
+        symbols.scan_symbols(script, program);
         return symbols;
     }
 
     /// Scans all symbols in `script` and adds them to this table.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void scan_symbols(Script& script);
+    void scan_symbols(Script& script, ProgramContext& program);
 
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
     void build_script_table(const std::vector<shared_ptr<Script>>& scripts);
@@ -197,12 +198,12 @@ struct SymTable
     }
 
 
-    /// \throws CompilerError if label already exists.
-    shared_ptr<Label> add_label(const std::string& name, shared_ptr<const Scope> scope, shared_ptr<const Script> script)
+    /// Adds a new label to the table, returns `nullopt` if it already exists.
+    optional<shared_ptr<Label>> add_label(const std::string& name, shared_ptr<const Scope> scope, shared_ptr<const Script> script)
     {
         auto it = this->labels.emplace(name, std::make_shared<Label>(scope, script));
         if(it.second == false)
-            throw CompilerError("Label {} already exists.", name);
+            return nullopt;
         return it.first->second;
     }
 
@@ -216,8 +217,8 @@ struct SymTable
     }
 
     /// Informs about a external script file with `type` referenced by `command`
-    /// \throws CompilerError if declaration conflicts with previosly ones.
-    void add_script(ScriptType type, const SyntaxTree& command);
+    /// Returns false and sends a error to `program` if declaration conflicts with previosly ones.
+    bool add_script(ScriptType type, const SyntaxTree& command, ProgramContext& program);
 
     optional<shared_ptr<Script>> find_script(const std::string& filename) const
     {
@@ -228,7 +229,8 @@ struct SymTable
     }
 
     /// Merges symbol table `t2` into this one.
-    void merge(SymTable t2);
+    /// May output non-fatal errors to `program`.
+    void merge(SymTable t2, ProgramContext& program);
 
     /// Shifts all global vars offsets by `offset`. The unit is not bytes, but indices.
     void apply_offset_to_vars(uint32_t offset_in_index)
@@ -239,7 +241,7 @@ struct SymTable
 };
 
 template<typename InputIt> inline
-auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir, InputIt begin, InputIt end, ScriptType type) 
+auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir, InputIt begin, InputIt end, ScriptType type, ProgramContext& program) 
 -> std::vector<std::pair<shared_ptr<Script>, SymTable>>
 {
     std::vector<std::pair<shared_ptr<Script>, SymTable>> output;
@@ -247,12 +249,17 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
     for(auto it = begin; it != end; ++it)
     {
         auto path_it = subdir.find(*it);
-        if(path_it == subdir.end())
-            throw CompilerError("File '{}' does not exist in '{}' subdirectory.", *it, "main");
-
-        auto script = Script::create(path_it->second, type);
-        auto symtable = SymTable::from_script(*script);
-        output.emplace_back(std::make_pair(std::move(script), std::move(symtable)));
+        if(path_it != subdir.end())
+        {
+            auto script = Script::create(path_it->second, type);
+            auto symtable = SymTable::from_script(*script, program);
+            output.emplace_back(std::make_pair(std::move(script), std::move(symtable)));
+        }
+        else
+        {
+            program.error(nocontext, "File '{}' does not exist in '{}' subdirectory.", *it, "main");
+            // TODO is this safe to continue compilation or is it fatal?
+        }
     }
 
     return output;

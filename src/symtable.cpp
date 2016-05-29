@@ -82,11 +82,12 @@ void SymTable::build_script_table(const std::vector<shared_ptr<Script>>& scripts
     }
 }
 
-void SymTable::add_script(ScriptType type, const SyntaxTree& command)
+bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramContext& program)
 {
     if(command.child_count() <= 1)
     {
-        throw CompilerError("XXX few args");
+        program.error(command, "XXX few args");
+        return false;
     }
     else
     {
@@ -103,11 +104,20 @@ void SymTable::add_script(ScriptType type, const SyntaxTree& command)
         bool found_mission   = std::any_of(this->mission.begin(), this->mission.end(), searcher);
 
         if(found_extfile && type != ScriptType::MainExtension)
-            throw CompilerError("XXX incompatible, previous declaration blabla");
+        {
+            program.error(command, "XXX incompatible, previous declaration blabla");
+            return false;
+        }
         else if(found_subscript && type != ScriptType::Subscript)
-            throw CompilerError("XXX incompatible, previous declaration blabla");
+        {
+            program.error(command, "XXX incompatible, previous declaration blabla");
+            return false;
+        }
         else if(found_mission && type != ScriptType::Mission)
-            throw CompilerError("XXX incompatible, previous declaration blabla");
+        {
+            program.error(command, "XXX incompatible, previous declaration blabla");
+            return false;
+        }
         else 
         {
             // still not added to its list?
@@ -119,11 +129,12 @@ void SymTable::add_script(ScriptType type, const SyntaxTree& command)
 
                 vector.get().emplace_back(std::move(script_name));
             }
+            return true;
         }
     }
 }
 
-void SymTable::merge(SymTable t2)
+void SymTable::merge(SymTable t2, ProgramContext& program)
 {
     // TODO improve readability of this
 
@@ -148,10 +159,16 @@ void SymTable::merge(SymTable t2)
     // TODO check for conflicting extfiles, subscripts and mission
 
     if(int_labels.size() > 0)
-        throw CompilerError("XXX dup label between script units");
+        program.error(nocontext, "XXX dup label between script units");
 
     if(int_gvars.size() > 0)
-        throw CompilerError("XXX dup global var between script units");
+        program.error(nocontext, "XXX dup global var between script units");
+
+
+
+    //
+    // All error conditions checked, perform actual merge
+    //
 
     shared_ptr<Var> highest_var;
     uint32_t begin_t2_vars = 0;
@@ -187,7 +204,7 @@ void SymTable::merge(SymTable t2)
     std::move(t2.mission.begin(), t2.mission.end(), std::back_inserter(t1.mission));
 }
 
-void SymTable::scan_symbols(Script& script)
+void SymTable::scan_symbols(Script& script, ProgramContext& program)
 {
     std::function<bool(SyntaxTree&)> walker;
 
@@ -218,37 +235,58 @@ void SymTable::scan_symbols(Script& script)
                 else
                 {
                     auto& label_name = node.child(0).text();
-                    auto label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
-                    node.set_annotation(std::move(label_ptr));
+                    
+                    auto opt_label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
+                    if(!opt_label_ptr)
+                    {
+                        program.error(node, "XXX Label {} already exists", label_name);
+                        opt_label_ptr = table.find_label(label_name).value();
+                    }
+
+                    Expects(opt_label_ptr != nullopt);
+                    node.set_annotation(std::move(*opt_label_ptr)); 
                 }
                 return false;
             }
 
             case NodeType::Scope:
             {
-                if(current_scope)
-                    throw CompilerError("Already inside a scope.");
-
-                auto guard = make_scope_guard([&] {
-                    current_scope = nullptr;
+                auto guard = make_scope_guard([&, old_current_scope = current_scope] {
+                    current_scope = old_current_scope;
                 });
 
-                local_index = 0;
-                current_scope = table.add_scope();
+                if(current_scope)
                 {
-                    if(next_scoped_label)
+                    program.error(node, "XXX Already inside a scope.");
+                    // continue using current scope instead of entering a new one
+                }
+                else
+                {
+                    local_index = 0;
+                    current_scope = table.add_scope();
+                }
+
+                if(next_scoped_label)
+                {
+                    auto& label_name = next_scoped_label->child(0).text();
+
+                    auto opt_label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
+                    if(!opt_label_ptr)
                     {
-                        auto& label_name = next_scoped_label->child(0).text();
-                        auto label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
-                        next_scoped_label->set_annotation(std::move(label_ptr));
-                        next_scoped_label = nullptr;
+                        program.error(node, "XXX Label {} already exists", label_name);
+                        opt_label_ptr = table.find_label(label_name).value();
                     }
 
-                    node.walk(std::ref(walker));
-
-                    node.set_annotation(std::move(current_scope));
+                    Expects(opt_label_ptr != nullopt);
+                    next_scoped_label->set_annotation(std::move(*opt_label_ptr));
+                    next_scoped_label = nullptr;
                 }
-                // guard sets current_scope to nullptr
+
+                node.walk(std::ref(walker));
+
+                node.set_annotation(std::move(current_scope));
+
+                // guard sets current_scope to previous value (probably nullptr)
 
                 return false;
             }
@@ -259,11 +297,11 @@ void SymTable::scan_symbols(Script& script)
 
                 // TODO use `const Commands&` to identify these?
                 if(name == "LOAD_AND_LAUNCH_MISSION")
-                    table.add_script(ScriptType::Mission, node);
+                    table.add_script(ScriptType::Mission, node, program);
                 else if(name == "LAUNCH_MISSION")
-                    table.add_script(ScriptType::Subscript, node);
+                    table.add_script(ScriptType::Subscript, node, program);
                 else if(name == "GOSUB_FILE")
-                    table.add_script(ScriptType::MainExtension, node);
+                    table.add_script(ScriptType::MainExtension, node, program);
 
                 return false;
             }
@@ -278,7 +316,10 @@ void SymTable::scan_symbols(Script& script)
                 std::tie(global, vartype) = token_to_vartype(node.type());
 
                 if(!global && current_scope == nullptr)
-                    throw CompilerError("Local var definition outside scope.");
+                {
+                    program.error(node, "XXX Local var definition outside scope.");
+                    return false;
+                }
 
                 auto& target = global? table.global_vars : current_scope->vars;
                 auto& index = global? global_index : local_index;
@@ -295,20 +336,27 @@ void SymTable::scan_symbols(Script& script)
                         auto array_counter = std::stol(varnode.child(0).text(), nullptr, 0);
 
                         if(array_counter <= 0)
-                            throw CompilerError("Negative or zero array counter {}.", name);
+                        {
+                            program.error(varnode, "XXX Negative or zero array counter {}.", name);
+                            array_counter = 1; // fallback to 1 instead of halting compilation
+                        }
 
-                        count.emplace(array_counter);
+                        count = array_counter;
                     }
 
                     auto it = target.emplace(name, std::make_shared<Var>(global, vartype, index, count));
                     auto var_ptr = it.first->second;
 
                     if(it.second == false)
-                        throw CompilerError("Variable {} already exists.", name);
-
-                    index += var_ptr->space_taken();
-
-                    varnode.set_annotation(std::move(var_ptr));
+                    {
+                        program.error(varnode, "XXX Variable {} already exists.", name);
+                        varnode.set_annotation(std::move(var_ptr));
+                    }
+                    else
+                    {
+                        index += var_ptr->space_taken();
+                        varnode.set_annotation(std::move(var_ptr));
+                    }
                 }
 
                 return false;
@@ -322,7 +370,7 @@ void SymTable::scan_symbols(Script& script)
     script.tree->walk(std::ref(walker));
 }
 
-void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
+void Script::annotate_tree(const SymTable& symbols, const Commands& commands, ProgramContext& program)
 {
     std::function<bool(SyntaxTree&)> walker;
 
@@ -455,32 +503,41 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 auto& var = node.child(1);
 
                 // TODO cache this or dunno?
+                // TODO to be pedantic REPEAT must accept only INT times
                 SyntaxTree number_zero = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "0") :
                                           times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "0.0") :
-                                          throw CompilerError("XXX times must be int or float"));
+                                          (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, "0"))); // int as fallback
 
                 SyntaxTree number_one = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "1") :
                                          times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "1.0") :
-                                         throw CompilerError("XXX times must be int or float"));
+                                         (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, "1"))); // int as fallback
 
-                // TODO to be pedantic REPEAT must accept only INT times
-
-                const Command& set_var_to_zero = commands.match_args(symbols, current_scope, commands.set(), var, number_zero);
-                commands.annotate_args(symbols, current_scope, set_var_to_zero, var, number_zero);
-                
-                const Command& add_var_with_one = commands.match_args(symbols, current_scope, commands.add_thing_to_thing(), var, number_one);
-                commands.annotate_args(symbols, current_scope, add_var_with_one, var, number_one);
-
-                const Command& is_var_geq_times = commands.match_args(symbols, current_scope, commands.is_thing_greater_or_equal_to_thing(), var, times);
-                commands.annotate_args(symbols, current_scope, is_var_geq_times, var, times);
-
+                // Walk on the REPEAT body before matching the base commands.
+                // This will allow error messages in the body to be displayed even if
+                // the base matching throws BadAlternator.
                 node.child(2).walk(std::ref(walker));
 
-                node.set_annotation(RepeatAnnotation {
-                    set_var_to_zero, add_var_with_one, is_var_geq_times,
-                    std::make_shared<SyntaxTree>(std::move(number_zero)),
-                    std::make_shared<SyntaxTree>(std::move(number_one))
-                });
+                try
+                {
+                    const Command& set_var_to_zero = commands.match_args(symbols, current_scope, commands.set(), var, number_zero);
+                    commands.annotate_args(symbols, current_scope, set_var_to_zero, var, number_zero);
+                
+                    const Command& add_var_with_one = commands.match_args(symbols, current_scope, commands.add_thing_to_thing(), var, number_one);
+                    commands.annotate_args(symbols, current_scope, add_var_with_one, var, number_one);
+
+                    const Command& is_var_geq_times = commands.match_args(symbols, current_scope, commands.is_thing_greater_or_equal_to_thing(), var, times);
+                    commands.annotate_args(symbols, current_scope, is_var_geq_times, var, times);
+
+                    node.set_annotation(RepeatAnnotation {
+                        set_var_to_zero, add_var_with_one, is_var_geq_times,
+                        std::make_shared<SyntaxTree>(std::move(number_zero)),
+                        std::make_shared<SyntaxTree>(std::move(number_one))
+                    });
+                }
+                catch(const BadAlternator& e)
+                {
+                    program.error(e.error());
+                }
 
                 return false;
             }
@@ -507,9 +564,16 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 }
                 else
                 {
-                    const Command& command = commands.match(node, symbols, current_scope);
-                    commands.annotate(node, command, symbols, current_scope);
-                    node.set_annotation(std::cref(command));
+                    try
+                    {
+                        const Command& command = commands.match(node, symbols, current_scope);
+                        commands.annotate(node, command, symbols, current_scope);
+                        node.set_annotation(std::cref(command));
+                    }
+                    catch(const BadAlternator& e)
+                    {
+                        program.error(e.error());
+                    }
                 }
 
                 return false;
@@ -522,44 +586,50 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
             case NodeType::Lesser:
             case NodeType::LesserEqual:
             {
-                Commands::alternator_pair alter_cmds1 = find_command_for_expr(node).value();
-
-                if(auto alter_op = find_command_for_expr(node.child(1)))
+                try
                 {
-                    // either 'a = b OP c' or 'a OP= c'
+                    Commands::alternator_pair alter_cmds1 = find_command_for_expr(node).value();
 
-                    // TODO to be pedantic, alter_set can be only SET (i.e. cannot be CSET)
+                    if(auto alter_op = find_command_for_expr(node.child(1)))
+                    {
+                        // either 'a = b OP c' or 'a OP= c'
 
-                    // TODO buh what if '=' is IS_THING_EQUAL_TO_THING here?
+                        // TODO to be pedantic, alter_set can be only SET (i.e. cannot be CSET)
 
-                    // TODO ensure alter_cmds1 is only '=' here (it will happen, but we need to Expects somehow)
+                        // TODO buh what if '=' is IS_THING_EQUAL_TO_THING here?
 
-                    SyntaxTree& op = node.child(1);
-                    SyntaxTree& a = node.child(0);
-                    SyntaxTree& b = op.child(0);
-                    SyntaxTree& c = op.child(1);
+                        // TODO ensure alter_cmds1 is only '=' here (it will happen, but we need to Expects somehow)
 
-                    const Command& cmd_set = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
-                    commands.annotate_args(symbols, current_scope, cmd_set, a, b);
+                        SyntaxTree& op = node.child(1);
+                        SyntaxTree& a = node.child(0);
+                        SyntaxTree& b = op.child(0);
+                        SyntaxTree& c = op.child(1);
 
-                    const Command& cmd_op = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, c);
-                    commands.annotate_args(symbols, current_scope, cmd_op, a, c);
+                        const Command& cmd_set = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
+                        commands.annotate_args(symbols, current_scope, cmd_set, a, b);
 
-                    node.set_annotation(std::cref(cmd_set));
-                    op.set_annotation(std::cref(cmd_op));
+                        const Command& cmd_op = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, c);
+                        commands.annotate_args(symbols, current_scope, cmd_op, a, c);
+
+                        node.set_annotation(std::cref(cmd_set));
+                        op.set_annotation(std::cref(cmd_op));
+                    }
+                    else
+                    {
+                        // 'a = b' or 'a =# b' or 'a > b' (and such)
+
+                        SyntaxTree& a = node.child(0);
+                        SyntaxTree& b = node.child(1);
+
+                        const Command& command = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
+                        commands.annotate_args(symbols, current_scope, command, a, b);
+                        node.set_annotation(std::cref(command));
+                    }
                 }
-                else
+                catch(const BadAlternator& e)
                 {
-                    // 'a = b' or 'a =# b' or 'a > b' (and such)
-
-                    SyntaxTree& a = node.child(0);
-                    SyntaxTree& b = node.child(1);
-
-                    const Command& command = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
-                    commands.annotate_args(symbols, current_scope, command, a, b);
-                    node.set_annotation(std::cref(command));
+                    program.error(e.error());
                 }
-                
                 return false;
             }
 
@@ -572,28 +642,35 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands)
                 auto& var_ident = node.child(0);
 
                 if(var_ident.type() != NodeType::Identifier)
-                    throw CompilerError("XXX {} argument is not a identifier", opkind);
+                    program.fatal_error(var_ident, "XXX {} argument is not a identifier", opkind); // TODO use program.error and think about fallback
 
                 auto opt_varinfo = symbols.find_var(var_ident.text(), current_scope);
                 if(!opt_varinfo)
-                    throw CompilerError("XXX {} is not a variable", var_ident.text());
+                    program.fatal_error(var_ident, "XXX {} is not a variable", var_ident.text()); // TODO use program.error and think about fallback
 
                 auto varinfo = std::move(*opt_varinfo);
 
                 // TODO cache this or dunno?
                 SyntaxTree number_one = (varinfo->type == VarType::Int? SyntaxTree::temporary(NodeType::Integer, "1") :
                                          varinfo->type == VarType::Float? SyntaxTree::temporary(NodeType::Float, "1.0") :
-                                         throw CompilerError("XXX {} must be int or float", opkind));
+                                         (program.error(var_ident, "XXX {} must be int or float", opkind), SyntaxTree::temporary(NodeType::Integer, "1")) ); // int as fallback
 
 
-                const Command& op_var_with_one = commands.match_args(symbols, current_scope, alternator_thing, var_ident, number_one);
+                try
+                {
+                    const Command& op_var_with_one = commands.match_args(symbols, current_scope, alternator_thing, var_ident, number_one);
                 
-                commands.annotate_args(symbols, current_scope, op_var_with_one, var_ident, number_one);
+                    commands.annotate_args(symbols, current_scope, op_var_with_one, var_ident, number_one);
 
-                node.set_annotation(IncDecAnnotation {
-                    op_var_with_one,
-                    std::make_shared<SyntaxTree>(std::move(number_one)),
-                });
+                    node.set_annotation(IncDecAnnotation {
+                        op_var_with_one,
+                        std::make_shared<SyntaxTree>(std::move(number_one)),
+                    });
+                }
+                catch(const BadAlternator& e)
+                {
+                    program.error(e.error());
+                }
 
                 return false;
             }

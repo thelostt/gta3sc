@@ -16,7 +16,7 @@
 // SyntaxTree
 //
 
-std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
+std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node, const shared_ptr<std::string>& filenam)
 {
     std::string data;
     int type = node->getType(node);
@@ -47,6 +47,9 @@ std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
     }
 
     std::shared_ptr<SyntaxTree> tree(new SyntaxTree(type, data));
+    tree->filenam= filenam;
+    tree->lineno = node->getLine(node);
+    tree->colno  = node->getCharPositionInLine(node) + 1;
     tree->childs.reserve(child_count);
 
     for(size_t i = 0; i < child_count; ++i)
@@ -54,7 +57,7 @@ std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node)
         auto node_child = (pANTLR3_BASE_TREE)(node->getChild(node, i));
         if(node_child->getType(node_child) != SKIPS) // newline statements
         {
-            auto my_child = from_raw_tree(node_child);
+            auto my_child = from_raw_tree(node_child, filenam);
             my_child->parent_ = std::weak_ptr<SyntaxTree>(tree);
             tree->childs.emplace_back(std::move(my_child));
         }
@@ -92,7 +95,8 @@ std::shared_ptr<SyntaxTree> SyntaxTree::compile(const TokenStream& tstream)
 
         if(start_tree.tree)
         {
-            return SyntaxTree::from_raw_tree(start_tree.tree);
+            auto filenam = std::make_shared<std::string>((const char*) tstream.istream->fileName->chars);
+            return SyntaxTree::from_raw_tree(start_tree.tree, filenam);
         }
     }
 

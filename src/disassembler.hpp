@@ -2,9 +2,9 @@
 
 #pragma once
 #include "stdinc.h"
-#include "defs/game.hpp"
 #include "commands.hpp"
 #include "compiler.hpp" // for Compiled* types
+#include "program.hpp"
 
 //using EOAL = EOAL;
 
@@ -124,16 +124,12 @@ public:
 
     Disassembler(Disassembler&&) = default;
 
-    static Disassembler from_file(GameConfig config, const Commands& commands, const fs::path& path)
+    static optional<Disassembler> from_file(GameConfig config, const Commands& commands, const fs::path& path)
     {
         if(auto opt_bytecode = read_file_binary(path))
-        {
             return Disassembler(config, commands, *opt_bytecode);
-        }
         else
-        {
-            throw DecompilerError("File {} does not exist", path);
-        }
+            return nullopt;
     }
 
 

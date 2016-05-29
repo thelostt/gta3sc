@@ -103,6 +103,7 @@ struct CompilerContext
     // TODO think about more guards?
 
     // Inputs
+    ProgramContext&                 program;
     const Commands&                 commands;
     const shared_ptr<const Script>  script;
     const SymTable&                 symbols;
@@ -117,8 +118,8 @@ struct CompilerContext
 
     /// Note 1: The SyntaxTree of the script must have been anotated. (TODO explain how to annotate the tree?).
     /// Note 2: TODO explain how to generate a symbol table?
-    CompilerContext(shared_ptr<const Script> script, const SymTable& symbols, const Commands& commands)
-        : script(std::move(script)), symbols(symbols), commands(commands)
+    CompilerContext(shared_ptr<const Script> script, const SymTable& symbols, const Commands& commands, ProgramContext& program)
+        : script(std::move(script)), symbols(symbols), commands(commands), program(program)
     {}
 
     /// Compiles everything on the Syntax Tree of the script.
@@ -174,13 +175,14 @@ private:
                 compile_command(node, not_flag);
                 break;
             case NodeType::NOT:
-                throw CompilerError("XXX NOT outside of a condition block");
+                program.error(node, "XXX NOT outside of a condition block");
+                compile_statement(node.child(0), !not_flag);
                 break;
             case NodeType::Greater:
             case NodeType::GreaterEqual:
             case NodeType::Lesser:
             case NodeType::LesserEqual:
-                throw CompilerError("XXX conditional expression outside of a condition block");
+                program.error(node, "XXX conditional expression outside of a condition block");
                 break;
             case NodeType::Equal:
             case NodeType::Cast:

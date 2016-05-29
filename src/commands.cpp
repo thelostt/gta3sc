@@ -49,10 +49,10 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
         }
 
         if(is_good == false)
-            throw BadAlternator("XXX type mismatch");
+            throw BadAlternator(nocontext, "XXX type mismatch");
     }
     else
-        throw BadAlternator("XXX kind of var not allowed");
+        throw BadAlternator(nocontext, "XXX kind of var not allowed");
 }
 
 static void match_identifier(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
@@ -61,7 +61,7 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
     {
         case ArgType::Label:
             if(!symbols.find_label(node.text()))
-                throw BadAlternator("XXX not label identifier");
+                throw BadAlternator(node, "XXX not label identifier");
             break;
 
         case ArgType::TextLabel:
@@ -81,11 +81,18 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
 
             if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
             {
-                match_identifier_var(*opt_var, arg, symbols);
-                break;
+                try
+                {
+                    match_identifier_var(*opt_var, arg, symbols);
+                    break;
+                }
+                catch(const BadAlternator& error)
+                {
+                    throw BadAlternator(node, error);
+                }
             }
 
-            throw BadAlternator("XXX");
+            throw BadAlternator(node, "XXX");
         }
 
         default:
@@ -107,7 +114,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
         size_t args_readen = 0;
 
         auto it_alter_arg = alternative.args.begin();
-        auto it_target_arg = begin;
+        auto it_target_arg = begin; // SyntaxTree
 
         for(; ;
         (it_alter_arg->optional? it_alter_arg : ++it_alter_arg),
@@ -147,7 +154,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     {
                         match_identifier(**it_target_arg, commands, *it_alter_arg, symbols, scope_ptr);
                     }
-                    catch(const CompilerError&)
+                    catch(const BadAlternator&)
                     {
                         bad_alternative = true;
                     }
@@ -165,7 +172,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
         }
     }
 
-    throw BadAlternator("XXX");
+    throw BadAlternator(nocontext, "XXX BAD ALTERNATOR, GIVE ME A ERROR MESSAGE");
 }
 
 template<typename Iter> static

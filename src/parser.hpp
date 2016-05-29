@@ -52,7 +52,7 @@ public:
     
     static std::shared_ptr<SyntaxTree> compile(const TokenStream& tstream);
 
-    static std::shared_ptr<SyntaxTree> from_raw_tree(ANTLR3_BASE_TREE_struct*);
+    static std::shared_ptr<SyntaxTree> from_raw_tree(ANTLR3_BASE_TREE_struct*, const shared_ptr<std::string>& filename = nullptr);
 
     const_iterator begin() const
     {
@@ -69,6 +69,21 @@ public:
         return std::find_if(begin(), end(), [&](const std::shared_ptr<SyntaxTree>& node) {
             return node.get() == std::addressof(child);
         });
+    }
+
+    std::string filename() const
+    {
+        return this->filenam->empty()? "" : *this->filenam;
+    }
+
+    uint32_t line() const
+    {
+        return this->lineno;
+    }
+
+    uint32_t column() const
+    {
+        return this->colno;
     }
 
     // contains state changes
@@ -186,6 +201,10 @@ private:
     std::vector<std::shared_ptr<SyntaxTree>>    childs;
     optional<std::weak_ptr<SyntaxTree>>         parent_;
     any                                         udata;
+    shared_ptr<std::string>                     filenam;    //< File name
+    uint32_t                                    lineno;     //< Line number (starting from 1)
+    uint32_t                                    colno;      //< Column number (starting from 1)
+    
 
     explicit SyntaxTree(int type, std::string data)
         : type_(NodeType(type)), data(std::move(data))
