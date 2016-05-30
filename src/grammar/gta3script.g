@@ -358,10 +358,17 @@ DEC_LITERAL : ('0' | '1'..'9' '0'..'9'*) ;
 
 fragment
 FLOAT_LITERAL
+    :   ('0'..'9')+ ('.'|'f'|'F') ('0'..'9'|'.'|'f'|'F')*		// stricly what the R* compiler checks for :(
+    ;
+
+/* More elaborated literal, but not 100% compatible with R*s, e.g. won't compile gta3 source code.
+fragment
+FLOAT_LITERAL
     :   ('0'..'9')+ '.' ('0'..'9')* EXPONENT? ('f'|'F')?
     |   '.' ('0'..'9')+ EXPONENT? ('f'|'F')?
     |   ('0'..'9')+ EXPONENT ('f'|'F')?
     ;
+*/
 
 fragment
 EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;
