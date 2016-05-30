@@ -42,6 +42,7 @@ struct Script : std::enable_shared_from_this<Script>
         return p;
     }
 
+
     /// Annnotates this script's syntax tree with informations to simplify the compilation step.
     /// For example, annotates whether a identifier is a variable, enum, label, etc.
     ///
@@ -113,7 +114,7 @@ struct Var
 /// Scope information.
 struct Scope
 {
-    std::map<std::string, shared_ptr<Var>> vars;
+    std::map<std::string, shared_ptr<Var>, iless> vars;
 };
 
 /// Label information.
@@ -143,12 +144,13 @@ struct Label
 struct SymTable
 {
     // TODO check conflicts of label names and global names!?! (on merge too)
+    // TODO keep using iless or use another solution?
 
     // IMPORTANT! Make sure whenever you add any new field, to update merge() accordingly !!!!!!!!!!
-    std::map<std::string, shared_ptr<Script>> scripts;
-    std::map<std::string, shared_ptr<Label>>  labels;
-    std::map<std::string, shared_ptr<Var>>    global_vars;
-    std::vector<std::shared_ptr<Scope>>       local_scopes;
+    std::map<std::string, shared_ptr<Script>>       scripts;
+    std::map<std::string, shared_ptr<Label>, iless> labels;
+    std::map<std::string, shared_ptr<Var>, iless>   global_vars;
+    std::vector<std::shared_ptr<Scope>>             local_scopes;
 
     std::vector<std::string>    extfiles;   /// GOSUB_FILE scripts
     std::vector<std::string>    subscript;  /// LAUNCH_MISSION scripts
