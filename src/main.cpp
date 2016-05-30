@@ -32,7 +32,11 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
 
         ProgramContext program(gta3_config);
 
-        auto main = Script::create("test.sc"/*"main.sc"*/, ScriptType::Main);
+        //const char* input = "intro.sc";
+        //const char* input = "test.sc";
+        const char* input = "gta3_src/main.sc";
+
+        auto main = Script::create(input, ScriptType::Main);
         auto symbols = SymTable::from_script(*main, program);
         symbols.apply_offset_to_vars(2);
 
@@ -43,6 +47,8 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
         auto ext_scripts = read_and_scan_symbols(subdir, symbols.extfiles.begin(), symbols.extfiles.end(), ScriptType::MainExtension, program);
         auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
         auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
+
+        // TODO handle lex/parser errors
 
         for(auto& x : ext_scripts)
         {

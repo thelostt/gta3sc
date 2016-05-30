@@ -224,7 +224,7 @@ std::string TokenStream::get_line(size_t lineno) const
     const char* start = this->data.c_str() + offset;
     const char* end;
 
-    for(end = start; *end && *end != '\n'; ++end) {}
+    for(end = start; *end && *end != '\n' && *end != '\r'; ++end) {}
 
     return std::string(start, end);
 }

@@ -46,7 +46,7 @@ inline std::string format_error(const char* type, optional<const SyntaxTree&> co
                 }
             }
         }
-
+        
         if(type)
             prefix = fmt::format("{}:{}:{}: {}: ", context->filename(), context->line(), context->column(), type);
         else
@@ -64,7 +64,7 @@ inline std::string format_error(const char* type, optional<const SyntaxTree&> co
         else
             /* prefix is empty */;
     }
-    return fmt::format("{}{}{}\n", prefix, fmt::format(msg, std::forward<Args>(args)...), suffix);
+    return fmt::format("{}{}{}", prefix, fmt::format(msg, std::forward<Args>(args)...), suffix);
 }
 
 class ProgramError
@@ -115,6 +115,11 @@ public:
     {
         ++error_count;
         this->puts(pg_error.message().c_str());
+
+        /* TODO limit error_count
+        if(error_count > 100)
+            fatal_error(nocontext, "XXX too many errors");
+        */
     }
 
     template<typename... Args>
@@ -155,7 +160,7 @@ public:
 private:
     static void puts(const std::string& msg)
     {
-        std::fputs(msg.c_str(), stderr);
+        std::fprintf(stderr, "%s\n", msg.c_str());
     }
 
 private:

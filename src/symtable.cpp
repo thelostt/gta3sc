@@ -86,6 +86,7 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
 {
     if(command.child_count() <= 1)
     {
+        // TODO hmm this is never reached since those special commands are checked on the parser
         program.error(command, "XXX few args");
         return false;
     }
@@ -159,11 +160,23 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
     // TODO check for conflicting extfiles, subscripts and mission
 
     if(int_labels.size() > 0)
-        program.error(nocontext, "XXX dup label between script units");
+    {
+        for(auto& kv : int_labels)
+        {
+            auto script1_name = t1.labels.find(kv.first)->second->script->path.generic_u8string();
+            auto script2_name = t2.labels.find(kv.first)->second->script->path.generic_u8string();
+            program.error(nocontext, "XXX duplicate label '{}' between script units '{}' and '{}'.", kv.first, script1_name, script2_name);
+        }
+    }
 
     if(int_gvars.size() > 0)
-        program.error(nocontext, "XXX dup global var between script units");
-
+    {
+        for(auto& kv : int_gvars)
+        {
+            // XXX maybe store in Var the Script where it was declared?
+            program.error(nocontext, "XXX duplicate global var '{}' between script units.", kv.first);
+        }
+    }
 
 
     //
@@ -264,12 +277,16 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 {
                     local_index = 0;
                     current_scope = table.add_scope();
+                    // TODO timer indices are different on SA
+                    // TODO should we cache the shared_ptr of the timers to avoid allocation on each scope?
+                    current_scope->vars.emplace("TIMERA", std::make_shared<Var>(false, VarType::Int, 16, nullopt));
+                    current_scope->vars.emplace("TIMERB", std::make_shared<Var>(false, VarType::Int, 17, nullopt));
                 }
 
                 if(next_scoped_label)
                 {
                     auto& label_name = next_scoped_label->child(0).text();
-
+                    
                     auto opt_label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
                     if(!opt_label_ptr)
                     {
@@ -311,6 +328,8 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
             case NodeType::VAR_TEXT_LABEL: case NodeType::LVAR_TEXT_LABEL:
             case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
             {
+                // TODO where should we put the global/local variable limitations? Here?
+
                 bool global; VarType vartype;
 
                 std::tie(global, vartype) = token_to_vartype(node.type());
@@ -546,7 +565,16 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
             {
                 auto& command_name = node.child(0).text();
 
-                if(command_name == "LAUNCH_MISSION")
+                // TODO use `const Commands&` to identify these?
+                if(command_name == "LOAD_AND_LAUNCH_MISSION")
+                {
+                    // TODO! This is wrong.
+                    const Command& command = commands.load_and_launch_mission();
+                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                    node.child(1).set_annotation(script->start_label);
+                    node.set_annotation(std::cref(command));
+                }
+                else if(command_name == "LAUNCH_MISSION")
                 {
                     const Command& command = commands.launch_mission();
                     shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
@@ -641,7 +669,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
 
                 auto& var_ident = node.child(0);
 
-                if(var_ident.type() != NodeType::Identifier)
+                if(var_ident.type() != NodeType::Identifier) // TODO unecessary? Checked on the parser.
                     program.fatal_error(var_ident, "XXX {} argument is not a identifier", opkind); // TODO use program.error and think about fallback
 
                 auto opt_varinfo = symbols.find_var(var_ident.text(), current_scope);

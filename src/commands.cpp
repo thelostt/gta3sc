@@ -5,6 +5,9 @@
 #include <rapidxml.hpp>
 #include <rapidxml_utils.hpp>
 
+// TODO every BadAlternator throw (which happens a lot because of argument matching)
+// we build a ProgramError (which is probably costful?), how to improve this?
+
 Commands::Commands(std::multimap<std::string, Command> commands_, std::map<std::string, shared_ptr<Enum>> enums_)
     : commands(std::move(commands_)), enums(std::move(enums_))
 {
@@ -102,8 +105,9 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
 
 template<typename Iter> static 
 const Command& match_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
-    Commands::alternator_pair alternator_range, Iter begin, Iter end)
+    Commands::alternator_pair alternator_range, Iter begin, Iter end) // Iter should meet SyntaxTree** requiriments
 {
+    int TMP_bad_alter_id = -1; // TODO REMOVE ME
     auto num_target_args = (size_t)std::distance(begin, end);
 
     for(auto it = alternator_range.first; it != alternator_range.second; ++it)
@@ -165,14 +169,23 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::TextLabel) || argtype_matches(it_alter_arg->type, ArgType::Buffer128));
                     bad_alternative = bad_alternative || !it_alter_arg->allow_constant;;
                     break;
+                default:
+                    Unreachable();
             }
 
             if(bad_alternative)
+            {
+                TMP_bad_alter_id = (int) args_readen;
                 break; // try another alternative
+            }
         }
     }
 
-    throw BadAlternator(nocontext, "XXX BAD ALTERNATOR, GIVE ME A ERROR MESSAGE");
+    TMP_bad_alter_id = TMP_bad_alter_id < 0? 0 : TMP_bad_alter_id;
+    if(begin != end) // TODO improve context
+        throw BadAlternator(**(begin + TMP_bad_alter_id), "XXX BAD ALTERNATOR, GIVE ME A ERROR MESSAGE");
+    else
+        throw BadAlternator(nocontext, "XXX BAD ALTERNATOR, GIVE ME A ERROR MESSAGE");
 }
 
 template<typename Iter> static
