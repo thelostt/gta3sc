@@ -178,12 +178,17 @@ private:
                 // group of anything, usually group of statements
                 compile_statements(node);
                 break;
-            case NodeType::Command:
-                compile_command(node, not_flag);
-                break;
             case NodeType::NOT:
                 program.error(node, "XXX NOT outside of a condition block");
                 compile_statement(node.child(0), !not_flag);
+                break;
+            case NodeType::Command:
+                compile_command(node, not_flag);
+                break;
+            case NodeType::MISSION_START:
+                break;
+            case NodeType::MISSION_END:
+                compile_mission_end(node, not_flag);
                 break;
             case NodeType::Greater:
             case NodeType::GreaterEqual:
@@ -341,6 +346,13 @@ private:
         return compile_command(command, get_args(command, command_node), not_flag);
     }
 
+    void compile_mission_end(const SyntaxTree& me_node, bool not_flag = false)
+    {
+        // Cannot call compile_command(me_node, not_flag) directly because we're not a actual command node with a name child.
+        const Command& command = me_node.annotation<std::reference_wrapper<const Command>>();
+        return compile_command(command, {}, not_flag);
+    }
+
     void compile_condition(const SyntaxTree& node, bool not_flag = false)
     {
         // also see compile_conditions
@@ -402,6 +414,8 @@ private:
 
     std::vector<ArgVariant> get_args(const Command& command, const SyntaxTree& command_node)
     {
+        Expects(command_node.child_count() >= 1); // command_name + [args...]
+
         std::vector<ArgVariant> args;
         args.reserve(command_node.child_count() - 1);
 

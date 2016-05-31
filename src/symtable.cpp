@@ -393,8 +393,12 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
 {
     std::function<bool(SyntaxTree&)> walker;
 
+    bool had_mission_start = false;
+    bool had_mission_end   = false;
+
     std::shared_ptr<Scope> current_scope = nullptr;
     bool is_condition_block = false;
+    uint32_t num_statements = 0;
 
     auto find_command_for_expr = [&](const SyntaxTree& op) -> optional<Commands::alternator_pair>
     {
@@ -474,7 +478,8 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
 
     walker = [&](SyntaxTree& node)
     {
-        switch(node.type())
+        ++num_statements;
+        switch(node.type()) // this switch should handle all main/top node types.
         {
             case NodeType::Label:
                 // already annotated in SymTable::scan_symbols
@@ -486,6 +491,40 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
             case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
                 // already annotated in SymTable::scan_symbols
                 return false;
+
+            case NodeType::MISSION_START:
+            {
+                if(!had_mission_start)
+                {
+                    had_mission_start = true;
+
+                    if(num_statements != 1)
+                        program.error(node, "XXX MISSION_START must be the first line of subscript or mission script.");
+                }
+                else
+                {
+                    program.error(node, "XXX more than one MISSION_START in script.");
+                }
+                return false;
+            }
+
+            case NodeType::MISSION_END:
+            {
+                if(!had_mission_end)
+                {
+                    had_mission_end = true;
+                    const Command& command = commands.terminate_this_script();
+                    node.set_annotation(std::cref(command));
+
+                    if(!had_mission_start)
+                        program.error(node, "XXX MISSION_END without a MISSION_START.");
+                }
+                else
+                {
+                    program.error(node, "XXX more than one MISSION_END in script.");
+                }
+                return false;
+            }
 
             case NodeType::Scope:
             {
@@ -703,14 +742,24 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 return false;
             }
 
-            
-
             default:
+                // go into my childs to find a proper statement node
+                --num_statements;
+                assert(num_statements >= 0);
                 return true;
         }
     };
 
     this->tree->walk(std::ref(walker));
+
+    if(this->type == ScriptType::Mission || this->type == ScriptType::Subscript)
+    {
+        // TODO context for program.error is this->script, remove '{}' after allowing such context
+        if(!had_mission_start)
+            program.error(nocontext, "Mission script or subscript does not contain MISSION_START '{}'", this->path.generic_u8string());
+        else if(!had_mission_end)
+            program.error(nocontext, "Mission script or subscript does not contain MISSION_END '{}'", this->path.generic_u8string());
+    }
 }
 
 

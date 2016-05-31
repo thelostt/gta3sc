@@ -82,8 +82,18 @@ statement
 	| variableDeclaration
 	| loopControlStatement
 	| labelStatement
+	| keyStatement
 	| commandStatement
 	;
+
+//////
+
+keyStatement
+	:	WS* MISSION_START newLine -> MISSION_START
+	|	WS* MISSION_END newLine -> MISSION_END
+	;
+
+//////
 
 labelStatement
 	:	WS* IDENTIFIER ':' newLine
@@ -257,7 +267,7 @@ unaryOperators
 	;
 	
 //////
-	
+
 commandStatement
 	:	WS* NOT positiveCommandStatement -> ^(NOT positiveCommandStatement)
 	|	positiveCommandStatement -> positiveCommandStatement
@@ -312,6 +322,9 @@ CASE		:	C A S E ;
 DEFAULT		:	D E F A U L T ;
 BREAK		:	B R E A K ;
 CONTINUE	:	C O N T I N U E ; // custom keyword
+
+MISSION_START : M I S S I O N '_' S T A R T ;
+MISSION_END   : M I S S I O N '_' E N D ;
 
 VAR_INT   			:	 V A R '_' I N T ;
 LVAR_INT  			:	 L V A R '_' I N T ;
