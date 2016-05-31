@@ -754,11 +754,10 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
 
     if(this->type == ScriptType::Mission || this->type == ScriptType::Subscript)
     {
-        // TODO context for program.error is this->script, remove '{}' after allowing such context
         if(!had_mission_start)
-            program.error(nocontext, "Mission script or subscript does not contain MISSION_START '{}'", this->path.generic_u8string());
+            program.error(*this, "Mission script or subscript does not contain MISSION_START");
         else if(!had_mission_end)
-            program.error(nocontext, "Mission script or subscript does not contain MISSION_END '{}'", this->path.generic_u8string());
+            program.error(*this, "Mission script or subscript does not contain MISSION_END");
     }
 }
 

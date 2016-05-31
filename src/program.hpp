@@ -25,48 +25,94 @@ struct GameConfig
 };
 
 template<typename... Args>
-inline std::string format_error(const char* type, optional<const SyntaxTree&> context, const char* msg, Args&&... args)
+inline std::string format_error(const char* type,
+                                const shared_ptr<const TokenStream>& tstream_ptr,
+                                const char* filename, uint32_t lineno, uint32_t colno,
+                                const char* msg, Args&&... args)
 {
-    std::string prefix;
-    std::string suffix;
-    if(context)
-    {
-        // Let's do a bit of magic on context first.
-        ///
-        // If the supplied context has no text data associated with it, it's not very useful. It's likely that
-        // its column is at the start of the line. So, find the first child (not too deep) that contains text data.
-        if(!context->has_text())
-        {
-            for(auto it = context->begin(); it != context->end(); ++it)
-            {
-                if((*it)->has_text())
-                {
-                    context.emplace(**it);
-                    break;
-                }
-            }
-        }
-        
-        if(type)
-            prefix = fmt::format("{}:{}:{}: {}: ", context->filename(), context->line(), context->column(), type);
-        else
-            prefix = fmt::format("{}:{}:{}: ", context->filename(), context->line(), context->column());
+    std::string message;
+    message.reserve(255);
 
-        if(auto tstream_ptr = context->token_stream().lock())
-        {
-            suffix = fmt::format("\n {}\n {:>{}}", tstream_ptr->get_line(context->line()), "^", context->column());
-        }
-    }
-    else
+    if(filename)
     {
-        if(type)
-            prefix = fmt::format("{}: ", type);
-        else
-            /* prefix is empty */;
+        message += filename;
+        message.push_back(':');
     }
-    return fmt::format("{}{}{}", prefix, fmt::format(msg, std::forward<Args>(args)...), suffix);
+
+    if(lineno)
+    {
+        message += std::to_string(lineno);
+        message.push_back(':');
+    }
+
+    if(colno)
+    {
+        message += std::to_string(colno);
+        message.push_back(':');
+    }
+
+    if(message.size())
+    {
+        message.push_back(' ');
+    }
+
+    if(type)
+    {
+        message += type;
+        message += ": ";
+    }
+
+    message += fmt::format(msg, std::forward<Args>(args)...);
+
+    if(tstream_ptr)
+    {
+        message += fmt::format("\n {}\n {:>{}}", tstream_ptr->get_line(lineno), "^", colno);
+    }
+
+    return message;
 }
 
+template<typename... Args>
+inline std::string format_error(const char* type, const SyntaxTree& base_context, const char* msg, Args&&... args)
+{
+    const SyntaxTree* context = &base_context;
+
+    // Let's change the context a bit if necessary.
+    ///
+    // If the supplied context has no text data associated with it, it's not very useful. It's likely that
+    // its column is at the start of the line. So, find the first child (not too deep) that contains text data.
+    if(!context->has_text())
+    {
+        for(auto it = context->begin(); it != context->end(); ++it)
+        {
+            if((*it)->has_text())
+            {
+                context = &(**it);
+                break;
+            }
+        }
+    }
+
+    return format_error(type, context->token_stream().lock(),
+                              context->filename().c_str(), context->line(), context->column(),
+                              msg, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+inline std::string format_error(const char* type, const Script& script, const char* msg, Args&&... args)
+{
+    return format_error(type, nullptr, script.path.generic_u8string().c_str(), 0, 0, msg, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+inline std::string format_error(const char* type, tag_nocontext_t, const char* msg, Args&&... args)
+{
+    return format_error(type, nullptr, nullptr, 0, 0, msg, std::forward<Args>(args)...);
+}
+
+
+
+// TODO this is a weird type, we should probably get rid of it, leave only the program.error function
 class ProgramError
 {
 public:
@@ -76,8 +122,13 @@ public:
     {}
 
     template<typename... Args>
+    ProgramError(const Script& context, const char* msg, Args&&... args)
+        : message_(format_error("error", context, msg, std::forward<Args>(args)...))
+    {}
+
+    template<typename... Args>
     ProgramError(tag_nocontext_t, const char* msg, Args&&... args)
-        : message_(format_error("error", nullopt, msg, std::forward<Args>(args)...))
+        : message_(format_error("error", nocontext, msg, std::forward<Args>(args)...))
     {}
 
     ProgramError(const SyntaxTree& context, const ProgramError& nocontext_error)
@@ -129,6 +180,12 @@ public:
     }
 
     template<typename... Args>
+    void error(const Script& context, const char* msg, Args&&... args)
+    {
+        return error(ProgramError(context, msg, std::forward<Args>(args)...));
+    }
+
+    template<typename... Args>
     void error(tag_nocontext_t, const char* msg, Args&&... args)
     {
         return error(ProgramError(tag_nocontext_t(), msg, std::forward<Args>(args)...));
@@ -153,7 +210,7 @@ public:
     void fatal_error [[noreturn]](tag_nocontext_t, const char* msg, Args&&... args)
     {
         ++fatal_count;
-        this->puts(format_error("fatal error", nullopt, msg, std::forward<Args>(args)...));
+        this->puts(format_error("fatal error", nocontext, msg, std::forward<Args>(args)...));
         throw HaltJobException();
     }
 

@@ -5,8 +5,9 @@
 #include <rapidxml.hpp>
 #include <rapidxml_utils.hpp>
 
-// TODO every BadAlternator throw (which happens a lot because of argument matching)
-// we build a ProgramError (which is probably costful?), how to improve this?
+// TODO every BadAlternator (which happens a lot because of argument matching)
+//      we throw a exception (which is costful) and we also build up a ProgramError object (also costful).
+//      Please improve this out.
 
 Commands::Commands(std::multimap<std::string, Command> commands_, std::map<std::string, shared_ptr<Enum>> enums_)
     : commands(std::move(commands_)), enums(std::move(enums_))

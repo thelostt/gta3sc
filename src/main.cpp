@@ -33,8 +33,8 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
         ProgramContext program(gta3_config);
 
         //const char* input = "intro.sc";
-        //const char* input = "test.sc";
-        const char* input = "gta3_src/main.sc";
+        const char* input = "test.sc";
+        //const char* input = "gta3_src/main.sc";
 
         auto main = Script::create(input, ScriptType::Main);
         auto symbols = SymTable::from_script(*main, program);
