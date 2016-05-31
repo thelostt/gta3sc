@@ -617,10 +617,9 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 // TODO use `const Commands&` to identify these?
                 if(command_name == "LOAD_AND_LAUNCH_MISSION")
                 {
-                    // TODO! This is wrong.
                     const Command& command = commands.load_and_launch_mission();
                     shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
-                    node.child(1).set_annotation(script->start_label);
+                    node.child(1).set_annotation(int32_t(script->mission_id.value()));
                     node.set_annotation(std::cref(command));
                 }
                 else if(command_name == "LAUNCH_MISSION")

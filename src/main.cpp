@@ -33,8 +33,8 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
         ProgramContext program(gta3_config);
 
         //const char* input = "intro.sc";
-        const char* input = "test.sc";
-        //const char* input = "gta3_src/main.sc";
+        //const char* input = "test.sc";
+        const char* input = "gta3_src/main.sc";
 
         auto main = Script::create(input, ScriptType::Main);
         auto symbols = SymTable::from_script(*main, program);
@@ -62,10 +62,12 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
             scripts.emplace_back(x.first); // maybe move
         }
 
-        for(auto& x : mission_scripts)
+        for(size_t i = 0; i < mission_scripts.size(); ++i)
         {
+            auto& x = mission_scripts[i];
             symbols.merge(std::move(x.second), program);
             scripts.emplace_back(x.first); // maybe move
+            scripts.back()->mission_id = i;
         }
 
         symbols.build_script_table(scripts);

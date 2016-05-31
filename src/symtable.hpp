@@ -76,6 +76,10 @@ struct Script : std::enable_shared_from_this<Script>
     /// TODO explain further on which compilation step this value gets to be available.
     optional<uint32_t>      size;
 
+    /// If `this->type == ScriptType::Mission`, contains the index of this mission.
+    /// This value is made available just before the AST annotation step.
+    optional<uint16_t>      mission_id;
+
 private:
     struct priv_ctor {};
 
