@@ -45,10 +45,10 @@ std::pair<bool, VarType> token_to_vartype(NodeType token_type)
     }
 }
 
-void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts)
+void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, size_t header_size)
 {
-    // TODO header, pass as argument too
-    size_t offset = 0;
+    size_t offset = header_size;
+
     for(auto& script_ptr : scripts)
     {
         Expects(script_ptr->offset == nullopt);
@@ -135,6 +135,25 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
     }
 }
 
+optional<shared_ptr<Var>> SymTable::highest_global_var() const
+{
+    auto fn_comp = [](const auto& apair, const auto& bpair) {
+        const shared_ptr<Var>& a = apair.second;
+        const shared_ptr<Var>& b = bpair.second;
+        if(a->index < b->index)
+            return true;
+        else if(a->index != b->index)
+            return false;
+        else
+            return a->space_taken() < b->space_taken();
+    };
+
+    auto it = std::max_element(this->global_vars.begin(), this->global_vars.end(), fn_comp);
+    if(it == this->global_vars.end())
+        return nullopt;
+    return it->second;
+}
+
 void SymTable::merge(SymTable t2, ProgramContext& program)
 {
     // TODO improve readability of this
@@ -183,16 +202,7 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
     // All error conditions checked, perform actual merge
     //
 
-    shared_ptr<Var> highest_var;
-    uint32_t begin_t2_vars = 0;
-    for(const auto& var : t1.global_vars)
-    {
-        if(highest_var == nullptr || var.second->index > highest_var->index)
-        {
-            highest_var = var.second;
-            begin_t2_vars = highest_var->index + highest_var->space_taken();
-        }
-    }
+    uint32_t begin_t2_vars = t1.size_global_vars() / 4;
     t2.apply_offset_to_vars(begin_t2_vars);
 
     t1.scripts.insert(std::make_move_iterator(t2.scripts.begin()),

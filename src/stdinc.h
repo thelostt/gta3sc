@@ -35,3 +35,4 @@ struct Script;
 struct Scope;
 struct SymTable;
 struct CodeGenerator;
+struct CodeGeneratorBase;

@@ -81,6 +81,7 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
             throw HaltJobException();
 
         std::vector<CodeGenerator> gens;
+        gens.reserve(scripts.size());
         for(auto& script : scripts)
         {
             CompilerContext cc(script, symbols, commands, program);
@@ -92,27 +93,43 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
         if(program.has_error())
             throw HaltJobException();
 
+        size_t global_vars_size = 0;
+        if(auto highest_var = symbols.highest_global_var())
+        {
+            global_vars_size = (*highest_var)->end_offset();
+        }
+
+        // TODO models
+        CompiledScmHeader header(CompiledScmHeader::Version::Liberty, symbols.size_global_vars(), {}, main, mission_scripts);
+
         // not thread-safe
         Expects(gens.size() == scripts.size());
         for(size_t i = 0; i < gens.size(); ++i) // zip
         {
-            scripts[i]->size = gens[i].compute_labels(); // <- maybe???! this is actually thread safe
-        }                                                //
-        Script::compute_script_offsets(scripts);         // <- but this isn't
+            scripts[i]->size = gens[i].compute_labels();                    // <- maybe???! this is actually thread safe
+        }                                                                   //
+        Script::compute_script_offsets(scripts, header.compiled_size());    // <- but this isn't
 
 
         for(auto& gen : gens)
             gen.generate();
 
-        if(FILE* f = fopen("output.cs", "wb"))
+        if(FILE* f = fopen("output.scm", "wb"))
         {
             auto guard = make_scope_guard([&] {
                 fclose(f);
             });
 
+            if(true)
+            {
+                CodeGeneratorData hgen(header, program);
+                hgen.generate();
+                write_file(f, hgen.buffer(), hgen.buffer_size());
+            }
+
             for(auto& gen : gens)
             {
-                write_file(f, gen.bytecode.get(), gen.script->size.value());
+                write_file(f, gen.buffer(), gen.buffer_size());
             }
         }
         else

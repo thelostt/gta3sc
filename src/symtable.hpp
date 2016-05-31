@@ -29,6 +29,7 @@ std::pair<bool, VarType> token_to_vartype(NodeType token_type);
 
 struct SymTable;
 struct Commands;
+struct CompiledScmHeader;
 struct Label;
 
 /// Represents a *.sc script file.
@@ -57,7 +58,7 @@ struct Script : std::enable_shared_from_this<Script>
     ///
     /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
     /// of the scripts in the `scripts` vector should be running while this method is executed.
-    static void compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts);
+    static void compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, size_t header_size);
 
     fs::path                path;
     ScriptType              type;
@@ -109,6 +110,9 @@ struct Var
 
     /// \returns the byte offset (index*4) on which this variable is in memory.
     uint32_t offset() { return index * 4; }
+
+    /// \returns the byte offset (index*4) on which this variable ends in memory (i.e. where the next variable is).
+    uint32_t end_offset() { return (index + space_taken()) * 4; }
 };
 
 /// Scope information.
@@ -176,6 +180,18 @@ struct SymTable
     shared_ptr<Scope> add_scope()
     {
         return *local_scopes.emplace(local_scopes.end(), new Scope());
+    }
+
+    /// Returns the pointer to the highest global variable (based on index), or nullopt
+    /// if there's no global variable in the table.
+    optional<shared_ptr<Var>> highest_global_var() const;
+
+    /// Returns the size (in bytes) of the space required to store the global variables in this table.
+    size_t size_global_vars() const
+    {
+        if(auto highest_var = this->highest_global_var())
+            return (*highest_var)->end_offset();
+        return 0;
     }
 
     /// Finds global var `name` or local var `name` in `current_scope`. `current_scope` may be nullptr,

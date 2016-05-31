@@ -77,6 +77,36 @@ struct CompiledHex
     }
 };
 
+// IR for SCM header
+struct CompiledScmHeader
+{
+    enum class Version : uint8_t
+    {
+        Liberty,
+        Miami,
+    };
+
+    Version                               version;
+    uint32_t                              size_global_vars_space; // excluding the 8 bytes of GOTO at the top
+    std::vector<std::string>              models;
+    shared_ptr<const Script>              main;       // used to find main_size
+    std::vector<shared_ptr<const Script>> missions;   // used to find highest mission and mission offsets
+
+    CompiledScmHeader(Version version, size_t size_globals,
+                      std::vector<std::string> models_,
+                      shared_ptr<const Script> main_,
+                      const std::vector<std::pair<shared_ptr<Script>, SymTable>>& missions_pair) :
+        version(version), size_global_vars_space(size_globals),
+        models(std::move(models_)), main(std::move(main_))
+    {
+        this->missions.reserve(missions_pair.size());
+        for(auto& mpair : missions_pair)
+            this->missions.emplace_back(mpair.first);
+    }
+
+    size_t compiled_size() const;
+};
+
 /// IR for a fundamental piece of compiled data. May be a label or a command.
 struct CompiledData
 {
