@@ -44,6 +44,7 @@ struct Command
         bool allow_local_var : 1;   /// Allow local variables
         std::vector<shared_ptr<Enum>> enums;
 
+        /// Finds a constant associated with the enums of this argument.
         ::optional<int32_t> find_constant(const std::string& value) const
         {
             for(auto& e : enums)
@@ -52,6 +53,13 @@ struct Command
                     return opt;
             }
             return nullopt;
+        }
+
+        /// Checks whether this argument uses the specified enum.
+        bool uses_enum(const shared_ptr<Enum>& e) const 
+        {
+            if(!e) return false;
+            return std::find(enums.begin(), enums.end(), e) != enums.end();
         }
     };
 
@@ -106,15 +114,19 @@ public:
 
     /// Annotates the argument nodes of a COMMAND node in the AST for a specific `command`.
     /// If nodes are already annotated, will just ensure the type of annotation is the same (program will abort otherwise).
-    void annotate(SyntaxTree& command_node, const Command& command, const SymTable&, const shared_ptr<Scope>&) const;
+    ///
+    /// If the argument is a model enum, and the identifier is unknown, a model gets appened to the `script` model table.
+    void annotate(SyntaxTree& command_node, const Command& command, const SymTable&, const shared_ptr<Scope>&, Script&) const;
 
     /// Annotates the argument `nodes...` for a specific `command`.
     /// If nodes are already annotated, will just ensure the type of annotation is the same  (program will abort otherwise).
+    ///
+    ///  If the argument is a model enum, and the identifier is unknown, a model gets appened to the `script` model table.
     template<typename... TSyntaxTree>
-    void annotate_args(const SymTable& symbols, const shared_ptr<Scope>& scope, const Command& command, TSyntaxTree&... nodes) const
+    void annotate_args(const SymTable& symbols, const shared_ptr<Scope>& scope, Script& s, const Command& command, TSyntaxTree&... nodes) const
     {
         SyntaxTree* args[] = { std::addressof<TSyntaxTree>(nodes)... };
-        return annotate_internal(symbols, scope, command, std::begin(args), std::end(args));
+        return annotate_internal(symbols, scope, s, command, std::begin(args), std::end(args));
     }
 
     /// Finds the literal value of a constant `value`.
@@ -170,7 +182,10 @@ public:
         return false;
     }
 
-
+    const shared_ptr<Enum>& get_models_enum() const
+    {
+        return this->enum_models;
+    }
 
 
     // --- Important Commands ---
@@ -325,7 +340,7 @@ private:
     const Command& match_internal(const SymTable&, const shared_ptr<Scope>&,
         alternator_pair commands, const SyntaxTree** begin, const SyntaxTree** end) const;
 
-    void annotate_internal(const SymTable&, const shared_ptr<Scope>&,
+    void annotate_internal(const SymTable&, const shared_ptr<Scope>&, Script&,
         const Command&, SyntaxTree** begin, SyntaxTree** end) const;
 };
 

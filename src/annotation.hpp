@@ -1,6 +1,12 @@
 #pragma once
 #include "stdinc.h"
 
+struct ModelAnnotation
+{
+    weak_ptr<const Script> where;       // weak to avoid circular reference
+    uint32_t               id;
+};
+
 struct RepeatAnnotation
 {
     const Command& set_var_to_zero;

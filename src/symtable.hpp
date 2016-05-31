@@ -5,6 +5,8 @@
 #include "error.hpp"
 #include "program.hpp"
 
+// TODO fix circular references to shared_ptr<Script> on tree nodes. (e.g. on Label, which has a shared_ptr to Script)
+
 /// Declared type of a variable.
 enum class VarType
 {
@@ -60,6 +62,14 @@ struct Script : std::enable_shared_from_this<Script>
     /// of the scripts in the `scripts` vector should be running while this method is executed.
     static void compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, size_t header_size);
 
+    /// Calculates the model indices (for `models` field)  for all the scripts in the `scripts` vector.
+    ///
+    /// \returns A list of models that should be put in the SCM header.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
+    /// of the scripts in the `scripts` vector should be running while this method is executed.
+    static auto compute_unknown_models(const std::vector<shared_ptr<Script>>& scripts) -> std::vector<std::string>;
+
     fs::path                path;
     ScriptType              type;
     shared_ptr<TokenStream> tstream;        // may be nullptr
@@ -79,6 +89,33 @@ struct Script : std::enable_shared_from_this<Script>
     /// If `this->type == ScriptType::Mission`, contains the index of this mission.
     /// This value is made available just before the AST annotation step.
     optional<uint16_t>      mission_id;
+
+    /// List of unknown models referenced by this script.
+    /// TODO explain further on which compilation step this value gets to be available.
+    std::vector<std::pair<std::string, int32_t>> models;
+
+public:
+    optional<int32_t> find_model(const std::string& name) const
+    {
+        auto it = std::find_if(models.begin(), models.end(), [&](const auto& mpair) {
+            return iequal_to()(mpair.first, name);
+        });
+        if(it != models.end())
+            return it->second;
+        return nullopt;
+    }
+
+    int32_t add_or_find_model(const std::string& name)
+    {
+        if(auto opt = this->find_model(name))
+            return *opt;
+        return this->models.emplace(models.end(), name, models.size())->second;
+    }
+
+    int32_t find_model_at(uint32_t i) const
+    {
+        return this->models.at(i).second;
+    }
 
 private:
     struct priv_ctor {};
@@ -148,6 +185,7 @@ struct Label
     }
 };
 
+
 /// Stores important symbols defined throught scripts (labels, vars, scopes, subscripts).
 struct SymTable
 {
@@ -165,17 +203,17 @@ struct SymTable
     std::vector<std::string>    mission;    /// LOAD_AND_LAUNCH_MISSION scripts
 
     /// Construts a SymTable from the symbols in `script`.
-    static SymTable from_script(Script& script, ProgramContext& program)
+    static SymTable from_script(Script& script, const Commands& commands, ProgramContext& program)
     {
         SymTable symbols;
-        symbols.scan_symbols(script, program);
+        symbols.scan_symbols(script, commands, program);
         return symbols;
     }
 
     /// Scans all symbols in `script` and adds them to this table.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void scan_symbols(Script& script, ProgramContext& program);
+    void scan_symbols(Script& script, const Commands& commands, ProgramContext& program);
 
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
     void build_script_table(const std::vector<shared_ptr<Script>>& scripts);
@@ -268,8 +306,9 @@ struct SymTable
 };
 
 template<typename InputIt> inline
-auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir, InputIt begin, InputIt end, ScriptType type, ProgramContext& program) 
--> std::vector<std::pair<shared_ptr<Script>, SymTable>>
+auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
+                           InputIt begin, InputIt end, ScriptType type,
+                           const Commands& commands, ProgramContext& program) -> std::vector<std::pair<shared_ptr<Script>, SymTable>>
 {
     std::vector<std::pair<shared_ptr<Script>, SymTable>> output;
 
@@ -279,7 +318,7 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
         if(path_it != subdir.end())
         {
             auto script = Script::create(path_it->second, type);
-            auto symtable = SymTable::from_script(*script, program);
+            auto symtable = SymTable::from_script(*script, commands, program);
             output.emplace_back(std::make_pair(std::move(script), std::move(symtable)));
         }
         else

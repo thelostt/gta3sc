@@ -57,6 +57,34 @@ void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scrip
     }
 }
 
+auto Script::compute_unknown_models(const std::vector<shared_ptr<Script>>& scripts) -> std::vector<std::string>
+{
+    std::vector<std::string> models;
+
+    for(auto& script : scripts)
+    {
+        for(auto& umodel : script->models)
+        {
+            auto it = std::find_if(models.begin(), models.end(), [&](const std::string& m) {
+                return iequal_to()(m, umodel.first);
+            });
+
+            if(it == models.end())
+            {
+                if(models.capacity() == 0)
+                    models.reserve(200);
+
+                models.emplace_back(umodel.first);
+                it = models.begin() + (models.size() - 1);
+            }
+
+            umodel.second = -(1 + std::distance(models.begin(), it));
+        }
+    }
+
+    return models;
+}
+
 std::map<std::string, fs::path, iless> Script::scan_subdir() const
 {
     auto output = std::map<std::string, fs::path, iless>();
@@ -227,7 +255,7 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
     std::move(t2.mission.begin(), t2.mission.end(), std::back_inserter(t1.mission));
 }
 
-void SymTable::scan_symbols(Script& script, ProgramContext& program)
+void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramContext& program)
 {
     std::function<bool(SyntaxTree&)> walker;
 
@@ -320,14 +348,14 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
             case NodeType::Command:
             {
-                auto name = node.child(0).text();
+                auto& command_name = node.child(0).text();
 
                 // TODO use `const Commands&` to identify these?
-                if(name == "LOAD_AND_LAUNCH_MISSION")
+                if(command_name == "LOAD_AND_LAUNCH_MISSION")
                     table.add_script(ScriptType::Mission, node, program);
-                else if(name == "LAUNCH_MISSION")
+                else if(command_name == "LAUNCH_MISSION")
                     table.add_script(ScriptType::Subscript, node, program);
-                else if(name == "GOSUB_FILE")
+                else if(command_name == "GOSUB_FILE")
                     table.add_script(ScriptType::MainExtension, node, program);
 
                 return false;
@@ -588,13 +616,13 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 try
                 {
                     const Command& set_var_to_zero = commands.match_args(symbols, current_scope, commands.set(), var, number_zero);
-                    commands.annotate_args(symbols, current_scope, set_var_to_zero, var, number_zero);
+                    commands.annotate_args(symbols, current_scope, *this, set_var_to_zero, var, number_zero);
                 
                     const Command& add_var_with_one = commands.match_args(symbols, current_scope, commands.add_thing_to_thing(), var, number_one);
-                    commands.annotate_args(symbols, current_scope, add_var_with_one, var, number_one);
+                    commands.annotate_args(symbols, current_scope, *this, add_var_with_one, var, number_one);
 
                     const Command& is_var_geq_times = commands.match_args(symbols, current_scope, commands.is_thing_greater_or_equal_to_thing(), var, times);
-                    commands.annotate_args(symbols, current_scope, is_var_geq_times, var, times);
+                    commands.annotate_args(symbols, current_scope, *this, is_var_geq_times, var, times);
 
                     node.set_annotation(RepeatAnnotation {
                         set_var_to_zero, add_var_with_one, is_var_geq_times,
@@ -643,7 +671,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                     try
                     {
                         const Command& command = commands.match(node, symbols, current_scope);
-                        commands.annotate(node, command, symbols, current_scope);
+                        commands.annotate(node, command, symbols, current_scope, *this);
                         node.set_annotation(std::cref(command));
                     }
                     catch(const BadAlternator& e)
@@ -682,10 +710,10 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                         SyntaxTree& c = op.child(1);
 
                         const Command& cmd_set = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
-                        commands.annotate_args(symbols, current_scope, cmd_set, a, b);
+                        commands.annotate_args(symbols, current_scope, *this, cmd_set, a, b);
 
                         const Command& cmd_op = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, c);
-                        commands.annotate_args(symbols, current_scope, cmd_op, a, c);
+                        commands.annotate_args(symbols, current_scope, *this, cmd_op, a, c);
 
                         node.set_annotation(std::cref(cmd_set));
                         op.set_annotation(std::cref(cmd_op));
@@ -698,7 +726,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                         SyntaxTree& b = node.child(1);
 
                         const Command& command = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
-                        commands.annotate_args(symbols, current_scope, command, a, b);
+                        commands.annotate_args(symbols, current_scope, *this, command, a, b);
                         node.set_annotation(std::cref(command));
                     }
                 }
@@ -736,7 +764,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 {
                     const Command& op_var_with_one = commands.match_args(symbols, current_scope, alternator_thing, var_ident, number_one);
                 
-                    commands.annotate_args(symbols, current_scope, op_var_with_one, var_ident, number_one);
+                    commands.annotate_args(symbols, current_scope, *this, op_var_with_one, var_ident, number_one);
 
                     node.set_annotation(IncDecAnnotation {
                         op_var_with_one,

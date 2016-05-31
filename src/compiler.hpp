@@ -480,25 +480,31 @@ private:
 
             case NodeType::Identifier:
             {
-                if(auto opt_var = arg_node.maybe_annotation<shared_ptr<Var>>())
-                {
-                    return CompiledVar{ *opt_var, nullopt };
-                }
-                else if(auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>())
-                {
-                    return *opt_label;
-                }
-                else if(auto opt_text = arg_node.maybe_annotation<std::string>())
-                {
-                    return CompiledString{ CompiledString::Type::TextLabel8, *opt_text };
-                }
-                else if(auto opt_int = arg_node.maybe_annotation<int32_t>())
+                if(auto opt_int = arg_node.maybe_annotation<int32_t>())
                 {
                     return conv_int(*opt_int);
                 }
                 else if(auto opt_flt = arg_node.maybe_annotation<float>())
                 {
                     return *opt_flt;
+                }
+                else if(auto opt_var = arg_node.maybe_annotation<shared_ptr<Var>>())
+                {
+                    return CompiledVar{ std::move(*opt_var), nullopt };
+                }
+                else if(auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>())
+                {
+                    return std::move(*opt_label);
+                }
+                else if(auto opt_text = arg_node.maybe_annotation<std::string>())
+                {
+                    return CompiledString{ CompiledString::Type::TextLabel8, std::move(*opt_text) };
+                }
+                else if(auto opt_umodel = arg_node.maybe_annotation<const ModelAnnotation&>())
+                {
+                    assert(opt_umodel->where.expired() == false);
+                    int32_t i32 = opt_umodel->where.lock()->find_model_at(opt_umodel->id);
+                    return conv_int(i32);
                 }
                 else
                 {

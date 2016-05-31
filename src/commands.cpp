@@ -96,6 +96,12 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
                 }
             }
 
+            if(arg.uses_enum(commands.get_models_enum()))
+            {
+                // allow unknown models
+                break;
+            }
+
             throw BadAlternator(node, "XXX");
         }
 
@@ -190,7 +196,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
 }
 
 template<typename Iter> static
-void annotate_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
+void annotate_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script,
     const Command& command, Iter begin, Iter end)
 {
     size_t i = 0;
@@ -271,6 +277,17 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                         else
                             arg_node.set_annotation(*opt_var);
                     }
+                    else if(arg.uses_enum(commands.get_models_enum()))
+                    {
+                        if(arg_node.is_annotated())
+                            Expects(arg_node.maybe_annotation<const ModelAnnotation&>());
+                        else
+                        {
+                            auto index = script.add_or_find_model(arg_node.text());
+                            assert(index >= 0); // at first we don't use a negative based indice, that is changed later before the compilation step.
+                            arg_node.set_annotation(ModelAnnotation{ script.shared_from_this(), uint32_t(index) });
+                        }
+                    }
                     else
                         Unreachable();
                 }
@@ -301,16 +318,16 @@ const Command& Commands::match_internal(const SymTable& symbols, const shared_pt
     return ::match_internal(*this, symbols, scope_ptr, alternator_range, begin, end);
 }
 
-void Commands::annotate(SyntaxTree& command_node, const Command& command, 
-    const SymTable& symbols, const shared_ptr<Scope>& scope_ptr) const
+void Commands::annotate(SyntaxTree& command_node, const Command& command,
+    const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script) const
 {
-    return ::annotate_internal(*this, symbols, scope_ptr, command, command_node.begin() + 1, command_node.end());
+    return ::annotate_internal(*this, symbols, scope_ptr, script, command, command_node.begin() + 1, command_node.end());
 }
 
-void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
+void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script,
     const Command& command, SyntaxTree** begin, SyntaxTree** end) const
 {
-    return ::annotate_internal(*this, symbols, scope_ptr, command, begin, end);
+    return ::annotate_internal(*this, symbols, scope_ptr, script, command, begin, end);
 }
 
 optional<int32_t> Commands::find_constant(const std::string& value, bool context_free_only) const
@@ -334,8 +351,7 @@ optional<int32_t> Commands::find_constant_for_arg(const std::string& value, cons
 
     // If the enum that the argument accepts is MODEL, and the above didn't find a match,
     // also try on the CARPEDMODEL enum.
-    if(this->enum_models && this->enum_carpedmodels
-     && std::find(arg.enums.begin(), arg.enums.end(), this->enum_models) != arg.enums.end())
+    if(this->enum_carpedmodels && arg.uses_enum(this->enum_models))
     {
         if(auto opt_const = enum_carpedmodels->find(value))
             return opt_const;

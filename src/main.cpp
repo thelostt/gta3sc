@@ -37,16 +37,16 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
         const char* input = "gta3_src/main.sc";
 
         auto main = Script::create(input, ScriptType::Main);
-        auto symbols = SymTable::from_script(*main, program);
+        auto symbols = SymTable::from_script(*main, commands, program);
         symbols.apply_offset_to_vars(2);
 
         scripts.emplace_back(main);
 
         auto subdir = main->scan_subdir();
 
-        auto ext_scripts = read_and_scan_symbols(subdir, symbols.extfiles.begin(), symbols.extfiles.end(), ScriptType::MainExtension, program);
-        auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
-        auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
+        auto ext_scripts = read_and_scan_symbols(subdir, symbols.extfiles.begin(), symbols.extfiles.end(), ScriptType::MainExtension, commands, program);
+        auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, commands, program);
+        auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, commands, program);
 
         // TODO handle lex/parser errors
 
@@ -77,6 +77,9 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
             script->annotate_tree(symbols, commands, program);
         }
 
+        // not thread-safe
+        std::vector<std::string> models = Script::compute_unknown_models(scripts);
+
         // CompilerContext wants an annotated ASTs, if we have any error, it's possible that
         // the AST is not correctly annotated.
         if(program.has_error())
@@ -102,7 +105,7 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
         }
 
         // TODO models
-        CompiledScmHeader header(CompiledScmHeader::Version::Liberty, symbols.size_global_vars(), {}, main, mission_scripts);
+        CompiledScmHeader header(CompiledScmHeader::Version::Liberty, symbols.size_global_vars(), models, main, mission_scripts);
 
         // not thread-safe
         Expects(gens.size() == scripts.size());

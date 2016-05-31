@@ -289,7 +289,7 @@ inline size_t CompiledScmHeader::compiled_size() const
     {
         case CompiledScmHeader::Version::Liberty:
         case CompiledScmHeader::Version::Miami:
-            return 8 + this->size_global_vars_space + 8 + 4 + (24 * this->models.size())
+            return 8 + this->size_global_vars_space + 8 + 4 + (24 * (1 + this->models.size()))
                 + 8 + 4 + 4 + 2 + 2 + (4 * this->missions.size());
             break;
         default:
@@ -470,9 +470,10 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
     codegen.emplace_fill(header.size_global_vars_space, 0);
 
     // Models segment
-    goto_rel(4 + (24 * header.models.size()));
+    goto_rel(4 + (24 * (1 + header.models.size())));
     codegen.emplace_u8(0);
-    codegen.emplace_u32(header.models.size());
+    codegen.emplace_u32(1 + header.models.size());
+    codegen.emplace_chars(24, "");
     for(auto& model : header.models)
         codegen.emplace_chars(24, model.c_str());
 
