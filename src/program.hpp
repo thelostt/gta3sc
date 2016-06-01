@@ -157,6 +157,19 @@ public:
     ProgramContext(const ProgramContext&) = delete;
     ProgramContext(ProgramContext&&) = delete;
 
+    bool is_model_from_ide(const std::string& name) const
+    {
+        // TODO elaborate
+        if(iequal_to()(name, "PLAYERSDOOR")
+        || iequal_to()(name, "DEADMAN1")
+        || iequal_to()(name, "BACKDOOR")
+        || iequal_to()(name, "HELIX_BARRIER")
+        || iequal_to()(name, "AIRPORTDOOR1")
+        || iequal_to()(name, "AIRPORTDOOR2"))
+            return true;
+        return false;
+    }
+
     bool has_error() const
     {
         return this->error_count > 0;

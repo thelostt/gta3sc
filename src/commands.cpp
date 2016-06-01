@@ -196,7 +196,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
 }
 
 template<typename Iter> static
-void annotate_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script,
+void annotate_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script, ProgramContext& program,
     const Command& command, Iter begin, Iter end)
 {
     size_t i = 0;
@@ -270,26 +270,32 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                         else
                             arg_node.set_annotation(*opt_const);
                     }
-                    else if(auto opt_var = symbols.find_var(arg_node.text(), scope_ptr))
-                    {
-                        if(arg_node.is_annotated())
-                            Expects(arg_node.maybe_annotation<const shared_ptr<Var>&>());
-                        else
-                            arg_node.set_annotation(*opt_var);
-                    }
-                    else if(arg.uses_enum(commands.get_models_enum()))
-                    {
-                        if(arg_node.is_annotated())
-                            Expects(arg_node.maybe_annotation<const ModelAnnotation&>());
-                        else
-                        {
-                            auto index = script.add_or_find_model(arg_node.text());
-                            assert(index >= 0); // at first we don't use a negative based indice, that is changed later before the compilation step.
-                            arg_node.set_annotation(ModelAnnotation{ script.shared_from_this(), uint32_t(index) });
-                        }
-                    }
                     else
-                        Unreachable();
+                    {
+                        bool is_model_enum = arg.uses_enum(commands.get_models_enum());
+                        bool avoid_var = is_model_enum && program.is_model_from_ide(arg_node.text());
+
+                        if(auto opt_var = !avoid_var? symbols.find_var(arg_node.text(), scope_ptr) : nullopt)
+                        {
+                             if(arg_node.is_annotated())
+                                Expects(arg_node.maybe_annotation<const shared_ptr<Var>&>());
+                            else
+                                arg_node.set_annotation(*opt_var);
+                        }
+                        else if(is_model_enum)
+                        {
+                            if(arg_node.is_annotated())
+                                Expects(arg_node.maybe_annotation<const ModelAnnotation&>());
+                            else
+                            {
+                                auto index = script.add_or_find_model(arg_node.text());
+                                assert(index >= 0); // at first we don't use a negative based indice, that is changed later before the compilation step.
+                                arg_node.set_annotation(ModelAnnotation{ script.shared_from_this(), uint32_t(index) });
+                            }
+                        }
+                        else
+                            Unreachable();
+                    }
                 }
                 else
                 {
@@ -319,15 +325,15 @@ const Command& Commands::match_internal(const SymTable& symbols, const shared_pt
 }
 
 void Commands::annotate(SyntaxTree& command_node, const Command& command,
-    const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script) const
+    const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script, ProgramContext& program) const
 {
-    return ::annotate_internal(*this, symbols, scope_ptr, script, command, command_node.begin() + 1, command_node.end());
+    return ::annotate_internal(*this, symbols, scope_ptr, script, program, command, command_node.begin() + 1, command_node.end());
 }
 
-void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script,
+void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script, ProgramContext& program,
     const Command& command, SyntaxTree** begin, SyntaxTree** end) const
 {
-    return ::annotate_internal(*this, symbols, scope_ptr, script, command, begin, end);
+    return ::annotate_internal(*this, symbols, scope_ptr, script, program, command, begin, end);
 }
 
 optional<int32_t> Commands::find_constant(const std::string& value, bool context_free_only) const

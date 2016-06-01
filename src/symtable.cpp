@@ -616,13 +616,13 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 try
                 {
                     const Command& set_var_to_zero = commands.match_args(symbols, current_scope, commands.set(), var, number_zero);
-                    commands.annotate_args(symbols, current_scope, *this, set_var_to_zero, var, number_zero);
+                    commands.annotate_args(symbols, current_scope, *this, program, set_var_to_zero, var, number_zero);
                 
                     const Command& add_var_with_one = commands.match_args(symbols, current_scope, commands.add_thing_to_thing(), var, number_one);
-                    commands.annotate_args(symbols, current_scope, *this, add_var_with_one, var, number_one);
+                    commands.annotate_args(symbols, current_scope, *this, program, add_var_with_one, var, number_one);
 
                     const Command& is_var_geq_times = commands.match_args(symbols, current_scope, commands.is_thing_greater_or_equal_to_thing(), var, times);
-                    commands.annotate_args(symbols, current_scope, *this, is_var_geq_times, var, times);
+                    commands.annotate_args(symbols, current_scope, *this, program, is_var_geq_times, var, times);
 
                     node.set_annotation(RepeatAnnotation {
                         set_var_to_zero, add_var_with_one, is_var_geq_times,
@@ -671,7 +671,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                     try
                     {
                         const Command& command = commands.match(node, symbols, current_scope);
-                        commands.annotate(node, command, symbols, current_scope, *this);
+                        commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));
                     }
                     catch(const BadAlternator& e)
@@ -710,10 +710,10 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                         SyntaxTree& c = op.child(1);
 
                         const Command& cmd_set = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
-                        commands.annotate_args(symbols, current_scope, *this, cmd_set, a, b);
+                        commands.annotate_args(symbols, current_scope, *this, program, cmd_set, a, b);
 
                         const Command& cmd_op = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, c);
-                        commands.annotate_args(symbols, current_scope, *this, cmd_op, a, c);
+                        commands.annotate_args(symbols, current_scope, *this, program, cmd_op, a, c);
 
                         node.set_annotation(std::cref(cmd_set));
                         op.set_annotation(std::cref(cmd_op));
@@ -726,7 +726,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                         SyntaxTree& b = node.child(1);
 
                         const Command& command = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
-                        commands.annotate_args(symbols, current_scope, *this, command, a, b);
+                        commands.annotate_args(symbols, current_scope, *this, program, command, a, b);
                         node.set_annotation(std::cref(command));
                     }
                 }
@@ -764,7 +764,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 {
                     const Command& op_var_with_one = commands.match_args(symbols, current_scope, alternator_thing, var_ident, number_one);
                 
-                    commands.annotate_args(symbols, current_scope, *this, op_var_with_one, var_ident, number_one);
+                    commands.annotate_args(symbols, current_scope, *this, program, op_var_with_one, var_ident, number_one);
 
                     node.set_annotation(IncDecAnnotation {
                         op_var_with_one,

@@ -116,17 +116,17 @@ public:
     /// If nodes are already annotated, will just ensure the type of annotation is the same (program will abort otherwise).
     ///
     /// If the argument is a model enum, and the identifier is unknown, a model gets appened to the `script` model table.
-    void annotate(SyntaxTree& command_node, const Command& command, const SymTable&, const shared_ptr<Scope>&, Script&) const;
+    void annotate(SyntaxTree& command_node, const Command& command, const SymTable&, const shared_ptr<Scope>&, Script&, ProgramContext&) const;
 
     /// Annotates the argument `nodes...` for a specific `command`.
     /// If nodes are already annotated, will just ensure the type of annotation is the same  (program will abort otherwise).
     ///
     ///  If the argument is a model enum, and the identifier is unknown, a model gets appened to the `script` model table.
     template<typename... TSyntaxTree>
-    void annotate_args(const SymTable& symbols, const shared_ptr<Scope>& scope, Script& s, const Command& command, TSyntaxTree&... nodes) const
+    void annotate_args(const SymTable& symbols, const shared_ptr<Scope>& scope, Script& s, ProgramContext& p, const Command& command, TSyntaxTree&... nodes) const
     {
         SyntaxTree* args[] = { std::addressof<TSyntaxTree>(nodes)... };
-        return annotate_internal(symbols, scope, s, command, std::begin(args), std::end(args));
+        return annotate_internal(symbols, scope, s, p, command, std::begin(args), std::end(args));
     }
 
     /// Finds the literal value of a constant `value`.
@@ -340,7 +340,7 @@ private:
     const Command& match_internal(const SymTable&, const shared_ptr<Scope>&,
         alternator_pair commands, const SyntaxTree** begin, const SyntaxTree** end) const;
 
-    void annotate_internal(const SymTable&, const shared_ptr<Scope>&, Script&,
+    void annotate_internal(const SymTable&, const shared_ptr<Scope>&, Script&, ProgramContext&,
         const Command&, SyntaxTree** begin, SyntaxTree** end) const;
 };
 
