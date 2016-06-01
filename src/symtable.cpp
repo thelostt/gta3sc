@@ -3,6 +3,8 @@
 
 // TODO check if vars, labels, etc aren't already constants and etc
 
+// TODO android compiler registers START_CUTSCENE stuff before the global variable space
+
 uint32_t Var::space_taken()
 {
     switch(this->type)
@@ -110,11 +112,20 @@ void SymTable::build_script_table(const std::vector<shared_ptr<Script>>& scripts
     }
 }
 
+void SymTable::check_command_count(ProgramContext& program) const
+{
+    if(this->count_set_progress_total > 1)
+        program.error(nocontext, "XXX SET_PROGRESS_TOTAL occurs multiple times between script units, it should appear only once.");
+    if(this->count_set_collectable1_total > 1)
+        program.error(nocontext, "XXX SET_COLLECTABLE1_TOTAL occurs multiple times between script units, it should appear only once.");
+    if(this->count_set_total_number_of_missions > 1)
+        program.error(nocontext, "XXX SET_TOTAL_NUMBER_OF_MISSIONS occurs multiple times between script units, it should appear only once.");
+}
+
 bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramContext& program)
 {
     if(command.child_count() <= 1)
     {
-        // TODO hmm this is never reached since those special commands are checked on the parser
         program.error(command, "XXX few args");
         return false;
     }
@@ -253,6 +264,14 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
 
     t1.mission.reserve(t1.mission.size() + t2.mission.size());
     std::move(t2.mission.begin(), t2.mission.end(), std::back_inserter(t1.mission));
+
+    t1.count_progress += t2.count_progress;
+    t1.count_collectable1 += t2.count_collectable1;
+    t1.count_mission_passed += t2.count_mission_passed;
+
+    t1.count_set_progress_total += t2.count_set_progress_total;
+    t1.count_set_collectable1_total += t2.count_set_collectable1_total;
+    t1.count_set_total_number_of_missions += t2.count_set_total_number_of_missions;
 }
 
 void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramContext& program)
@@ -266,6 +285,28 @@ void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramCon
 
     // the scan output
     SymTable& table = *this;
+
+    auto get_progress_value = [&](const SyntaxTree& node)
+    {
+        if(node.child_count() == 2)
+        {
+            try
+            {
+                return std::stoi(node.child(1).text());
+            }
+            catch(const std::logic_error&)
+            {
+                // just emit a warning since R* compiler accepts this construct.
+                program.warning(node, "XXX progress value is not a constant");
+                return 0;
+            }
+        }
+        else
+        {
+            program.error(node, "XXX bad num args");
+            return 0;
+        }
+    };
 
     // the scanner
     walker = [&](SyntaxTree& node)
@@ -350,6 +391,8 @@ void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramCon
             {
                 auto& command_name = node.child(0).text();
 
+                uint16_t count_unique_command = 0;
+
                 // TODO use `const Commands&` to identify these?
                 if(command_name == "LOAD_AND_LAUNCH_MISSION")
                     table.add_script(ScriptType::Mission, node, program);
@@ -357,6 +400,21 @@ void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramCon
                     table.add_script(ScriptType::Subscript, node, program);
                 else if(command_name == "GOSUB_FILE")
                     table.add_script(ScriptType::MainExtension, node, program);
+                else if(command_name == "CREATE_COLLECTABLE1")
+                    ++table.count_collectable1;
+                else if(command_name == "REGISTER_MISSION_PASSED" || command_name == "REGISTER_ODDJOB_MISSION_PASSED")
+                    ++table.count_mission_passed;
+                else if(command_name == "PLAYER_MADE_PROGRESS")
+                    table.count_progress += get_progress_value(node);
+                else if(command_name == "SET_COLLECTABLE1_TOTAL")
+                    count_unique_command = ++table.count_set_collectable1_total;
+                else if(command_name == "SET_TOTAL_NUMBER_OF_MISSIONS")
+                    count_unique_command = ++table.count_set_total_number_of_missions;
+                else if(command_name == "SET_PROGRESS_TOTAL")
+                    count_unique_command = ++table.count_set_progress_total;
+
+                if(count_unique_command > 1)
+                    program.error(node, "XXX {} more than once", command_name);
 
                 return false;
             }
@@ -437,6 +495,25 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
     std::shared_ptr<Scope> current_scope = nullptr;
     bool is_condition_block = false;
     uint32_t num_statements = 0;
+
+    auto replace_arg0 = [&](SyntaxTree& node, int32_t value)
+    {
+        if(node.child_count() == 2)
+        {
+            if(node.child(1).maybe_annotation<int32_t>().value_or(99) == 0)
+            {
+                node.child(1).set_annotation(value);
+            }
+            else
+            {
+                program.error(node, "XXX first argument must be 0");
+            }
+        }
+        else
+        {
+            program.error(node, "XXX bad arg count");
+        }
+    };
 
     auto find_command_for_expr = [&](const SyntaxTree& op) -> optional<Commands::alternator_pair>
     {
@@ -673,6 +750,13 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                         const Command& command = commands.match(node, symbols, current_scope);
                         commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));
+
+                        if(commands.equal(command, commands.set_collectable1_total()))
+                            replace_arg0(node, symbols.count_collectable1);
+                        else if(commands.equal(command, commands.set_total_number_of_missions()))
+                            replace_arg0(node, symbols.count_mission_passed);
+                        else if(commands.equal(command, commands.set_progress_total()))
+                            replace_arg0(node, symbols.count_progress);
                     }
                     catch(const BadAlternator& e)
                     {

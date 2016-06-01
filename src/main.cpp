@@ -70,6 +70,8 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
             scripts.back()->mission_id = i;
         }
 
+        symbols.check_command_count(program);
+
         symbols.build_script_table(scripts);
 
         for(auto& script : scripts)

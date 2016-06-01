@@ -190,6 +190,24 @@ public:
 
     // --- Important Commands ---
 
+    const Command& set_progress_total() const
+    {
+        // TODO cached
+        return commands.find("SET_PROGRESS_TOTAL")->second;
+    }
+
+    const Command& set_total_number_of_missions() const
+    {
+        // TODO cached
+        return commands.find("SET_TOTAL_NUMBER_OF_MISSIONS")->second;
+    }
+
+    const Command& set_collectable1_total() const
+    {
+        // TODO cached
+        return commands.find("SET_COLLECTABLE1_TOTAL")->second;
+    }
+
     const Command& switch_start() const
     {
         // TODO cached

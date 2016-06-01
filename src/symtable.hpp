@@ -192,7 +192,10 @@ struct SymTable
     // TODO check conflicts of label names and global names!?! (on merge too)
     // TODO keep using iless or use another solution?
 
-    // IMPORTANT! Make sure whenever you add any new field, to update merge() accordingly !!!!!!!!!!
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
+    // IMPORTANT! Make sure whenever you add any new field to this object, to update merge() accordingly !!!!!!!!//
+    //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
+
     std::map<std::string, shared_ptr<Script>>       scripts;
     std::map<std::string, shared_ptr<Label>, iless> labels;
     std::map<std::string, shared_ptr<Var>, iless>   global_vars;
@@ -201,6 +204,14 @@ struct SymTable
     std::vector<std::string>    extfiles;   /// GOSUB_FILE scripts
     std::vector<std::string>    subscript;  /// LAUNCH_MISSION scripts
     std::vector<std::string>    mission;    /// LOAD_AND_LAUNCH_MISSION scripts
+
+    int32_t count_collectable1 = 0;
+    int32_t count_mission_passed = 0;
+    int32_t count_progress = 0;
+    uint16_t count_set_progress_total = 0;
+    uint16_t count_set_total_number_of_missions = 0;
+    uint16_t count_set_collectable1_total = 0;
+
 
     /// Construts a SymTable from the symbols in `script`.
     static SymTable from_script(Script& script, const Commands& commands, ProgramContext& program)
@@ -217,6 +228,9 @@ struct SymTable
 
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
     void build_script_table(const std::vector<shared_ptr<Script>>& scripts);
+
+    /// \warning
+    void check_command_count(ProgramContext& program) const;
 
     /// Creates a new scope in this table.
     shared_ptr<Scope> add_scope()
