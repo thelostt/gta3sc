@@ -395,7 +395,7 @@ private:
             case NodeType::Equal:
             case NodeType::Greater:
             case NodeType::GreaterEqual:
-                return compile_expr(node);
+                return compile_expr(node, not_flag);
             case NodeType::Lesser:
             case NodeType::LesserEqual:
                 return compile_expr(node, !not_flag);

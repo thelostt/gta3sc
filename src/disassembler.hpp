@@ -610,12 +610,7 @@ private:
                 case 0x06: // Float
                     if(this->config.use_half_float)
                     {
-                        auto from_half = [](int16_t value) -> float {
-                            if(!value) return 0.0f;
-                            return value / 16.0f;
-                        };
-
-                        ccmd.args.emplace_back(from_half(*fetch_i16(offset)));
+                        ccmd.args.emplace_back(*fetch_i16(offset) / 16.0f);
                         offset += sizeof(int16_t);
                     }
                     else

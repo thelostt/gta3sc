@@ -22,7 +22,7 @@ int main()
 
     Commands commands = Commands::from_xml({ "gta3/constants.xml", "gta3/commands.xml" });
 
-    return test_decompiler(gta3_config, commands);
+    return test_compiler(gta3_config, commands);
 }
 
 int test_compiler(const GameConfig& gta3_config, const Commands& commands)

@@ -340,15 +340,8 @@ inline void generate_code(const float& value, CodeGenerator& codegen)
 {
     if(codegen.program.opt.use_half_float)
     {
-        auto to_half = [](float value) -> int16_t {
-            // from Wesser
-            if(!value) return 0;
-            value *= 16.0f;
-            return static_cast<int16_t>(value + (value > 0? 0.5f : -0.5f));
-        };
-
         codegen.emplace_u8(6);
-        codegen.emplace_i16(to_half(value));
+        codegen.emplace_i16(static_cast<int16_t>(value * 16.0f));
     }
     else
     {
