@@ -289,9 +289,12 @@ inline size_t CompiledScmHeader::compiled_size() const
     {
         case CompiledScmHeader::Version::Liberty:
         case CompiledScmHeader::Version::Miami:
-            return 8 + this->size_global_vars_space + 8 + 4 + (24 * (1 + this->models.size()))
+        {
+            auto size_globals = (std::max)(this->size_global_vars_space, 8u);
+            return 8 + (size_globals - 8) + 8 + 4 + (24 * (1 + this->models.size()))
                 + 8 + 4 + 4 + 2 + 2 + (4 * this->missions.size());
             break;
+        }
         default:
             Unreachable();
     }
@@ -465,9 +468,10 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
         largest_mission_size = (*it_highest_mission)->size.value();
 
    // Variables segment
-    goto_rel(header.size_global_vars_space);
+    auto size_globals = (std::max)(header.size_global_vars_space, 8u);
+    goto_rel(size_globals - 8);
     codegen.emplace_i8(target_id);
-    codegen.emplace_fill(header.size_global_vars_space, 0);
+    codegen.emplace_fill(size_globals - 8, 0);
 
     // Models segment
     goto_rel(4 + (24 * (1 + header.models.size())));

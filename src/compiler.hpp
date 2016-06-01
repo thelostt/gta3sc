@@ -87,7 +87,7 @@ struct CompiledScmHeader
     };
 
     Version                               version;
-    uint32_t                              size_global_vars_space; // excluding the 8 bytes of GOTO at the top
+    uint32_t                              size_global_vars_space; // including the 8 bytes of GOTO at the top
     std::vector<std::string>              models;
     shared_ptr<const Script>              main;       // used to find main_size
     std::vector<shared_ptr<const Script>> missions;   // used to find highest mission and mission offsets
