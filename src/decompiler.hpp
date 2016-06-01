@@ -160,10 +160,10 @@ inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerConte
     return output;
 }
 
-inline std::string decompile_data(const DecompiledLabelDef&, DecompilerContext&)
+inline std::string decompile_data(const DecompiledLabelDef& label, DecompilerContext&)
 {
     // TODO
-    return std::string("\nLABEL________:\n");
+    return fmt::format("\nLABEL_{}:\n", label.offset);
 }
 
 inline std::string decompile_data(const DecompiledHex& hex, DecompilerContext&)

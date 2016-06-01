@@ -49,6 +49,29 @@ struct DecompiledLabelDef
 // constrat to CompiledHex
 using DecompiledHex = CompiledHex;
 
+// constrat to CompiledScmHeader
+struct DecompiledScmHeader
+{
+    enum class Version : uint8_t
+    {
+        Liberty,
+        Miami,
+    };
+
+    Version                               version;
+    uint32_t                              size_global_vars_space; // including the 8 bytes of GOTO at the top
+    std::vector<std::string>              models;
+    uint32_t                              main_size;
+    std::vector<uint32_t>                 mission_offsets;
+
+    DecompiledScmHeader(Version version, uint32_t size_globals, std::vector<std::string> models,
+        uint32_t main_size, std::vector<uint32_t> mission_offsets) :
+        version(version), size_global_vars_space(size_globals), main_size(main_size),
+        models(std::move(models)), mission_offsets(std::move(mission_offsets))
+    {
+    }
+};
+
 // constrat to CompiledData
 struct DecompiledData
 {
@@ -102,6 +125,8 @@ private:
 
     size_t switch_cases_left = 0;
 
+    std::vector<uint32_t> local_offsets;
+
 public:
     // undefined behaviour is invoked if data inside `bytecode` is changed while
     // this context object is still alive.
@@ -132,8 +157,17 @@ public:
             return nullopt;
     }
 
+    void analyze_header(const DecompiledScmHeader& header)
+    {
+        this->local_offsets = header.mission_offsets;
 
+        std::sort(local_offsets.begin(), local_offsets.end());
 
+        for(auto it = local_offsets.rbegin(); it != local_offsets.rend(); ++it)
+        {
+            this->to_explore.emplace(*it);
+        }
+    }
 
     void run_analyzer()
     {
@@ -180,8 +214,67 @@ public:
         return output;
     }
 
+    optional<DecompiledScmHeader> read_header(DecompiledScmHeader::Version version)
+    {
+        assert(version == DecompiledScmHeader::Version::Liberty
+            || version == DecompiledScmHeader::Version::Miami);
+
+        try
+        {
+            // TODO check if start of segs is 02 00 01
+
+            auto seg1_offset = 0u;
+            auto seg2_offset = fetch_u32(seg1_offset + 3).value();
+            auto seg3_offset = fetch_u32(seg2_offset + 3).value();
+
+            uint32_t size_globals = seg2_offset;
+
+            std::vector<std::string> models;
+            size_t num_models = static_cast<size_t>((std::max)(1u, fetch_u32(seg2_offset + 8 + 0).value()) - 1);
+            models.reserve(num_models);
+            for(size_t i = 0; i < num_models; ++i)
+            {
+                auto model_name = fetch_chars(seg2_offset + 8 + 4 + 24 + (24 * i), 24).value();
+                models.emplace_back(std::move(model_name));
+            }
+
+            auto main_size = fetch_u32(seg3_offset + 8 + 0).value();
+            auto num_missions = fetch_u16(seg3_offset + 8 + 8).value();
+
+            std::vector<uint32_t> mission_offsets;
+            for(size_t i = 0; i < num_missions; ++i)
+            {
+                mission_offsets.emplace_back(fetch_u32(seg3_offset + 8 + 8 + 4 + (4 *i)).value());
+            }
+
+            return DecompiledScmHeader { version, size_globals, std::move(models), main_size, std::move(mission_offsets) };
+        }
+        catch(const bad_optional_access&)
+        {
+            // the header is incorrect or broken
+            return nullopt;
+        }
+    }
+
 
 private:
+
+    uint32_t get_absolute_offset(uint32_t addressed_from, int32_t offset)
+    {
+        if(offset >= 0)
+            return offset;
+
+        auto it = std::lower_bound(this->local_offsets.begin(), this->local_offsets.end(), addressed_from);
+        if(it != this->local_offsets.end() && *it >= addressed_from)
+        {
+            return *it + (-offset);
+        }
+        else
+        {
+            // it's not possible to have a local offset on this location, TODO?
+            return -offset;
+        }
+    }
 
     void analyze()
     {
@@ -233,8 +326,8 @@ private:
 
         bool stop_it = false;
 
-        bool is_switch_start     = (&command == &this->commands.switch_start());
-        bool is_switch_continued = (&command == &this->commands.switch_continued());
+        bool is_switch_start     = false;/* (&command == &this->commands.switch_start()) TODO*/;
+        bool is_switch_continued = false;/* (&command == &this->commands.switch_continued()) TODO*/;
 
         size_t argument_id = 0;
 
@@ -256,9 +349,9 @@ private:
                         --this->switch_cases_left;
                 }
 
-                // TODO treat negative offsets properly (relative to mission base, etc)
-                interesting_offsets.push(value < 0? -value : value);
-                label_offsets.emplace(value < 0? -value : value);
+                uint32_t absolute_value = this->get_absolute_offset(op_offset, value);
+                interesting_offsets.emplace(absolute_value);
+                label_offsets.emplace(absolute_value);
             }
         };
 
@@ -406,9 +499,9 @@ private:
         // TODO would be nice if this was actually configurable.
         if(!this->commands.equal(command, this->commands.goto_())
         && !this->commands.equal(command, this->commands.return_())
-        && !this->commands.equal(command, this->commands.ret())
+        && /*!this->commands.equal(command, this->commands.ret()) TODO*/!false
         && !this->commands.equal(command, this->commands.terminate_this_script())
-        && !this->commands.equal(command, this->commands.terminate_this_custom_script()))
+        && /*!this->commands.equal(command, this->commands.terminate_this_custom_script()) TODO*/!false)
         // TODO more
         {
             if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)

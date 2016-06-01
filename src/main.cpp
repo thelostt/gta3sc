@@ -22,7 +22,7 @@ int main()
 
     Commands commands = Commands::from_xml({ "gta3/constants.xml", "gta3/commands.xml" });
 
-    return test_compiler(gta3_config, commands);
+    return test_decompiler(gta3_config, commands);
 }
 
 int test_compiler(const GameConfig& gta3_config, const Commands& commands)
@@ -160,16 +160,17 @@ int test_decompiler(const GameConfig& gta3_config, const Commands& commands)
 {
     ProgramContext program(gta3_config);
 
-    auto opt_decomp = Disassembler::from_file(gta3_config, commands, "output.cs");
+    auto opt_decomp = Disassembler::from_file(gta3_config, commands, "output.scm");
     if(!opt_decomp)
-        program.fatal_error(nocontext, "File {} does not exist", "output.cs");
+        program.fatal_error(nocontext, "File {} does not exist", "output.scm");
 
     Disassembler decomp(std::move(*opt_decomp));
+    auto scm_header = decomp.read_header(DecompiledScmHeader::Version::Liberty).value();
+    decomp.analyze_header(scm_header);
     decomp.run_analyzer();
     auto data = decomp.get_data();
 
-    printf("%d\n", data.size());
-
+    printf("// %d\n", data.size());
     puts(DecompilerContext(commands, std::move(data)).decompile().c_str());
 
     return 0;
