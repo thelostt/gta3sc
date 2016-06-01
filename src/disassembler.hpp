@@ -264,10 +264,10 @@ private:
         if(offset >= 0)
             return offset;
 
-        auto it = std::lower_bound(this->local_offsets.begin(), this->local_offsets.end(), addressed_from);
-        if(it != this->local_offsets.end() && *it >= addressed_from)
+        auto it = std::upper_bound(this->local_offsets.begin(), this->local_offsets.end(), addressed_from);
+        if(it != this->local_offsets.begin())
         {
-            return *it + (-offset);
+            return *(--it) + (-offset);
         }
         else
         {
