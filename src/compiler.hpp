@@ -89,19 +89,21 @@ struct CompiledScmHeader
     Version                               version;
     uint32_t                              size_global_vars_space; // including the 8 bytes of GOTO at the top
     std::vector<std::string>              models;
-    shared_ptr<const Script>              main;       // used to find main_size
-    std::vector<shared_ptr<const Script>> missions;   // used to find highest mission and mission offsets
+    std::vector<shared_ptr<const Script>> scripts;   // used to find size of main, size of highest mission and mission offsets
+    uint32_t                              num_missions;
 
     CompiledScmHeader(Version version, size_t size_globals,
                       std::vector<std::string> models_,
-                      shared_ptr<const Script> main_,
-                      const std::vector<std::pair<shared_ptr<Script>, SymTable>>& missions_pair) :
+                      const std::vector<shared_ptr<Script>>& scripts) :
         version(version), size_global_vars_space(size_globals),
-        models(std::move(models_)), main(std::move(main_))
+        models(std::move(models_)), num_missions(0)
     {
-        this->missions.reserve(missions_pair.size());
-        for(auto& mpair : missions_pair)
-            this->missions.emplace_back(mpair.first);
+        this->scripts.reserve(scripts.size());
+        for(auto& sc : scripts)
+        {
+            this->num_missions += (sc->type == ScriptType::Mission? 1 : 0);
+            this->scripts.emplace_back(sc);
+        }
     }
 
     size_t compiled_size() const;
@@ -357,9 +359,15 @@ private:
         }
         else
         {
-            // 'a = b' or 'a =# b'
+            // 'a = b' or 'a =# b' or 'a > b' (and such)
+            
+            bool invert = (eq_node.type() == NodeType::Lesser || eq_node.type() == NodeType::LesserEqual);
+
+            auto& a_node = eq_node.child(!invert? 0 : 1);
+            auto& b_node = eq_node.child(!invert? 1 : 0);
+
             const Command& cmd_set = eq_node.annotation<std::reference_wrapper<const Command>>();
-            compile_command(cmd_set, { get_arg(eq_node.child(0)), get_arg(eq_node.child(1)) }, not_flag);
+            compile_command(cmd_set, { get_arg(a_node), get_arg(b_node) }, not_flag);
         }
     }
 
@@ -395,10 +403,9 @@ private:
             case NodeType::Equal:
             case NodeType::Greater:
             case NodeType::GreaterEqual:
-                return compile_expr(node, not_flag);
             case NodeType::Lesser:
             case NodeType::LesserEqual:
-                return compile_expr(node, !not_flag);
+                return compile_expr(node, not_flag);
             default:
                 Unreachable();
         }
@@ -410,7 +417,7 @@ private:
         {
             // TODO check amount of conditions <= 8
 
-            compile_command(this->commands.andor(), { conv_int(op + conds_vector.child_count()) });
+            compile_command(this->commands.andor(), { conv_int(op + conds_vector.child_count() - 2) });
             for(auto& cond : conds_vector) compile_condition(*cond);
         };
 
@@ -428,10 +435,10 @@ private:
                 compile_condition(conds_node);
                 break;
             case NodeType::AND: // 1-8
-                compile_multi_andor(conds_node, 0);
+                compile_multi_andor(conds_node, 1);
                 break;
             case NodeType::OR: // 21-28
-                compile_multi_andor(conds_node, 20);
+                compile_multi_andor(conds_node, 21);
                 break;
             default:
                 Unreachable();
@@ -494,7 +501,13 @@ private:
                 }
                 else if(auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>())
                 {
-                    return std::move(*opt_label);
+                    auto label = std::move(*opt_label);
+                    if(label->script->type == ScriptType::Mission)
+                    {
+                        if(this->script != label->script)
+                            program.error(arg_node, "Reference to mission label '{}' outside of its mission script.", arg_node.text());
+                    }
+                    return label;
                 }
                 else if(auto opt_text = arg_node.maybe_annotation<std::string>())
                 {

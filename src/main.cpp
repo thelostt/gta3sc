@@ -106,8 +106,7 @@ int test_compiler(const GameConfig& gta3_config, const Commands& commands)
             global_vars_size = (*highest_var)->end_offset();
         }
 
-        // TODO models
-        CompiledScmHeader header(CompiledScmHeader::Version::Liberty, symbols.size_global_vars(), models, main, mission_scripts);
+        CompiledScmHeader header(CompiledScmHeader::Version::Liberty, symbols.size_global_vars(), models, scripts);
 
         // not thread-safe
         Expects(gens.size() == scripts.size());

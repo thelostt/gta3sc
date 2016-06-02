@@ -292,7 +292,7 @@ inline size_t CompiledScmHeader::compiled_size() const
         {
             auto size_globals = (std::max)(this->size_global_vars_space, 8u);
             return 8 + (size_globals - 8) + 8 + 4 + (24 * (1 + this->models.size()))
-                + 8 + 4 + 4 + 2 + 2 + (4 * this->missions.size());
+                + 8 + 4 + 4 + 2 + 2 + (4 * this->num_missions);
             break;
         }
         default:
@@ -356,7 +356,18 @@ inline void generate_code(const float& value, CodeGenerator& codegen)
 inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& codegen)
 {
     codegen.emplace_u8(1);
-    codegen.emplace_i32(label_ptr->offset());
+
+    if(label_ptr->script->type == ScriptType::Mission)
+    {
+        assert(label_ptr->script == codegen.script); // enforced on compiler.hpp/cpp
+
+        int32_t local_offset = static_cast<int32_t>(label_ptr->local_offset.value());
+        codegen.emplace_i32(-local_offset);
+    }
+    else
+    {
+        codegen.emplace_i32(label_ptr->offset());
+    }
 }
 
 inline void generate_code(const CompiledString& str, CodeGenerator& codegen)
@@ -450,17 +461,32 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
         return m1->size.value() < m2->size.value();
     };
 
+    uint32_t head_size            = header.compiled_size();
+    uint32_t main_size            = head_size;
     uint32_t largest_mission_size = 0;
 
-    char target_id = (header.version == CompiledScmHeader::Version::Liberty? 'l' :
-                     header.version == CompiledScmHeader::Version::Miami? 'm' :
-                     Unreachable());
+    std::vector<shared_ptr<const Script>> missions;
 
-    auto it_highest_mission = std::max_element(header.missions.begin(), header.missions.end(), comp_largest_mission);
-    if(it_highest_mission != header.missions.end())
-        largest_mission_size = (*it_highest_mission)->size.value();
+    char target_id = (header.version == CompiledScmHeader::Version::Liberty? '\0' : // original III main.scm doesn't use 'l' yet
+                      header.version == CompiledScmHeader::Version::Miami? 'm' :
+                      Unreachable());
 
-   // Variables segment
+    missions.reserve(header.num_missions);
+    for(auto& sc : header.scripts)
+    {
+        if(sc->type != ScriptType::Mission)
+        {
+            main_size += sc->size.value();
+        }
+        else
+        {
+            missions.emplace_back(sc);
+            if(largest_mission_size < sc->size.value())
+                largest_mission_size = *sc->size;
+        }
+    }
+
+    // Variables segment
     auto size_globals = (std::max)(header.size_global_vars_space, 8u);
     goto_rel(size_globals - 8);
     codegen.emplace_i8(target_id);
@@ -475,13 +501,13 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
         codegen.emplace_chars(24, model.c_str());
 
     // SCM info segment
-    goto_rel(4 + 4 + 2 + 2 + (4 * header.missions.size()));
+    goto_rel(4 + 4 + 2 + 2 + (4 * missions.size()));
     codegen.emplace_u8(0);
-    codegen.emplace_u32(header.main->size.value());
+    codegen.emplace_u32(main_size);
     codegen.emplace_u32(largest_mission_size);
-    codegen.emplace_u16(static_cast<uint16_t>(header.missions.size()));
+    codegen.emplace_u16(static_cast<uint16_t>(missions.size()));
     codegen.emplace_u16(0); // number_of_exclusive_missions
-    for(auto& script_ptr : header.missions)
+    for(auto& script_ptr : missions)
         codegen.emplace_i32(script_ptr->offset.value());
 }
 

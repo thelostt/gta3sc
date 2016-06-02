@@ -131,6 +131,8 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
     }
     else
     {
+        // TODO R* compiler checks if parameter ends with .sc
+
         auto script_name = (command.child(0).text() == "GOSUB_FILE"?
                                 command.child(2).text() :
                                 command.child(1).text());
@@ -539,10 +541,10 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
             case NodeType::TimedMinus:
                 return commands.sub_thing_from_thing_timed();
             case NodeType::Greater:
-            case NodeType::LesserEqual: // NOT'd
+            case NodeType::Lesser: // with arguments inverted
                 return commands.is_thing_greater_than_thing();
             case NodeType::GreaterEqual:
-            case NodeType::Lesser: // NOT'd
+            case NodeType::LesserEqual: // with arguments inverted
                 return commands.is_thing_greater_or_equal_to_thing();
             case NodeType::Module:
                 // TODO CLEO
@@ -806,8 +808,10 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                     {
                         // 'a = b' or 'a =# b' or 'a > b' (and such)
 
-                        SyntaxTree& a = node.child(0);
-                        SyntaxTree& b = node.child(1);
+                        bool invert = (node.type() == NodeType::Lesser || node.type() == NodeType::LesserEqual);
+
+                        SyntaxTree& a = node.child(!invert? 0 : 1);
+                        SyntaxTree& b = node.child(!invert? 1 : 0);
 
                         const Command& command = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
                         commands.annotate_args(symbols, current_scope, *this, program, command, a, b);
