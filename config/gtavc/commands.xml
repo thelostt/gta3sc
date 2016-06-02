@@ -2828,7 +2828,7 @@
     <Command ID="0x1b2" Name="GIVE_WEAPON_TO_CHAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
-        <Arg Type="INT" Desc="Weapon ID"/>
+        <Arg Type="INT" Desc="Weapon ID" Enum="WEAPONTYPE"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
@@ -4838,7 +4838,7 @@
     <Command ID="0x2d8" Name="IS_CURRENT_CHAR_WEAPON">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
-        <Arg Type="INT" Desc="Weapon ID"/>
+        <Arg Type="INT" Desc="Weapon ID" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x2d9" Name="CLEAR_NUMBER_OF_POWER_PILLS_EATEN" Supported="false"/>

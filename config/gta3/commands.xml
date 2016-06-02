@@ -2063,7 +2063,7 @@
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x152" Name="SET_ZONE_CAR_INFO">
+    <Command ID="0x152" Name="SETUP_ZONE_CAR_INFO">
       <Args>
         <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT"/>
@@ -2139,7 +2139,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x15c" Name="SET_ZONE_PED_INFO">
+    <Command ID="0x15c" Name="SETUP_ZONE_PED_INFO">
       <Args>
         <Arg Type="TEXT_LABEL" Desc="Area name" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -2827,7 +2827,7 @@
     <Command ID="0x1b2" Name="GIVE_WEAPON_TO_CHAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
-        <Arg Type="INT" Desc="Weapon ID"/>
+        <Arg Type="INT" Desc="Weapon ID" Enum="WEAPONTYPE"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
@@ -4835,7 +4835,7 @@
     <Command ID="0x2d8" Name="IS_CURRENT_CHAR_WEAPON">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
-        <Arg Type="INT" Desc="Weapon ID"/>
+        <Arg Type="INT" Desc="Weapon ID" Enum="WEAPONTYPE"/>
       </Args>
     </Command>
     <Command ID="0x2d9" Name="CLEAR_NUMBER_OF_POWER_PILLS_EATEN"/>

@@ -2797,7 +2797,7 @@
     <Command ID="0x1b2" Name="GIVE_WEAPON_TO_CHAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="INT" Desc="Weapon ID"/>
+        <Arg Type="INT" Desc="Weapon ID" Enum="WEAPONTYPE"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
