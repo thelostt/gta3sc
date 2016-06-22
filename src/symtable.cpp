@@ -1,5 +1,7 @@
 #include "symtable.hpp"
 #include "commands.hpp"
+#include "program.hpp"
+#include "error.hpp"
 
 // TODO check if vars, labels, etc aren't already constants and etc
 
@@ -165,11 +167,11 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
             // still not added to its list?
             if(!found_extfile && !found_subscript && !found_mission)
             {
-                auto& vector = (type == ScriptType::MainExtension? std::ref(this->extfiles) :
+                auto refvector = (type == ScriptType::MainExtension? std::ref(this->extfiles) :
                     type == ScriptType::Subscript? std::ref(this->subscript) :
                     type == ScriptType::Mission? std::ref(this->mission) : Unreachable());
 
-                vector.get().emplace_back(std::move(script_name));
+                refvector.get().emplace_back(std::move(script_name));
             }
             return true;
         }
@@ -833,7 +835,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
             case NodeType::Decrement:
             {
                 const char* opkind     = node.type() == NodeType::Increment? "increment" : "decrement";
-                auto& alternator_thing = node.type() == NodeType::Increment? commands.add_thing_to_thing() : commands.sub_thing_from_thing();
+                auto alternator_thing  = node.type() == NodeType::Increment? commands.add_thing_to_thing() : commands.sub_thing_from_thing();
 
                 auto& var_ident = node.child(0);
 
@@ -887,6 +889,22 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
             program.error(*this, "Mission script or subscript does not contain MISSION_START");
         else if(!had_mission_end)
             program.error(*this, "Mission script or subscript does not contain MISSION_END");
+    }
+}
+
+auto read_script(const std::string& filename, const std::map<std::string, fs::path, iless>& subdir,
+                 ScriptType type, const Commands& commands, ProgramContext& program) -> optional<shared_ptr<Script>>
+{
+    auto path_it = subdir.find(filename);
+    if(path_it != subdir.end())
+    {
+        return Script::create(path_it->second, type);
+    }
+    else
+    {
+        // TODO is this safe to continue compilation or is it fatal?
+        program.error(nocontext, "File '{}' does not exist in '{}' subdirectory.", filename, "main");
+        return nullopt;
     }
 }
 

@@ -6,6 +6,7 @@
 #pragma once
 #include "stdinc.h"
 #include "parser.hpp"
+#include "symtable.hpp"
 
 struct tag_nocontext_t {};
 constexpr tag_nocontext_t nocontext;

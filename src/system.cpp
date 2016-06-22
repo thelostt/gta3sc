@@ -18,7 +18,7 @@ static fs::path find_config_path()
         path /= L"config";
         return path;
     }
-    throw std::runtime_error("find_proc_path failed");
+    throw std::runtime_error("find_config_path failed");
 #else
 #   error find_proc_path not implemented on this OS.
 #endif

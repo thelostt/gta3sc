@@ -37,3 +37,8 @@ struct Scope;
 struct SymTable;
 struct CodeGenerator;
 struct CodeGeneratorBase;
+
+#ifndef _MSC_VER
+#   define __debugbreak()
+#endif
+

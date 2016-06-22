@@ -354,7 +354,6 @@ int decompile(fs::path input, fs::path output, const Options& options, const Com
     decomp.run_analyzer();
     auto data = decomp.get_data();
 
-    //printf("// %d\n", data.size());
     fprintf(outstream, "%s\n", DecompilerContext(commands, std::move(data)).decompile().c_str());
 
     return 0;

@@ -2,8 +2,6 @@
 #include "stdinc.h"
 #include "annotation.hpp"
 #include "parser.hpp"
-#include "error.hpp"
-#include "program.hpp"
 
 // TODO fix circular references to shared_ptr<Script> on tree nodes. (e.g. on Label, which has a shared_ptr to Script)
 
@@ -319,6 +317,10 @@ struct SymTable
     }
 };
 
+auto read_script(const std::string& filename, const std::map<std::string, fs::path, iless>& subdir,
+                 ScriptType type, const Commands& commands, ProgramContext& program) -> optional<shared_ptr<Script>>;
+
+
 template<typename InputIt> inline
 auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
                            InputIt begin, InputIt end, ScriptType type,
@@ -328,17 +330,11 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
 
     for(auto it = begin; it != end; ++it)
     {
-        auto path_it = subdir.find(*it);
-        if(path_it != subdir.end())
+        if(auto opt_script = read_script(*it, subdir, type, commands, program))
         {
-            auto script = Script::create(path_it->second, type);
-            auto symtable = SymTable::from_script(*script, commands, program);
+	    shared_ptr<Script> script = std::move(*opt_script);
+            SymTable symtable = SymTable::from_script(*script, commands, program);
             output.emplace_back(std::make_pair(std::move(script), std::move(symtable)));
-        }
-        else
-        {
-            program.error(nocontext, "File '{}' does not exist in '{}' subdirectory.", *it, "main");
-            // TODO is this safe to continue compilation or is it fatal?
         }
     }
 
