@@ -21,6 +21,7 @@ Options:
   --config=<name>          Which compilation configurations to use (gta3,gtavc,
                            gtasa). This effectively reads the data files at
                            '/config/<name>/' and sets some appropriate flags.
+  -pedantic                Forbid the usage of extensions not in R* compiler.
   -f[no-]half-float        Whether codegen uses GTA III half-float format.
   -f[no-]text-label-prefix Whether codegen uses GTA SA text label data type.
 )";
@@ -83,6 +84,10 @@ int main(int argc, char** argv)
             else if(const char* o = optget(argv, "-o", nullptr, 1))
             {
                 output = o;
+            }
+            else if(optget(argv, nullptr, "-pedantic", 0))
+            {
+                options.pedantic = true;
             }
             else if(const char* name = optget(argv, nullptr, "--config", 1))
             {

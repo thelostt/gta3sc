@@ -678,7 +678,6 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 auto& var = node.child(1);
 
                 // TODO cache this or dunno?
-                // TODO to be pedantic REPEAT must accept only INT times
                 SyntaxTree number_zero = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "0") :
                                           times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "0.0") :
                                           (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, "0"))); // int as fallback
@@ -686,6 +685,11 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 SyntaxTree number_one = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "1") :
                                          times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "1.0") :
                                          (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, "1"))); // int as fallback
+
+                if(program.opt.pedantic && times.type() != NodeType::Integer)
+                {
+                    program.error(times, "XXX REPEAT allows only INT counters [-pedantic]");
+                }
 
                 // Walk on the REPEAT body before matching the base commands.
                 // This will allow error messages in the body to be displayed even if

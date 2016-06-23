@@ -20,6 +20,7 @@ struct Options
     // TODO maybe use bitfields?
 
     /// Boolean flags
+    bool pedantic = false;
     bool use_half_float = false;
     bool has_text_label_prefix = false;
 };
