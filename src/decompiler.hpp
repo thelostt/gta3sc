@@ -2,6 +2,7 @@
 
 #include "stdinc.h"
 #include "disassembler.hpp"
+#include "flow.hpp"
 
 struct DecompilerContext;
 
@@ -13,6 +14,7 @@ struct DecompilerContext
 {
 private:
     std::vector<DecompiledData> data;
+    std::vector<ScriptFlow::Block> blocks;
 
 protected:
     friend std::string decompile_data(const DecompiledCommand& ccmd, DecompilerContext& context);
@@ -20,9 +22,14 @@ protected:
     const Commands& commands;
 
 public:
-    DecompilerContext(const Commands& commands, std::vector<DecompiledData> decompiled)
+    DecompilerContext(const Commands& commands, std::vector<DecompiledData> decompiled, const DecompiledScmHeader& header)
         : commands(commands), data(std::move(decompiled))
     {
+        ScriptFlow cflow(this->data);
+        cflow.analyze_header(header);
+        cflow.find_indices();
+        cflow.find_blocks();
+        this->blocks = cflow.get_blocks();
     }
 
     std::string decompile()
@@ -33,6 +40,19 @@ public:
             output += ::decompile_data(d, *this);
         }
         return output;
+    }
+
+    optional<int32_t> block_id_by_data(const DecompiledData& data)
+    {
+        size_t decomp_index = (&data - &this->data[0]);
+        Expects(decomp_index < this->data.size()); // happens if &data is not from this->data
+
+        for(size_t i = 0; i < this->blocks.size(); ++i)
+        {
+            if(this->blocks[i].begin == decomp_index)
+                return i;
+        }
+        return nullopt;
     }
 
 };
@@ -184,6 +204,18 @@ inline std::string decompile_data(const DecompiledHex& hex, DecompilerContext&)
 
 inline std::string decompile_data(const DecompiledData& data, DecompilerContext& context)
 {
-    return visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
+    std::string output;
+
+    if(auto block_id = context.block_id_by_data(data))
+    {
+        output = fmt::format("\n// BLOCK {}\n", *block_id);
+        output += visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
+    }
+    else
+    {
+        output = visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
+    }
+
+    return output;
 }
 
