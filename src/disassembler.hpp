@@ -105,7 +105,7 @@ static optional<int32_t> get_imm32(const ArgVariant2&);
 struct Disassembler
 {
 private:
-    const GameConfig config;
+    const Options config;
     const Commands&  commands;
 
     const uint8_t*  bytecode;
@@ -130,7 +130,7 @@ private:
 public:
     // undefined behaviour is invoked if data inside `bytecode` is changed while
     // this context object is still alive.
-    Disassembler(GameConfig config, const Commands& commands,
+    Disassembler(Options config, const Commands& commands,
                         const uint8_t* bytecode, size_t size) :
         bytecode(bytecode), bytecode_size(size),
         config(std::move(config)), commands(commands)
@@ -139,7 +139,7 @@ public:
         this->offset_explored.resize(size);
     }
 
-    Disassembler(GameConfig config, const Commands& commands, std::vector<uint8_t> bytecode_) :
+    Disassembler(Options config, const Commands& commands, std::vector<uint8_t> bytecode_) :
         Disassembler(std::move(config), commands, bytecode_.data(), bytecode_.size())
     {
         this->bytecode_buffer_ = std::move(bytecode_);
@@ -149,7 +149,7 @@ public:
 
     Disassembler(Disassembler&&) = default;
 
-    static optional<Disassembler> from_file(GameConfig config, const Commands& commands, const fs::path& path)
+    static optional<Disassembler> from_file(Options config, const Commands& commands, const fs::path& path)
     {
         if(auto opt_bytecode = read_file_binary(path))
             return Disassembler(config, commands, *opt_bytecode);

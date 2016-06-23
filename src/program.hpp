@@ -15,7 +15,7 @@ struct HaltJobException : public std::exception
 {
 };
 
-struct GameConfig
+struct Options
 {
     // TODO maybe use bitfields?
 
@@ -147,10 +147,10 @@ protected:
 class ProgramContext
 {
 public:
-    const GameConfig opt;   ///< Compiler options / flags.
+    const Options opt;   ///< Compiler options / flags.
 
 public:
-    explicit ProgramContext(GameConfig opt) :
+    explicit ProgramContext(Options opt) :
         opt(std::move(opt))
     {}
 

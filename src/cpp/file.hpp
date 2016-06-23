@@ -4,6 +4,20 @@
 #include "optional.hpp"
 #include "filesystem.hpp"
 
+inline FILE* u8fopen(const fs::path& path, const char* mode)
+{
+#ifdef _WIN32
+    size_t i;
+    wchar_t mode_wc[8];
+    for(i = 0; mode[i] && i < 7; ++i)
+        mode_wc[i] = mode[i];
+    mode_wc[i] = L'\0';
+    return _wfopen(path.c_str(), mode_wc);
+#else
+    return fopen(path.c_str(), mode);
+#endif
+}
+
 inline bool write_file(FILE* f, const void* data, size_t size)
 {
     return (fwrite(data, 1, size, f) == size);
