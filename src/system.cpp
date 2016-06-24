@@ -2,7 +2,6 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#else
 #endif
 
 static fs::path find_config_path()
@@ -17,6 +16,30 @@ static fs::path find_config_path()
         path /= L"../../.."; // TODO remove me, needed only when debug building
         path /= L"config";
         return path;
+    }
+    throw std::runtime_error("find_config_path failed");
+#elif defined(__unix__)
+    const char* home_path = std::getenv("HOME");
+    std::vector<fs::path> search_path;
+    // Search path for unix, ordered by priority:
+    {
+        // In folder of the binary (temporary installations etc.)
+        search_path.emplace_back("./config");
+        // Home folder
+        if(home_path != NULL)
+        {
+            search_path.emplace_back(fs::path(home_path) / ".local/share/gta3sc/config");
+        }
+        // Generic installation
+        search_path.emplace_back("/usr/share/gta3sc/config");
+    }
+
+    for(auto& path : search_path)
+    {
+        if(fs::is_directory(path))
+        {
+            return path;
+        }
     }
     throw std::runtime_error("find_config_path failed");
 #else
