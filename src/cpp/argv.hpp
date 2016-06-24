@@ -3,6 +3,7 @@
 ///
 #pragma once
 #include <cstddef>
+#include <climits>
 #include <stdexcept>
 #include "optional.hpp"
 
@@ -53,7 +54,7 @@ inline char* optget(char**& argv, const char* shortopt, const char* longopt, siz
         }
         else
         {
-            return "";
+            return *(argv-1); // dummy pointer
         }
     }
 
@@ -75,7 +76,7 @@ inline char* optget(char**& argv, const char* shortopt, const char* longopt, siz
         }
         else
         {
-            return "";
+            return *(argv-1); // dummy pointer
         }
     }
 
@@ -116,7 +117,7 @@ inline char* optflag(char**& argv, const char* flagname, bool* flag)
         *argv += 2;
         if(char* val = optget(argv, nullptr, flagname, 0))
         {
-            *flag = true;
+            if(flag) *flag = true;
             return val;
         }
         else

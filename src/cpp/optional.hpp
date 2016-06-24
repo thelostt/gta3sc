@@ -6,7 +6,8 @@
 #pragma once
 
 #ifndef _CXX17_OPTIONAL_TYPE
-#  ifdef __has_include
+//#  ifdef __has_include
+#  if 0
 #    if __has_include(<optional>)                // Check for a standard library
 #     include <optional>
 #     define _CXX17_OPTIONAL_TYPE    std::optional

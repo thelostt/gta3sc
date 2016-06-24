@@ -43,8 +43,6 @@ int main(int argc, char** argv)
     std::string config_name;
     optional<Commands> commands;        // can't construct Commands with no arguments
 
-    _wchdir(L"../..");
-
     ++argv;
 
     if(*argv && **argv != '-')
@@ -354,7 +352,6 @@ int decompile(fs::path input, fs::path output, const Options& options, const Com
     decomp.run_analyzer();
     auto data = decomp.get_data();
 
-    //printf("// %d\n", data.size());
     fprintf(outstream, "%s\n", DecompilerContext(commands, std::move(data)).decompile().c_str());
 
     return 0;

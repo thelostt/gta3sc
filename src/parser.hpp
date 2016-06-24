@@ -135,17 +135,17 @@ public:
         return !this->text().empty();
     }
 
-    size_t SyntaxTree::child_count() const
+    size_t child_count() const
     {
         return this->childs.size();
     }
     
-    const SyntaxTree& SyntaxTree::child(size_t i) const
+    const SyntaxTree& child(size_t i) const
     {
         return *this->childs[i];
     }
 
-    SyntaxTree& SyntaxTree::child(size_t i)
+    SyntaxTree& child(size_t i)
     {
         return *this->childs[i];
     }

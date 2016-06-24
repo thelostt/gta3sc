@@ -30,7 +30,7 @@ public:
     {}
 
 
-    const char* what() const override
+    const char* what() const noexcept override
     {
         return this->pg_error.message().c_str();
     }
