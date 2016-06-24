@@ -57,4 +57,7 @@ add_executable(gta3sc
 
 target_link_libraries(gta3sc cppformat antlr3 stdc++fs)
 
+add_custom_command(TARGET gta3sc POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/config $<TARGET_FILE_DIR:gta3sc>/config)
+
 #install(TARGETS gta3sc RUNTIME DESTINATION bin)
