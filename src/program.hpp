@@ -9,7 +9,7 @@
 #include "symtable.hpp"
 
 struct tag_nocontext_t {};
-constexpr tag_nocontext_t nocontext;
+constexpr tag_nocontext_t nocontext = {};
 
 // TODO better name?
 struct HaltJobException : public std::exception
