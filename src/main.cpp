@@ -43,8 +43,6 @@ int main(int argc, char** argv)
     std::string config_name;
     optional<Commands> commands;        // can't construct Commands with no arguments
 
-    _wchdir(L"../..");
-
     ++argv;
 
     if(*argv && **argv != '-')
