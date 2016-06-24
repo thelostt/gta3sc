@@ -110,7 +110,7 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    throw invalid_opt("arbitrary config names not supported yet");
+                    throw invalid_opt("arbitrary config names not supported yet. Must be 'gta3', 'gtavc' or 'gtasa'");
                 }
             }
             else if(optflag(argv, "half-float", &flag))
