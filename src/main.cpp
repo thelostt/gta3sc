@@ -8,6 +8,7 @@
 #include "decompiler.hpp"
 #include "codegen.hpp"
 #include "program.hpp"
+#include "system.hpp"
 #include "cpp/argv.hpp"
 
 int compile(fs::path input, fs::path output, const Options& options, const Commands& commands);
@@ -163,6 +164,9 @@ int main(int argc, char** argv)
             return EXIT_FAILURE;
         }
     }
+
+    fs::path conf_path = config_path();
+    fprintf(stdout, "Using '%s' as configuration path\n", conf_path.string().c_str());
 
     try
     {
