@@ -1,3 +1,4 @@
+#include "stdinc.h"
 #include "system.hpp"
 
 #ifdef _WIN32
@@ -6,14 +7,13 @@
 
 static fs::path find_config_path()
 {
-#ifdef _WIN32
+#if defined(_WIN32)
     wchar_t szPathBuffer[MAX_PATH];
     DWORD dwResult = GetModuleFileNameW(NULL, szPathBuffer, std::size(szPathBuffer));
     if(dwResult != 0 && dwResult < std::size(szPathBuffer))
     {
         fs::path path(szPathBuffer);
         path.remove_filename();
-        path /= L"../../.."; // TODO remove me, needed only when debug building
         path /= L"config";
         return path;
     }
@@ -21,6 +21,7 @@ static fs::path find_config_path()
 #elif defined(__unix__)
     const char* home_path = std::getenv("HOME");
     std::vector<fs::path> search_path;
+
     // Search path for unix, ordered by priority:
     {
         // In folder of the binary (temporary installations etc.)
@@ -37,14 +38,12 @@ static fs::path find_config_path()
     for(auto& path : search_path)
     {
         if(fs::is_directory(path))
-        {
             return path;
-        }
     }
+
     throw std::runtime_error("find_config_path failed");
 #else
-	// TODO
-	return "../../config";
+#   error find_config_path not implemented for this platform.
 #endif
 }
 

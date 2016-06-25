@@ -1,4 +1,4 @@
-#include <cassert>
+#include "stdinc.h"
 #include "parser.hpp"
 
 // Note: Include those after everything else!
@@ -137,9 +137,11 @@ TokenStream::TokenStream(std::string data_, const char* stream_name)
 
     if(istream)
     {
-        if(this->lexer = gta3scriptLexerNew(istream))
+        this->lexer = gta3scriptLexerNew(istream);
+        if(this->lexer)
         {
-            if(this->tokstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(lexer)))
+            this->tokstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(lexer));
+            if(this->tokstream)
             {
                 this->calc_lines(); // TODO maybe make this call optional?
                 return;
