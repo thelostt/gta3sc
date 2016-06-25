@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
-project(gta3sc)
+project(gta3sc LANGUAGES C CXX)
 
 if(CMAKE_CXX_COMPILER MATCHES "Clang")
   set(CMAKE_COMPILER_IS_CLANGXX 1)

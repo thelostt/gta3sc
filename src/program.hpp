@@ -40,6 +40,10 @@ inline std::string format_error(const char* type,
         message += filename;
         message.push_back(':');
     }
+    else
+    {
+        message += "gta3sc:";
+    }
 
     if(lineno)
     {

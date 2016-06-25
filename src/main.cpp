@@ -36,13 +36,13 @@ enum class Action
 
 int main(int argc, char** argv)
 {
-    // use fprintf(stderr, ...) for error reporting since we don't have a ProgramContext on main.
+    // Due to main() not having a ProgramContext yet, error reporting must be done using fprintf(stderr, ...).
 
     Action action = Action::None;
     Options options;
     fs::path input, output;
     std::string config_name;
-    optional<Commands> commands;        // can't construct Commands with no arguments
+    optional<Commands> commands; // can't construct Commands with no arguments
 
     ++argv;
 
@@ -70,7 +70,10 @@ int main(int argc, char** argv)
             if(**argv != '-')
             {
                 if(!input.empty())
-                    throw invalid_opt("input file appears twice");
+                {
+                    fprintf(stderr, "gta3sc: error: input file appears twice.\n");
+                    return EXIT_FAILURE;
+                }
 
                 input = *argv;
                 ++argv;
@@ -110,7 +113,8 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    throw invalid_opt("arbitrary config names not supported yet. Must be 'gta3', 'gtavc' or 'gtasa'");
+                    fprintf(stderr, "gta3sc: error: arbitrary config names not supported yet, must be 'gta3', 'gtavc' or 'gtasa'.\n");
+                    return EXIT_FAILURE;
                 }
             }
             else if(optflag(argv, "half-float", &flag))
@@ -123,7 +127,8 @@ int main(int argc, char** argv)
             }
             else
             {
-                throw invalid_opt(fmt::format("unregonized argument '{}'", *argv));
+                fprintf(stderr, "gta3sc: error: unregonized argument '%s'\n", *argv);
+                return EXIT_FAILURE;
             }
         }
     }
@@ -166,7 +171,7 @@ int main(int argc, char** argv)
     }
 
     fs::path conf_path = config_path();
-    fprintf(stdout, "Using '%s' as configuration path\n", conf_path.string().c_str());
+    fprintf(stdout, "Using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
 
     try
     {
@@ -175,6 +180,7 @@ int main(int argc, char** argv)
     catch(const ConfigError& e)
     {
         fprintf(stderr, "gta3sc: error: %s\n", e.what());
+        return EXIT_FAILURE;
     }
 
     switch(action)
