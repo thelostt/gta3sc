@@ -6,6 +6,8 @@ This is a native script compiler/decompiler for the so called [gta3script](http:
 
 It's very experimental at the moment and works only for GTA III and GTA Vice City, though it is able to compile lots of scripts, including the ones [War Drum Studios](http://gta.wikia.com/wiki/War_Drum_Studios) left on the GTA III 10th Anniversary release.
 
+Due to its design, it can also be used as a framework for working with SCM data. See the README.md in the [src directory](src) for a technical overview. There's also a experimental Dynamic Recompiler in the [dynarec-x86](https://github.com/thelink2012/gta3sc/tree/dynarec-x86) branch.
+
 ## Building
 
 Windows (MSVC) and Linux (GCC/Clang) are currently supported, but you need the latest compiler toolchain of your platform due to the use of C++17.
