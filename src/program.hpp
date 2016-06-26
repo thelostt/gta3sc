@@ -240,7 +240,7 @@ private:
     }
 
 private:
-    uint32_t error_count = 0;
-    uint32_t fatal_count = 0;
-    uint32_t warn_count  = 0;
+    std::atomic<uint32_t> error_count {0};
+    std::atomic<uint32_t> fatal_count {0};
+    std::atomic<uint32_t> warn_count  {0};
 };
