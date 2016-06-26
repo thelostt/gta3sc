@@ -1,5 +1,9 @@
 /build/
 /debug/
+/test/*.tar.gz
+/test/main-test-gta3/**/*.sc
+/test/main-test-gta3/*.scm
+/test/main-test-gta3/expected.scm.md5
 *.pyc
 *.class
 *.java

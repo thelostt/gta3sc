@@ -27,3 +27,9 @@ script:
   - mkdir build
   - cd build
   - cmake .. && make
+  - cd ..
+  - PATH=$(pwd)/build:$PATH
+  - cd test
+  - sh test.sh
+  - cd ..
+
