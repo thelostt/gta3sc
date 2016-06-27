@@ -183,19 +183,6 @@ int main(int argc, char** argv)
         }
     }
 
-    fs::path conf_path = config_path();
-    fprintf(stdout, "gta3sc: using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
-
-    try
-    {
-        commands = Commands::from_xml({ config_name + "/constants.xml", config_name + "/commands.xml" });
-    }
-    catch(const ConfigError& e)
-    {
-        fprintf(stderr, "gta3sc: error: %s\n", e.what());
-        return EXIT_FAILURE;
-    }
-
     ProgramContext program(options);
 
     if(!datadir.empty())
@@ -227,6 +214,32 @@ int main(int argc, char** argv)
             return EXIT_FAILURE;
         }
     }
+
+    try
+    {
+        std::vector<fs::path> config_files;
+        config_files.reserve(3);
+
+        // order matters
+        config_files.emplace_back(config_name + "/constants.xml");
+        if(datadir.empty()) config_files.emplace_back(config_name + "/default.xml");
+        config_files.emplace_back(config_name + "/commands.xml");
+
+        commands = Commands::from_xml(config_files);
+
+        if(!datadir.empty())
+        {
+            (*commands).add_default_models(program);
+        }
+    }
+    catch(const ConfigError& e)
+    {
+        fprintf(stderr, "gta3sc: error: %s\n", e.what());
+        return EXIT_FAILURE;
+    }
+
+    fs::path conf_path = config_path();
+    fprintf(stdout, "gta3sc: using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
 
     switch(action)
     {
@@ -369,6 +382,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
         // TODO put a error message of compilation failed instead of zeroing output!??!!!
         FILE* f = u8fopen(output, "wb");
         if(f) fclose(f);
+        return EXIT_FAILURE;
     }
 
     return 0;

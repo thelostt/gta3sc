@@ -16,10 +16,10 @@ enum class ArgType : uint8_t
 struct Enum
 {
     // TODO pendantically, only ints are allowed, but maybe later we can add floats and strings.
-    std::map<std::string, int32_t> values;
+    std::map<std::string, int32_t, iless> values;
     bool is_global = false;
 
-    Enum(std::map<std::string, int32_t> values, bool is_global) :
+    Enum(std::map<std::string, int32_t, iless> values, bool is_global) :
         values(std::move(values)), is_global(is_global)
     {}
 
@@ -84,8 +84,8 @@ protected:
     std::multimap<uint16_t, const Command*> commands_by_id; // TODO use shared_ptr<Command>!?
     std::map<std::string, shared_ptr<Enum>> enums;
 
-    shared_ptr<Enum> enum_models;       // may be null
-    shared_ptr<Enum> enum_carpedmodels; // may be null
+    shared_ptr<Enum> enum_models;
+    shared_ptr<Enum> enum_carpedmodels;
 
 public:
     using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
@@ -96,6 +96,10 @@ public:
     ///
     static Commands from_xml(const std::vector<fs::path>& xml_list);
 
+    /// Adds the default models associated with the program context into the CARPEDMODEL enum.
+    ///
+    /// \warning This method is not thread-safe.
+    void add_default_models(const ProgramContext& program);
 
     /// Matches the best command based on the alternators with the command name and arguments given a COMMAND node in the AST.
     ///

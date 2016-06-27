@@ -241,6 +241,9 @@ private:
     std::atomic<uint32_t> fatal_count {0};
     std::atomic<uint32_t> warn_count  {0};
 
+protected:
+    friend struct Commands;
+
     std::map<std::string, uint32_t, iless> default_models;
     std::map<std::string, uint32_t, iless> level_models;
 

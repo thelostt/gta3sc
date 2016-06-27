@@ -15,15 +15,23 @@ Commands::Commands(std::multimap<std::string, Command> commands_, std::map<std::
     auto it_carpedmodel = this->enums.find("CARPEDMODEL");
     auto it_model       = this->enums.find("MODEL");
 
-    if(it_carpedmodel != this->enums.end())
-        this->enum_carpedmodels = it_carpedmodel->second;
+    assert(it_model != this->enums.end());
+    assert(it_carpedmodel != this->enums.end());
 
-    if(it_model != this->enums.end())
-        this->enum_models = it_model->second;
+    this->enum_models = it_model->second;
+    this->enum_carpedmodels = it_carpedmodel->second;
 
     for(auto& pair : this->commands)
     {
         this->commands_by_id.emplace(pair.second.id, &pair.second);
+    }
+}
+
+void Commands::add_default_models(const ProgramContext& program)
+{
+    for(auto& model_pair : program.default_models)
+    {
+        this->enum_carpedmodels->values.emplace(model_pair);
     }
 }
 
@@ -358,7 +366,7 @@ optional<int32_t> Commands::find_constant_for_arg(const std::string& value, cons
 
     // If the enum that the argument accepts is MODEL, and the above didn't find a match,
     // also try on the CARPEDMODEL enum.
-    if(this->enum_carpedmodels && arg.uses_enum(this->enum_models))
+    if(arg.uses_enum(this->enum_models))
     {
         if(auto opt_const = enum_carpedmodels->find(value))
             return opt_const;
@@ -417,8 +425,7 @@ static ArgType xml_to_argtype(const char* string)
         throw ConfigError("Unexpected Type attribute: {}", string);
 }
 
-static std::pair<std::string, shared_ptr<Enum>>
-  parse_enum_node(const rapidxml::xml_node<>* enum_node)
+static void parse_enum_node(std::map<std::string, shared_ptr<Enum>>& enums, const rapidxml::xml_node<>* enum_node)
 {
     using namespace rapidxml;
 
@@ -428,7 +435,19 @@ static std::pair<std::string, shared_ptr<Enum>>
     if(!enum_name_attrib)
         throw ConfigError("Missing Name attrib on <Enum> node");
 
-    std::map<std::string, int32_t> constant_map;
+    bool is_global = xml_to_bool(enum_global_attrib, false);
+    auto eit = enums.find(enum_name_attrib->value());
+    if(eit == enums.end())
+    {
+        auto enum_ptr = std::make_shared<Enum>(Enum { {}, is_global });
+        eit = enums.emplace(enum_name_attrib->value(), std::move(enum_ptr)).first;
+    }
+    else
+    {
+        assert(is_global == eit->second->is_global);
+    }
+
+    std::map<std::string, int32_t, iless>& constant_map = eit->second->values;
     int32_t current_value = 0;
 
     for(auto value_node = enum_node->first_node(); value_node; value_node = value_node->next_sibling())
@@ -448,13 +467,6 @@ static std::pair<std::string, shared_ptr<Enum>>
 
         ++current_value;
     }
-
-    auto enump = std::make_shared<Enum>(Enum {
-        std::move(constant_map),
-        xml_to_bool(enum_global_attrib, false),
-    });
-
-    return { enum_name_attrib->value(), std::move(enump) };
 }
 
 static std::pair<std::string, Command>
@@ -539,6 +551,10 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
     std::multimap<std::string, Command>     commands;
     std::map<std::string, shared_ptr<Enum>> enums;
 
+    // fundamental enums
+    enums.emplace("MODEL", std::make_shared<Enum>(Enum { {}, false, }));
+    enums.emplace("CARPEDMODEL", std::make_shared<Enum>(Enum { {}, false, }));
+
     fs::path conf_path = config_path();
 
     for(auto& xml_path : xml_list)
@@ -586,8 +602,7 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
                     {
                         if(!strcmp(const_node->name(), "Enum"))
                         {
-                            auto enum_pair = parse_enum_node(const_node);
-                            enums.emplace(std::move(enum_pair));
+                            parse_enum_node(enums, const_node);
                         }
                     }
                 }

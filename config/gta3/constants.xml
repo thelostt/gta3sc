@@ -136,14 +136,10 @@
       <Constant Name="CARCOLOUR_RED4" Value="13"/>
     </Enum>
     <Enum Name="CARPEDMODEL">
-      <Constant Name="AMBULAN" Value="106"/>
-      <Constant Name="BELLYUP" Value="132"/>
-      <Constant Name="BFINJECT" Value="114"/>
       <Constant Name="BOAT_GHOST" Value="150"/>
       <Constant Name="BOAT_PREDATOR" Value="120"/>
       <Constant Name="BOAT_REEFER" Value="143"/>
       <Constant Name="BOAT_SPEEDER" Value="142"/>
-      <Constant Name="BORGNINE" Value="148"/>
       <Constant Name="CAR_AMBULANCE" Value="106"/>
       <Constant Name="CAR_BANSHEE" Value="119"/>
       <Constant Name="CAR_BARRACKS" Value="123"/>
@@ -194,20 +190,6 @@
       <Constant Name="CAR_YAKUZA" Value="136"/>
       <Constant Name="CAR_YANKEE" Value="146"/>
       <Constant Name="CAR_YARDIE" Value="135"/>
-      <Constant Name="COLUMB" Value="138"/>
-      <Constant Name="CUT_OBJ1" Value="185"/>
-      <Constant Name="CUT_OBJ2" Value="186"/>
-      <Constant Name="CUT_OBJ3" Value="187"/>
-      <Constant Name="CUT_OBJ4" Value="188"/>
-      <Constant Name="CUT_OBJ5" Value="189"/>
-      <Constant Name="DIABLOS" Value="137"/>
-      <Constant Name="ENFORCER" Value="117"/>
-      <Constant Name="FBICAR" Value="107"/>
-      <Constant Name="FIRETRUK" Value="97"/>
-      <Constant Name="HOODS" Value="139"/>
-      <Constant Name="LANDSTAL" Value="90"/>
-      <Constant Name="MAFIA" Value="134"/>
-      <Constant Name="PATRIOT" Value="96"/>
       <Constant Name="PED_B_MAN1" Value="59"/>
       <Constant Name="PED_B_MAN2" Value="60"/>
       <Constant Name="PED_B_MAN3" Value="61"/>
@@ -253,12 +235,22 @@
       <Constant Name="PED_TAXI_DRIVER" Value="8"/>
       <Constant Name="PLANE_DODO" Value="126"/>
       <Constant Name="PLANE_DEADDODO" Value="141"/>
-      <Constant Name="POLICE" Value="116"/>
-      <Constant Name="RHINO" Value="122"/>
-      <Constant Name="STALLION" Value="129"/>
-      <Constant Name="TOYZ" Value="149"/>
-      <Constant Name="YAKUZA" Value="136"/>
-      <Constant Name="YARDIE" Value="135"/>
+      <Constant Name="WEAPON_AK47" Value="171"/>
+      <Constant Name="WEAPON_BAT" Value="172"/>
+      <Constant Name="WEAPON_COLT45" Value="173"/>
+      <Constant Name="WEAPON_FLAME" Value="181"/>
+      <Constant Name="WEAPON_GRENADE" Value="170"/>
+      <Constant Name="WEAPON_M16" Value="180"/>
+      <Constant Name="WEAPON_MOLOTOV" Value="174"/>
+      <Constant Name="WEAPON_ROCKET" Value="175"/>
+      <Constant Name="WEAPON_SHOTGUN" Value="176"/>
+      <Constant Name="WEAPON_SNIPER" Value="177"/>
+      <Constant Name="WEAPON_UZI" Value="178"/>
+      <Constant Name="CUT_OBJ1" Value="185"/>
+      <Constant Name="CUT_OBJ2" Value="186"/>
+      <Constant Name="CUT_OBJ3" Value="187"/>
+      <Constant Name="CUT_OBJ4" Value="188"/>
+      <Constant Name="CUT_OBJ5" Value="189"/>
     </Enum>
     <Enum Name="CHANGECAMMODE">
       <Constant Name="INTERPOLATION" Value="1"/>
@@ -325,31 +317,6 @@
       <Constant Name="MISSION_NONE" Value="0"/>
       <Constant Name="MISSION_RAMPLAYER_FARAWAY" Value="2"/>
       <Constant Name="MISSION_STOP_FOREVER" Value="11"/>
-    </Enum>
-    <Enum Name="MODEL">
-      <Constant Name="AK47" Value="171"/>
-      <Constant Name="COLT45" Value="173"/>
-      <Constant Name="CUT_OBJ1" Value="185"/>
-      <Constant Name="CUT_OBJ2" Value="186"/>
-      <Constant Name="CUT_OBJ3" Value="187"/>
-      <Constant Name="CUT_OBJ4" Value="188"/>
-      <Constant Name="CUT_OBJ5" Value="189"/>
-      <Constant Name="FLAME" Value="181"/>
-      <Constant Name="GRENADE" Value="170"/>
-      <Constant Name="MOLOTOV" Value="174"/>
-      <Constant Name="SNIPER" Value="177"/>
-      <Constant Name="UZI" Value="178"/>
-      <Constant Name="WEAPON_AK47" Value="171"/>
-      <Constant Name="WEAPON_BAT" Value="172"/>
-      <Constant Name="WEAPON_COLT45" Value="173"/>
-      <Constant Name="WEAPON_FLAME" Value="181"/>
-      <Constant Name="WEAPON_GRENADE" Value="170"/>
-      <Constant Name="WEAPON_M16" Value="180"/>
-      <Constant Name="WEAPON_MOLOTOV" Value="174"/>
-      <Constant Name="WEAPON_ROCKET" Value="175"/>
-      <Constant Name="WEAPON_SHOTGUN" Value="176"/>
-      <Constant Name="WEAPON_SNIPER" Value="177"/>
-      <Constant Name="WEAPON_UZI" Value="178"/>
     </Enum>
     <Enum Name="PARTICLE">
       <Constant Name="PARTICLE_BLOOD_SMALL" Value="5"/>
