@@ -78,6 +78,7 @@ set(GTA3SC_SRC_MAIN
   src/main.cpp
   src/parser.cpp
   src/parser.hpp
+  src/program.cpp
   src/program.hpp
   src/stdinc.h
   src/symtable.cpp

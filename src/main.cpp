@@ -11,8 +11,8 @@
 #include "system.hpp"
 #include "cpp/argv.hpp"
 
-int compile(fs::path input, fs::path output, const Options& options, const Commands& commands);
-int decompile(fs::path input, fs::path output, const Options& options, const Commands& commands);
+int compile(fs::path input, fs::path output, ProgramContext& program, const Commands& commands);
+int decompile(fs::path input, fs::path output, ProgramContext& program, const Commands& commands);
 
 const char* help_message =
 R"(Usage: gta3sc [compile|decompile] file --config=<name> [options]
@@ -22,6 +22,9 @@ Options:
   --config=<name>          Which compilation configurations to use (gta3,gtavc,
                            gtasa). This effectively reads the data files at
                            '/config/<name>/' and sets some appropriate flags.
+  --datadir=<path>         Path to where IDE and DAT files are in.
+                           The compiler will still try to behave properly
+                           without this, but this is still recommended.
   -pedantic                Forbid the usage of extensions not in R* compiler.
   -f[no-]half-float        Whether codegen uses GTA III half-float format.
   -f[no-]text-label-prefix Whether codegen uses GTA SA text label data type.
@@ -43,6 +46,9 @@ int main(int argc, char** argv)
     fs::path input, output;
     std::string config_name;
     optional<Commands> commands; // can't construct Commands with no arguments
+
+    fs::path datadir;
+    const char* levelfile = nullptr;
 
     ++argv;
 
@@ -98,16 +104,19 @@ int main(int argc, char** argv)
                 // TODO instead of hard-coding the flags, use a XML?
                 if(config_name == "gta3")
                 {
+                    levelfile = "gta3.dat";
                     options.use_half_float = true;
                     options.has_text_label_prefix = false;
                 }
                 else if(config_name == "gtavc")
                 {
+                    levelfile = "gta_vc.dat";
                     options.use_half_float = false;
                     options.has_text_label_prefix = false;
                 }
                 else if(config_name == "gtasa")
                 {
+                    levelfile = "gta.dat";
                     options.use_half_float = false;
                     options.has_text_label_prefix = true;
                 }
@@ -116,6 +125,10 @@ int main(int argc, char** argv)
                     fprintf(stderr, "gta3sc: error: arbitrary config names not supported yet, must be 'gta3', 'gtavc' or 'gtasa'.\n");
                     return EXIT_FAILURE;
                 }
+            }
+            else if(const char* path = optget(argv, nullptr, "--datadir", 1))
+            {
+                datadir = path;
             }
             else if(optflag(argv, "half-float", &flag))
             {
@@ -171,7 +184,7 @@ int main(int argc, char** argv)
     }
 
     fs::path conf_path = config_path();
-    fprintf(stdout, "Using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
+    fprintf(stdout, "gta3sc: using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
 
     try
     {
@@ -183,18 +196,50 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    ProgramContext program(options);
+
+    if(!datadir.empty())
+    {
+        if(levelfile == nullptr)
+        {
+            if(fs::exists(datadir / "gta.dat"))
+                levelfile = "gta.dat";
+            else if(fs::exists(datadir / "gta3.dat"))
+                levelfile = "gta3.dat";
+            else if(fs::exists(datadir / "gta_vc.dat"))
+                levelfile = "gta_vc.dat";
+            else
+            {
+                fprintf(stderr, "gta3sc: error: could not find level file (gta*.dat) in datadir '%s'.\n",
+                            datadir.generic_u8string().c_str());
+                return EXIT_FAILURE;
+            }
+        }
+
+        try
+        {
+            program.load_dat(datadir / "default.dat", true);
+            program.load_dat(datadir / levelfile, false);
+        }
+        catch(const ConfigError& e)
+        {
+            fprintf(stderr, "gta3sc: error: %s\n", e.what());
+            return EXIT_FAILURE;
+        }
+    }
+
     switch(action)
     {
         case Action::Compile:
-            return compile(input, output, options, *commands);
+            return compile(input, output, program, *commands);
         case Action::Decompile:
-            return decompile(input, output, options, *commands);
+            return decompile(input, output, program, *commands);
         default:
             Unreachable();
     }
 }
 
-int compile(fs::path input, fs::path output, const Options& options, const Commands& commands)
+int compile(fs::path input, fs::path output, ProgramContext& program, const Commands& commands)
 {
     if(output.empty())
     {
@@ -205,8 +250,6 @@ int compile(fs::path input, fs::path output, const Options& options, const Comma
 
     try {
         std::vector<shared_ptr<Script>> scripts;
-
-        ProgramContext program(options);
 
         //const char* input = "intro.sc";
         //const char* input = "test.sc";
@@ -331,10 +374,8 @@ int compile(fs::path input, fs::path output, const Options& options, const Comma
     return 0;
 }
 
-int decompile(fs::path input, fs::path output, const Options& options, const Commands& commands)
+int decompile(fs::path input, fs::path output, ProgramContext& program, const Commands& commands)
 {
-    ProgramContext program(options);
-
     FILE* outstream;
 
     if(output.empty())
@@ -352,7 +393,7 @@ int decompile(fs::path input, fs::path output, const Options& options, const Com
         if(outstream != stdout) fclose(outstream);
     });
 
-    auto opt_decomp = Disassembler::from_file(options, commands, input);
+    auto opt_decomp = Disassembler::from_file(program, commands, input);
     if(!opt_decomp)
         program.fatal_error(nocontext, "File {} does not exist", input.generic_u8string());
 

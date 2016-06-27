@@ -163,22 +163,19 @@ public:
     ProgramContext(const ProgramContext&) = delete;
     ProgramContext(ProgramContext&&) = delete;
 
-    bool is_model_from_ide(const std::string& name) const
-    {
-        // TODO elaborate
-        if(iequal_to()(name, "PLAYERSDOOR")
-        || iequal_to()(name, "DEADMAN1")
-        || iequal_to()(name, "BACKDOOR")
-        || iequal_to()(name, "HELIX_BARRIER")
-        || iequal_to()(name, "AIRPORTDOOR1")
-        || iequal_to()(name, "AIRPORTDOOR2"))
-            return true;
-        return false;
-    }
+    /// \warning Not thread-safe.
+    /// \throws ConfigError on failure.
+    void load_ide(const fs::path& filepath, bool is_default_ide);
+
+    /// \warning Not thread-safe.
+    /// \throws ConfigError on failure.
+    void load_dat(const fs::path& filepath, bool is_default_dat);
+
+    bool is_model_from_ide(const std::string& name) const;
 
     bool has_error() const
     {
-        return this->error_count > 0;
+        return (this->error_count > 0 || this->fatal_count > 0);
     }
 
     void error(const ProgramError& pg_error)
@@ -243,4 +240,10 @@ private:
     std::atomic<uint32_t> error_count {0};
     std::atomic<uint32_t> fatal_count {0};
     std::atomic<uint32_t> warn_count  {0};
+
+    std::map<std::string, uint32_t, iless> default_models;
+    std::map<std::string, uint32_t, iless> level_models;
+
+    // TODO profile whether unordered_map is faster for the models table on current standard lib impls.
+    // hmmm we'd need to lowercase the string for unordered_map since it hashes...
 };

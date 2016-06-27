@@ -105,8 +105,8 @@ static optional<int32_t> get_imm32(const ArgVariant2&);
 struct Disassembler
 {
 private:
-    const Options config;
-    const Commands&  commands;
+    ProgramContext& program;
+    const Commands& commands;
 
     const uint8_t*  bytecode;
     size_t          bytecode_size;
@@ -130,17 +130,17 @@ private:
 public:
     // undefined behaviour is invoked if data inside `bytecode` is changed while
     // this context object is still alive.
-    Disassembler(Options config, const Commands& commands,
+    Disassembler(ProgramContext& program, const Commands& commands,
                         const uint8_t* bytecode, size_t size) :
         bytecode(bytecode), bytecode_size(size),
-        config(std::move(config)), commands(commands)
+        program(program), commands(commands)
     {
         // This constructor is **ALWAYS** ran, put all common initialization here.
         this->offset_explored.resize(size);
     }
 
-    Disassembler(Options config, const Commands& commands, std::vector<uint8_t> bytecode_) :
-        Disassembler(std::move(config), commands, bytecode_.data(), bytecode_.size())
+    Disassembler(ProgramContext& program, const Commands& commands, std::vector<uint8_t> bytecode_) :
+        Disassembler(program, commands, bytecode_.data(), bytecode_.size())
     {
         this->bytecode_buffer_ = std::move(bytecode_);
     }
@@ -149,10 +149,10 @@ public:
 
     Disassembler(Disassembler&&) = default;
 
-    static optional<Disassembler> from_file(Options config, const Commands& commands, const fs::path& path)
+    static optional<Disassembler> from_file(ProgramContext& program, const Commands& commands, const fs::path& path)
     {
         if(auto opt_bytecode = read_file_binary(path))
-            return Disassembler(config, commands, *opt_bytecode);
+            return Disassembler(program, commands, *opt_bytecode);
         else
             return nullopt;
     }
@@ -382,7 +382,7 @@ private:
                 return nullopt;
 
             // Handle III/VC string arguments
-            if(*opt_argtype > 0x06 && !this->config.has_text_label_prefix)
+            if(*opt_argtype > 0x06 && !this->program.opt.has_text_label_prefix)
             {
                 if(it->type == ArgType::TextLabel)
                 {
@@ -438,7 +438,7 @@ private:
                     break;
 
                 case 0x06: // Float
-                    if(this->config.use_half_float)
+                    if(this->program.opt.use_half_float)
                     {
                         if(!fetch_i16(offset))
                             return nullopt;
@@ -553,7 +553,7 @@ private:
             auto datatype = *fetch_u8(offset++);
 
             // Handle III/VC string arguments
-            if(datatype > 0x06 && !this->config.has_text_label_prefix)
+            if(datatype > 0x06 && !this->program.opt.has_text_label_prefix)
             {
                 if(it->type == ArgType::TextLabel)
                 {
@@ -608,7 +608,7 @@ private:
                     break;
 
                 case 0x06: // Float
-                    if(this->config.use_half_float)
+                    if(this->program.opt.use_half_float)
                     {
                         ccmd.args.emplace_back(*fetch_i16(offset) / 16.0f);
                         offset += sizeof(int16_t);

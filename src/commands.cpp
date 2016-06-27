@@ -274,6 +274,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     {
                         bool is_model_enum = arg.uses_enum(commands.get_models_enum());
                         bool avoid_var = is_model_enum && program.is_model_from_ide(arg_node.text());
+                        // TODO VC miss2 doesn't allow models and vars with same name?
 
                         if(auto opt_var = !avoid_var? symbols.find_var(arg_node.text(), scope_ptr) : nullopt)
                         {
