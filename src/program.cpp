@@ -105,7 +105,7 @@ void ProgramContext::load_ide(const fs::path& filepath, bool is_default_ide)
                     break;
                 }
 
-                if(sscanf_s(buffer, "%u %s", &id, model_name, std::size(model_name)) != EOF)
+                if(sscanf(buffer, "%u %63s", &id, model_name) != EOF)
                 {
                     if(is_default_ide)
                         this->default_models.emplace(model_name, id);
