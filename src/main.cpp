@@ -417,7 +417,7 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
     decomp.run_analyzer();
     auto data = decomp.get_data();
 
-    fprintf(outstream, "%s\n", DecompilerContext(commands, std::move(data)).decompile().c_str());
+    fprintf(outstream, "%s\n", DecompilerContext(commands, std::move(data), scm_header).decompile().c_str());
 
     return 0;
 }

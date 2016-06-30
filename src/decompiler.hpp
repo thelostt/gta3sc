@@ -1,5 +1,5 @@
 // TODO doc comments
-
+#pragma once
 #include "stdinc.h"
 #include "disassembler.hpp"
 #include "flow.hpp"
@@ -14,7 +14,9 @@ struct DecompilerContext
 {
 private:
     std::vector<DecompiledData> data;
+public://
     std::vector<ScriptFlow::Block> blocks;
+    std::vector<ScriptFlow::CfgNode> cfg_nodes;
 
 protected:
     friend std::string decompile_data(const DecompiledCommand& ccmd, DecompilerContext& context);
@@ -29,7 +31,9 @@ public:
         cflow.analyze_header(header);
         cflow.find_indices();
         cflow.find_blocks();
+        cflow.find_edges();
         this->blocks = cflow.get_blocks();
+        this->cfg_nodes = cflow.get_cfg_nodes();
     }
 
     std::string decompile()
@@ -209,6 +213,14 @@ inline std::string decompile_data(const DecompiledData& data, DecompilerContext&
     if(auto block_id = context.block_id_by_data(data))
     {
         output = fmt::format("\n// BLOCK {}\n", *block_id);
+        output += "//     OUT EDGES ";
+        for(auto& x : context.cfg_nodes[*block_id].edges_out)
+            output += fmt::format("{} ", x);
+        output += "\n//     IN  EDGES ";
+        for(auto& x : context.cfg_nodes[*block_id].edges_in)
+            output += fmt::format("{} ", x);
+        output += "\n";
+
         output += visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
     }
     else

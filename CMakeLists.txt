@@ -75,6 +75,7 @@ set(GTA3SC_SRC_MAIN
   src/decompiler.hpp
   src/disassembler.hpp
   src/error.hpp
+  src/flow.hpp
   src/main.cpp
   src/parser.cpp
   src/parser.hpp
