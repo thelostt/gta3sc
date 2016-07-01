@@ -8,6 +8,7 @@
 ///
 #pragma once
 #include "stdinc.h"
+#include "program.hpp"
 #include "symtable.hpp"
 #include "commands.hpp"
 

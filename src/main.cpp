@@ -407,7 +407,6 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
         if(outstream != stdout) fclose(outstream);
     });
 
-    
     auto opt_bytecode = read_file_binary(input);
     if(!opt_bytecode)
         program.fatal_error(nocontext, "File {} does not exist", input.generic_u8string());
@@ -420,32 +419,8 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
 
     DecompiledScmHeader& header = *opt_header;
 
-    std::vector<size_t> mission_offsets_sorted = header.mission_offsets;
-    std::sort(mission_offsets_sorted.begin(), mission_offsets_sorted.end());
-
-
     BinaryFetcher main_segment { bytecode.data(), std::min(bytecode.size(), header.main_size) };
-    std::vector<BinaryFetcher> mission_segments;
-    mission_segments.reserve(header.mission_offsets.size());
-
-    for(size_t i = 0; i < header.mission_offsets.size(); ++i)
-    {
-        size_t mission_offset = header.mission_offsets[i];
-
-        if(mission_offset < header.main_size)
-            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#3)");
-
-        auto it = std::lower_bound(mission_offsets_sorted.begin(), mission_offsets_sorted.end(), mission_offset);
-        if(it == mission_offsets_sorted.end() || *it != mission_offset)
-            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#2)");
-
-        size_t next_mission_offset  = it+1 != mission_offsets_sorted.end()? *(it+1) : bytecode.size();
-
-        if(next_mission_offset > bytecode.size())
-            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#4)");
-
-        mission_segments.emplace_back((bytecode.data() + mission_offset), (next_mission_offset - mission_offset));
-    }
+    std::vector<BinaryFetcher> mission_segments = mission_segment_fetcher(bytecode.data(), bytecode.size(), header, program);
 
     Disassembler main_segment_asm(program, commands, main_segment);
     std::vector<Disassembler> mission_segments_asm;
