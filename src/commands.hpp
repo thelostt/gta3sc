@@ -194,6 +194,12 @@ public:
 
     // --- Important Commands ---
 
+    const Command& script_name() const
+    {
+        // TODO cached
+        return commands.find("SCRIPT_NAME")->second;
+    }
+
     const Command& set_progress_total() const
     {
         // TODO cached

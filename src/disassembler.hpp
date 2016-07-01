@@ -43,7 +43,7 @@ struct DecompiledCommand
 // constrat to CompiledLabelDef
 struct DecompiledLabelDef
 {
-    size_t offset;
+    size_t offset;      //< Local offset
 };
 
 // constrat to CompiledHex
@@ -70,6 +70,8 @@ struct DecompiledScmHeader
         models(std::move(models)), mission_offsets(std::move(mission_offsets))
     {
     }
+
+    static optional<DecompiledScmHeader> from_bytecode(const uint8_t* bytecode, size_t bytecode_size, Version version);
 };
 
 // constrat to CompiledData
@@ -93,14 +95,102 @@ struct DecompiledData
 
 
 /// Gets the immediate 32 bits value of the value inside the variant, or nullopt if not possible.
-///
-/// This function should be overloaded/specialized for each possible value in ArgVariant2.
-///
 template<typename T>
 static optional<int32_t> get_imm32(const T&);
 static optional<int32_t> get_imm32(const ArgVariant2&);
 
+/// Gets the immediate string / text label value of the value inside the variant, or nullopt if not possible.
+template<typename T>
+static optional<std::string> get_immstr(const T&);
+static optional<std::string> get_immstr(const ArgVariant2&);
 
+struct BinaryFetcher
+{
+public:
+    const uint8_t* const bytecode;
+    const size_t         size;
+
+public:
+    explicit BinaryFetcher(const uint8_t* bytecode, size_t size)
+        : bytecode(bytecode), size(size)
+    {}
+
+    optional<uint8_t> fetch_u8(size_t offset)
+    {
+        if(offset + 1 <= size)
+        {
+             return this->bytecode[offset];
+        }
+        return nullopt;
+    }
+
+    optional<uint16_t> fetch_u16(size_t offset)
+    {
+        if(offset + 2 <= size)
+        {
+            return uint16_t(this->bytecode[offset+0]) << 0
+                 | uint16_t(this->bytecode[offset+1]) << 8;
+        }
+        return nullopt;
+    }
+
+    optional<uint32_t> fetch_u32(size_t offset)
+    {
+        if(offset + 4 <= size)
+        {
+            return uint32_t(this->bytecode[offset+0]) << 0
+                 | uint32_t(this->bytecode[offset+1]) << 8
+                 | uint32_t(this->bytecode[offset+2]) << 16
+                 | uint32_t(this->bytecode[offset+3]) << 24;
+        }
+        return nullopt;
+    }
+
+    optional<int8_t> fetch_i8(size_t offset)
+    {
+        if(auto opt = fetch_u8(offset))
+        {
+            return reinterpret_cast<int8_t&>(*opt);
+        }
+        return nullopt;
+    }
+
+    optional<int16_t> fetch_i16(size_t offset)
+    {
+        if(auto opt = fetch_u16(offset))
+        {
+            return reinterpret_cast<int16_t&>(*opt);
+        }
+        return nullopt;
+    }
+
+    optional<int32_t> fetch_i32(size_t offset)
+    {
+        if(auto opt = fetch_u32(offset))
+        {
+            return reinterpret_cast<int32_t&>(*opt);
+        }
+        return nullopt;
+    }
+
+    optional<char*> fetch_chars(size_t offset, size_t count, char* output)
+    {
+        if(offset + count <= size)
+        {
+            std::strncpy(output, reinterpret_cast<const char*>(&this->bytecode[offset]), count);
+            return output;
+        }
+        return nullopt;
+    }
+
+    optional<std::string> fetch_chars(size_t offset, size_t count)
+    {
+        std::string str(count, '\0');
+        if(fetch_chars(offset, count, &str[0]))
+            return str;
+        return nullopt;
+    }
+};
 
 struct Disassembler
 {
@@ -108,8 +198,7 @@ private:
     ProgramContext& program;
     const Commands& commands;
 
-    const uint8_t*  bytecode;
-    size_t          bytecode_size;
+    BinaryFetcher   bf;
 
     dynamic_bitset      offset_explored;
 
@@ -118,55 +207,34 @@ private:
     // must be LIFO
     std::stack<size_t>  to_explore;
 
-    // used when bytecode is allocated by us
-    std::vector<uint8_t>    bytecode_buffer_;
-
     size_t hint_num_ops = 0;
 
     size_t switch_cases_left = 0;
 
-    std::vector<uint32_t> local_offsets;
+    Disassembler& main_asm;
 
 public:
-    // undefined behaviour is invoked if data inside `bytecode` is changed while
+    // undefined behaviour is invoked if data inside `fetcher.bytecode` is changed while
     // this context object is still alive.
-    Disassembler(ProgramContext& program, const Commands& commands,
-                        const uint8_t* bytecode, size_t size) :
-        bytecode(bytecode), bytecode_size(size),
-        program(program), commands(commands)
+    Disassembler(ProgramContext& program, const Commands& commands, BinaryFetcher fetcher, Disassembler& main_asm) :
+        bf(std::move(fetcher)), program(program), commands(commands), main_asm(main_asm)
     {
         // This constructor is **ALWAYS** ran, put all common initialization here.
-        this->offset_explored.resize(size);
+        this->offset_explored.resize(bf.size);
     }
 
-    Disassembler(ProgramContext& program, const Commands& commands, std::vector<uint8_t> bytecode_) :
-        Disassembler(program, commands, bytecode_.data(), bytecode_.size())
+    Disassembler(ProgramContext& program, const Commands& commands, BinaryFetcher fetcher) :
+        Disassembler(program, commands, std::move(fetcher), *this)
     {
-        this->bytecode_buffer_ = std::move(bytecode_);
     }
 
     Disassembler(const Disassembler&) = delete;
 
     Disassembler(Disassembler&&) = default;
 
-    static optional<Disassembler> from_file(ProgramContext& program, const Commands& commands, const fs::path& path)
+    bool is_main_segment() const
     {
-        if(auto opt_bytecode = read_file_binary(path))
-            return Disassembler(program, commands, *opt_bytecode);
-        else
-            return nullopt;
-    }
-
-    void analyze_header(const DecompiledScmHeader& header)
-    {
-        this->local_offsets = header.mission_offsets;
-
-        std::sort(local_offsets.begin(), local_offsets.end());
-
-        for(auto it = local_offsets.rbegin(); it != local_offsets.rend(); ++it)
-        {
-            this->to_explore.emplace(*it);
-        }
+        return this == &main_asm;
     }
 
     void run_analyzer()
@@ -175,13 +243,13 @@ public:
         this->analyze();
     }
 
-    std::vector<DecompiledData> get_data()
+    std::vector<DecompiledData> disassembly()
     {
         std::vector<DecompiledData> output;
 
         output.reserve(this->hint_num_ops + 16); // +16 for unknown/hex areas
 
-        for(size_t offset = 0; offset < bytecode_size; )
+        for(size_t offset = 0; offset < bf.size; )
         {
             if(this->label_offsets.count(offset))
             {
@@ -196,7 +264,7 @@ public:
             else
             {
                 auto begin_offset = offset++;
-                for(; offset < bytecode_size; ++offset)
+                for(; offset < bf.size; ++offset)
                 {
                     // repeat this loop until a label offset or a explored offset is found, then break.
                     //
@@ -207,74 +275,14 @@ public:
                         break;
                 }
 
-                output.emplace_back(begin_offset, std::vector<uint8_t>(this->bytecode + begin_offset, this->bytecode + offset));
+                output.emplace_back(begin_offset, std::vector<uint8_t>(bf.bytecode + begin_offset, bf.bytecode + offset));
             }
         }
 
         return output;
     }
 
-    optional<DecompiledScmHeader> read_header(DecompiledScmHeader::Version version)
-    {
-        assert(version == DecompiledScmHeader::Version::Liberty
-            || version == DecompiledScmHeader::Version::Miami);
-
-        try
-        {
-            // TODO check if start of segs is 02 00 01
-
-            auto seg1_offset = 0u;
-            auto seg2_offset = fetch_u32(seg1_offset + 3).value();
-            auto seg3_offset = fetch_u32(seg2_offset + 3).value();
-
-            uint32_t size_globals = seg2_offset;
-
-            std::vector<std::string> models;
-            size_t num_models = static_cast<size_t>((std::max)(1u, fetch_u32(seg2_offset + 8 + 0).value()) - 1);
-            models.reserve(num_models);
-            for(size_t i = 0; i < num_models; ++i)
-            {
-                auto model_name = fetch_chars(seg2_offset + 8 + 4 + 24 + (24 * i), 24).value();
-                models.emplace_back(std::move(model_name));
-            }
-
-            auto main_size = fetch_u32(seg3_offset + 8 + 0).value();
-            auto num_missions = fetch_u16(seg3_offset + 8 + 8).value();
-
-            std::vector<uint32_t> mission_offsets;
-            for(size_t i = 0; i < num_missions; ++i)
-            {
-                mission_offsets.emplace_back(fetch_u32(seg3_offset + 8 + 8 + 4 + (4 *i)).value());
-            }
-
-            return DecompiledScmHeader { version, size_globals, std::move(models), main_size, std::move(mission_offsets) };
-        }
-        catch(const bad_optional_access&)
-        {
-            // the header is incorrect or broken
-            return nullopt;
-        }
-    }
-
-
 private:
-
-    uint32_t get_absolute_offset(uint32_t addressed_from, int32_t offset)
-    {
-        if(offset >= 0)
-            return offset;
-
-        auto it = std::upper_bound(this->local_offsets.begin(), this->local_offsets.end(), addressed_from);
-        if(it != this->local_offsets.begin())
-        {
-            return *(--it) + (-offset);
-        }
-        else
-        {
-            // it's not possible to have a local offset on this location, TODO?
-            return -offset;
-        }
-    }
 
     void analyze()
     {
@@ -289,7 +297,7 @@ private:
 
     void explore(size_t offset)
     {
-        if(offset >= bytecode_size)
+        if(offset >= bf.size)
         {
             // hm, there's a jump outer of code...
             // ...or we're not detecting flow instructions properly.
@@ -301,7 +309,7 @@ private:
         if(offset_explored[offset])
             return; // already explored
 
-        if(auto opt_cmdid = fetch_u16(offset))
+        if(auto opt_cmdid = bf.fetch_u16(offset))
         {
             bool not_flag = (*opt_cmdid & 0x8000) != 0;
             if(auto opt_cmd = this->commands.find_command(*opt_cmdid & 0x7FFF))
@@ -349,9 +357,7 @@ private:
                         --this->switch_cases_left;
                 }
 
-                uint32_t absolute_value = this->get_absolute_offset(op_offset, value);
-                interesting_offsets.emplace(absolute_value);
-                label_offsets.emplace(absolute_value);
+                interesting_offsets.emplace(value);
             }
         };
 
@@ -364,134 +370,139 @@ private:
 
         // TODO optimize out fetches here to just check offset + N
 
-        for(auto it = command.args.begin();
-            !stop_it && it != command.args.end();
-            (it->optional? it : ++it), ++argument_id)
+        try
         {
-            if(it->type == ArgType::Buffer128)
+            for(auto it = command.args.begin();
+                !stop_it && it != command.args.end();
+                (it->optional? it : ++it), ++argument_id)
             {
-                if(!fetch_chars(offset, 128))
-                    return nullopt;
-                offset += 128;
-                continue;
-            }
-
-            optional<uint8_t> opt_argtype = fetch_u8(offset++);
-
-            if(!opt_argtype)
-                return nullopt;
-
-            // Handle III/VC string arguments
-            if(*opt_argtype > 0x06 && !this->program.opt.has_text_label_prefix)
-            {
-                if(it->type == ArgType::TextLabel)
+                if(it->type == ArgType::Buffer128)
                 {
-                    offset = offset - 1; // there was no data type, remove one byte
-                    if(!fetch_chars(offset, 8))
-                        return nullopt;
-                    offset += 8;
+                    bf.fetch_chars(offset, 128).value();
+                    offset += 128;
                     continue;
                 }
-                return nullopt;
-            }
 
-            switch(*opt_argtype)
-            {
-                case 0x00: // EOA (end of args)
-                    if(!it->optional)
-                        return nullopt;
-                    stop_it = true;
-                    break;
+                optional<uint8_t> opt_argtype = bf.fetch_u8(offset++);
 
-                case 0x01: // Int32
-                    if(auto opt = fetch_i32(offset))
+                if(!opt_argtype)
+                    return nullopt;
+
+                // Handle III/VC string arguments
+                if(*opt_argtype > 0x06 && !this->program.opt.has_text_label_prefix)
+                {
+                    if(it->type == ArgType::TextLabel)
                     {
-                        check_for_imm32(*opt, *it);
+                        offset = offset - 1; // there was no data type, remove one byte
+                        bf.fetch_chars(offset, 8).value();
+                        offset += 8;
+                        continue;
+                    }
+                    return nullopt;
+                }
+
+                switch(*opt_argtype)
+                {
+                    case 0x00: // EOA (end of args)
+                        if(!it->optional)
+                            return nullopt;
+                        stop_it = true;
+                        break;
+
+                    case 0x01: // Int32
+                    {
+                        int32_t imm32 = bf.fetch_i32(offset).value();
+                        check_for_imm32(imm32, *it);
                         offset += sizeof(int32_t);
                         break;
                     }
-                    return nullopt;
 
-                case 0x04: // Int8
-                    if(auto opt = fetch_i8(offset))
+                    case 0x04: // Int8
                     {
-                        check_for_imm32(*opt, *it);
+                        int8_t imm8 = bf.fetch_i8(offset).value();
+                        check_for_imm32(imm8, *it);
                         offset += sizeof(int8_t);
                         break;
                     }
-                    return nullopt;
 
-                case 0x05: // Int16
-                    if(auto opt = fetch_i16(offset))
+                    case 0x05: // Int16
                     {
-                        check_for_imm32(*opt, *it);
+                        int16_t imm16 = bf.fetch_i16(offset).value();
+                        check_for_imm32(imm16, *it);
                         offset += sizeof(int16_t);
                         break;
                     }
-                    return nullopt;
 
-                case 0x02: // Global Int/Float Var
-                case 0x03: // Local Int/Float Var
-                    if(!fetch_u16(offset))
-                        return nullopt;
-                    offset += sizeof(uint16_t);
-                    break;
+                    case 0x02: // Global Int/Float Var
+                    case 0x03: // Local Int/Float Var
+                        bf.fetch_u16(offset).value();
+                        offset += sizeof(uint16_t);
+                        break;
 
-                case 0x06: // Float
-                    if(this->program.opt.use_half_float)
+                    case 0x06: // Float
+                        if(this->program.opt.use_half_float)
+                        {
+                            bf.fetch_i16(offset).value();
+                            offset += sizeof(int16_t);
+                        }
+                        else
+                        {
+                            bf.fetch_u32(offset).value();
+                            offset += sizeof(uint32_t);
+                        }
+                        break;
+
+                    //
+                    // The following cases will not get to run on III/VC
+                    //
+
+                    case 0x09: // Immediate 8-byte string
+                        bf.fetch_chars(offset, 8).value();
+                        offset += 8;
+                        break;
+
+                    case 0x0F: // Immediate 16-byte string
+                        bf.fetch_chars(offset, 16).value();
+                        offset += 16;
+                        break;
+
+                    case 0x0E: // Immediate variable-length string
                     {
-                        if(!fetch_i16(offset))
-                            return nullopt;
-                        offset += sizeof(int16_t);
-                    }
-                    else
-                    {
-                        if(!fetch_u32(offset))
-                            return nullopt;
-                        offset += sizeof(uint32_t);
-                    }
-                    break;
-
-                //
-                // The following cases will not get to run on III/VC
-                //
-
-                case 0x09: // Immediate 8-byte string
-                    if(!fetch_chars(offset, 8))
-                        return nullopt;
-                    offset += 8;
-                    break;
-
-                case 0x0F: // Immediate 16-byte string
-                    if(!fetch_chars(offset, 16))
-                        return nullopt;
-                    offset += 16;
-                    break;
-
-                case 0x0E: // Immediate variable-length string
-                {
-                    if(auto opt_count = fetch_u8(offset))
-                    {
-                        if(!fetch_chars(offset+1, *opt_count))
-                            return nullopt;
-                        offset += *opt_count+1;
+                        uint8_t count = bf.fetch_u8(offset).value();
+                        bf.fetch_chars(offset+1, count).value();
+                        offset += (count+1);
                         break;
                     }
-                    return nullopt;
+
+                    // TODO add rest of data types SA specific
+
+                    default:
+                        return nullopt;
                 }
-
-                // TODO add rest of data types SA specific
-
-                default:
-                    return nullopt;
             }
+        }
+        catch(const bad_optional_access&)
+        {
+            // opcode is incorrect or broken
+            return nullopt;
         }
 
         // OK, opcode is not ill formed, we can push up the new offsets to explore
         while(!interesting_offsets.empty())
         {
-            this->to_explore.emplace(interesting_offsets.top());
+            int32_t label_param = interesting_offsets.top();
             interesting_offsets.pop();
+
+            if(label_param >= 0)
+            {
+                main_asm.to_explore.emplace(label_param);
+                main_asm.label_offsets.emplace(label_param);
+            }
+            else
+            {
+                this->to_explore.emplace(-label_param);
+                this->label_offsets.emplace(-label_param);
+            }
         }
 
         // add next instruction as the next thing to be explored, if this isn't a instruction that
@@ -527,7 +538,7 @@ private:
     // before it runs, `explore_opcode` ran, meaning everything is alright.
     DecompiledData opcode_to_data(size_t& offset)
     {
-        auto cmdid     = *fetch_u16(offset);
+        auto cmdid     = *bf.fetch_u16(offset);
         bool not_flag  = (cmdid & 0x8000) != 0;
         const Command& command = *this->commands.find_command(cmdid & 0x7FFF);
 
@@ -545,12 +556,12 @@ private:
         {
             if(it->type == ArgType::Buffer128)
             {
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*fetch_chars(offset, 128)) });
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*bf.fetch_chars(offset, 128)) });
                 offset += 128;
                 continue;
             }
 
-            auto datatype = *fetch_u8(offset++);
+            auto datatype = *bf.fetch_u8(offset++);
 
             // Handle III/VC string arguments
             if(datatype > 0x06 && !this->program.opt.has_text_label_prefix)
@@ -558,7 +569,7 @@ private:
                 if(it->type == ArgType::TextLabel)
                 {
                     offset = offset - 1; // there was no data type, remove one byte
-                    ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
+                    ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, std::move(*bf.fetch_chars(offset, 8)) });
                     offset += 8;
                     continue;
                 }
@@ -575,7 +586,7 @@ private:
 
                 case 0x01: // Int32
                 {
-                    auto i32 = *fetch_i32(offset);
+                    auto i32 = *bf.fetch_i32(offset);
                     offset += sizeof(int32_t);
                     ccmd.args.emplace_back(i32);
                     break;
@@ -583,7 +594,7 @@ private:
 
                 case 0x04: // Int8
                 {
-                    auto i8 = *fetch_i8(offset);
+                    auto i8 = *bf.fetch_i8(offset);
                     offset += sizeof(int8_t);
                     ccmd.args.emplace_back(i8);
                     break;
@@ -591,26 +602,26 @@ private:
 
                 case 0x05: // Int16
                 {
-                    auto i16 = *fetch_i16(offset);
+                    auto i16 = *bf.fetch_i16(offset);
                     offset += sizeof(int16_t);
                     ccmd.args.emplace_back(i16);
                     break;
                 }
 
                 case 0x02: // Global Int/Float Var
-                    ccmd.args.emplace_back(DecompiledVar { true, *fetch_u16(offset) });
+                    ccmd.args.emplace_back(DecompiledVar { true, *bf.fetch_u16(offset) });
                     offset += sizeof(uint16_t);
                     break;
 
                 case 0x03: // Local Int/Float Var
-                    ccmd.args.emplace_back(DecompiledVar { false, *fetch_u16(offset) * 4u });
+                    ccmd.args.emplace_back(DecompiledVar { false, *bf.fetch_u16(offset) * 4u });
                     offset += sizeof(uint16_t);
                     break;
 
                 case 0x06: // Float
                     if(this->program.opt.use_half_float)
                     {
-                        ccmd.args.emplace_back(*fetch_i16(offset) / 16.0f);
+                        ccmd.args.emplace_back(*bf.fetch_i16(offset) / 16.0f);
                         offset += sizeof(int16_t);
                     }
                     else
@@ -618,7 +629,7 @@ private:
                         static_assert(std::numeric_limits<float>::is_iec559
                             && sizeof(float) == sizeof(uint32_t), "IEEE 754 floating point expected.");
 
-                        ccmd.args.emplace_back(reinterpret_cast<const float&>(*fetch_u32(offset)));
+                        ccmd.args.emplace_back(reinterpret_cast<const float&>(*bf.fetch_u32(offset)));
                         offset += sizeof(uint32_t);
                     }
                     break;
@@ -629,19 +640,19 @@ private:
                 //
 
                 case 0x09: // Immediate 8-byte string
-                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*bf.fetch_chars(offset, 8)) });
                     offset += 8;
                     break;
 
                 case 0x0F: // Immediate 16-byte string
-                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 16)) });
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*bf.fetch_chars(offset, 16)) });
                     offset += 16;
                     break;
 
                 case 0x0E: // Immediate variable-length string
                 {
-                    auto count = *fetch_u8(offset);
-                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset+1, count)) });
+                    auto count = *bf.fetch_u8(offset);
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*bf.fetch_chars(offset+1, count)) });
                     offset += count + 1;
                     break;
                 }
@@ -654,92 +665,6 @@ private:
         }
 
         return DecompiledData(start_offset, std::move(ccmd));
-    }
-
-
-
-
-
-
-
-
-
-
-
-    optional<uint8_t> fetch_u8(size_t offset)
-    {
-        if(offset + 1 <= bytecode_size)
-        {
-             return this->bytecode[offset];
-        }
-        return nullopt;
-    }
-
-    optional<uint16_t> fetch_u16(size_t offset)
-    {
-        if(offset + 2 <= bytecode_size)
-        {
-            return uint16_t(this->bytecode[offset+0]) << 0
-                 | uint16_t(this->bytecode[offset+1]) << 8;
-        }
-        return nullopt;
-    }
-
-    optional<uint32_t> fetch_u32(size_t offset)
-    {
-        if(offset + 4 <= bytecode_size)
-        {
-            return uint32_t(this->bytecode[offset+0]) << 0
-                 | uint32_t(this->bytecode[offset+1]) << 8
-                 | uint32_t(this->bytecode[offset+2]) << 16
-                 | uint32_t(this->bytecode[offset+3]) << 24;
-        }
-        return nullopt;
-    }
-
-    optional<int8_t> fetch_i8(size_t offset)
-    {
-        if(auto opt = fetch_u8(offset))
-        {
-            return reinterpret_cast<int8_t&>(*opt);
-        }
-        return nullopt;
-    }
-
-    optional<int16_t> fetch_i16(size_t offset)
-    {
-        if(auto opt = fetch_u16(offset))
-        {
-            return reinterpret_cast<int16_t&>(*opt);
-        }
-        return nullopt;
-    }
-
-    optional<int32_t> fetch_i32(size_t offset)
-    {
-        if(auto opt = fetch_u32(offset))
-        {
-            return reinterpret_cast<int32_t&>(*opt);
-        }
-        return nullopt;
-    }
-
-    optional<char*> fetch_chars(size_t offset, size_t count, char* output)
-    {
-        if(offset + count <= bytecode_size)
-        {
-            std::strncpy(output, reinterpret_cast<const char*>(&this->bytecode[offset]), count);
-            return output;
-        }
-        return nullopt;
-    }
-
-    optional<std::string> fetch_chars(size_t offset, size_t count)
-    {
-        std::string str(count, '\0');
-        if(fetch_chars(offset, count, &str[0]))
-            return str;
-        return nullopt;
     }
 };
 
@@ -789,4 +714,101 @@ inline optional<int32_t> get_imm32(const float& flt)
 inline optional<int32_t> get_imm32(const ArgVariant2& varg)
 {
     return visit_one(varg, [&](const auto& arg) { return ::get_imm32(arg); });
+}
+
+inline optional<std::string> get_immstr(const EOAL&)
+{
+    return nullopt;
+}
+
+inline optional<std::string> get_immstr(const DecompiledVar&)
+{
+    return nullopt;
+}
+
+inline optional<std::string> get_immstr(const DecompiledVarArray&)
+{
+    return nullopt;
+}
+
+inline optional<std::string> get_immstr(const DecompiledString& s)
+{
+    // TODO unescape storage
+    // TODO for varlen strings don't search for \0, just unescape
+    auto nul_it = std::find(s.storage.begin(), s.storage.end(), '\0');
+    return std::string(s.storage.begin(), nul_it);
+}
+
+inline optional<std::string> get_immstr(const int8_t&)
+{
+    return nullopt;
+}
+
+inline optional<std::string> get_immstr(const int16_t&)
+{
+    return nullopt;
+}
+
+inline optional<std::string> get_immstr(const int32_t&)
+{
+    return nullopt;
+}
+
+inline optional<std::string> get_immstr(const float&)
+{
+    return nullopt;
+}
+
+inline optional<std::string> get_immstr(const ArgVariant2& varg)
+{
+    return visit_one(varg, [&](const auto& arg) { return ::get_immstr(arg); });
+}
+
+
+
+
+
+
+inline optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const uint8_t* bytecode, size_t bytecode_size, Version version)
+{
+    assert(version == DecompiledScmHeader::Version::Liberty
+        || version == DecompiledScmHeader::Version::Miami);
+
+    try
+    {
+        // TODO check if start of segs is 02 00 01
+
+        BinaryFetcher bf(bytecode, bytecode_size);
+
+        auto seg1_offset = 0u;
+        auto seg2_offset = bf.fetch_u32(seg1_offset + 3).value();
+        auto seg3_offset = bf.fetch_u32(seg2_offset + 3).value();
+
+        uint32_t size_globals = seg2_offset;
+
+        std::vector<std::string> models;
+        size_t num_models = static_cast<size_t>((std::max)(1u, bf.fetch_u32(seg2_offset + 8 + 0).value()) - 1);
+        models.reserve(num_models);
+        for(size_t i = 0; i < num_models; ++i)
+        {
+            auto model_name = bf.fetch_chars(seg2_offset + 8 + 4 + 24 + (24 * i), 24).value();
+            models.emplace_back(std::move(model_name));
+        }
+
+        auto main_size    = bf.fetch_u32(seg3_offset + 8 + 0).value();
+        auto num_missions = bf.fetch_u16(seg3_offset + 8 + 8).value();
+
+        std::vector<uint32_t> mission_offsets;
+        for(size_t i = 0; i < num_missions; ++i)
+        {
+            mission_offsets.emplace_back(bf.fetch_u32(seg3_offset + 8 + 8 + 4 + (4 *i)).value());
+        }
+
+        return DecompiledScmHeader { version, size_globals, std::move(models), main_size, std::move(mission_offsets) };
+    }
+    catch(const bad_optional_access&)
+    {
+        // the header is incorrect or broken
+        return nullopt;
+    }
 }

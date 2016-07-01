@@ -407,17 +407,72 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
         if(outstream != stdout) fclose(outstream);
     });
 
-    auto opt_decomp = Disassembler::from_file(program, commands, input);
-    if(!opt_decomp)
+    
+    auto opt_bytecode = read_file_binary(input);
+    if(!opt_bytecode)
         program.fatal_error(nocontext, "File {} does not exist", input.generic_u8string());
 
-    Disassembler decomp(std::move(*opt_decomp));
-    auto scm_header = decomp.read_header(DecompiledScmHeader::Version::Liberty).value();
-    decomp.analyze_header(scm_header);
-    decomp.run_analyzer();
-    auto data = decomp.get_data();
+    std::vector<uint8_t>& bytecode = *opt_bytecode;
 
-    fprintf(outstream, "%s\n", DecompilerContext(commands, std::move(data), scm_header).decompile().c_str());
+    auto opt_header = DecompiledScmHeader::from_bytecode(bytecode.data(), bytecode.size(), DecompiledScmHeader::Version::Liberty);
+    if(!opt_header)
+        program.fatal_error(nocontext, "XXX Corrupted SCM Header (#1)");
+
+    DecompiledScmHeader& header = *opt_header;
+
+    std::vector<size_t> mission_offsets_sorted = header.mission_offsets;
+    std::sort(mission_offsets_sorted.begin(), mission_offsets_sorted.end());
+
+
+    BinaryFetcher main_segment { bytecode.data(), std::min(bytecode.size(), header.main_size) };
+    std::vector<BinaryFetcher> mission_segments;
+    mission_segments.reserve(header.mission_offsets.size());
+
+    for(size_t i = 0; i < header.mission_offsets.size(); ++i)
+    {
+        size_t mission_offset = header.mission_offsets[i];
+
+        if(mission_offset < header.main_size)
+            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#3)");
+
+        auto it = std::lower_bound(mission_offsets_sorted.begin(), mission_offsets_sorted.end(), mission_offset);
+        if(it == mission_offsets_sorted.end() || *it != mission_offset)
+            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#2)");
+
+        size_t next_mission_offset  = it+1 != mission_offsets_sorted.end()? *(it+1) : bytecode.size();
+
+        if(next_mission_offset > bytecode.size())
+            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#4)");
+
+        mission_segments.emplace_back((bytecode.data() + mission_offset), (next_mission_offset - mission_offset));
+    }
+
+    Disassembler main_segment_asm(program, commands, main_segment);
+    std::vector<Disassembler> mission_segments_asm;
+    mission_segments_asm.reserve(header.mission_offsets.size());
+
+    // this loop cannot be thread safely unfolded because of main_segment_asm being
+    // mutated on all the units.
+    for(auto& mission_bytecode : mission_segments)
+    {
+        mission_segments_asm.emplace_back(program, commands, mission_bytecode, main_segment_asm);
+        mission_segments_asm.back().run_analyzer();
+    }
+
+
+    {
+        main_segment_asm.run_analyzer();
+        std::string output = DecompilerContext(commands, main_segment_asm.disassembly(), 0).decompile();
+        fprintf(outstream, "/***** Main Segment *****/\n%s\n", output.c_str());
+    }
+
+    for(size_t i = 0; i < mission_segments_asm.size(); ++i)
+    {
+        auto& mission_asm = mission_segments_asm[i];
+        mission_asm.run_analyzer();
+        std::string output = DecompilerContext(commands, mission_asm.disassembly(), 1+i).decompile();
+        fprintf(outstream, "/***** Mission Segment %d *****/\n%s\n", (int)(i), output.c_str());
+    }
 
     return 0;
 }

@@ -20,20 +20,25 @@ public://
 
 protected:
     friend std::string decompile_data(const DecompiledCommand& ccmd, DecompilerContext& context);
+    friend std::string decompile_data(const DecompiledLabelDef& label, DecompilerContext& context);
 
     const Commands& commands;
 
+    size_t unique_id; //< Helper for labels
+    std::string script_name;
+
 public:
-    DecompilerContext(const Commands& commands, std::vector<DecompiledData> decompiled, const DecompiledScmHeader& header)
-        : commands(commands), data(std::move(decompiled))
+    DecompilerContext(const Commands& commands, std::vector<DecompiledData> decompiled, size_t unique_id)
+        : commands(commands), data(std::move(decompiled)), unique_id(unique_id)
     {
+        /*
         ScriptFlow cflow(this->data);
         cflow.analyze_header(header);
         cflow.find_indices();
         cflow.find_blocks();
         cflow.find_edges();
         this->blocks = cflow.get_blocks();
-        this->cfg_nodes = cflow.get_cfg_nodes();
+        this->cfg_nodes = cflow.get_cfg_nodes();*/
     }
 
     std::string decompile()
@@ -180,14 +185,29 @@ inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerConte
         output.push_back(' ');
     }
 
+    if(cmd_name == "SCRIPT_NAME" && ccmd.args.size() >= 1)
+    {
+        context.script_name = get_immstr(ccmd.args[0]).value_or("");
+    }
+
     output.push_back('\n');
     return output;
 }
 
-inline std::string decompile_data(const DecompiledLabelDef& label, DecompilerContext&)
+inline std::string decompile_data(const DecompiledLabelDef& label, DecompilerContext& context)
 {
-    // TODO
-    return fmt::format("\nLABEL_{}:\n", label.offset);
+    if(context.script_name.empty())
+    {
+        if(context.unique_id == 0)
+            return fmt::format("\nLABEL_{}:\n", label.offset);
+        else
+            return fmt::format("\nLABEL_{}_{}:\n", context.unique_id, label.offset);
+    }
+    else
+    {
+        auto test = fmt::format("\n{}_{}:\n", context.script_name, label.offset);
+        return test;
+    }
 }
 
 inline std::string decompile_data(const DecompiledHex& hex, DecompilerContext&)
@@ -210,6 +230,7 @@ inline std::string decompile_data(const DecompiledData& data, DecompilerContext&
 {
     std::string output;
 
+    /*
     if(auto block_id = context.block_id_by_data(data))
     {
         output = fmt::format("\n// BLOCK {}\n", *block_id);
@@ -223,7 +244,7 @@ inline std::string decompile_data(const DecompiledData& data, DecompilerContext&
 
         output += visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
     }
-    else
+    else*/
     {
         output = visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
     }
