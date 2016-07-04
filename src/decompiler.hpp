@@ -15,8 +15,6 @@ struct DecompilerContext
 private:
     std::vector<DecompiledData> data;
 public://
-    std::vector<ScriptFlow::Block> blocks;
-    std::vector<ScriptFlow::CfgNode> cfg_nodes;
 
 protected:
     friend std::string decompile_data(const DecompiledCommand& ccmd, DecompilerContext& context);
@@ -28,6 +26,7 @@ protected:
     std::string script_name;
 
 public:
+    // TODO this takes a copy of the vector<DecompiledData>, maybe take ref?
     DecompilerContext(const Commands& commands, std::vector<DecompiledData> decompiled, size_t unique_id)
         : commands(commands), data(std::move(decompiled)), unique_id(unique_id)
     {
@@ -51,6 +50,14 @@ public:
         return output;
     }
 
+    static std::string decompile(const DecompiledData& d, const Commands& commands)
+    {
+        // TODO improve (constructing a vector every time)
+        DecompilerContext tmp(commands, { d }, 0);
+        return ::decompile_data(d, tmp);
+    }
+
+    /*
     optional<int32_t> block_id_by_data(const DecompiledData& data)
     {
         size_t decomp_index = (&data - &this->data[0]);
@@ -62,7 +69,7 @@ public:
                 return i;
         }
         return nullopt;
-    }
+    }*/
 
 };
 

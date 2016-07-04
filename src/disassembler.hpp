@@ -231,6 +231,9 @@ private:
     /// This reference may be pointing to *this.
     Disassembler&       main_asm;
 
+    /// The result of disassemblying
+    std::vector<DecompiledData> decompiled;
+
 public:
     /// Constructs assuming `main_asm` to be the main code segment.
     ///
@@ -267,7 +270,14 @@ public:
     void run_analyzer();
 
     /// Step 2. After analyzes, disassembly into a vector of pseudo-instructions.
-    std::vector<DecompiledData> disassembly();
+    void disassembly();
+
+    /// Step 3. Get reference to output.
+    const std::vector<DecompiledData>& get_data() const { return this->decompiled; }
+
+    /// After Step 3. the following is available also.
+    /// Gets index on get_data() vector based on a local offset.
+    optional<size_t> get_dataindex(uint32_t local_offset) const;
 
 private:
 

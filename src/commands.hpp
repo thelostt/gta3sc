@@ -230,6 +230,12 @@ public:
         return commands.find("SWITCH_CONTINUED")->second;
     }
 
+    const Command& gosub() const
+    {
+        // TODO cached
+        return commands.find("GOSUB")->second;
+    }
+
     const Command& gosub_file() const
     {
         // TODO cached
@@ -287,6 +293,12 @@ public:
     {
         // TODO cached
         return commands.find("GOTO_IF_FALSE")->second;
+    }
+
+    const Command& goto_if_true() const
+    {
+        // TODO cached
+        return commands.find("GOTO_IF_TRUE")->second;
     }
 
     const Command& andor() const

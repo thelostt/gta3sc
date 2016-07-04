@@ -138,6 +138,14 @@ int main(int argc, char** argv)
             {
                 options.has_text_label_prefix = flag;
             }
+            else if(optget(argv, nullptr, "--graphviz-control-flow", 0))
+            {
+                options.graphviz_control_flow = true;
+            }
+            else if(const char* name = optget(argv, nullptr, "--graphviz-only-script", 1))
+            {
+                options.graphviz_only_script = name;
+            }
             else
             {
                 fprintf(stderr, "gta3sc: error: unregonized argument '%s'\n", *argv);
@@ -239,7 +247,7 @@ int main(int argc, char** argv)
     }
 
     fs::path conf_path = config_path();
-    fprintf(stdout, "gta3sc: using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
+    fprintf(stderr, "gta3sc: using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
 
     switch(action)
     {
@@ -434,19 +442,93 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
         mission_segments_asm.back().run_analyzer();
     }
 
-
+    if(true)
     {
+        // run main segment analyzer after the missions analyzer
         main_segment_asm.run_analyzer();
-        std::string output = DecompilerContext(commands, main_segment_asm.disassembly(), 0).decompile();
-        fprintf(outstream, "/***** Main Segment *****/\n%s\n", output.c_str());
+        main_segment_asm.disassembly();
     }
 
-    for(size_t i = 0; i < mission_segments_asm.size(); ++i)
+    for(auto& mission_asm : mission_segments_asm)
     {
-        auto& mission_asm = mission_segments_asm[i];
-        mission_asm.run_analyzer();
-        std::string output = DecompilerContext(commands, mission_asm.disassembly(), 1+i).decompile();
-        fprintf(outstream, "/***** Mission Segment %d *****/\n%s\n", (int)(i), output.c_str());
+        mission_asm.disassembly();
+    }
+
+    if(!program.opt.graphviz_control_flow)
+    {
+        {
+            std::string output = DecompilerContext(commands, main_segment_asm.get_data(), 0).decompile();
+            fprintf(outstream, "/***** Main Segment *****/\n%s\n", output.c_str());
+        }
+
+        for(size_t i = 0; i < mission_segments_asm.size(); ++i)
+        {
+            auto& mission_asm = mission_segments_asm[i];
+            // analyzer already ran after emplace
+            mission_asm.disassembly();
+            std::string output = DecompilerContext(commands, mission_asm.get_data(), 1+i).decompile();
+            fprintf(outstream, "/***** Mission Segment %d *****/\n%s\n", (int)(i), output.c_str());
+        }
+    }
+    else if(program.opt.graphviz_control_flow)
+    {
+        BlockList block_list = find_basic_blocks(commands, main_segment_asm, mission_segments_asm);
+        find_edges(block_list, commands);
+        find_call_edges(block_list, commands);
+
+        fprintf(outstream, "digraph G {\n");
+
+        for(size_t i = 0; i < block_list.proc_entries.size(); ++i)
+        {
+            auto& entry_point = block_list.proc_entries[i];
+        
+            if(!program.opt.graphviz_only_script.empty())
+            {
+                auto opt_name = find_script_name(commands, block_list, entry_point.block_id);
+                if(opt_name == nullopt || opt_name != program.opt.graphviz_only_script)
+                    continue;
+            }
+
+            fprintf(outstream, "subgraph cluster_%u {\n", unsigned(i));
+
+            depth_first(block_list, entry_point.block_id, true, [&](BlockId block_id) {
+
+                auto& block = block_list.block(block_id);
+
+                fprintf(outstream, "b%u [shape=box, label=\"", unsigned(block_id));
+                for(auto it = block.begin(block_list), end = block.end(block_list); it != end; ++it)
+                {
+                    size_t newline_pos = 0;
+                    std::string output = DecompilerContext::decompile(*it, commands);
+                    while((newline_pos = output.find('\n', newline_pos)) != std::string::npos)
+                    {
+                        output.replace(newline_pos, 1, "\\n");
+                    }
+                    fprintf(outstream, "%s", output.c_str());
+                }
+                fprintf(outstream, "\"];\n");
+
+                for(BlockId pred : block.pred)
+                {
+                    const char* color = "black";
+
+                    auto& pred_block = block_list.block(pred);
+                    if(pred_block.succ.size() == 2)
+                    {
+                        auto i = std::distance(pred_block.succ.begin(), std::find(pred_block.succ.begin(), pred_block.succ.end(), block_id));
+                        color = (i == 0? "red" : "green");
+                    }
+
+                    fprintf(outstream, "b%u -> b%u [color=%s];\n", unsigned(pred), unsigned(block_id), color);
+                }
+                
+                return true;
+            });
+
+            fprintf(outstream, "}\n");
+        }
+
+        fprintf(outstream, "}\n");
     }
 
     return 0;

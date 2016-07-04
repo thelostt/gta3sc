@@ -24,6 +24,10 @@ struct Options
     bool pedantic = false;
     bool use_half_float = false;
     bool has_text_label_prefix = false;
+
+    // Decompiler-only
+    bool graphviz_control_flow = false;
+    std::string graphviz_only_script;
 };
 
 template<typename... Args>

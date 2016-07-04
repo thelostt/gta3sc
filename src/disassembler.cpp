@@ -1,6 +1,16 @@
 #include "stdinc.h"
 #include "disassembler.hpp"
 
+optional<size_t> Disassembler::get_dataindex(uint32_t local_offset) const
+{
+    for(size_t i = 0; i < this->decompiled.size(); ++i)
+    {
+        if(this->decompiled[i].offset == local_offset)
+            return i;
+    }
+    return nullopt;
+}
+
 void Disassembler::run_analyzer()
 {
     this->to_explore.emplace(0x0);
@@ -390,9 +400,9 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
     return DecompiledData(start_offset, std::move(ccmd));
 }
 
-std::vector<DecompiledData> Disassembler::disassembly()
+void Disassembler::disassembly()
 {
-    std::vector<DecompiledData> output;
+    std::vector<DecompiledData>& output = this->decompiled;
 
     output.reserve(this->hint_num_ops + 16); // +16 for unknown/hex areas
 
@@ -425,8 +435,6 @@ std::vector<DecompiledData> Disassembler::disassembly()
             output.emplace_back(begin_offset, std::vector<uint8_t>(bf.bytecode + begin_offset, bf.bytecode + offset));
         }
     }
-
-    return output;
 }
 
 optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const uint8_t* bytecode, size_t bytecode_size, Version version)
