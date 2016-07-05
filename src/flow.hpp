@@ -68,8 +68,8 @@ struct SegReference
     uint16_t    segindex;   //< Index on specific segment array (e.g. mission_segments[seg_index])
     uint32_t    data_index; //< Index on std::vector<DecompiledData>
 
-    explicit SegReference(uint8_t, SegType segtype, size_t segindex, uint32_t data_index) :
-        segtype(segtype), segindex(static_cast<uint16_t>(segindex)), data_index(data_index)
+    explicit SegReference(uint8_t, SegType segtype, size_t segindex, size_t data_index) :
+        segtype(segtype), segindex(static_cast<uint16_t>(segindex)), data_index(static_cast<uint32_t>(data_index))
     {}
 
 

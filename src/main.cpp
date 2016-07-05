@@ -459,7 +459,7 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
 
     DecompiledScmHeader& header = *opt_header;
 
-    BinaryFetcher main_segment { bytecode.data(), std::min(bytecode.size(), header.main_size) };
+    BinaryFetcher main_segment { bytecode.data(), std::min<uint32_t>(bytecode.size(), header.main_size) };
     std::vector<BinaryFetcher> mission_segments = mission_segment_fetcher(bytecode.data(), bytecode.size(), header, program);
 
     Disassembler main_segment_asm(program, commands, main_segment);
@@ -525,9 +525,9 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
             {
                 proc_declared[proc_id] = true;
                 if(invisible)
-                    fprintf(outstream, "p%u [shape=point, style=invis, label=\"%s\"];\n", proc_id, script_name.c_str());
+                    fprintf(outstream, "p%u [shape=point, style=invis, label=\"%s\"];\n", unsigned(proc_id), script_name.c_str());
                 else
-                    fprintf(outstream, "p%u [shape=box, label=\"%s\"];\n", proc_id, script_name.c_str());
+                    fprintf(outstream, "p%u [shape=box, label=\"%s\"];\n", unsigned(proc_id), script_name.c_str());
             }
         };
 

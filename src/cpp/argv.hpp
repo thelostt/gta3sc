@@ -49,7 +49,7 @@ inline const char* optget(char**& argv, const char* shortopt, const char* longop
         ++argv;
         if(num_values)
         {
-            const char** p = eq_pos_beg? &eq_pos_beg : argv;
+            const char** p = eq_pos_beg? &eq_pos_beg : const_cast<const char**>(argv);
             if(*p == nullptr || **p == '\0')
             {
                 --argv;
@@ -71,7 +71,7 @@ inline const char* optget(char**& argv, const char* shortopt, const char* longop
         if(num_values)
         {
             const char* arg2 = (*(argv - 1)) + 2;
-            const char** p = *arg2? &arg2 : argv;
+            const char** p = *arg2? &arg2 : const_cast<const char**>(argv);
             if(*p == nullptr || **p == '\0')
             {
                 --argv;
