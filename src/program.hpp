@@ -26,7 +26,10 @@ struct Options
     bool has_text_label_prefix = false;
 
     // Decompiler-only
+    bool csv_command_usage = false;
     bool graphviz_control_flow = false;
+    bool graphviz_call_graph = false;
+    bool graphviz_spawn_graph = false;
     std::string graphviz_only_script;
 };
 

@@ -28,6 +28,14 @@ Options:
   -pedantic                Forbid the usage of extensions not in R* compiler.
   -f[no-]half-float        Whether codegen uses GTA III half-float format.
   -f[no-]text-label-prefix Whether codegen uses GTA SA text label data type.
+
+Decompiler Options:
+  --graphviz-control-flow[=NAME] Outputs a DOT file of the control-flow of
+                                 the script NAME (must be uppercase). If no
+                                 name is specified, does this for all scripts.
+                                 Can be used with the other --graphiz opts.
+  --graphviz-call-graph[=NAME]   Ditto, but outputs a call graph.
+  --graphviz-spawn-graph[=NAME]  Ditto, but creates a script creation graph.
 )";
 
 enum class Action
@@ -40,6 +48,9 @@ enum class Action
 int main(int argc, char** argv)
 {
     // Due to main() not having a ProgramContext yet, error reporting must be done using fprintf(stderr, ...).
+
+    // using guid instead of empty string because we want a unique char pointer.
+    const char* empty_optional = "aae3b594-9843-4eeb-91a6-74158717417e";
 
     Action action = Action::None;
     Options options;
@@ -138,13 +149,34 @@ int main(int argc, char** argv)
             {
                 options.has_text_label_prefix = flag;
             }
-            else if(optget(argv, nullptr, "--graphviz-control-flow", 0))
+            else if(const char* script_name = optget(argv, nullptr, "--graphviz-control-flow", 1, empty_optional))
             {
                 options.graphviz_control_flow = true;
+                if(options.graphviz_only_script.empty())
+                {
+                    options.graphviz_only_script  = (script_name == empty_optional? "" : script_name);
+                }
             }
-            else if(const char* name = optget(argv, nullptr, "--graphviz-only-script", 1))
+            else if(const char* script_name = optget(argv, nullptr, "--graphviz-call-graph", 1, empty_optional))
             {
-                options.graphviz_only_script = name;
+                options.graphviz_call_graph = true;
+                if(options.graphviz_only_script.empty())
+                {
+                    options.graphviz_only_script = (script_name == empty_optional? "" : script_name);
+                }
+            }
+            else if(const char* script_name = optget(argv, nullptr, "--graphviz-spawn-graph", 1, empty_optional))
+            {
+                options.graphviz_spawn_graph = true;
+                if(options.graphviz_only_script.empty())
+                {
+                    options.graphviz_only_script = (script_name == empty_optional? "" : script_name);
+                }
+            }
+            else if(optget(argv, nullptr, "--csv-command-usage", 0))
+            {
+                // undocumented, may be removed at any moment
+                options.csv_command_usage = true;
             }
             else
             {
@@ -454,7 +486,279 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
         mission_asm.disassembly();
     }
 
-    if(!program.opt.graphviz_control_flow)
+    if(program.opt.graphviz_control_flow
+    || program.opt.graphviz_call_graph
+    || program.opt.graphviz_spawn_graph)
+    {
+        //
+        // node names:
+        //   pN = proc N
+        //   bN = block N
+        //
+        // colors:
+        //  black  = direct goto
+        //  red    = branch taken (in case of GOTO_IF_FALSE/GOTO_IF_TRUE)
+        //  green  = branch not taken
+        //  blue   = subroutine called
+        //  purple = script spawned
+        //
+
+        BlockList block_list = find_basic_blocks(commands, main_segment_asm, mission_segments_asm);
+        find_edges(block_list, commands);
+        find_call_edges(block_list, commands);
+
+        dynamic_bitset proc_declared(block_list.proc_entries.size());
+        dynamic_bitset proc_written(block_list.proc_entries.size());
+        size_t noname_id;
+
+        auto declare_proc = [&](const ProcEntry& entry_point, bool invisible)
+        {
+            std::string script_name;
+            size_t proc_id = block_list.proc_id(entry_point);
+
+            if(auto opt_name = find_script_name(commands, block_list, entry_point.block_id))
+                script_name = *opt_name;
+            else
+                script_name = fmt::format("NONAME_{}", noname_id);
+
+            if(!proc_declared[proc_id])
+            {
+                proc_declared[proc_id] = true;
+                if(invisible)
+                    fprintf(outstream, "p%u [shape=point, style=invis, label=\"%s\"];\n", proc_id, script_name.c_str());
+                else
+                    fprintf(outstream, "p%u [shape=box, label=\"%s\"];\n", proc_id, script_name.c_str());
+            }
+        };
+
+        auto write_proc = [&](const ProcEntry& entry_point)
+        {
+            ProcId i = block_list.proc_id(entry_point);
+            if(proc_written[i] == false)
+            {
+                proc_written[i] = true;
+                fprintf(outstream, "subgraph cluster_%u {\n", unsigned(i));
+
+                declare_proc(entry_point, true);
+
+                depth_first(block_list, entry_point.block_id, true, [&](BlockId block_id) {
+
+                    auto& block = block_list.block(block_id);
+
+                    fprintf(outstream, "b%u [shape=box, label=\"", unsigned(block_id));
+                    for(auto it = block.begin(block_list), end = block.end(block_list); it != end; ++it)
+                    {
+                        size_t newline_pos = 0;
+                        std::string output = DecompilerContext::decompile(*it, commands);
+                        while((newline_pos = output.find('\n', newline_pos)) != std::string::npos)
+                        {
+                            output.replace(newline_pos, 1, "\\n");
+                        }
+                        fprintf(outstream, "%s", output.c_str());
+                    }
+                    fprintf(outstream, "\"];\n");
+
+                    for(BlockId pred : block.pred)
+                    {
+                        const char* color = "black";
+
+                        auto& pred_block = block_list.block(pred);
+                        if(pred_block.succ.size() == 2)
+                        {
+                            auto i = std::distance(pred_block.succ.begin(), std::find(pred_block.succ.begin(), pred_block.succ.end(), block_id));
+                            color = (i == 0? "red" : "green");
+                        }
+
+                        fprintf(outstream, "b%u -> b%u [color=%s];\n", unsigned(pred), unsigned(block_id), color);
+                    }
+
+                    return true;
+                });
+
+                fprintf(outstream, "}\n");
+            }
+        };
+
+        fprintf(outstream, "digraph G {\n");
+
+        for(size_t i = 0; i < block_list.proc_entries.size(); ++i)
+        {
+            auto& entry_point = block_list.proc_entries[i];
+
+            switch(entry_point.type)
+            {
+                case ProcType::Main:
+                case ProcType::Mission:
+                case ProcType::Script:
+                case ProcType::Subscript:
+                    break;
+                case ProcType::Gosub:
+                    // Don't directly look at the body of gosubs when searchig for SCRIPT_NAME.
+                    if(!program.opt.graphviz_only_script.empty())
+                        continue;
+                    break;
+                default:
+                    Unreachable();
+            }
+        
+            noname_id = i;
+
+            if(!program.opt.graphviz_only_script.empty())
+            {
+                auto opt_name = find_script_name(commands, block_list, entry_point);
+                if(opt_name != program.opt.graphviz_only_script)
+                    continue;
+            }
+
+            if(program.opt.graphviz_control_flow)
+            {
+                write_proc(entry_point);
+                if(program.opt.graphviz_call_graph) // additionally write the graph for called subs
+                {
+                    depth_first(call_graph, block_list, entry_point, true, [&](const ProcEntry& subproc) {
+                        write_proc(subproc);
+                        return true;
+                    });
+                }
+            }
+
+            if(program.opt.graphviz_call_graph)
+            {
+                declare_proc(entry_point, false);
+
+                depth_first(call_graph, block_list, entry_point, true, [&](const ProcEntry& proc) {
+
+                    for(auto& pred : proc.called_from)
+                    {
+                        if(!program.opt.graphviz_control_flow)
+                        {
+                            auto target_proc_id = block_list.proc_id(proc);
+                            fprintf(outstream, "p%u -> p%u [color=%s];\n", unsigned(pred.proc_id), unsigned(target_proc_id), "blue");
+                        }
+                        else
+                        {
+
+                            auto source_block_id = pred.block_id;
+                            auto target_block_id = proc.block_id;
+                            fprintf(outstream, "b%u -> b%u [color=%s];\n", unsigned(source_block_id), unsigned(target_block_id), "blue");
+                        }
+                    }
+                
+                    return true;
+                });
+            }
+
+            if(program.opt.graphviz_spawn_graph)
+            {
+                declare_proc(entry_point, false);
+
+                depth_first(spawn_graph, block_list, entry_point, true, [&](const ProcEntry& proc) {
+
+                    for(auto& pred : proc.spawned_from)
+                    {
+                        if(!program.opt.graphviz_control_flow)
+                        {
+                            auto target_proc_id = block_list.proc_id(proc);
+                            fprintf(outstream, "p%u -> p%u [color=%s];\n", unsigned(pred.proc_id), unsigned(target_proc_id), "purple");
+                        }
+                        else
+                        {
+                            auto source_block_id = pred.block_id;
+                            auto target_block_id = proc.block_id;
+                            fprintf(outstream, "b%u -> b%u [color=%s];\n", unsigned(source_block_id), unsigned(target_block_id), "purple");
+                        }
+                    }
+                
+                    return true;
+                });
+            }
+        }
+
+        fprintf(outstream, "}\n");
+    }
+    else if(program.opt.csv_command_usage)
+    {
+        struct CommandUsage
+        {
+            std::map<uint16_t, size_t> usage;
+        };
+        
+        std::vector<std::pair<std::string, CommandUsage>> scripts;
+        size_t highest_used_command = 0;
+
+        BlockList block_list = find_basic_blocks(commands, main_segment_asm, mission_segments_asm);
+        find_edges(block_list, commands);
+        find_call_edges(block_list, commands);
+
+        for(size_t i = 0; i < block_list.proc_entries.size(); ++i)
+        {
+            auto& entry_point = block_list.proc_entries[i];
+
+            switch(entry_point.type)
+            {
+                case ProcType::Main:
+                case ProcType::Mission:
+                case ProcType::Script:
+                case ProcType::Subscript:
+                    break;
+                case ProcType::Gosub:
+                    continue;
+                default:
+                    Unreachable();
+            }
+        
+            std::string script_name = find_script_name(commands, block_list, entry_point).value_or(fmt::format("NONAME_{}", i));
+
+            depth_first(call_graph, block_list, entry_point, true, [&](const ProcEntry& proc)
+            {
+                depth_first(block_list, proc.block_id, true, [&](BlockId block_id) 
+                {
+                    auto& block = block_list.block(block_id);
+                    for(auto it = block.begin(block_list), end = block.end(block_list); it != end; ++it)
+                    {
+                        if(!is<DecompiledCommand>(it->data))
+                            continue;
+
+                        auto usager_it = std::find_if(scripts.begin(), scripts.end(), [&](const std::pair<std::string, CommandUsage>& x) {
+                            return x.first == script_name;
+                        });
+
+                        if(usager_it == scripts.end())
+                        {
+                            usager_it = scripts.emplace(scripts.end(), std::make_pair(script_name, CommandUsage{}));
+                        }
+
+                        auto id = get<DecompiledCommand>(it->data).id & 0x7FFF;
+                        usager_it->second.usage[id]++;
+                        if(id > highest_used_command)
+                        {
+                            highest_used_command = id;
+                        }
+                    }
+                    return true;
+                });
+                return true;
+            });
+        }
+
+        fprintf(outstream, "%s,", "Command");
+        for(auto& script_pair : scripts)
+        {
+            fprintf(outstream, "%s,", script_pair.first.c_str());
+        }
+        fprintf(outstream, "\n");
+
+        for(size_t id = 0; id < highest_used_command; ++id)
+        {
+            fprintf(outstream, "0x%.4X,", unsigned(id));
+            for(auto& script_pair : scripts)
+            {
+                fprintf(outstream, "%u,", unsigned(script_pair.second.usage[id]));
+            }
+            fprintf(outstream, "\n");
+        }
+    }
+    else
     {
         {
             std::string output = DecompilerContext(commands, main_segment_asm.get_data(), 0).decompile();
@@ -469,66 +773,6 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
             std::string output = DecompilerContext(commands, mission_asm.get_data(), 1+i).decompile();
             fprintf(outstream, "/***** Mission Segment %d *****/\n%s\n", (int)(i), output.c_str());
         }
-    }
-    else if(program.opt.graphviz_control_flow)
-    {
-        BlockList block_list = find_basic_blocks(commands, main_segment_asm, mission_segments_asm);
-        find_edges(block_list, commands);
-        find_call_edges(block_list, commands);
-
-        fprintf(outstream, "digraph G {\n");
-
-        for(size_t i = 0; i < block_list.proc_entries.size(); ++i)
-        {
-            auto& entry_point = block_list.proc_entries[i];
-        
-            if(!program.opt.graphviz_only_script.empty())
-            {
-                auto opt_name = find_script_name(commands, block_list, entry_point.block_id);
-                if(opt_name == nullopt || opt_name != program.opt.graphviz_only_script)
-                    continue;
-            }
-
-            fprintf(outstream, "subgraph cluster_%u {\n", unsigned(i));
-
-            depth_first(block_list, entry_point.block_id, true, [&](BlockId block_id) {
-
-                auto& block = block_list.block(block_id);
-
-                fprintf(outstream, "b%u [shape=box, label=\"", unsigned(block_id));
-                for(auto it = block.begin(block_list), end = block.end(block_list); it != end; ++it)
-                {
-                    size_t newline_pos = 0;
-                    std::string output = DecompilerContext::decompile(*it, commands);
-                    while((newline_pos = output.find('\n', newline_pos)) != std::string::npos)
-                    {
-                        output.replace(newline_pos, 1, "\\n");
-                    }
-                    fprintf(outstream, "%s", output.c_str());
-                }
-                fprintf(outstream, "\"];\n");
-
-                for(BlockId pred : block.pred)
-                {
-                    const char* color = "black";
-
-                    auto& pred_block = block_list.block(pred);
-                    if(pred_block.succ.size() == 2)
-                    {
-                        auto i = std::distance(pred_block.succ.begin(), std::find(pred_block.succ.begin(), pred_block.succ.end(), block_id));
-                        color = (i == 0? "red" : "green");
-                    }
-
-                    fprintf(outstream, "b%u -> b%u [color=%s];\n", unsigned(pred), unsigned(block_id), color);
-                }
-                
-                return true;
-            });
-
-            fprintf(outstream, "}\n");
-        }
-
-        fprintf(outstream, "}\n");
     }
 
     return 0;

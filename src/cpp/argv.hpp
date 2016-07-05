@@ -21,20 +21,27 @@ struct invalid_opt : std::runtime_error
 /// If it is, returns a non null pointer, which points to the argument to the option if `num_values` is `1`.
 /// It also increments `argv` accordingly, so that its past the argument just read.
 ///
+/// If `num_values` is 1, and `default_value` is not `nullptr`, a default value is assumed if a value isn't specified in argv.
+///
 /// Otherwise, returns nullptr and argv is not modified.
 ///
-inline char* optget(char**& argv, const char* shortopt, const char* longopt, size_t num_values)
+inline const char* optget(char**& argv, const char* shortopt, const char* longopt, size_t num_values, const char* default_value = nullptr)
 {
     assert(*argv != nullptr);
     assert(shortopt == 0 || strlen(shortopt) == 2);
     assert(num_values <= 1);
 
-    char *eq_pos = nullptr, *eq_pos_beg;
+    const char *eq_pos = nullptr, *eq_pos_beg = nullptr;
 
     if(num_values)
     {
         eq_pos = strchr(*argv, '=');
         eq_pos_beg = eq_pos? eq_pos + 1 : 0;
+
+        if(default_value && !eq_pos_beg)
+        {
+            eq_pos_beg = default_value;
+        }
     }
 
     if(longopt && !strncmp(*argv, longopt, eq_pos? (eq_pos - *argv) : INT_MAX))
@@ -42,7 +49,7 @@ inline char* optget(char**& argv, const char* shortopt, const char* longopt, siz
         ++argv;
         if(num_values)
         {
-            char** p = eq_pos? &eq_pos_beg : argv;
+            const char** p = eq_pos_beg? &eq_pos_beg : argv;
             if(*p == nullptr || **p == '\0')
             {
                 --argv;
@@ -63,8 +70,8 @@ inline char* optget(char**& argv, const char* shortopt, const char* longopt, siz
         ++argv;
         if(num_values)
         {
-            char* arg2 = (*(argv - 1)) + 2;
-            char** p = *arg2? &arg2 : argv;
+            const char* arg2 = (*(argv - 1)) + 2;
+            const char** p = *arg2? &arg2 : argv;
             if(*p == nullptr || **p == '\0')
             {
                 --argv;
@@ -94,14 +101,14 @@ inline char* optget(char**& argv, const char* shortopt, const char* longopt, siz
 ///
 /// Otherwise, if `flag` is a null pointer, checks only for `-fflagname`.
 ///
-inline char* optflag(char**& argv, const char* flagname, bool* flag)
+inline const char* optflag(char**& argv, const char* flagname, bool* flag)
 {
     assert(*argv != nullptr);
 
     if(flag && !strncmp(*argv, "-fno-", 5))
     {
         *argv += 5;
-        if(char* val = optget(argv, nullptr, flagname, 0))
+        if(const char* val = optget(argv, nullptr, flagname, 0))
         {
             *flag = false;
             return val;
@@ -115,7 +122,7 @@ inline char* optflag(char**& argv, const char* flagname, bool* flag)
     if(!strncmp(*argv, "-f", 2))
     {
         *argv += 2;
-        if(char* val = optget(argv, nullptr, flagname, 0))
+        if(const char* val = optget(argv, nullptr, flagname, 0))
         {
             if(flag) *flag = true;
             return val;
