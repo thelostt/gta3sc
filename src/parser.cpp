@@ -1,5 +1,6 @@
 #include "stdinc.h"
 #include "parser.hpp"
+#include "program.hpp"
 
 // Note: Include those after everything else!
 // These headers have some bad defines (including true, false and EOF)
@@ -90,12 +91,14 @@ SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
     return *this;
 }
 
-std::shared_ptr<SyntaxTree> SyntaxTree::compile(const TokenStream& tstream)
+std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const TokenStream& tstream)
 {
     auto parser = gta3scriptParserNew(tstream.get());
     if(parser)
     {
         auto start_tree = parser->start(parser);
+
+        program.register_errors(parser->pParser->rec->state->errorCount);
 
         if(start_tree.tree)
         {
@@ -130,8 +133,8 @@ std::string SyntaxTree::to_string() const
 // TokenStream
 //
 
-TokenStream::TokenStream(std::string data_, const char* stream_name)
-    : data(std::move(data_)), sname(stream_name)
+TokenStream::TokenStream(ProgramContext& program, std::string data_, const char* stream_name)
+    : program(program), data(std::move(data_)), sname(stream_name)
 {
     this->istream = antlr3StringStreamNew((pANTLR3_UINT8)(data.c_str()), ANTLR3_ENC_UTF8, data.size(), (pANTLR3_UINT8)(stream_name));
 
@@ -152,18 +155,18 @@ TokenStream::TokenStream(std::string data_, const char* stream_name)
     throw std::runtime_error("Failed to open token stream named '" + std::string(stream_name) + "' for reading.");
 }
 
-TokenStream::TokenStream(optional<std::string> data_, const char* stream_name)
-    : TokenStream((data_? std::move(data_.value()) : throw std::runtime_error("")), stream_name) // TODO simplify this line
+TokenStream::TokenStream(ProgramContext& program, optional<std::string> data_, const char* stream_name)
+    : TokenStream(program, (data_? std::move(data_.value()) : throw std::runtime_error("")), stream_name) // TODO simplify this line
 {
 }
 
-TokenStream::TokenStream(const fs::path& path)
-    : TokenStream(read_file_utf8(path), path.generic_u8string().c_str())
+TokenStream::TokenStream(ProgramContext& program, const fs::path& path)
+    : TokenStream(program, read_file_utf8(path), path.generic_u8string().c_str())
 {
 }
 
 TokenStream::TokenStream(TokenStream&& rhs)
-    : tokstream(nullptr), lexer(nullptr), istream(nullptr)
+    : program(rhs.program), tokstream(nullptr), lexer(nullptr), istream(nullptr)
 {
     *this = std::move(rhs);
 }
@@ -185,6 +188,8 @@ TokenStream& TokenStream::operator=(TokenStream&& rhs)
     rhs.tokstream = nullptr;
     rhs.lexer = nullptr;
     rhs.istream = nullptr;
+
+    Ensures(&rhs.program == &this->program);
 
     return *this;
 }

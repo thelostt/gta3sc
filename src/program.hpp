@@ -230,6 +230,12 @@ public:
         throw HaltJobException();
     }
 
+    void register_errors(uint32_t n)
+    {
+        // n may be 0
+        error_count += n;
+    }
+
 private:
     static void puts(const std::string& msg)
     {

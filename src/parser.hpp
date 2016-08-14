@@ -15,8 +15,8 @@ using NodeType = Token;
 class TokenStream : public std::enable_shared_from_this<TokenStream>
 {
 public:
-    explicit TokenStream(const fs::path& path);
-    explicit TokenStream(std::string data, const char* stream_name);
+    explicit TokenStream(ProgramContext&, const fs::path& path);
+    explicit TokenStream(ProgramContext&, std::string data, const char* stream_name);
     ~TokenStream();
 
     TokenStream(const TokenStream&) = delete;
@@ -60,6 +60,8 @@ protected:
     }
 
 private:
+    ProgramContext& program;
+
     // My stuff.
     std::string             sname;
     std::string             data;
@@ -70,7 +72,7 @@ private:
     gta3scriptLexer_Ctx_struct* lexer;
     ANTLR3_COMMON_TOKEN_STREAM_struct* tokstream;
 
-    explicit TokenStream(optional<std::string> data, const char* stream_name);
+    explicit TokenStream(ProgramContext&, optional<std::string> data, const char* stream_name);
 
     void calc_lines();
 };
@@ -85,7 +87,7 @@ public:
     SyntaxTree& operator=(const SyntaxTree&) = delete; // expensive, make a explicit method if needed
     SyntaxTree& operator=(SyntaxTree&&);
     
-    static std::shared_ptr<SyntaxTree> compile(const TokenStream& tstream);
+    static std::shared_ptr<SyntaxTree> compile(ProgramContext&, const TokenStream& tstream);
 
     const_iterator begin() const
     {

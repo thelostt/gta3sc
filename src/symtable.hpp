@@ -35,9 +35,9 @@ struct Label;
 /// Represents a *.sc script file.
 struct Script : std::enable_shared_from_this<Script>
 {
-    static shared_ptr<Script> create(fs::path path_, ScriptType type)
+    static shared_ptr<Script> create(ProgramContext& program, fs::path path_, ScriptType type)
     {
-        auto p = std::make_shared<Script>(std::move(path_), type, priv_ctor());
+        auto p = std::make_shared<Script>(program, std::move(path_), type, priv_ctor());
         p->start_label = std::make_shared<Label>(nullptr, p->shared_from_this());
         p->top_label = std::make_shared<Label>(nullptr, p->shared_from_this());
         return p;
@@ -120,13 +120,13 @@ private:
 
 public:
     /// Use create instead.
-    explicit Script(fs::path path_, ScriptType type, priv_ctor)
+    explicit Script(ProgramContext& program, fs::path path_, ScriptType type, priv_ctor)
         : type(type)
     {
         this->path = std::move(path_);
-        this->tstream.reset(new TokenStream(this->path)); // use new instead of make_shared,
+        this->tstream.reset(new TokenStream(program, this->path)); // use new instead of make_shared,
                                                           // we don't want weak_ptr to leave the TokenStream on memory.
-        this->tree = SyntaxTree::compile(*this->tstream);
+        this->tree = SyntaxTree::compile(program, *this->tstream);
     }
 
     // TODO a flag to not use tstream (free up memory)?

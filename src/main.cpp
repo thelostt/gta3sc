@@ -268,7 +268,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
         //const char* input = "test.sc";
         //const char* input = "gta3_src/main.sc";
 
-        auto main = Script::create(input, ScriptType::Main);
+        auto main = Script::create(program, input, ScriptType::Main);
         auto symbols = SymTable::from_script(*main, commands, program);
         symbols.apply_offset_to_vars(2);
 
@@ -280,7 +280,9 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
         auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, commands, program);
         auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, commands, program);
 
-        // TODO handle lex/parser errors
+        // Following steps wants a fully working syntax tree, so check for parser/lexer errors.
+        if(program.has_error())
+            throw HaltJobException();
 
         for(auto& x : ext_scripts)
         {
