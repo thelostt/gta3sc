@@ -304,13 +304,15 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
             scripts.emplace_back(x.first); // maybe move
         }
 
-        for(size_t i = 0; i < mission_scripts.size(); ++i)
-        {
-            auto& x = mission_scripts[i];
-            symbols.merge(std::move(x.second), program);
-            scripts.emplace_back(x.first); // maybe move
-            scripts.back()->mission_id = i;
-        }
+		{
+			size_t i = 0;
+			for(auto& x : mission_scripts)
+			{
+				symbols.merge(std::move(x.second), program);
+				scripts.emplace_back(x.first); // maybe move
+				scripts.back()->mission_id = static_cast<uint16_t>(i++);
+			}
+		}
 
         symbols.check_command_count(program);
 
