@@ -28,6 +28,7 @@ Options:
   -pedantic                Forbid the usage of extensions not in R* compiler.
   -f[no-]half-float        Whether codegen uses GTA III half-float format.
   -f[no-]text-label-prefix Whether codegen uses GTA SA text label data type.
+  -f[no-]skip-if           Omits compiling ANDOR for single condition statements.
 )";
 
 enum class Action
@@ -107,18 +108,21 @@ int main(int argc, char** argv)
                     levelfile = "gta3.dat";
                     options.use_half_float = true;
                     options.has_text_label_prefix = false;
+					options.skip_single_ifs = false;
                 }
                 else if(config_name == "gtavc")
                 {
                     levelfile = "gta_vc.dat";
                     options.use_half_float = false;
                     options.has_text_label_prefix = false;
+					options.skip_single_ifs = false;
                 }
                 else if(config_name == "gtasa")
                 {
                     levelfile = "gta.dat";
                     options.use_half_float = false;
                     options.has_text_label_prefix = true;
+					options.skip_single_ifs = false;
                 }
                 else
                 {
@@ -138,6 +142,10 @@ int main(int argc, char** argv)
             {
                 options.has_text_label_prefix = flag;
             }
+			else if(optflag(argv, "skip-if", &flag))
+			{
+				options.skip_single_ifs = flag;
+			}
             else
             {
                 fprintf(stderr, "gta3sc: error: unregonized argument '%s'\n", *argv);
@@ -296,13 +304,15 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
             scripts.emplace_back(x.first); // maybe move
         }
 
-        for(size_t i = 0; i < mission_scripts.size(); ++i)
-        {
-            auto& x = mission_scripts[i];
-            symbols.merge(std::move(x.second), program);
-            scripts.emplace_back(x.first); // maybe move
-            scripts.back()->mission_id = i;
-        }
+		{
+			size_t i = 0;
+			for(auto& x : mission_scripts)
+			{
+				symbols.merge(std::move(x.second), program);
+				scripts.emplace_back(x.first); // maybe move
+				scripts.back()->mission_id = static_cast<uint16_t>(i++);
+			}
+		}
 
         symbols.check_command_count(program);
 

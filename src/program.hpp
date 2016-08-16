@@ -24,6 +24,7 @@ struct Options
     bool pedantic = false;
     bool use_half_float = false;
     bool has_text_label_prefix = false;
+	bool skip_single_ifs = false;
 };
 
 template<typename... Args>
