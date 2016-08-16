@@ -28,6 +28,7 @@ Options:
   -pedantic                Forbid the usage of extensions not in R* compiler.
   -f[no-]half-float        Whether codegen uses GTA III half-float format.
   -f[no-]text-label-prefix Whether codegen uses GTA SA text label data type.
+  -f[no-]skip-if           Omits compiling ANDOR for single condition statements.
 )";
 
 enum class Action
@@ -107,18 +108,21 @@ int main(int argc, char** argv)
                     levelfile = "gta3.dat";
                     options.use_half_float = true;
                     options.has_text_label_prefix = false;
+					options.skip_single_ifs = false;
                 }
                 else if(config_name == "gtavc")
                 {
                     levelfile = "gta_vc.dat";
                     options.use_half_float = false;
                     options.has_text_label_prefix = false;
+					options.skip_single_ifs = false;
                 }
                 else if(config_name == "gtasa")
                 {
                     levelfile = "gta.dat";
                     options.use_half_float = false;
                     options.has_text_label_prefix = true;
+					options.skip_single_ifs = false;
                 }
                 else
                 {
@@ -138,6 +142,10 @@ int main(int argc, char** argv)
             {
                 options.has_text_label_prefix = flag;
             }
+			else if(optflag(argv, "skip-if", &flag))
+			{
+				options.skip_single_ifs = flag;
+			}
             else
             {
                 fprintf(stderr, "gta3sc: error: unregonized argument '%s'\n", *argv);
