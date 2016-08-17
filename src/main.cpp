@@ -29,6 +29,7 @@ Options:
   -f[no-]half-float        Whether codegen uses GTA III half-float format.
   -f[no-]text-label-prefix Whether codegen uses GTA SA text label data type.
   -f[no-]skip-if           Omits compiling ANDOR for single condition statements.
+  -f[no-]optimize-zero     Compiles 0.0 as 0, using a 8 bit data type.
 )";
 
 enum class Action
@@ -109,6 +110,7 @@ int main(int argc, char** argv)
                     options.use_half_float = true;
                     options.has_text_label_prefix = false;
 					options.skip_single_ifs = false;
+					options.optimize_zero_floats = false;
                 }
                 else if(config_name == "gtavc")
                 {
@@ -116,6 +118,7 @@ int main(int argc, char** argv)
                     options.use_half_float = false;
                     options.has_text_label_prefix = false;
 					options.skip_single_ifs = false;
+					options.optimize_zero_floats = false;
                 }
                 else if(config_name == "gtasa")
                 {
@@ -123,6 +126,7 @@ int main(int argc, char** argv)
                     options.use_half_float = false;
                     options.has_text_label_prefix = true;
 					options.skip_single_ifs = false;
+					options.optimize_zero_floats = false;
                 }
                 else
                 {
@@ -145,6 +149,10 @@ int main(int argc, char** argv)
 			else if(optflag(argv, "skip-if", &flag))
 			{
 				options.skip_single_ifs = flag;
+			}
+			else if(optflag(argv, "optimize-zero", &flag))
+			{
+				options.optimize_zero_floats = flag;
 			}
             else
             {

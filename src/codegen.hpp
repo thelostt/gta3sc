@@ -233,12 +233,13 @@ inline size_t compiled_size(const int32_t&, const CodeGenerator&)
     return 1 + sizeof(int32_t);
 }
 
-inline size_t compiled_size(const float&, const CodeGenerator& codegen)
+inline size_t compiled_size(const float& f, const CodeGenerator& codegen)
 {
+    if(codegen.program.opt.optimize_zero_floats && f == 0.0f)
+        return 1 + sizeof(int8_t);
     if(codegen.program.opt.use_half_float)
         return 1 + sizeof(int16_t);
-    else
-        return 1 + sizeof(float);
+    return 1 + sizeof(float);
 }
 
 inline size_t compiled_size(const shared_ptr<Label>&, const CodeGenerator&)
@@ -338,7 +339,11 @@ inline void generate_code(const int32_t& value, CodeGenerator& codegen)
 
 inline void generate_code(const float& value, CodeGenerator& codegen)
 {
-    if(codegen.program.opt.use_half_float)
+	if(codegen.program.opt.optimize_zero_floats && value == 0.0f)
+	{
+		generate_code(static_cast<int8_t>(0), codegen);	
+	}
+    else if(codegen.program.opt.use_half_float)
     {
         codegen.emplace_u8(6);
         codegen.emplace_i16(static_cast<int16_t>(value * 16.0f));
