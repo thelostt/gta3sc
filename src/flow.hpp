@@ -109,6 +109,8 @@ struct Block
     std::vector<BlockId> pred;   //< Predecessor blocks
     std::vector<BlockId> succ;   //< Successor blocks
 
+    dynamic_bitset       dominators; //< Available after compute_dominators
+
     explicit Block(SegReference block_begin, size_t length) :
         block_begin(std::move(block_begin)), length(length)
     {}
@@ -244,6 +246,7 @@ inline auto Block::end(const BlockList& bl) const -> Block::const_iterator
 BlockList find_basic_blocks(const Commands& commands, const Disassembler& main_segment, const std::vector<Disassembler>& mission_segments);
 void find_edges(BlockList& block_list, const Commands& commands);
 void find_call_edges(BlockList& block_list, const Commands& commands);
+void compute_dominators(BlockList& block_list);
 
 //
 // Utility functions

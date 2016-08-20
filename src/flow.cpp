@@ -385,6 +385,60 @@ void find_call_edges(BlockList& block_list, const Commands& commands)
     }
 }
 
+
+// block_list.blocks.size() mustn't change after this computation.
+/// https://en.wikipedia.org/wiki/Dominator_%28graph_theory%29
+void compute_dominators(BlockList& block_list)
+{
+    // TODO improve for a proper dynamic_bitset library
+
+    auto& vec_blocks = block_list.blocks; // we have to use all blocks list including dummy nodes
+    size_t block_count = vec_blocks.size();
+
+    if(block_count == 0)
+        return;
+
+    // For all nodes, set all nodes as the dominators.
+    for(auto it = vec_blocks.begin(); it != vec_blocks.end(); ++it)
+    {
+        //it->dominators.resize(block_count);
+        it->dominators.assign(block_count, true);
+    }
+
+    // Dominator of the start node is the start itself
+    auto& block0 = vec_blocks[0];
+    block0.dominators.assign(block_count, false);
+    block0.dominators[0] = true;
+
+    bool changed = true;
+    dynamic_bitset bits;
+    bits.reserve(block_count);
+
+    // Iteratively eliminate nodes that are not dominators.
+    while(changed)
+    {
+        changed = false;
+
+        size_t i = 0;
+        for(auto it = vec_blocks.begin(), end = vec_blocks.end(); it != end; ++it, ++i)
+        {
+            if(&(*it) == &block0)
+                continue;
+
+            for(auto& pred : it->pred)
+            {
+                bits = it->dominators;
+
+                it->dominators &= vec_blocks[pred].dominators;
+                it->dominators[i] = true;
+
+                if(it->dominators != bits)
+                    changed = true; 
+            }
+        }
+    }
+}
+
 void BlockList::find_ranges(const std::vector<Block>& blocks, block_range& main_blocks, std::vector<block_range>& mission_blocks)
 {
     // TODO what if missions aren't sorted by offset

@@ -48,3 +48,40 @@ struct CodeGeneratorBase;
 #   define __debugbreak()
 #endif
 
+
+// URGENT!!!!!! TODO TODO TODO!!!!!!!!!!!!! USE A PROPER DYNAMIC_BITSET LIBRARY AND REMOVE THIS!!!
+
+template<typename OpFunctor>
+inline dynamic_bitset& ops_dynamic_bitset(dynamic_bitset& a, const dynamic_bitset& b)
+{
+    Expects(a.size() == b.size());
+
+    OpFunctor bitop;
+
+    #if defined(_MSC_VER)
+    auto a_begin = a._Myvec.begin();
+    auto b_begin = b._Myvec.begin();
+    auto a_end   = a._Myvec.end();
+    #else
+    auto a_begin = a.begin();
+    auto b_begin = b.begin();
+    auto a_end   = a.end();
+    #endif
+
+    for(; a_begin < a_end; ++a_begin, ++b_begin)
+    {
+        *a_begin = bitop(*a_begin, *b_begin);
+    }
+
+    return a;
+}
+
+inline dynamic_bitset& operator&=(dynamic_bitset& a, const dynamic_bitset& b)
+{
+    return ops_dynamic_bitset<std::bit_and<void>>(a, b);
+}
+
+inline dynamic_bitset& operator|=(dynamic_bitset& a, const dynamic_bitset& b)
+{
+    return ops_dynamic_bitset<std::bit_or<void>>(a, b);
+}
