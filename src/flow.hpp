@@ -38,8 +38,9 @@ struct ProcEntry
         ProcId  proc_id;
     };
 
-    ProcType type;
-    BlockId  block_id;
+    ProcType           type;
+    BlockId            block_id;
+    optional<BlockId>  exit_block;    //< Available after find_edges
 
     std::vector<XRefInfo> calls_into;
     std::vector<XRefInfo> called_from;
@@ -57,7 +58,8 @@ enum class SegType : uint8_t
     Main,
     Mission,
     Streamed,
-    Dummy,      // must be the last enum value
+    ExitNode,      // must be the last enum value because its the last kind of block
+                   // inserted into the vector (which is sorted by segtype)
 };
 
 // Try to make this struct as small as possible.
@@ -119,6 +121,9 @@ struct Block
 
     iterator begin(const BlockList& bl) { return const_cast<const Block&>(*this).begin(bl); }
     iterator end(const BlockList& bl)   { return const_cast<const Block&>(*this).end(bl); }
+
+    // i.e. block that contains a RETURN / TERMINATE_THIS_SCRIPT at the end, which next linked block is dummy.
+    bool is_pre_end_block(const BlockList& bl) const;
 };
 
 // TODO make explicit constructor
@@ -185,6 +190,8 @@ public:
             return main_segment.get_data().data() + segref.data_index;
         else if(segref.segtype == SegType::Mission)
             return mission_segments[segref.segindex].get_data().data() + segref.data_index;
+        else if(segref.segtype == SegType::ExitNode)
+            return nullptr;
         else
             Unreachable();
     }

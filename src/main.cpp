@@ -545,7 +545,13 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
 
                     auto& block = block_list.block(block_id);
 
-                    fprintf(outstream, "b%u [shape=box, label=\"", unsigned(block_id));
+                    const char* shape;
+                    if(block.block_begin.segtype == SegType::ExitNode)
+                        shape = "diamond";
+                    else
+                        shape = "box";
+
+                    fprintf(outstream, "b%u [shape=%s, label=\"", unsigned(block_id), shape);
                     for(auto it = block.begin(block_list), end = block.end(block_list); it != end; ++it)
                     {
                         size_t newline_pos = 0;
@@ -563,7 +569,8 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
                         const char* color = "black";
 
                         auto& pred_block = block_list.block(pred);
-                        if(pred_block.succ.size() == 2)
+                        
+                        if(pred_block.succ.size() == 2 && !pred_block.is_pre_end_block(block_list))
                         {
                             auto i = std::distance(pred_block.succ.begin(), std::find(pred_block.succ.begin(), pred_block.succ.end(), block_id));
                             color = (i == 0? "red" : "green");

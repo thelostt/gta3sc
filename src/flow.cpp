@@ -3,6 +3,16 @@
 // TODO dcmd->id & 0x7FFF
 // TODO should we get rid of 0-length blocks?
 
+bool Block::is_pre_end_block(const BlockList& bl) const
+{
+    for(auto& next_id : this->succ)
+    {
+        if(bl.block(next_id).block_begin.segtype != SegType::ExitNode)
+            return false;
+    }
+    return true;
+}
+
 optional<std::string> find_script_name(const Commands& commands, const BlockList& block_list, const ProcEntry& entry_point)
 {
     optional<std::string> result;
@@ -284,6 +294,41 @@ void find_edges(BlockList& block_list, const Commands& commands)
         {
             // other non-branchful operations
             block_list.link_blocks(this_block_id, this_block_id + 1);
+        }
+    }
+
+    // make exit blocks go into a single exit block
+    {
+        auto segref_dummy = SegReference { 0, SegType::ExitNode, SIZE_MAX, SIZE_MAX };
+
+        for(auto& entry_point : block_list.proc_entries)
+        {
+            block_list.blocks.emplace_back(Block{ segref_dummy, 0 });
+            entry_point.exit_block = block_list.blocks.size() - 1;
+
+            depth_first(block_list, entry_point.block_id, true, [&](BlockId dpfs_id)
+            {
+                auto& block = block_list.block(dpfs_id);
+
+                if(block.length != 0)
+                {
+                    auto branch_it = std::prev(block.end(block_list));
+
+                    if(!is<DecompiledCommand>(branch_it->data))
+                        return true;
+
+                    auto& dcmd = get<DecompiledCommand>(branch_it->data);
+
+                    if(dcmd.id == commands.return_().id
+                    || dcmd.id == commands.terminate_this_script().id)
+                    {
+                        block_list.link_blocks(dpfs_id, *entry_point.exit_block);
+                        return false;
+                    }
+                }
+
+                return true;
+            });
         }
     }
 }
