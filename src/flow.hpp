@@ -109,7 +109,7 @@ struct Block
     std::vector<BlockId> pred;   //< Predecessor blocks
     std::vector<BlockId> succ;   //< Successor blocks
 
-    dynamic_bitset       dominators; //< Available after compute_dominators
+    dynamic_bitset       dominators; //< Available after compute_dominators. Which blocks dominates this block.
 
     explicit Block(SegReference block_begin, size_t length) :
         block_begin(std::move(block_begin)), length(length)
@@ -222,6 +222,8 @@ public:
 
     optional<BlockId> block_from_label(const SegReference& current_seg, int32_t label_target);
     optional<BlockId> block_from_mission(int32_t mission_id);
+
+    optional<block_range> get_block_range(SegType segtype, uint16_t segindex) const;
 
 protected:
     friend BlockList find_basic_blocks(const Commands& commands, const Disassembler& main_segment,

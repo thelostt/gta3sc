@@ -60,15 +60,15 @@ public:
     /*
     optional<int32_t> block_id_by_data(const DecompiledData& data)
     {
-        size_t decomp_index = (&data - &this->data[0]);
-        Expects(decomp_index < this->data.size()); // happens if &data is not from this->data
+    size_t decomp_index = (&data - &this->data[0]);
+    Expects(decomp_index < this->data.size()); // happens if &data is not from this->data
 
-        for(size_t i = 0; i < this->blocks.size(); ++i)
-        {
-            if(this->blocks[i].begin == decomp_index)
-                return i;
-        }
-        return nullopt;
+    for(size_t i = 0; i < this->blocks.size(); ++i)
+    {
+    if(this->blocks[i].begin == decomp_index)
+    return i;
+    }
+    return nullopt;
     }*/
 
 };
@@ -176,11 +176,11 @@ inline std::string decompile_data(const ArgVariant2& varg, DecompilerContext& co
 inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerContext& context)
 {
     std::string output;
-    
+
     bool not_flag = (ccmd.id & 0x8000) != 0;
 
     auto cmd_name = *context.commands.find_command_name(ccmd.id & 0x7FFF, true);
-    
+
     output.reserve(cmd_name.size() + ccmd.args.size() * 6);
 
     if(not_flag) output += "NOT ";
@@ -240,16 +240,16 @@ inline std::string decompile_data(const DecompiledData& data, DecompilerContext&
     /*
     if(auto block_id = context.block_id_by_data(data))
     {
-        output = fmt::format("\n// BLOCK {}\n", *block_id);
-        output += "//     OUT EDGES ";
-        for(auto& x : context.cfg_nodes[*block_id].edges_out)
-            output += fmt::format("{} ", x);
-        output += "\n//     IN  EDGES ";
-        for(auto& x : context.cfg_nodes[*block_id].edges_in)
-            output += fmt::format("{} ", x);
-        output += "\n";
+    output = fmt::format("\n// BLOCK {}\n", *block_id);
+    output += "//     OUT EDGES ";
+    for(auto& x : context.cfg_nodes[*block_id].edges_out)
+    output += fmt::format("{} ", x);
+    output += "\n//     IN  EDGES ";
+    for(auto& x : context.cfg_nodes[*block_id].edges_in)
+    output += fmt::format("{} ", x);
+    output += "\n";
 
-        output += visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
+    output += visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
     }
     else*/
     {

@@ -6,6 +6,7 @@
 #include "compiler.hpp"
 #include "disassembler.hpp"
 #include "decompiler.hpp"
+#include "decompiler2.hpp"
 #include "codegen.hpp"
 #include "program.hpp"
 #include "system.hpp"
@@ -771,6 +772,18 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
         find_edges(block_list, commands);
         find_call_edges(block_list, commands);
         compute_dominators(block_list);
+
+        {
+            std::string output = DecompilerContext2(commands, main_segment_asm.get_data(), block_list, SegType::Main, 0).decompile();
+            fprintf(outstream, "/***** Main Segment *****/\n%s\n", output.c_str());
+        }
+
+        for(size_t i = 0; i < mission_segments_asm.size(); ++i)
+        {
+            auto& mission_asm = mission_segments_asm[i];
+            std::string output = DecompilerContext2(commands, mission_asm.get_data(), block_list, SegType::Mission, i).decompile();
+            fprintf(outstream, "/***** Mission Segment %d *****/\n%s\n", (int)(i), output.c_str());
+        }
     }
     else
     {
@@ -782,8 +795,6 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
         for(size_t i = 0; i < mission_segments_asm.size(); ++i)
         {
             auto& mission_asm = mission_segments_asm[i];
-            // analyzer already ran after emplace
-            mission_asm.disassembly();
             std::string output = DecompilerContext(commands, mission_asm.get_data(), 1+i).decompile();
             fprintf(outstream, "/***** Mission Segment %d *****/\n%s\n", (int)(i), output.c_str());
         }

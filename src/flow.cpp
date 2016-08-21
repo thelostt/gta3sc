@@ -398,6 +398,14 @@ void compute_dominators(BlockList& block_list)
     if(block_count == 0)
         return;
 
+    // Cache-friendly list of entry points.
+    std::vector<BlockId> entry_blocks;
+    entry_blocks.reserve(block_list.proc_entries.size());
+    for(auto& entry : block_list.proc_entries)
+    {
+        entry_blocks.emplace_back(entry.block_id);
+    }
+
     // For all nodes, set all nodes as the dominators.
     for(auto it = vec_blocks.begin(); it != vec_blocks.end(); ++it)
     {
@@ -405,10 +413,13 @@ void compute_dominators(BlockList& block_list)
         it->dominators.assign(block_count, true);
     }
 
-    // Dominator of the start node is the start itself
-    auto& block0 = vec_blocks[0];
-    block0.dominators.assign(block_count, false);
-    block0.dominators[0] = true;
+    // Dominator of the entry nodes are the entry nodes itself.
+    for(const BlockId& block_id : entry_blocks)
+    {
+        auto& block0 = vec_blocks[block_id];
+        block0.dominators.assign(block_count, false);
+        block0.dominators[block_id] = true;
+    }
 
     bool changed = true;
     dynamic_bitset bits;
@@ -422,7 +433,7 @@ void compute_dominators(BlockList& block_list)
         size_t i = 0;
         for(auto it = vec_blocks.begin(), end = vec_blocks.end(); it != end; ++it, ++i)
         {
-            if(&(*it) == &block0)
+            if(std::find(entry_blocks.begin(), entry_blocks.end(), i) != entry_blocks.end())
                 continue;
 
             for(auto& pred : it->pred)
@@ -546,4 +557,26 @@ optional<BlockId> BlockList::block_from_label(const SegReference& current_seg, i
 optional<BlockId> BlockList::block_from_mission(int32_t mission_id)
 {
     return this->mission_blocks[mission_id].first;
+}
+
+auto BlockList::get_block_range(SegType segtype, uint16_t segindex) const -> optional<block_range>
+{
+    switch(segtype)
+    {
+        case SegType::Main:
+        {
+            return this->main_blocks;
+        }
+
+        case SegType::Mission:
+        {
+            if(segindex >= this->mission_blocks.size())
+                return nullopt;
+            return this->mission_blocks[segindex];
+        }
+
+        default:
+            Unreachable();
+    }
+
 }
