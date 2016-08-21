@@ -450,6 +450,52 @@ void compute_dominators(BlockList& block_list)
     }
 }
 
+static void find_natural_loop_blocks(
+    BlockList::Loop& loop, const BlockList& block_list,
+    BlockId head_id, BlockId curr_id)
+{
+    if(curr_id == head_id)
+        return;
+
+    loop.blocks.emplace_back(curr_id);
+
+    for(BlockId pred : block_list.block(curr_id).pred)
+    {
+        if(std::find(loop.blocks.begin(), loop.blocks.end(), pred) == loop.blocks.end())
+        {
+            find_natural_loop_blocks(loop, block_list, head_id, pred);
+        }
+    }
+}
+
+auto find_natural_loops(const BlockList& block_list) -> std::vector<BlockList::Loop>
+{
+    std::vector<BlockList::Loop> loops;
+
+    for(auto it = block_list.begin(), end = block_list.end(); it != end; ++it)
+    {
+        // TODO if it == some entry point, continue (should we do this? why?)
+
+        for(BlockId succ : it->succ)
+        {
+            // Every successor that dominates its predecessor is a loop header.
+            if(it->dominated_by(succ))
+            {
+                auto head_id = succ;
+                auto tail_id = block_list.block_id(*it);
+
+                loops.emplace_back(BlockList::Loop{ head_id, tail_id });
+                auto& loop = loops.back();
+
+                loop.blocks.emplace_back(head_id);
+                find_natural_loop_blocks(loop, block_list, head_id, tail_id);
+            }
+        }
+    }
+
+    return loops;
+}
+
 void BlockList::find_ranges(const std::vector<Block>& blocks, block_range& main_blocks, std::vector<block_range>& mission_blocks)
 {
     // TODO what if missions aren't sorted by offset

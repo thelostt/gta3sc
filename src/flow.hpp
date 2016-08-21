@@ -126,12 +126,28 @@ struct Block
 
     // i.e. block that contains a RETURN / TERMINATE_THIS_SCRIPT at the end, which next linked block is dummy.
     bool is_pre_end_block(const BlockList& bl) const;
+
+    bool dominated_by(BlockId block_id) const
+    {
+        return this->dominators[block_id];
+    }
 };
 
 // TODO make explicit constructor
 struct BlockList
 {
     using block_range = std::pair<BlockId, BlockId>;
+
+    struct Loop
+    {
+        BlockId head;
+        BlockId tail;
+        std::vector<BlockId> blocks; // TODO is this needed?
+
+        explicit Loop(BlockId head, BlockId tail) :
+            head(head), tail(tail)
+        {}
+    };
 
     std::vector<Block>              blocks;             // dummy blocks (at the end) aren't sorted, so container isn't
                                                         // see ranges below for sorted ranges
@@ -249,6 +265,7 @@ BlockList find_basic_blocks(const Commands& commands, const Disassembler& main_s
 void find_edges(BlockList& block_list, const Commands& commands);
 void find_call_edges(BlockList& block_list, const Commands& commands);
 void compute_dominators(BlockList& block_list);
+auto find_natural_loops(const BlockList& block_list) -> std::vector<BlockList::Loop>;
 
 //
 // Utility functions

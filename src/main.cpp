@@ -772,16 +772,17 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
         find_edges(block_list, commands);
         find_call_edges(block_list, commands);
         compute_dominators(block_list);
+        auto loops = find_natural_loops(block_list);
 
         {
-            std::string output = DecompilerContext2(commands, main_segment_asm.get_data(), block_list, SegType::Main, 0).decompile();
+            std::string output = DecompilerContext2(commands, main_segment_asm.get_data(), block_list, loops, SegType::Main, 0).decompile();
             fprintf(outstream, "/***** Main Segment *****/\n%s\n", output.c_str());
         }
 
         for(size_t i = 0; i < mission_segments_asm.size(); ++i)
         {
             auto& mission_asm = mission_segments_asm[i];
-            std::string output = DecompilerContext2(commands, mission_asm.get_data(), block_list, SegType::Mission, i).decompile();
+            std::string output = DecompilerContext2(commands, mission_asm.get_data(), block_list, loops, SegType::Mission, i).decompile();
             fprintf(outstream, "/***** Mission Segment %d *****/\n%s\n", (int)(i), output.c_str());
         }
     }

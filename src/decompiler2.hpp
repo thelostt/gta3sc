@@ -26,6 +26,8 @@ protected:
     std::string script_name;
 
     const BlockList& block_list;
+    const std::vector<BlockList::Loop>& loops;
+
     BlockList::block_range block_range;
 
     SegType  segtype;
@@ -34,8 +36,10 @@ protected:
 public:
     // TODO this takes a copy of the vector<DecompiledData>, maybe take ref?
     DecompilerContext2(const Commands& commands, std::vector<DecompiledData> decompiled,
-                       const BlockList& block_list, SegType segtype, size_t segindex)
-        : commands(commands), data(std::move(decompiled)), block_list(block_list),
+                       const BlockList& block_list, const std::vector<BlockList::Loop>& loops,
+                       SegType segtype, size_t segindex)
+        : commands(commands), data(std::move(decompiled)),
+          block_list(block_list), loops(loops),
           segtype(segtype), segindex(segindex)
     {
         this->block_range = block_list.get_block_range(this->segtype, this->segindex).value();
@@ -209,13 +213,28 @@ inline std::string decompile_data(const DecompiledLabelDef& label, size_t data_i
     if(auto opt_block = context.get_block(data_index))
     {
         const Block& block = *opt_block;
-        output += fmt::format("\n// BLOCK ID: {}", context.block_list.block_id(block));
+        BlockId block_id = context.block_list.block_id(block);
+
+        output += fmt::format("\n// BLOCK ID: {}", block_id);
         output += "\n// DOMINATORS: ";
         for(size_t k = context.block_range.first; k < context.block_range.second; ++k)
         {
             if(block.dominators[k])
             {
                 output += fmt::format("{} ", k);
+            }
+        }
+
+        for(auto& loop : context.loops)
+        {
+            if(loop.head == block_id)
+            {
+                output += fmt::format("\n// HEADER OF A LOOP {}!", (void*) &loop);
+            }
+
+            if(loop.tail == block_id)
+            {
+                output += fmt::format("\n// TAIL OF A LOOP {}!", (void*) &loop);
             }
         }
     }
