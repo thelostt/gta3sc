@@ -117,18 +117,6 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
             if(commands.find_constant_all(node.text()))
                 break;
 
-            if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
-            {
-                try
-                {
-                    match_identifier_var(*opt_var, arg, symbols);
-                    break;
-                }
-                catch(const BadAlternator& error)
-                {
-                    throw BadAlternator(node, error);
-                }
-            }
             throw BadAlternator(node, "XXX");
         }
 
