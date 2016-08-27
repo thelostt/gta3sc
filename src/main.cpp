@@ -109,24 +109,24 @@ int main(int argc, char** argv)
                     levelfile = "gta3.dat";
                     options.use_half_float = true;
                     options.has_text_label_prefix = false;
-					options.skip_single_ifs = false;
-					options.optimize_zero_floats = false;
+                    options.skip_single_ifs = false;
+                    options.optimize_zero_floats = false;
                 }
                 else if(config_name == "gtavc")
                 {
                     levelfile = "gta_vc.dat";
                     options.use_half_float = false;
                     options.has_text_label_prefix = false;
-					options.skip_single_ifs = false;
-					options.optimize_zero_floats = false;
+                    options.skip_single_ifs = false;
+                    options.optimize_zero_floats = false;
                 }
                 else if(config_name == "gtasa")
                 {
                     levelfile = "gta.dat";
                     options.use_half_float = false;
                     options.has_text_label_prefix = true;
-					options.skip_single_ifs = false;
-					options.optimize_zero_floats = false;
+                    options.skip_single_ifs = false;
+                    options.optimize_zero_floats = false;
                 }
                 else
                 {
@@ -146,14 +146,14 @@ int main(int argc, char** argv)
             {
                 options.has_text_label_prefix = flag;
             }
-			else if(optflag(argv, "skip-if", &flag))
-			{
-				options.skip_single_ifs = flag;
-			}
-			else if(optflag(argv, "optimize-zero", &flag))
-			{
-				options.optimize_zero_floats = flag;
-			}
+            else if(optflag(argv, "skip-if", &flag))
+            {
+                options.skip_single_ifs = flag;
+            }
+            else if(optflag(argv, "optimize-zero", &flag))
+            {
+                options.optimize_zero_floats = flag;
+            }
             else
             {
                 fprintf(stderr, "gta3sc: error: unregonized argument '%s'\n", *argv);
@@ -312,15 +312,15 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
             scripts.emplace_back(x.first); // maybe move
         }
 
-		{
-			size_t i = 0;
-			for(auto& x : mission_scripts)
-			{
-				symbols.merge(std::move(x.second), program);
-				scripts.emplace_back(x.first); // maybe move
-				scripts.back()->mission_id = static_cast<uint16_t>(i++);
-			}
-		}
+        {
+            size_t i = 0;
+            for(auto& x : mission_scripts)
+            {
+                symbols.merge(std::move(x.second), program);
+                scripts.emplace_back(x.first); // maybe move
+                scripts.back()->mission_id = static_cast<uint16_t>(i++);
+            }
+        }
 
         symbols.check_command_count(program);
 

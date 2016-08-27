@@ -339,10 +339,10 @@ inline void generate_code(const int32_t& value, CodeGenerator& codegen)
 
 inline void generate_code(const float& value, CodeGenerator& codegen)
 {
-	if(codegen.program.opt.optimize_zero_floats && value == 0.0f)
-	{
-		generate_code(static_cast<int8_t>(0), codegen);	
-	}
+    if(codegen.program.opt.optimize_zero_floats && value == 0.0f)
+    {
+        generate_code(static_cast<int8_t>(0), codegen); 
+    }
     else if(codegen.program.opt.use_half_float)
     {
         codegen.emplace_u8(6);
