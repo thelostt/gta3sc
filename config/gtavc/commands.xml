@@ -7638,13 +7638,13 @@
     <Command ID="0x4a3" Name="IS_THING_EQUAL_TO_THING">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
       </Args>
     </Command>
     <Command ID="0x4a4" Name="IS_THING_EQUAL_TO_THING">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
       </Args>
     </Command>
     <Command ID="0x4a5" Name="GET_DEAD_CHAR_PICKUP_COORDS">
@@ -7703,60 +7703,60 @@
     <Command ID="0x4ae" Name="SET">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
       </Args>
     </Command>
     <Command ID="0x4af" Name="SET">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
       </Args>
     </Command>
     <Command ID="0x4b0" Name="IS_THING_GREATER_THAN_THING">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
       </Args>
     </Command>
     <Command ID="0x4b1" Name="IS_THING_GREATER_THAN_THING">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
       </Args>
     </Command>
     <Command ID="0x4b2" Name="IS_THING_GREATER_THAN_THING">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x4b3" Name="IS_THING_GREATER_THAN_THING">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x4b4" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
       </Args>
     </Command>
     <Command ID="0x4b5" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
       </Args>
     </Command>
     <Command ID="0x4b6" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x4b7" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="CONST"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>

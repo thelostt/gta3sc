@@ -44,7 +44,7 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
         switch(var->type)
         {
             case VarType::Int:
-                is_good = (arg.type == ArgType::Integer || arg.type == ArgType::Any);
+                is_good = (arg.type == ArgType::Integer || arg.type == ArgType::Constant || arg.type == ArgType::Any);
                 break;
             case VarType::Float:
                 is_good = (arg.type == ArgType::Float || arg.type == ArgType::Any);
@@ -109,6 +109,13 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
                 // allow unknown models
                 break;
             }
+
+            throw BadAlternator(node, "XXX");
+        }
+        case ArgType::Constant:
+        {
+            if(commands.find_constant_all(node.text()))
+                break;
 
             throw BadAlternator(node, "XXX");
         }
@@ -269,7 +276,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     else
                         arg_node.set_annotation(arg_node.text());
                 }
-                else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any)
+                else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Constant || arg.type == ArgType::Any)
                 {
                     if(auto opt_const = commands.find_constant_for_arg(arg_node.text(), arg))
                     {
@@ -359,10 +366,30 @@ optional<int32_t> Commands::find_constant(const std::string& value, bool context
     return nullopt;
 }
 
+optional<int32_t> Commands::find_constant_all(const std::string& value) const
+{
+    // TODO mayyybe speed up this? we didn't profile or anything.
+    for(auto& enum_pair : enums)
+    {
+        if(auto opt = enum_pair.second->find(value))
+            return opt;
+    }
+    return nullopt;
+}
+
+
 optional<int32_t> Commands::find_constant_for_arg(const std::string& value, const Command::Arg& arg) const
 {
-    if(auto opt_const = arg.find_constant(value)) // constants stricly related to this Arg
-        return opt_const;
+    if(arg.type == ArgType::Constant)
+    {
+        if(auto opt_const = this->find_constant_all(value))
+            return opt_const;
+    }
+    else
+    {
+        if(auto opt_const = arg.find_constant(value)) // constants stricly related to this Arg
+            return opt_const;
+    }
 
     // If the enum that the argument accepts is MODEL, and the above didn't find a match,
     // also try on the CARPEDMODEL enum.
@@ -372,8 +399,11 @@ optional<int32_t> Commands::find_constant_for_arg(const std::string& value, cons
             return opt_const;
     }
 
-    if(auto opt_const = this->find_constant(value, true)) // global constants
-        return opt_const;
+    if(arg.type != ArgType::Constant)
+    {
+        if(auto opt_const = this->find_constant(value, true)) // global constants
+            return opt_const;
+    }
 
     return nullopt;
 }
@@ -421,6 +451,8 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::Label;
     else if(!strcmp(string, "BUFFER"))
         return ArgType::Buffer128;
+    else if(!strcmp(string, "CONST"))
+        return ArgType::Constant;
     else
         throw ConfigError("Unexpected Type attribute: {}", string);
 }

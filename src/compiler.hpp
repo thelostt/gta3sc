@@ -431,8 +431,8 @@ private:
             case NodeType::GreaterEqual:
             case NodeType::Lesser:
             case NodeType::LesserEqual:
-				if (!this->program.opt.skip_single_ifs)
-					compile_command(this->commands.andor(), { conv_int(0) });
+                if (!this->program.opt.skip_single_ifs)
+                    compile_command(this->commands.andor(), { conv_int(0) });
                 compile_condition(conds_node);
                 break;
             case NodeType::AND: // 1-8

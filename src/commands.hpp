@@ -10,6 +10,7 @@ enum class ArgType : uint8_t
     Integer,
     Float,
     TextLabel,
+    Constant,
 };
 
 /// Stores constant values associated with a identifier.
@@ -137,6 +138,10 @@ public:
     /// `context_free_only` is whether we only search for constants that can be used in any occasion or
     /// constants that can be used only in specific commands arguments.
     optional<int32_t> find_constant(const std::string& value, bool context_free_only) const;
+
+    /// Finds the literal value of a constant 'value'.
+    /// This version searches for *all* enums in order to allow CONST type arguments
+    optional<int32_t> find_constant_all(const std::string& value) const;
 
     /// Finds the literal value of a constant `value` assuming we're dealing with argument `arg`.
     optional<int32_t> find_constant_for_arg(const std::string& value, const Command::Arg& arg) const;

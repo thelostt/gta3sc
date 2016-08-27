@@ -332,7 +332,7 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
     {
         if(auto opt_script = read_script(*it, subdir, type, commands, program))
         {
-	    shared_ptr<Script> script = std::move(*opt_script);
+        shared_ptr<Script> script = std::move(*opt_script);
             SymTable symtable = SymTable::from_script(*script, commands, program);
             output.emplace_back(std::make_pair(std::move(script), std::move(symtable)));
         }
