@@ -291,7 +291,7 @@ argument
 //////
 
 identifier
-	:	WS* IDENTIFIER -> IDENTIFIER
+	:	WS* (IDENTIFIER -> IDENTIFIER | IDENTIFIER '[' id=(IDENTIFIER|INTEGER) WS* ']' -> ^(ARRAY IDENTIFIER $id))
 	;
 
 integerConstant
