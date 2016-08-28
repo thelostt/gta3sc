@@ -125,7 +125,7 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
     }
 }
 
-template<typename Iter> static 
+template<typename Iter> static
 const Command& match_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
     Commands::alternator_pair alternator_range, Iter begin, Iter end) // Iter should meet SyntaxTree** requiriments
 {
@@ -173,7 +173,14 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::Float) && it_alter_arg->allow_constant);
                     break;
                 case NodeType::Array:
-                    // TODO array SA
+                    try
+                    {
+                        match_identifier( (*it_target_arg)->child(0), commands, *it_alter_arg, symbols, scope_ptr);
+                    }
+                    catch(const BadAlternator&)
+                    {
+                        bad_alternative = true;
+                    }
                     break;
                 case NodeType::Identifier:
                     try
@@ -253,7 +260,8 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
 
             case NodeType::Array:
             {
-                // TODO array SA
+                // Just annotate all children
+                annotate_internal(commands, symbols, scope_ptr, script, program, command, arg_node.begin(), arg_node.end());
                 break;
             }
 
@@ -561,11 +569,11 @@ static std::pair<std::string, Command>
                     arg.enums.shrink_to_fit();
                 }
             }
-            
+
             args.emplace_back(std::move(arg));
         }
     }
-    
+
     return {
         name_attrib->value(),
         Command {

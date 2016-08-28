@@ -249,7 +249,7 @@ inline size_t compiled_size(const shared_ptr<Label>&, const CodeGenerator&)
 
 inline size_t compiled_size(const CompiledVar& v, const CodeGenerator&)
 {
-    if(v.index == nullopt)
+    if(v.index == nullopt || is<int32_t>(*v.index))
         return 1 + sizeof(uint16_t);
     else
         return 1 + sizeof(uint16_t) * 2 + sizeof(uint8_t) * 2;
@@ -341,7 +341,7 @@ inline void generate_code(const float& value, CodeGenerator& codegen)
 {
     if(codegen.program.opt.optimize_zero_floats && value == 0.0f)
     {
-        generate_code(static_cast<int8_t>(0), codegen); 
+        generate_code(static_cast<int8_t>(0), codegen);
     }
     else if(codegen.program.opt.use_half_float)
     {
@@ -423,7 +423,41 @@ inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
     }
     else
     {
-        // TODO array SA only
+        if(is<int32_t>(*v.index))
+        {
+            switch(v.var->type)
+            {
+            case VarType::Int:
+            case VarType::Float:
+                codegen.emplace_u8(global? 0x2 : 0x3);
+                break;
+            case VarType::TextLabel:
+                codegen.emplace_u8(global? 0xA : 0xB);
+                break;
+            case VarType::TextLabel16:
+                codegen.emplace_u8(global? 0x10 : 0x11);
+                break;
+            }
+
+            codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() + get<int32_t>(*v.index) * 4 : v.var->index + get<int32_t>(*v.index)));
+        }
+        else
+        {
+            // TODO ArgType::TextLabel16 and ArgType::TextLabel (SA)
+            auto& indexVar = get<shared_ptr<Var>>(*v.index);
+            switch(v.var->type)
+            {
+            case VarType::Int:
+            case VarType::Float:
+                codegen.emplace_u8(global? 0x7 : 0x8);
+                break;
+            }
+
+            codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() : v.var->index));
+            codegen.emplace_u16(static_cast<uint16_t>(indexVar->global? indexVar->offset() : indexVar->index));
+            codegen.emplace_u8(static_cast<uint8_t>(v.var->count.value()));
+            codegen.emplace_u8((static_cast<uint8_t>(v.var->type) & 0x7F) | (indexVar->global << 7));
+        }
     }
 }
 
