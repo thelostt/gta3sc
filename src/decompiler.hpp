@@ -194,7 +194,7 @@ inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerConte
 
     if(cmd_name == "SCRIPT_NAME" && ccmd.args.size() >= 1)
     {
-        context.script_name = get_immstr(ccmd.args[0]).value_or("");
+        //context.script_name = get_immstr(ccmd.args[0]).value_or("");
     }
 
     output.push_back('\n');

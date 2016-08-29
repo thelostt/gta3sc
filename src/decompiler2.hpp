@@ -26,23 +26,26 @@ protected:
     std::string script_name;
 
     const BlockList& block_list;
-    const std::vector<BlockList::Loop>& loops;
+    std::vector<BlockList::Loop> loops;
 
     BlockList::block_range block_range;
 
     SegType  segtype;
     uint16_t segindex;
 
+    // TODO something else than map
+    std::map<const StatementNode*, bool> generated;
+
 public:
     // TODO this takes a copy of the vector<DecompiledData>, maybe take ref?
     DecompilerContext2(const Commands& commands, std::vector<DecompiledData> decompiled,
-                       const BlockList& block_list, const std::vector<BlockList::Loop>& loops,
+                       const BlockList& block_list,
                        SegType segtype, size_t segindex)
         : commands(commands), data(std::move(decompiled)),
-          block_list(block_list), loops(loops),
+          block_list(block_list),
           segtype(segtype), segindex(segindex)
     {
-        this->block_range = block_list.get_block_range(this->segtype, this->segindex).value();
+        this->block_range = this->block_list.get_block_range(this->segtype, this->segindex).value();
 
         switch(segtype)
         {
@@ -60,11 +63,30 @@ public:
     std::string decompile()
     {
         std::string output;
+
+        /*
         for(size_t i = 0; i < this->data.size(); ++i)
         {
             auto& d = this->data[i];
             output += ::decompile_data(d, i, *this);
         }
+        */
+
+        this->loops = find_natural_loops(this->block_list, this->block_range);
+        sort_natural_loops(this->block_list, this->loops);
+
+        for(auto& proc_entry : block_list.proc_entries)
+        {
+            if(proc_entry.block_id >= this->block_range.first
+                && proc_entry.block_id < this->block_range.second)
+            {
+                auto entry_node = to_statements(block_list, proc_entry.block_id);
+                entry_node = structure_dowhile(block_list, entry_node, loops);
+
+                output = this->generate_source(entry_node);
+            }
+        }
+
         return output;
     }
 
@@ -82,6 +104,12 @@ public:
         }
         return nullopt;
     }
+
+    std::string generate_source(const shared_ptr<StatementNode>& node);
+    std::string generate_source(const shared_ptr<StatementBlock>& node);
+    std::string generate_source(const shared_ptr<StatementWhile>& node);
+    std::string generate_source(const Block& block, size_t from, size_t until);
+    std::string generate_conditions(const shared_ptr<StatementBlock>& node);
 };
 
 
@@ -210,6 +238,7 @@ inline std::string decompile_data(const DecompiledLabelDef& label, size_t data_i
 {
     std::string output;
 
+#if 0
     if(auto opt_block = context.get_block(data_index))
     {
         const Block& block = *opt_block;
@@ -243,6 +272,7 @@ inline std::string decompile_data(const DecompiledLabelDef& label, size_t data_i
         Unreachable();
         output += "\n//BLOCK ID NOT FOUND";
     }
+#endif
 
     if(context.script_name.empty())
     {
@@ -280,4 +310,102 @@ inline std::string decompile_data(const DecompiledData& data, size_t index, Deco
     std::string output;
     output = visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, index, context); });
     return output;
+}
+
+inline std::string DecompilerContext2::generate_source(const shared_ptr<StatementNode>& node)
+{
+    using std::static_pointer_cast;
+
+    if(this->generated[node.get()])
+        return "";
+
+    this->generated[node.get()] = true;
+
+    switch(node->type)
+    {
+        case StatementNode::Type::Block:
+            return generate_source(static_pointer_cast<StatementBlock>(node));
+        case StatementNode::Type::While:
+            return generate_source(static_pointer_cast<StatementWhile>(node));
+        case StatementNode::Type::Break:
+            return "BREAK\n";
+        default:
+            Unreachable();
+    }
+}
+
+inline std::string DecompilerContext2::generate_source(const shared_ptr<StatementBlock>& node)
+{
+    const Block& block = this->block_list.block(node->block_id);
+
+    // TODO check kind of branch instead of count of successors
+    if(node->succ.size() == 0)
+    {
+        return this->generate_source(block, node->block_from, node->block_until);
+    }
+    else if(node->succ.size() == 1)
+    {
+        std::string output = this->generate_source(block, node->block_from, node->block_until);
+        output += this->generate_source(node->succ[0]);
+        return output;
+    }
+    else if(node->succ.size() == 2)
+    {
+        std::string output =  this->generate_source(block, node->block_from, node->block_until);
+        output += this->generate_source(node->succ[1]); // case branch not taken
+        output += this->generate_source(node->succ[0]); // case branch taken
+        return output;
+    }
+    else
+    {
+        Unreachable();
+    }
+}
+
+inline std::string DecompilerContext2::generate_source(const shared_ptr<StatementWhile>& node)
+{
+    using std::static_pointer_cast;
+    std::string output;
+    output += "WHILE ";
+    this->generated[node->loop_head.get()] = true;
+    output += generate_conditions(node->loop_head);
+    output += generate_source(node->loop_head->succ[1]);
+    output += "ENDWHILE\n";
+    output += generate_source(node->break_node());
+    return output;
+}
+
+inline std::string DecompilerContext2::generate_source(const Block& block, size_t from, size_t until)
+{
+    std::string output;
+    for(auto it = block.begin(block_list) + from, end = block.end(block_list) - until; it != end; ++it)
+    {
+        output += decompile_data(*it, -1, *this);
+    }
+    return output;
+}
+
+inline std::string DecompilerContext2::generate_conditions(const shared_ptr<StatementBlock>& node)
+{
+    const Block& block = this->block_list.block(node->block_id);
+
+    std::string output;
+
+    const auto& dcmd = get<DecompiledCommand>((block.begin(block_list) + 1)->data);
+    size_t argc = get_imm32(dcmd.args[0]).value();
+    bool first_iter = true;
+
+    for(auto it = block.begin(block_list) + 2, end = block.end(block_list) - 1; it != end; ++it)
+    {
+        if(!first_iter)
+        {
+            output += (argc >= 1 && argc <= 8)? "AND " : "OR ";
+        }
+        
+        output += decompile_data(*it, -1, *this);
+
+        first_iter = false;
+    }
+    return output;
+
 }

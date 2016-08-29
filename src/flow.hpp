@@ -110,6 +110,7 @@ struct Block
     std::vector<BlockId> succ;   //< Successor blocks
 
     dynamic_bitset       dominators; //< Available after compute_dominators. Which blocks dominates this block.
+    dynamic_bitset       post_dominators; //< Available after compute_dominators. Which blocks postdominates this block.
 
     explicit Block(SegReference block_begin, size_t length) :
         block_begin(std::move(block_begin)), length(length)
@@ -130,6 +131,11 @@ struct Block
     bool dominated_by(BlockId block_id) const
     {
         return this->dominators[block_id];
+    }
+
+    bool postdominated_by(BlockId block_id) const
+    {
+        return this->post_dominators[block_id];
     }
 };
 
@@ -266,6 +272,8 @@ void find_edges(BlockList& block_list, const Commands& commands);
 void find_call_edges(BlockList& block_list, const Commands& commands);
 void compute_dominators(BlockList& block_list);
 auto find_natural_loops(const BlockList& block_list) -> std::vector<BlockList::Loop>;
+auto find_natural_loops(const BlockList& block_list, BlockList::block_range range) -> std::vector<BlockList::Loop>;
+void sort_natural_loops(const BlockList& block_list, std::vector<BlockList::Loop>& loops);
 
 //
 // Utility functions
@@ -350,4 +358,270 @@ inline void depth_first(tag_spawn_graph_t tag, const BlockList& block_list, cons
 {
     dynamic_bitset visited(block_list.proc_entries.size());
     depth_first_internal_(tag, visited, block_list, start_proc, forward, std::move(visitor));
+}
+
+
+
+
+
+
+
+struct StatementNode : public std::enable_shared_from_this<StatementNode>
+{
+    enum class Type : uint8_t
+    {
+        Block,
+        //DoWhile,
+        While,
+        If,
+        IfElse,
+        Break,
+    };
+
+    std::vector<weak_ptr<StatementNode>>   pred;
+    std::vector<shared_ptr<StatementNode>> succ;
+
+    const Type type;
+
+    void add_successor(const shared_ptr<StatementNode>& succ_node)
+    {
+        this->succ.emplace_back(succ_node);
+        succ_node->pred.emplace_back(this->shared_from_this());
+    }
+
+    void remove_predecessor(const shared_ptr<StatementNode>& node)
+    {
+        auto this_ptr = this->shared_from_this(); // keep me alive for the lifetime of this procedure
+
+        for(auto it = this->pred.begin(); it != this->pred.end(); )
+        {
+            auto it_ptr = it->lock();
+            if(it_ptr == node)
+            {
+                it_ptr->succ.erase(std::find(it_ptr->succ.begin(), it_ptr->succ.end(), this_ptr));
+                it = this->pred.erase(it);
+            }
+            else
+                ++it;
+        }
+    }
+
+    void replace_successor(const shared_ptr<StatementNode>& old_node, const shared_ptr<StatementNode>& new_node)
+    {
+        auto this_ptr = this->shared_from_this();
+
+        for(auto it = this->succ.begin(); it != this->succ.end(); ++it)
+        {
+            if(*it == old_node)
+            {
+                *it = new_node;
+                new_node->pred.emplace_back(this_ptr);
+                old_node->pred.erase(std::find_if(old_node->pred.begin(), old_node->pred.end(), [&](const weak_ptr<StatementNode>& a) {
+                    return a.lock() == this_ptr;
+                }));
+            }
+        }
+    }
+
+    void unlink_preds(const shared_ptr<StatementNode>& new_succ, const shared_ptr<StatementNode> except = nullptr)
+    {
+        auto this_ptr = this->shared_from_this(); // keep me alive for the lifetime of this procedure
+
+        for(auto it = this->pred.begin(); it != this->pred.end(); )
+        {
+            auto pred_ptr = it->lock();
+
+            if(pred_ptr == except)
+            {
+                ++it;
+            }
+            else
+            {
+                std::replace(pred_ptr->succ.begin(), pred_ptr->succ.end(), this_ptr, new_succ);
+                new_succ->pred.emplace_back(pred_ptr);
+                it = this->pred.erase(it);
+            }
+        }
+    }
+
+
+protected:
+    StatementNode(Type type) : type(type)
+    {}
+};
+
+struct StatementBlock : public StatementNode
+{
+    BlockId block_id;
+    uint16_t block_from;    // begin() + block_from
+    uint16_t block_until;   // end() - block_until
+
+    bool goto_break = false;
+    bool goto_continue = false;
+
+    StatementBlock(BlockId block_id) :
+        StatementNode(Type::Block), block_id(block_id),
+        block_from(0), block_until(0)
+    {}
+};
+
+struct StatementBreak : public StatementNode
+{
+    StatementBreak() : StatementNode(Type::Break)
+    {}
+};
+
+struct StatementWhile : public StatementNode
+{
+    // the following nodes are isolated, no predecessors in head, and no successors in tail.
+    // when travesing head, you'll reach tail.
+    shared_ptr<StatementBlock> loop_head;
+    shared_ptr<StatementBlock> loop_tail;
+
+    StatementWhile() : StatementNode(Type::While)
+    {
+    }
+
+    void setup(const shared_ptr<StatementBlock>& stmt_loop_head, const shared_ptr<StatementBlock>& stmt_loop_tail)
+    {
+        auto this_ptr = this->shared_from_this();
+
+        this->loop_head = stmt_loop_head;
+        this->loop_tail = stmt_loop_tail;
+
+        Expects(this->loop_head->succ.size() == 2);
+        auto break_node = this->loop_head->succ[0]; // else pointer
+
+        this->loop_head->unlink_preds(this_ptr, this->loop_tail);
+
+        this->loop_head->replace_successor(break_node, std::make_shared<StatementBreak>());
+        this->add_successor(break_node);
+
+        ++this->loop_tail->block_until;
+    }
+
+    shared_ptr<StatementNode> continue_node()
+    {
+        return this->loop_head;
+    }
+
+    shared_ptr<StatementNode> break_node()
+    {
+        Expects(this->succ.size() == 1);
+        return this->succ[0];
+    }
+
+    void structure_break_continue();
+};
+
+//
+// Depth First on Statements
+//
+template<typename Visitor>
+inline bool depth_first_internal_(std::map<const StatementNode*, bool>& visited,
+                                  const shared_ptr<StatementNode>& node, bool forward, Visitor&& visitor)
+{
+    assert(visited[node.get()] == false);
+    visited[node.get()] = true;
+
+    if(!visitor(node))
+        return false;
+
+    Expects(forward == true);
+
+    for(const shared_ptr<StatementNode>& next : node->succ)
+    {
+        if(!visited[next.get()])
+        {
+            if(!depth_first_internal_(visited, next, forward, visitor))
+                return false;
+        }
+    }
+
+    return true;
+}
+
+template<typename Visitor>
+inline void depth_first(const shared_ptr<StatementNode>& start_node, bool forward, Visitor visitor)
+{
+    // TODO std::map is slow for this
+    std::map<const StatementNode*, bool> visited;
+    depth_first_internal_(visited, start_node, forward, std::move(visitor));
+}
+
+inline shared_ptr<StatementNode> to_statements_internal(const BlockList& block_list, BlockId block_id, 
+                                                        std::map<BlockId, shared_ptr<StatementNode>>& block2node)
+{
+    const Block& this_block = block_list.block(block_id);
+
+    shared_ptr<StatementNode> node = std::make_shared<StatementBlock>(block_id);
+    block2node.emplace(block_id, node);
+
+    for(const BlockId& succ : this_block.succ)
+    {
+        auto it = block2node.find(succ);
+        if(it != block2node.end())
+        {
+            node->add_successor(it->second);
+        }
+        else
+        {
+            auto next_node = to_statements_internal(block_list, succ, block2node);
+            node->add_successor(next_node);
+        }
+    }
+
+    return node;
+}
+
+inline shared_ptr<StatementNode> to_statements(const BlockList& block_list, BlockId entry_point)
+{
+    std::map<BlockId, shared_ptr<StatementNode>> block2node;
+    return to_statements_internal(block_list, entry_point, block2node);
+}
+
+inline shared_ptr<StatementNode> structure_dowhile(const BlockList& block_list,
+                                                   shared_ptr<StatementNode> entry_node,
+                                                   const std::vector<BlockList::Loop>& loops) // sorted loops
+{
+    for(auto& loop : loops)
+    {
+        shared_ptr<StatementBlock> stmt_loop_head;
+        shared_ptr<StatementBlock> stmt_loop_tail;
+
+        depth_first(entry_node, true, [&](const shared_ptr<StatementNode>& node)
+        {
+            if(node->type == StatementNode::Type::Block)
+            {
+                auto stmt_block = static_cast<const StatementBlock*>(node.get());
+
+                if(stmt_block->block_id == loop.head)
+                    stmt_loop_head = std::static_pointer_cast<StatementBlock>(node);
+                if(stmt_block->block_id == loop.tail)
+                    stmt_loop_tail = std::static_pointer_cast<StatementBlock>(node);
+
+                // stop once we have both head and tail nodes
+                return !(stmt_loop_head && stmt_loop_tail);
+            }
+            return true;
+        });
+
+        // Statements for this loop not in entry_node tree.
+        if(!stmt_loop_head || !stmt_loop_tail)
+            continue;
+
+        auto node_while = std::make_shared<StatementWhile>();
+        node_while->setup(stmt_loop_head, stmt_loop_tail);
+
+        if(entry_node == stmt_loop_head)
+        {
+            entry_node = node_while;
+        }
+    }
+    
+    return entry_node;
+}
+
+inline void StatementWhile::structure_break_continue()
+{
 }

@@ -391,6 +391,7 @@ void find_call_edges(BlockList& block_list, const Commands& commands)
 void compute_dominators(BlockList& block_list)
 {
     // TODO improve for a proper dynamic_bitset library
+    // TODO is the post dominance finding correct?
 
     auto& vec_blocks = block_list.blocks; // we have to use all blocks list including dummy nodes
     size_t block_count = vec_blocks.size();
@@ -398,53 +399,98 @@ void compute_dominators(BlockList& block_list)
     if(block_count == 0)
         return;
 
-    // Cache-friendly list of entry points.
-    std::vector<BlockId> entry_blocks;
-    entry_blocks.reserve(block_list.proc_entries.size());
-    for(auto& entry : block_list.proc_entries)
-    {
-        entry_blocks.emplace_back(entry.block_id);
-    }
-
-    // For all nodes, set all nodes as the dominators.
-    for(auto it = vec_blocks.begin(); it != vec_blocks.end(); ++it)
-    {
-        //it->dominators.resize(block_count);
-        it->dominators.assign(block_count, true);
-    }
-
-    // Dominator of the entry nodes are the entry nodes itself.
-    for(const BlockId& block_id : entry_blocks)
-    {
-        auto& block0 = vec_blocks[block_id];
-        block0.dominators.assign(block_count, false);
-        block0.dominators[block_id] = true;
-    }
-
-    bool changed = true;
+    // Helpers.
+    bool changed;
     dynamic_bitset bits;
     bits.reserve(block_count);
 
-    // Iteratively eliminate nodes that are not dominators.
-    while(changed)
+    // Cache-friendly list of entry points and exit points.
+    std::vector<BlockId> entry_blocks;
+    std::vector<BlockId> exit_blocks;
+
+    entry_blocks.reserve(block_list.proc_entries.size());
+    exit_blocks.reserve(block_list.proc_entries.size());
+    for(auto& entry : block_list.proc_entries)
     {
-        changed = false;
+        entry_blocks.emplace_back(entry.block_id);
+        exit_blocks.emplace_back(*entry.exit_block);
+    }
 
-        size_t i = 0;
-        for(auto it = vec_blocks.begin(), end = vec_blocks.end(); it != end; ++it, ++i)
+    // For all nodes, set all nodes as the dominators / postdominators.
+    for(auto it = vec_blocks.begin(); it != vec_blocks.end(); ++it)
+    {
+        it->dominators.assign(block_count, true);
+        it->post_dominators.assign(block_count, true);
+    }
+
+    // Dominators.
+    {
+        // Dominator of the entry nodes are the entry nodes itself.
+        for(const BlockId& block_id : entry_blocks)
         {
-            if(std::find(entry_blocks.begin(), entry_blocks.end(), i) != entry_blocks.end())
-                continue;
+            auto& block0 = vec_blocks[block_id];
+            block0.dominators.assign(block_count, false);
+            block0.dominators[block_id] = true;
+        }
 
-            for(auto& pred : it->pred)
+        // Iteratively eliminate nodes that are not dominators.
+        changed = true;
+        while(changed)
+        {
+            changed = false;
+
+            size_t i = 0;
+            for(auto it = vec_blocks.begin(), end = vec_blocks.end(); it != end; ++it, ++i)
             {
-                bits = it->dominators;
+                if(std::find(entry_blocks.begin(), entry_blocks.end(), i) != entry_blocks.end())
+                    continue;
 
-                it->dominators &= vec_blocks[pred].dominators;
-                it->dominators[i] = true;
+                for(auto& pred : it->pred)
+                {
+                    bits = it->dominators;
 
-                if(it->dominators != bits)
-                    changed = true; 
+                    it->dominators &= vec_blocks[pred].dominators;
+                    it->dominators[i] = true;
+
+                    if(it->dominators != bits)
+                        changed = true; 
+                }
+            }
+        }
+    }
+
+    // Postdominators.
+    {
+        // Postdominator of exit nodes are the exit nodes itself.
+        for(const BlockId& block_id : exit_blocks)
+        {
+            auto& block0 = vec_blocks[block_id];
+            block0.post_dominators.assign(block_count, false);
+            block0.post_dominators[block_id] = true;
+        }
+
+        // Iteratively eliminate nodes that are not post dominators.
+        changed = true;
+        while(changed)
+        {
+            changed = false;
+
+            size_t i = 0;
+            for(auto it = vec_blocks.begin(), end = vec_blocks.end(); it != end; ++it, ++i)
+            {
+                if(std::find(exit_blocks.begin(), exit_blocks.end(), i) != exit_blocks.end())
+                    continue;
+
+                for(auto& succ : it->succ)
+                {
+                    bits = it->post_dominators;
+
+                    it->post_dominators &= vec_blocks[succ].post_dominators;
+                    it->post_dominators[i] = true;
+
+                    if(it->post_dominators != bits)
+                        changed = true; 
+                }
             }
         }
     }
@@ -468,11 +514,12 @@ static void find_natural_loop_blocks(
     }
 }
 
-auto find_natural_loops(const BlockList& block_list) -> std::vector<BlockList::Loop>
+auto find_natural_loops(const BlockList& block_list, BlockList::block_range range) -> std::vector<BlockList::Loop>
 {
     std::vector<BlockList::Loop> loops;
 
-    for(auto it = block_list.begin(), end = block_list.end(); it != end; ++it)
+    for(auto it = block_list.begin() + range.first, end = block_list.begin() + range.second;
+        it != end; ++it)
     {
         // TODO if it == some entry point, continue (should we do this? why?)
 
@@ -494,6 +541,54 @@ auto find_natural_loops(const BlockList& block_list) -> std::vector<BlockList::L
     }
 
     return loops;
+}
+
+auto find_natural_loops(const BlockList& block_list) -> std::vector<BlockList::Loop>
+{
+    return find_natural_loops(block_list, block_list.non_dummy_blocks);
+}
+
+void sort_natural_loops(const BlockList& block_list, std::vector<BlockList::Loop>& loops)
+{
+    // TODO there is probably a better and faster way, I wrote this quickly for prototyping.
+
+#if 1
+    std::map<const BlockList::Loop*, size_t> num_loops_inside;
+
+    for(auto& this_loop : loops)
+    {
+        const Block& this_loop_head = block_list.block(this_loop.head);
+
+        for(auto& other_loop : loops)
+        {
+            if(&other_loop == &this_loop)
+                continue;
+
+            const Block& other_loop_head = block_list.block(this_loop.head);
+
+            // TODO what if this_loop_head == other_loop_head
+
+            if(other_loop_head.dominated_by(this_loop.head))
+            {
+                ++num_loops_inside[&this_loop];
+            }
+        }
+    }
+
+    std::sort(loops.begin(), loops.end(), [&](const BlockList::Loop& a, const BlockList::Loop& b)
+    {
+        return num_loops_inside[&a] < num_loops_inside[&b];
+    });
+#else
+    // does this work?
+    std::sort(loops.begin(), loops.end(), [&](const BlockList::Loop& a, const BlockList::Loop& b)
+    {
+        if(block_list.block(a.head).dominated_by(b.head)        // all paths from entry to A.HEAD must go through B.HEAD?
+        && block_list.block(a.head).postdominated_by(b.tail))   // all paths from A.HEAD to exit must go through B.TAIL?
+            return true; // then A is inside B, thus A < B
+        return false; // A >= B
+    });
+#endif
 }
 
 void BlockList::find_ranges(const std::vector<Block>& blocks, block_range& main_blocks, std::vector<block_range>& mission_blocks)
