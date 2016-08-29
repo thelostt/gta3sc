@@ -57,7 +57,7 @@ struct Command
         }
 
         /// Checks whether this argument uses the specified enum.
-        bool uses_enum(const shared_ptr<Enum>& e) const 
+        bool uses_enum(const shared_ptr<Enum>& e) const
         {
             if(!e) return false;
             return std::find(enums.begin(), enums.end(), e) != enums.end();

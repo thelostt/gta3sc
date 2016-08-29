@@ -125,7 +125,7 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
     }
 }
 
-template<typename Iter> static 
+template<typename Iter> static
 const Command& match_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
     Commands::alternator_pair alternator_range, Iter begin, Iter end) // Iter should meet SyntaxTree** requiriments
 {
@@ -173,7 +173,14 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::Float) && it_alter_arg->allow_constant);
                     break;
                 case NodeType::Array:
-                    // TODO array SA
+                    try
+                    {
+                        match_identifier( (*it_target_arg)->child(0), commands, *it_alter_arg, symbols, scope_ptr);
+                    }
+                    catch(const BadAlternator&)
+                    {
+                        bad_alternative = true;
+                    }
                     break;
                 case NodeType::Identifier:
                     try
@@ -253,7 +260,47 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
 
             case NodeType::Array:
             {
-                // TODO array SA
+                // Annotate first child as usual, and apply some special annotation to second child
+                annotate_internal(commands, symbols, scope_ptr, script, program, command, arg_node.begin(), arg_node.begin()+1);
+
+                SyntaxTree& child_node = arg_node.child(1);
+                switch (child_node.type())
+                {
+                    case NodeType::Integer:
+                    {
+                        if(child_node.is_annotated())
+                            Expects(child_node.maybe_annotation<const int32_t&>());
+                        else
+                            child_node.set_annotation(static_cast<int32_t>(std::stoi(child_node.text(), nullptr, 0)));
+                        break;
+                    }
+                    case NodeType::Identifier:
+                    {
+                        // TODO cleanup
+                        if(auto opt_const = commands.find_constant_for_arg(child_node.text(), arg))
+                        {
+                            if(child_node.is_annotated())
+                                Expects(child_node.maybe_annotation<const int32_t&>());
+                            else
+                                child_node.set_annotation(*opt_const);
+                        }
+                        else
+                        {
+                            if(auto opt_var = symbols.find_var(child_node.text(), scope_ptr))
+                            {
+                                if(child_node.is_annotated())
+                                    Expects(child_node.maybe_annotation<const shared_ptr<Var>&>());
+                                else
+                                    child_node.set_annotation(*opt_var);
+                            }
+                            else
+                                Unreachable();
+                        }
+                        break;
+                    }
+                    default:
+                        Unreachable();
+                }
                 break;
             }
 
@@ -561,11 +608,11 @@ static std::pair<std::string, Command>
                     arg.enums.shrink_to_fit();
                 }
             }
-            
+
             args.emplace_back(std::move(arg));
         }
     }
-    
+
     return {
         name_attrib->value(),
         Command {

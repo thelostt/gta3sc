@@ -195,7 +195,7 @@ expressionStatement
 	:	(id=identifier opa1=assignmentOperators1 a=argument newLine)
 		->  ^($opa1 $id $a)
 	|	(id=identifier opa2=assignmentOperators2 a=argument newLine)
-		->  ^(OP_EQ $id ^($opa2 $id $a))
+		->  ^(OP_EQ $id ^($opa2 ^($id) $a))
 	|	(id=identifier WS* '=' a=argument opb=binaryOperators b=argument newLine)
 		->  ^(OP_EQ $id ^($opb $a $b))
 	|	(a=argument opr=relationalOperators b=argument newLine)
@@ -291,7 +291,7 @@ argument
 //////
 
 identifier
-	:	WS* IDENTIFIER -> IDENTIFIER
+	:	WS* (IDENTIFIER -> IDENTIFIER | IDENTIFIER '[' id=(IDENTIFIER|INTEGER) WS* ']' -> ^(ARRAY IDENTIFIER $id))
 	;
 
 integerConstant

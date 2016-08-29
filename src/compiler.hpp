@@ -20,7 +20,7 @@ struct EOAL
 struct CompiledVar
 {
     shared_ptr<Var>                            var;
-    optional<variant<size_t, shared_ptr<Var>>> index;
+    optional<variant<int32_t, shared_ptr<Var>>> index;
 
     bool operator==(const CompiledVar& rhs) const
     {
@@ -329,7 +329,7 @@ private:
         auto& var = repeat_node.child(1);
 
         auto loop_ptr = make_internal_label();
-        
+
         compile_command(annotation.set_var_to_zero, { get_arg(var), get_arg(*annotation.number_zero) });
         compile_label(loop_ptr);
         compile_statements(repeat_node.child(2));
@@ -360,7 +360,7 @@ private:
         else
         {
             // 'a = b' or 'a =# b' or 'a > b' (and such)
-            
+
             bool invert = (eq_node.type() == NodeType::Lesser || eq_node.type() == NodeType::LesserEqual);
 
             auto& a_node = eq_node.child(!invert? 0 : 1);
@@ -482,7 +482,26 @@ private:
 
             case NodeType::Array:
             {
-                // TODO array SA
+                auto opt_var = arg_node.child(0).maybe_annotation<shared_ptr<Var>>();
+                if(opt_var)
+                {
+                    if(auto opt_int = arg_node.child(1).maybe_annotation<int32_t>())
+                    {
+                        return CompiledVar{ std::move(*opt_var), std::move(*opt_int) };
+                    }
+                    else if(auto opt_index = arg_node.child(1).maybe_annotation<shared_ptr<Var>>())
+                    {
+                        return CompiledVar{ std::move(*opt_var), std::move(*opt_index) };
+                    }
+                    else
+                    {
+                        Unreachable();
+                    }
+                }
+                else
+                {
+                    Unreachable();
+                }
                 break;
             }
 
