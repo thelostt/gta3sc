@@ -195,7 +195,8 @@ expressionStatement
 	:	(id=identifier opa1=assignmentOperators1 a=argument newLine)
 		->  ^($opa1 $id $a)
 	|	(id=identifier opa2=assignmentOperators2 a=argument newLine)
-		->  ^(OP_EQ $id ^($opa2 ^($id) $a))
+		->  ^(OP_EQ $id ^($opa2  ^($id) $a))
+		// for some reason $id (instead of ^($id)) doesn't work properly with arrays
 	|	(id=identifier WS* '=' a=argument opb=binaryOperators b=argument newLine)
 		->  ^(OP_EQ $id ^($opb $a $b))
 	|	(a=argument opr=relationalOperators b=argument newLine)
@@ -282,7 +283,7 @@ argument
 	:	WS*
 		(INTEGER -> INTEGER
 		|FLOAT -> FLOAT
-		|IDENTIFIER '[' id=(IDENTIFIER|INTEGER) WS* ']' -> ^(ARRAY IDENTIFIER $id)
+		|IDENTIFIER '[' idx=(IDENTIFIER|INTEGER) WS* ']' -> ^(ARRAY IDENTIFIER $idx)
 		|IDENTIFIER -> IDENTIFIER
 		|LONG_STRING -> LONG_STRING
 		|SHORT_STRING -> SHORT_STRING)
@@ -291,7 +292,9 @@ argument
 //////
 
 identifier
-	:	WS* (IDENTIFIER -> IDENTIFIER | IDENTIFIER '[' id=(IDENTIFIER|INTEGER) WS* ']' -> ^(ARRAY IDENTIFIER $id))
+	:	WS*
+	    (IDENTIFIER 									-> IDENTIFIER
+	    |IDENTIFIER '[' idx=(IDENTIFIER|INTEGER) WS* ']' -> ^(ARRAY IDENTIFIER $idx))
 	;
 
 integerConstant

@@ -67,6 +67,39 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
         throw BadAlternator(nocontext, "XXX kind of var not allowed");
 }
 
+static bool match_var(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
+{
+    if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
+    {
+        try
+        {
+            match_identifier_var(*opt_var, arg, symbols);
+            return true; // var exists and matches arg type
+        }
+        catch(const BadAlternator& error)
+        {
+            // var exists but arg type doesn't match var type
+            throw BadAlternator(node, error);
+        }
+    }
+    return false; // var doesn't exist
+}
+
+static void match_integer_constant(const SyntaxTree& node, const SymTable& symbols)
+{
+    switch(node.type())
+    {
+        case NodeType::Integer:
+            return;
+        case NodeType::Identifier:
+            // TODO constants
+            throw BadAlternator(node, "XXX match_integer_constant");
+            break;
+        default:
+            throw BadAlternator(node, "XXX match_integer_constant not constant");
+    }
+}
+
 static void match_identifier(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
 {
     switch(arg.type)
@@ -91,18 +124,8 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
                     break;
             }
 
-            if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
-            {
-                try
-                {
-                    match_identifier_var(*opt_var, arg, symbols);
-                    break;
-                }
-                catch(const BadAlternator& error)
-                {
-                    throw BadAlternator(node, error);
-                }
-            }
+            if(match_var(node, commands, arg, symbols, scope_ptr))
+                break;
 
             if(arg.uses_enum(commands.get_models_enum()))
             {
@@ -175,7 +198,25 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                 case NodeType::Array:
                     try
                     {
-                        match_identifier( (*it_target_arg)->child(0), commands, *it_alter_arg, symbols, scope_ptr);
+                        static Command::Arg array_index_arg(ArgType::Integer);
+
+                        auto& var_node = (*it_target_arg)->child(0);
+                        if(!match_var(var_node, commands, *it_alter_arg, symbols, scope_ptr))
+                            throw BadAlternator(var_node, "XXX var array doesn't exist");
+
+                        auto& index_node = (*it_target_arg)->child(1);
+                        switch(index_node.type())
+                        {
+                            case NodeType::Integer:
+                                // Fine as is.
+                                break;
+                            case NodeType::Identifier:
+                                if(!match_var(index_node, commands, array_index_arg, symbols, scope_ptr))
+                                    throw BadAlternator(index_node, "XXX array index identifier is not a var");
+                                break;
+                            default:
+                                Unreachable();
+                        }
                     }
                     catch(const BadAlternator&)
                     {
@@ -194,6 +235,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     break;
                 case NodeType::ShortString:
                     bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::TextLabel) && it_alter_arg->allow_constant);
+                    break;
                 case NodeType::LongString:
                     bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::TextLabel) || argtype_matches(it_alter_arg->type, ArgType::Buffer128));
                     bad_alternative = bad_alternative || !it_alter_arg->allow_constant;;
@@ -260,46 +302,44 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
 
             case NodeType::Array:
             {
-                // Annotate first child as usual, and apply some special annotation to second child
-                annotate_internal(commands, symbols, scope_ptr, script, program, command, arg_node.begin(), arg_node.begin()+1);
+                Expects(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any);
 
-                SyntaxTree& child_node = arg_node.child(1);
-                switch (child_node.type())
+                auto& var_node = arg_node.child(0);
+                auto& idx_node = arg_node.child(1);
+
+                if(var_node.is_annotated())
                 {
-                    case NodeType::Integer:
+                    Expects(var_node.maybe_annotation<const shared_ptr<Var>&>());
+                    Expects(idx_node.maybe_annotation<const shared_ptr<Var>&>() || arg_node.child(1).maybe_annotation<int32_t>());
+                }
+                else
+                {
+                    auto opt_var_base = symbols.find_var(var_node.text(), scope_ptr);
+                    Expects(opt_var_base != nullopt);
+                    var_node.set_annotation(*opt_var_base);
+
+                    switch(idx_node.type())
                     {
-                        if(child_node.is_annotated())
-                            Expects(child_node.maybe_annotation<const int32_t&>());
-                        else
-                            child_node.set_annotation(static_cast<int32_t>(std::stoi(child_node.text(), nullptr, 0)));
-                        break;
-                    }
-                    case NodeType::Identifier:
-                    {
-                        // TODO cleanup
-                        if(auto opt_const = commands.find_constant_for_arg(child_node.text(), arg))
-                        {
-                            if(child_node.is_annotated())
-                                Expects(child_node.maybe_annotation<const int32_t&>());
+                        case NodeType::Integer:
+                            if(idx_node.is_annotated())
+                                Expects(idx_node.maybe_annotation<const int32_t&>());
                             else
-                                child_node.set_annotation(*opt_const);
-                        }
-                        else
-                        {
-                            if(auto opt_var = symbols.find_var(child_node.text(), scope_ptr))
+                                idx_node.set_annotation(static_cast<int32_t>(std::stoi(idx_node.text(), nullptr, 0)));
+                            break;
+                        case NodeType::Identifier:
+                            if(auto opt_var_idx = symbols.find_var(idx_node.text(), scope_ptr))
                             {
-                                if(child_node.is_annotated())
-                                    Expects(child_node.maybe_annotation<const shared_ptr<Var>&>());
+                                if(idx_node.is_annotated())
+                                    Expects(idx_node.maybe_annotation<const shared_ptr<Var>&>());
                                 else
-                                    child_node.set_annotation(*opt_var);
+                                    idx_node.set_annotation(*opt_var_idx);
                             }
                             else
                                 Unreachable();
-                        }
-                        break;
+                            break;
+                        default:
+                            Unreachable();
                     }
-                    default:
-                        Unreachable();
                 }
                 break;
             }

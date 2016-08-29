@@ -45,6 +45,14 @@ struct Command
         bool allow_local_var : 1;   /// Allow local variables
         std::vector<shared_ptr<Enum>> enums;
 
+        Arg()
+        {}
+
+        explicit Arg(ArgType type) :
+            type(type), optional(false), allow_constant(true), allow_global_var(true), allow_local_var(true)
+        {
+        }
+
         /// Finds a constant associated with the enums of this argument.
         ::optional<int32_t> find_constant(const std::string& value) const
         {

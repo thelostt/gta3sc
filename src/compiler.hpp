@@ -19,8 +19,20 @@ struct EOAL
 /// IR for variable / array.
 struct CompiledVar
 {
-    shared_ptr<Var>                            var;
+    shared_ptr<Var>                             var;
     optional<variant<int32_t, shared_ptr<Var>>> index;
+
+    explicit CompiledVar(shared_ptr<Var> var, decltype(nullopt))
+        : var(std::move(var)), index(nullopt)
+    {}
+
+    explicit CompiledVar(shared_ptr<Var> var, int32_t index)
+        : var(std::move(var)), index(index)
+    {}
+
+    explicit CompiledVar(shared_ptr<Var> var, shared_ptr<Var> index)
+        : var(std::move(var)), index(std::move(index))
+    {}
 
     bool operator==(const CompiledVar& rhs) const
     {

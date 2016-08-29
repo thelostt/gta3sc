@@ -838,7 +838,8 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 auto alternator_thing  = node.type() == NodeType::Increment? commands.add_thing_to_thing() : commands.sub_thing_from_thing();
 
                 auto& var_ident = node.child(0);
-
+                
+                // TODO also check for arrays (NodeType::Array)
                 if(var_ident.type() != NodeType::Identifier) // TODO unecessary? Checked on the parser.
                     program.fatal_error(var_ident, "XXX {} argument is not a identifier", opkind); // TODO use program.error and think about fallback
 
