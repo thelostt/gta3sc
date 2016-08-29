@@ -211,7 +211,11 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                                 // Fine as is.
                                 break;
                             case NodeType::Identifier:
-                                if(!match_var(index_node, commands, array_index_arg, symbols, scope_ptr))
+                                if(match_var(index_node, commands, array_index_arg, symbols, scope_ptr))
+                                    break;
+                                else if(commands.find_constant_all(index_node.text()) != nullopt)
+                                    break; // check for -pedantic will happen in annotate 
+                                else
                                     throw BadAlternator(index_node, "XXX array index identifier is not a var");
                                 break;
                             default:
@@ -333,6 +337,18 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                                     Expects(idx_node.maybe_annotation<const shared_ptr<Var>&>());
                                 else
                                     idx_node.set_annotation(*opt_var_idx);
+                            }
+                            else if(auto opt_idx = commands.find_constant_all(idx_node.text()))
+                            {
+                                if(idx_node.is_annotated())
+                                    Expects(idx_node.maybe_annotation<const int32_t&>());
+                                else
+                                {
+                                    if(program.opt.pedantic)
+                                        program.error(idx_node, "XXX constant in array index is not -pedantic");
+
+                                    idx_node.set_annotation(static_cast<int32_t>(*opt_idx));
+                                }
                             }
                             else
                                 Unreachable();
