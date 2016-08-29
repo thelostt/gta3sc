@@ -260,8 +260,47 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
 
             case NodeType::Array:
             {
-                // Just annotate all children
-                annotate_internal(commands, symbols, scope_ptr, script, program, command, arg_node.begin(), arg_node.end());
+                // Annotate first child as usual, and apply some special annotation to second child
+                annotate_internal(commands, symbols, scope_ptr, script, program, command, arg_node.begin(), arg_node.begin()+1);
+
+                SyntaxTree& child_node = arg_node.child(1);
+                switch (child_node.type())
+                {
+                    case NodeType::Integer:
+                    {
+                        if(child_node.is_annotated())
+                            Expects(child_node.maybe_annotation<const int32_t&>());
+                        else
+                            child_node.set_annotation(static_cast<int32_t>(std::stoi(child_node.text(), nullptr, 0)));
+                        break;
+                    }
+                    case NodeType::Identifier:
+                    {
+                        // TODO cleanup
+                        if(auto opt_const = commands.find_constant_for_arg(child_node.text(), arg))
+                        {
+                            if(child_node.is_annotated())
+                                Expects(child_node.maybe_annotation<const int32_t&>());
+                            else
+                                child_node.set_annotation(*opt_const);
+                        }
+                        else
+                        {
+                            if(auto opt_var = symbols.find_var(child_node.text(), scope_ptr))
+                            {
+                                if(child_node.is_annotated())
+                                    Expects(child_node.maybe_annotation<const shared_ptr<Var>&>());
+                                else
+                                    child_node.set_annotation(*opt_var);
+                            }
+                            else
+                                Unreachable();
+                        }
+                        break;
+                    }
+                    default:
+                        Unreachable();
+                }
                 break;
             }
 
