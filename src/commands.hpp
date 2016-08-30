@@ -93,12 +93,43 @@ protected:
     std::multimap<uint16_t, const Command*> commands_by_id; // TODO use shared_ptr<Command>!?
     std::map<std::string, shared_ptr<Enum>> enums;
 
-    shared_ptr<Enum> enum_models;
-    shared_ptr<Enum> enum_carpedmodels;
-
 public:
     using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
 
+protected:
+    shared_ptr<Enum> enum_models;
+    shared_ptr<Enum> enum_carpedmodels;
+
+    optional<const Command&> cmd_SET_PROGRESS_TOTAL;
+    optional<const Command&> cmd_SET_TOTAL_NUMBER_OF_MISSIONS;
+    optional<const Command&> cmd_SET_COLLECTABLE1_TOTAL;
+    optional<const Command&> cmd_SWITCH_START;
+    optional<const Command&> cmd_SWITCH_CONTINUED;
+    optional<const Command&> cmd_GOSUB_FILE;
+    optional<const Command&> cmd_RETURN;
+    optional<const Command&> cmd_LAUNCH_MISSION;
+    optional<const Command&> cmd_LOAD_AND_LAUNCH_MISSION;
+    optional<const Command&> cmd_START_NEW_SCRIPT;
+    optional<const Command&> cmd_TERMINATE_THIS_SCRIPT;
+    optional<const Command&> cmd_RET;
+    optional<const Command&> cmd_GOTO;
+    optional<const Command&> cmd_GOTO_IF_FALSE;
+    optional<const Command&> cmd_ANDOR;
+    alternator_pair          alt_SET;
+    alternator_pair          alt_CSET;
+    alternator_pair          alt_TERMINATE_THIS_CUSTOM_SCRIPT;
+    alternator_pair          alt_ADD_THING_TO_THING;
+    alternator_pair          alt_SUB_THING_FROM_THING;
+    alternator_pair          alt_MULT_THING_BY_THING;
+    alternator_pair          alt_DIV_THING_BY_THING;
+    alternator_pair          alt_ADD_THING_TO_THING_TIMED;
+    alternator_pair          alt_SUB_THING_FROM_THING_TIMED;
+    alternator_pair          alt_IS_THING_EQUAL_TO_THING;
+    alternator_pair          alt_IS_THING_GREATER_THAN_THING;
+    alternator_pair          alt_IS_THING_GREATER_OR_EQUAL_TO_THING;
+
+
+public:
     Commands(std::multimap<std::string, Command> commands,
              std::map<std::string, shared_ptr<Enum>> enums);
 
@@ -155,6 +186,21 @@ public:
     optional<int32_t> find_constant_for_arg(const std::string& value, const Command::Arg& arg) const;
 
 
+    /// Find a command base on its name.
+    optional<const Command&> find_command(const char* name) const
+    {
+        auto it = this->commands.find(name);
+        if(it != this->commands.end())
+            return it->second;
+        return nullopt;
+    }
+
+    /// Finds a range of commands with the same alternator name.
+    alternator_pair find_alternator(const char* name) const
+    {
+        return commands.equal_range(name);
+    }
+
     /// Find a command based on its id.
     optional<const Command&> find_command(uint16_t id) const
     {
@@ -189,6 +235,12 @@ public:
         return &rhs == &lhs;
     }
 
+    bool equal(const Command& rhs, optional<const Command&> lhs) const
+    {
+        if(lhs) return equal(rhs, *lhs);
+        return false;
+    }
+
     bool equal(const Command& rhs, alternator_pair lhs) const
     {
         for(auto it = lhs.first; it != lhs.second; ++it)
@@ -207,165 +259,139 @@ public:
 
     // --- Important Commands ---
 
-    const Command& set_progress_total() const
+    optional<const Command&> set_progress_total() const
     {
-        // TODO cached
-        return commands.find("SET_PROGRESS_TOTAL")->second;
+        return this->cmd_SET_PROGRESS_TOTAL;
     }
 
-    const Command& set_total_number_of_missions() const
+    optional<const Command&> set_total_number_of_missions() const
     {
-        // TODO cached
-        return commands.find("SET_TOTAL_NUMBER_OF_MISSIONS")->second;
+        return this->cmd_SET_TOTAL_NUMBER_OF_MISSIONS;
     }
 
-    const Command& set_collectable1_total() const
+    optional<const Command&> set_collectable1_total() const
     {
-        // TODO cached
-        return commands.find("SET_COLLECTABLE1_TOTAL")->second;
+        return this->cmd_SET_COLLECTABLE1_TOTAL;
     }
 
-    const Command& switch_start() const
+    optional<const Command&> switch_start() const
     {
-        // TODO cached
-        return commands.find("SWITCH_START")->second;
+        return this->cmd_SWITCH_START;
     }
 
-    const Command& switch_continued() const
+    optional<const Command&> switch_continued() const
     {
-        // TODO cached
-        return commands.find("SWITCH_CONTINUED")->second;
+        return this->cmd_SWITCH_CONTINUED;
     }
 
-    const Command& gosub_file() const
+    optional<const Command&> gosub_file() const
     {
-        // TODO cached
-        return commands.find("GOSUB_FILE")->second;
+        return this->cmd_GOSUB_FILE;
     }
 
-    const Command& launch_mission() const
+    optional<const Command&> launch_mission() const
     {
-        // TODO cached
-        return commands.find("LAUNCH_MISSION")->second;
+        return this->cmd_LAUNCH_MISSION;
     }
 
-    const Command& load_and_launch_mission() const
+    optional<const Command&> load_and_launch_mission() const
     {
-        // TODO cached
-        return commands.find("LOAD_AND_LAUNCH_MISSION")->second;
+        return this->cmd_LOAD_AND_LAUNCH_MISSION;
     }
 
-    const Command& start_new_script() const
+    optional<const Command&> start_new_script() const
     {
-        // TODO cached
-        return commands.find("START_NEW_SCRIPT")->second;
+        return this->cmd_START_NEW_SCRIPT;
     }
 
-    const Command& terminate_this_script() const
+    optional<const Command&> terminate_this_script() const
     {
-        // TODO cached
-        return commands.find("TERMINATE_THIS_SCRIPT")->second;
+        return this->cmd_TERMINATE_THIS_SCRIPT;
     }
 
     alternator_pair terminate_this_custom_script() const
     {
-        return commands.equal_range("TERMINATE_THIS_CUSTOM_SCRIPT");
+        return this->alt_TERMINATE_THIS_CUSTOM_SCRIPT;
     }
 
-    const Command& return_() const    // can't be named purely return() because of the C keyword
+    optional<const Command&> return_() const    // can't be named purely return() because of the C keyword
     {
-        // TODO cached
-        return commands.find("RETURN")->second;
+        return this->cmd_RETURN;
     }
 
-    const Command& ret() const
+    optional<const Command&> ret() const
     {
-        // TODO cached
-        return commands.find("RET")->second;
+        return this->cmd_RET;
     }
 
-    const Command& goto_() const    // can't be named purely goto() because of the C keyword
+    optional<const Command&> goto_() const    // can't be named purely goto() because of the C keyword
     {
-        // TODO cached
-        return commands.find("GOTO")->second;
+        return this->cmd_GOTO;
     }
 
-    const Command& goto_if_false() const
+    optional<const Command&> goto_if_false() const
     {
-        // TODO cached
-        return commands.find("GOTO_IF_FALSE")->second;
+        return this->cmd_GOTO_IF_FALSE;
     }
 
-    const Command& andor() const
+    optional<const Command&> andor() const
     {
-        // TODO cached
-        return commands.find("ANDOR")->second;
+        return this->cmd_ANDOR;
     }
 
     alternator_pair set() const
     {
-        // TODO cached
-        return commands.equal_range("SET");
+        return this->alt_SET;
     }
 
     alternator_pair cset() const
     {
-        // TODO cached
-        return commands.equal_range("CSET");
+        return this->alt_CSET;
     }
 
     alternator_pair add_thing_to_thing() const
     {
-        // TODO cached
-        return commands.equal_range("ADD_THING_TO_THING");
+        return this->alt_ADD_THING_TO_THING;
     }
 
     alternator_pair sub_thing_from_thing() const
     {
-        // TODO cached
-        return commands.equal_range("SUB_THING_FROM_THING");
+        return this->alt_SUB_THING_FROM_THING;
     }
 
     alternator_pair mult_thing_by_thing() const
     {
-        // TODO cached
-        return commands.equal_range("MULT_THING_BY_THING");
+        return this->alt_MULT_THING_BY_THING;
     }
 
     alternator_pair div_thing_by_thing() const
     {
-        // TODO cached
-        return commands.equal_range("DIV_THING_BY_THING");
+        return this->alt_DIV_THING_BY_THING;
     }
 
     alternator_pair add_thing_to_thing_timed() const
     {
-        // TODO cached
-        return commands.equal_range("ADD_THING_TO_THING_TIMED");
+        return this->alt_ADD_THING_TO_THING_TIMED;
     }
 
     alternator_pair sub_thing_from_thing_timed() const
     {
-        // TODO cached
-        return commands.equal_range("SUB_THING_FROM_THING_TIMED");
+        return this->alt_SUB_THING_FROM_THING_TIMED;
     }
 
     alternator_pair is_thing_equal_to_thing() const
     {
-        // TODO cached
-        return commands.equal_range("IS_THING_EQUAL_TO_THING");
+        return this->alt_IS_THING_EQUAL_TO_THING;
     }
 
     alternator_pair is_thing_greater_than_thing() const
     {
-        // TODO cached
-        return commands.equal_range("IS_THING_GREATER_THAN_THING");
+        return this->alt_IS_THING_GREATER_THAN_THING;
     }
 
     alternator_pair is_thing_greater_or_equal_to_thing() const
     {
-        // TODO cached
-        return commands.equal_range("IS_THING_GREATER_OR_EQUAL_TO_THING");
+        return this->alt_IS_THING_GREATER_OR_EQUAL_TO_THING;
     }
 
 protected:

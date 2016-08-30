@@ -172,6 +172,15 @@ struct CompilerContext
         Expects(compiled.empty());
         Expects(!script->top_label->local_offset);
         Expects(!script->start_label->local_offset);
+
+        // Commands always required by the compiler.
+        if(!commands.andor() || !commands.andor()->supported)
+            program.fatal_error(nocontext, "XXX ANDOR undefined or unsupported");
+        if(!commands.goto_() || !commands.goto_()->supported)
+            program.fatal_error(nocontext, "XXX GOTO undefined or unsupported");
+        if(!commands.goto_if_false() || !commands.goto_if_false()->supported)
+            program.fatal_error(nocontext, "XXX GOTO_IF_FALSE undefined or unsupported");
+        
         compile_label(script->top_label);
         compile_label(script->start_label); // TODO at MISSION_START actually
         return compile_statements(*script->tree);
@@ -307,7 +316,7 @@ private:
             auto end_ptr  = make_internal_label();
             compile_conditions(if_node.child(0), else_ptr);
             compile_statements(if_node.child(1));
-            compile_command(this->commands.goto_(), { end_ptr });
+            compile_command(*this->commands.goto_(), { end_ptr });
             compile_label(else_ptr);
             compile_statements(if_node.child(2));
             compile_label(end_ptr);
@@ -328,7 +337,7 @@ private:
         compile_label(beg_ptr);
         compile_conditions(while_node.child(0), end_ptr);
         compile_statements(while_node.child(1));
-        compile_command(this->commands.goto_(), { beg_ptr });
+        compile_command(*this->commands.goto_(), { beg_ptr });
         compile_label(end_ptr);
     }
 
@@ -347,7 +356,7 @@ private:
         compile_statements(repeat_node.child(2));
         compile_command(annotation.add_var_with_one, { get_arg(var), get_arg(*annotation.number_one) });
         compile_command(annotation.is_var_geq_times, { get_arg(var), get_arg(times) });
-        compile_command(this->commands.goto_if_false(), { loop_ptr });
+        compile_command(*this->commands.goto_if_false(), { loop_ptr });
     }
 
     void compile_expr(const SyntaxTree& eq_node, bool not_flag = false)
@@ -429,7 +438,7 @@ private:
         {
             // TODO check amount of conditions <= 8
 
-            compile_command(this->commands.andor(), { conv_int(op + conds_vector.child_count() - 2) });
+            compile_command(*this->commands.andor(), { conv_int(op + conds_vector.child_count() - 2) });
             for(auto& cond : conds_vector) compile_condition(*cond);
         };
 
@@ -444,7 +453,7 @@ private:
             case NodeType::Lesser:
             case NodeType::LesserEqual:
                 if (!this->program.opt.skip_single_ifs)
-                    compile_command(this->commands.andor(), { conv_int(0) });
+                    compile_command(*this->commands.andor(), { conv_int(0) });
                 compile_condition(conds_node);
                 break;
             case NodeType::AND: // 1-8
@@ -457,7 +466,7 @@ private:
                 Unreachable();
         }
 
-        compile_command(this->commands.goto_if_false(), { else_ptr });
+        compile_command(*this->commands.goto_if_false(), { else_ptr });
     }
 
 

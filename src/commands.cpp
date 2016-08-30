@@ -25,6 +25,32 @@ Commands::Commands(std::multimap<std::string, Command> commands_, std::map<std::
     {
         this->commands_by_id.emplace(pair.second.id, &pair.second);
     }
+
+    this->cmd_SET_PROGRESS_TOTAL            = find_command("SET_PROGRESS_TOTAL");
+    this->cmd_SET_TOTAL_NUMBER_OF_MISSIONS  = find_command("SET_TOTAL_NUMBER_OF_MISSIONS");
+    this->cmd_SET_COLLECTABLE1_TOTAL        = find_command("SET_COLLECTABLE1_TOTAL");
+    this->cmd_SWITCH_START                  = find_command("SWITCH_START");
+    this->cmd_SWITCH_CONTINUED              = find_command("SWITCH_CONTINUED");
+    this->cmd_GOSUB_FILE                    = find_command("GOSUB_FILE");
+    this->cmd_LAUNCH_MISSION                = find_command("LAUNCH_MISSION");
+    this->cmd_LOAD_AND_LAUNCH_MISSION       = find_command("LOAD_AND_LAUNCH_MISSION");
+    this->cmd_START_NEW_SCRIPT              = find_command("START_NEW_SCRIPT");
+    this->cmd_TERMINATE_THIS_SCRIPT         = find_command("TERMINATE_THIS_SCRIPT");
+    this->cmd_RET                           = find_command("RET");
+    this->cmd_GOTO_IF_FALSE                 = find_command("GOTO_IF_FALSE");
+    this->cmd_ANDOR                         = find_command("ANDOR");
+    this->alt_SET                           = find_alternator("SET");
+    this->alt_CSET                          = find_alternator("CSET");
+    this->alt_TERMINATE_THIS_CUSTOM_SCRIPT  = find_alternator("TERMINATE_THIS_CUSTOM_SCRIPT");
+    this->alt_ADD_THING_TO_THING            = find_alternator("ADD_THING_TO_THING");
+    this->alt_SUB_THING_FROM_THING          = find_alternator("SUB_THING_FROM_THING");
+    this->alt_MULT_THING_BY_THING           = find_alternator("MULT_THING_BY_THING");
+    this->alt_DIV_THING_BY_THING            = find_alternator("DIV_THING_BY_THING");
+    this->alt_ADD_THING_TO_THING_TIMED      = find_alternator("ADD_THING_TO_THING_TIMED");
+    this->alt_SUB_THING_FROM_THING_TIMED    = find_alternator("SUB_THING_FROM_THING_TIMED");
+    this->alt_IS_THING_EQUAL_TO_THING       = find_alternator("IS_THING_EQUAL_TO_THING");
+    this->alt_IS_THING_GREATER_THAN_THING   = find_alternator("IS_THING_GREATER_THAN_THING");
+    this->alt_IS_THING_GREATER_OR_EQUAL_TO_THING = find_alternator("IS_THING_GREATER_OR_EQUAL_TO_THING");
 }
 
 void Commands::add_default_models(const ProgramContext& program)

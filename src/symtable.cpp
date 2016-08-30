@@ -632,8 +632,16 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 if(!had_mission_end)
                 {
                     had_mission_end = true;
-                    const Command& command = commands.terminate_this_script();
-                    node.set_annotation(std::cref(command));
+
+                    if(commands.terminate_this_script() && commands.terminate_this_script()->supported)
+                    {
+                        const Command& command = *commands.terminate_this_script();
+                        node.set_annotation(std::cref(command));
+                    }
+                    else
+                    {
+                        program.fatal_error(nocontext, "XXX TERMINATE_THIS_SCRIPT undefined or unsupported");
+                    }
 
                     if(!had_mission_start)
                         program.error(node, "XXX MISSION_END without a MISSION_START.");
@@ -730,26 +738,47 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                 // TODO use `const Commands&` to identify these?
                 if(command_name == "LOAD_AND_LAUNCH_MISSION")
                 {
-                    const Command& command = commands.load_and_launch_mission();
-                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
-                    node.child(1).set_annotation(int32_t(script->mission_id.value()));
-                    node.set_annotation(std::cref(command));
+                    if(commands.load_and_launch_mission() && commands.load_and_launch_mission()->supported)
+                    {
+                        const Command& command = *commands.load_and_launch_mission();
+                        shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                        node.child(1).set_annotation(int32_t(script->mission_id.value()));
+                        node.set_annotation(std::cref(command));
+                    }
+                    else
+                    {
+                        program.fatal_error(nocontext, "XXX LOAD_AND_LAUNCH_MISSION undefined or unsupported");
+                    }
                 }
                 else if(command_name == "LAUNCH_MISSION")
                 {
-                    const Command& command = commands.launch_mission();
-                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
-                    node.child(1).set_annotation(script->start_label);
-                    node.set_annotation(std::cref(command));
+                    if(commands.launch_mission() && commands.launch_mission()->supported)
+                    {
+                        const Command& command = *commands.launch_mission();
+                        shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                        node.child(1).set_annotation(script->start_label);
+                        node.set_annotation(std::cref(command));
+                    }
+                    else
+                    {
+                        program.fatal_error(nocontext, "XXX LAUNCH_MISSION undefined or unsupported");
+                    }
                 }
                 else if(command_name == "GOSUB_FILE")
                 {
-                    const Command& command = commands.gosub_file();
-                    shared_ptr<Label>  label  = symbols.find_label(node.child(1).text()).value();
-                    shared_ptr<Script> script = symbols.find_script(node.child(2).text()).value();
-                    node.child(1).set_annotation(label);
-                    node.child(2).set_annotation(script->top_label);
-                    node.set_annotation(std::cref(command));
+                    if(commands.gosub_file() && commands.gosub_file()->supported)
+                    {
+                        const Command& command = *commands.gosub_file();
+                        shared_ptr<Label>  label  = symbols.find_label(node.child(1).text()).value();
+                        shared_ptr<Script> script = symbols.find_script(node.child(2).text()).value();
+                        node.child(1).set_annotation(label);
+                        node.child(2).set_annotation(script->top_label);
+                        node.set_annotation(std::cref(command));
+                    }
+                    else
+                    {
+                        program.fatal_error(nocontext, "XXX GOSUB_FILE undefined or unsupported");
+                    }
                 }
                 else
                 {
