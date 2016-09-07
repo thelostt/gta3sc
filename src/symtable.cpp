@@ -428,8 +428,6 @@ void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramCon
             case NodeType::VAR_TEXT_LABEL: case NodeType::LVAR_TEXT_LABEL:
             case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
             {
-                // TODO where should we put the global/local variable limitations? Here?
-
                 bool global; VarType vartype;
 
                 std::tie(global, vartype) = token_to_vartype(node.type());
@@ -442,6 +440,7 @@ void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramCon
 
                 auto& target = global? table.global_vars : current_scope->vars;
                 auto& index = global? global_index : local_index;
+                size_t max_index = global? (32768 / 4) : 18; // TODO SA locals limit is different
 
                 for(size_t i = 0, max = node.child_count(); i < max; ++i)
                 {
@@ -476,6 +475,9 @@ void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramCon
                         index += var_ptr->space_taken();
                         varnode.set_annotation(std::move(var_ptr));
                     }
+
+                    if(index > max_index)
+                        program.error(varnode, "XXX max {} vars limit ('{}')", (global? "global" : "local"), max_index);
                 }
 
                 return false;
