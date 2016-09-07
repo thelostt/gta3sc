@@ -711,6 +711,19 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
 {
     using namespace rapidxml;
 
+    // Order by priority (which should be read first).
+    constexpr int XML_SECTION_CONSTANTS = 1;
+    constexpr int XML_SECTION_COMMANDS  = 2;
+
+    struct XmlData
+    {
+        std::string buffer;
+        std::unique_ptr<xml_document<>> doc;
+    };
+
+    std::vector<XmlData> xml_vector;
+    std::vector<std::pair<int, xml_node<>*>> xml_sections;
+
     std::multimap<std::string, Command>     commands;
     std::map<std::string, shared_ptr<Enum>> enums;
 
@@ -718,22 +731,19 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
     enums.emplace("MODEL", std::make_shared<Enum>(Enum { {}, false, }));
     enums.emplace("CARPEDMODEL", std::make_shared<Enum>(Enum { {}, false, }));
 
-    fs::path conf_path = config_path();
-
-    for(auto& xml_path : xml_list)
+    auto xml_parse = [](const fs::path& path) -> XmlData
     {
-        std::string xml_data;
-        xml_document<> doc;   // xml_data should be alive as long as doc
+        auto buffer = std::string();
+        auto doc    = std::make_unique<xml_document<>>(); // buffer should be alive as long as doc
 
-        fs::path full_xml_path(conf_path / xml_path);
+        fs::path full_xml_path(path);
         try
         {
-            xml_data = read_file_utf8(full_xml_path).value();
+            buffer = read_file_utf8(full_xml_path).value();
 
-            if(xml_data.empty())
-                continue;
+            doc->parse<0>(&buffer[0]); // buffer will get modified here
 
-            doc.parse<0>(&xml_data[0]); // xml_data will get modified here
+            return XmlData { std::move(buffer), std::move(doc) };
         }
         catch(const rapidxml::parse_error& e)
         {
@@ -743,35 +753,56 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
         {
             throw ConfigError("Failed to read XML {}: {}", full_xml_path.generic_u8string(), e.what());
         }
+    };
 
-        if(xml_node<>* root_node = doc.first_node("GTA3Script"))
+    for(auto& xml_path : xml_list)
+    {
+        xml_vector.emplace_back(xml_parse(config_path() / xml_path));
+
+        if(xml_node<>* root_node = xml_vector.back().doc->first_node("GTA3Script"))
         {
             for(auto node = root_node->first_node(); node; node = node->next_sibling())
             {
                 if(!strcmp(node->name(), "Commands"))
                 {
-                    for(auto cmd_node = node->first_node(); cmd_node; cmd_node = cmd_node->next_sibling())
-                    {
-                        if(!strcmp(cmd_node->name(), "Command"))
-                        {
-                            auto cmd_pair = parse_command_node(cmd_node, enums);
-                            commands.emplace(std::move(cmd_pair));
-                        }
-                    }
+                    xml_sections.emplace_back(XML_SECTION_COMMANDS, node);
                 }
                 else if(!strcmp(node->name(), "Constants"))
                 {
-                    for(auto const_node = node->first_node(); const_node; const_node = const_node->next_sibling())
-                    {
-                        if(!strcmp(const_node->name(), "Enum"))
-                        {
-                            parse_enum_node(enums, const_node);
-                        }
-                    }
+                    xml_sections.emplace_back(XML_SECTION_CONSTANTS, node);
                 }
             }
         }
+    }
 
+    std::stable_sort(xml_sections.begin(), xml_sections.end(), [](const auto& a, const auto& b) {
+        return a.first < b.first;
+    });
+
+    for(auto& section_pair : xml_sections)
+    {
+        xml_node<>* node = section_pair.second;
+        if(section_pair.first == XML_SECTION_COMMANDS)
+        {
+            for(auto cmd_node = node->first_node(); cmd_node; cmd_node = cmd_node->next_sibling())
+            {
+                if(!strcmp(cmd_node->name(), "Command"))
+                {
+                    auto cmd_pair = parse_command_node(cmd_node, enums);
+                    commands.emplace(std::move(cmd_pair));
+                }
+            }
+        }
+        else if(section_pair.first == XML_SECTION_CONSTANTS)
+        {
+            for(auto const_node = node->first_node(); const_node; const_node = const_node->next_sibling())
+            {
+                if(!strcmp(const_node->name(), "Enum"))
+                {
+                    parse_enum_node(enums, const_node);
+                }
+            }
+        }
     }
 
     return Commands(std::move(commands), std::move(enums));

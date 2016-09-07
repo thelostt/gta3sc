@@ -236,10 +236,9 @@ int main(int argc, char** argv)
         std::vector<fs::path> config_files;
         config_files.reserve(3);
 
-        // order matters
+        config_files.emplace_back(config_name + "/commands.xml");
         config_files.emplace_back(config_name + "/constants.xml");
         if(datadir.empty()) config_files.emplace_back(config_name + "/default.xml");
-        config_files.emplace_back(config_name + "/commands.xml");
 
         commands = Commands::from_xml(config_files);
 

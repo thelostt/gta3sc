@@ -70,7 +70,7 @@ static fs::path find_config_path()
 #endif
 }
 
-fs::path config_path()
+const fs::path& config_path()
 {
     static fs::path conf_path = find_config_path();
     return conf_path;
