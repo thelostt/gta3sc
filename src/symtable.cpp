@@ -440,7 +440,7 @@ void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramCon
 
                 auto& target = global? table.global_vars : current_scope->vars;
                 auto& index = global? global_index : local_index;
-                size_t max_index = global? (32768 / 4) : 18; // TODO SA locals limit is different
+                size_t max_index = global? (65536 / 4) : 16; // TODO SA locals limit is different
 
                 for(size_t i = 0, max = node.child_count(); i < max; ++i)
                 {
