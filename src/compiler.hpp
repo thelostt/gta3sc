@@ -375,8 +375,23 @@ private:
             auto c = get_arg(op_node.child(1));
 
             if(!is_same_var(a, b))
-                compile_command(cmd_set, { a, b }, not_flag);
-            compile_command(cmd_op,  { a, c }, not_flag);
+            {
+                if(!is_same_var(a, c))
+                {
+                    compile_command(cmd_set, { a, b }, not_flag);
+                    compile_command(cmd_op, { a, c }, not_flag);
+                }
+                else
+                {
+                    // Safe. The annotate_tree step won't allow non-commutative
+                    // operations (substraction or division) to be compiled.
+                    compile_command(cmd_op, { a, b }, not_flag);
+                }
+            }
+            else
+            {
+                compile_command(cmd_op, { a, c }, not_flag);
+            }
         }
         else
         {

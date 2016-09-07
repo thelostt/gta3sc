@@ -827,6 +827,8 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
 
                         // TODO ensure alter_cmds1 is only '=' here (it will happen, but we need to Expects somehow)
 
+                        const char* message = nullptr;
+
                         SyntaxTree& op = node.child(1);
                         SyntaxTree& a = node.child(0);
                         SyntaxTree& b = op.child(0);
@@ -837,6 +839,31 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
 
                         const Command& cmd_op = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, c);
                         commands.annotate_args(symbols, current_scope, *this, program, cmd_op, a, c);
+
+                        switch(node.child(1).type())
+                        {
+                            case NodeType::Minus:
+                                message = "XXX cannot do VAR1 = THING - VAR1";
+                                break;
+                            case NodeType::Divide:
+                                message = "XXX cannot do VAR1 = THING / VAR1";
+                                break;
+                            case NodeType::TimedPlus:
+                                message = "XXX cannot do VAR1 = THING +@ VAR1";
+                                break;
+                            case NodeType::TimedMinus:
+                                message = "XXX cannot do VAR1 = THING -@ VAR1";
+                                break;
+                        }
+
+                        if(message)
+                        {
+                            auto a_var = a.maybe_annotation<shared_ptr<Var>>();
+                            auto c_var = a.maybe_annotation<shared_ptr<Var>>();
+
+                            if(a_var && c_var && a_var == c_var)
+                                program.error(node, message);
+                        }
 
                         node.set_annotation(std::cref(cmd_set));
                         op.set_annotation(std::cref(cmd_op));
