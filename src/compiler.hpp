@@ -434,12 +434,13 @@ private:
 
     void compile_conditions(const SyntaxTree& conds_node, const shared_ptr<Label>& else_ptr)
     {
-        auto compile_multi_andor = [this](const auto& conds_vector, size_t op)
+        auto compile_multi_andor = [this](const auto& conds_node, size_t op)
         {
-            // TODO check amount of conditions <= 8
+            if(conds_node.child_count() > 8)
+                program.error(conds_node, "XXX more than 8 conditions");
 
-            compile_command(*this->commands.andor(), { conv_int(op + conds_vector.child_count() - 2) });
-            for(auto& cond : conds_vector) compile_condition(*cond);
+            compile_command(*this->commands.andor(), { conv_int(op + conds_node.child_count() - 2) });
+            for(auto& cond : conds_node) compile_condition(*cond);
         };
 
         switch(conds_node.type())
