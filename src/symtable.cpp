@@ -859,7 +859,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                         if(message)
                         {
                             auto a_var = a.maybe_annotation<shared_ptr<Var>>();
-                            auto c_var = a.maybe_annotation<shared_ptr<Var>>();
+                            auto c_var = c.maybe_annotation<shared_ptr<Var>>();
 
                             if(a_var && c_var && a_var == c_var)
                                 program.error(node, message);
