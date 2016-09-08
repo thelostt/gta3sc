@@ -809,9 +809,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
         if(node.child_count() == 2) // ensure XML definition is correct
         {
-            if(auto opt_script_name = node.child(1).maybe_annotation<const std::string&>())
+            if(auto opt_script_name = node.child(1).maybe_annotation<std::string>())
             {
-                if(!this->script_names.emplace(*opt_script_name).second)
+                if(!this->script_names.emplace(std::move(*opt_script_name)).second)
                 {
                     program.error(node, "XXX script name has already been used");
                 }
