@@ -39,6 +39,7 @@ Commands::Commands(std::multimap<std::string, Command> commands_,
     this->cmd_LOAD_AND_LAUNCH_MISSION       = find_command("LOAD_AND_LAUNCH_MISSION");
     this->cmd_START_NEW_SCRIPT              = find_command("START_NEW_SCRIPT");
     this->cmd_TERMINATE_THIS_SCRIPT         = find_command("TERMINATE_THIS_SCRIPT");
+    this->cmd_SCRIPT_NAME                   = find_command("SCRIPT_NAME");
     this->cmd_RETURN                        = find_command("RETURN");
     this->cmd_RET                           = find_command("RET");
     this->cmd_GOTO                          = find_command("GOTO");

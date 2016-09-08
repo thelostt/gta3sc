@@ -28,6 +28,7 @@ struct Options
     bool skip_single_ifs = false;
     bool optimize_zero_floats = false;
     bool entity_tracking = true;
+    bool script_name_check = true;
 
 };
 

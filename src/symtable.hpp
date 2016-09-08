@@ -112,6 +112,12 @@ public:
                          SyntaxTree::const_iterator arg_begin, SyntaxTree::const_iterator arg_end,
                          ProgramContext&);
 
+    /// Verifies if any script name conflicts between script units.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
+    /// of the scripts in the `scripts` vector should be running while this method is executed.
+    static void verify_script_names(const std::vector<shared_ptr<Script>>& scripts, ProgramContext&);
+
     fs::path                path;
     ScriptType              type;
     shared_ptr<TokenStream> tstream;        // may be nullptr
@@ -143,6 +149,9 @@ public:
     ///
     /// TODO explain further on which compilation step this value gets to be available.
     std::vector<std::pair<shared_ptr<Var>, VarInfo>> varinfo;
+
+    /// The script names used in this script.
+    std::set<std::string, iless> script_names;
 
 public:
     optional<int32_t> find_model(const std::string& name) const

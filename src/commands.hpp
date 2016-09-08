@@ -113,6 +113,7 @@ protected:
     optional<const Command&> cmd_LOAD_AND_LAUNCH_MISSION;
     optional<const Command&> cmd_START_NEW_SCRIPT;
     optional<const Command&> cmd_TERMINATE_THIS_SCRIPT;
+    optional<const Command&> cmd_SCRIPT_NAME;
     optional<const Command&> cmd_RET;
     optional<const Command&> cmd_GOTO;
     optional<const Command&> cmd_GOTO_IF_FALSE;
@@ -332,6 +333,11 @@ public:
     optional<const Command&> terminate_this_script() const
     {
         return this->cmd_TERMINATE_THIS_SCRIPT;
+    }
+
+    optional<const Command&> script_name() const
+    {
+        return this->cmd_SCRIPT_NAME;
     }
 
     alternator_pair terminate_this_custom_script() const

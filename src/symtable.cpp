@@ -373,6 +373,26 @@ void SymTable::check_command_count(ProgramContext& program) const
         program.error(nocontext, "XXX SET_TOTAL_NUMBER_OF_MISSIONS occurs multiple times between script units, it should appear only once.");
 }
 
+void Script::verify_script_names(const std::vector<shared_ptr<Script>>& scripts, ProgramContext& program)
+{
+    if(!program.opt.script_name_check)
+        return;
+
+    std::map<std::string, shared_ptr<Script>, iless> names;
+    for(auto sc1 = scripts.begin(); sc1 != scripts.end(); ++sc1)
+    {
+        for(auto& name : (**sc1).script_names)
+        {
+            auto inpair = names.emplace(name, *sc1);
+            if(!inpair.second)
+            {
+                program.error(**sc1, "XXX script name '{}' previosly used in {}",
+                              inpair.first->first, inpair.first->second->path.generic_u8string());
+            }
+        }
+    }
+}
+
 bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramContext& program)
 {
     if(command.child_count() <= 1)
@@ -782,6 +802,23 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
         }
     };
 
+    auto handle_script_name = [&](const SyntaxTree& node)
+    {
+        if(!program.opt.script_name_check)
+            return;
+
+        if(node.child_count() == 2) // ensure XML definition is correct
+        {
+            if(auto opt_script_name = node.child(1).maybe_annotation<const std::string&>())
+            {
+                if(!this->script_names.emplace(*opt_script_name).second)
+                {
+                    program.error(node, "XXX script name has already been used");
+                }
+            }
+        }
+    };
+
     auto find_command_for_expr = [&](const SyntaxTree& op) -> optional<Commands::alternator_pair>
     {
         switch(op.type())
@@ -1053,6 +1090,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                         if(commands.equal(command, commands.start_new_script()))
                             handle_start_new_script(node);
+                        else if(commands.equal(command, commands.script_name()))
+                            handle_script_name(node);
                         else if(commands.equal(command, commands.set_collectable1_total()))
                             replace_arg0(node, symbols.count_collectable1);
                         else if(commands.equal(command, commands.set_total_number_of_missions()))

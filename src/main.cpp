@@ -31,6 +31,7 @@ Options:
   -f[no-]skip-if           Omits compiling ANDOR for single condition statements.
   -f[no-]optimize-zero     Compiles 0.0 as 0, using a 8 bit data type.
   -f[no-]entity-tracking   Tracks entity types in variables.
+  -f[no-]script-name-check Checks if there's duplicated SCRIPT_NAMEs.
 )";
 
 enum class Action
@@ -157,6 +158,10 @@ int main(int argc, char** argv)
             else if(optflag(argv, "entity-tracking", &flag))
             {
                 options.entity_tracking = flag;
+            }
+            else if(optflag(argv, "script-name-check", &flag))
+            {
+                options.script_name_check = flag;
             }
             else
             {
@@ -336,6 +341,9 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         // not thread-safe
         Script::verify_entity_types(scripts, symbols, program);
+
+        // not thread-safe
+        Script::verify_script_names(scripts, program);
 
         // CompilerContext wants an annotated ASTs, if we have any error, it's possible that
         // the AST is not correctly annotated.
