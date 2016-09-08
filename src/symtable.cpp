@@ -92,6 +92,9 @@ auto Script::compute_unknown_models(const std::vector<shared_ptr<Script>>& scrip
 void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output,
                                  ProgramContext& program, const Commands& commands)
 {
+    if(!program.opt.entity_tracking)
+        return;
+
     if(arg_type != 0)
     {
         auto& var = var_node.annotation<const shared_ptr<Var>&>();
@@ -143,6 +146,9 @@ void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type
 
 void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext& program, const Commands& commands)
 {
+    if(!program.opt.entity_tracking)
+        return;
+
     auto opt_lhs_var = lhs.maybe_annotation<const shared_ptr<Var>&>();
     auto opt_rhs_var = rhs.maybe_annotation<const shared_ptr<Var>&>();
 
@@ -185,6 +191,9 @@ void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, Pr
 void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
                                  ProgramContext& program, const Commands& commands, const SymTable& symtable)
 {
+    if(!program.opt.entity_tracking)
+        return;
+
     /// Keep track of entities assigned in previous scripts.
     std::map<shared_ptr<Var>, EntityType> assigned_vars;
 

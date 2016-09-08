@@ -262,7 +262,7 @@ public:
     optional<std::string> find_entity_name(EntityType type) const
     {
         if(type == 0)
-            return "NONE";
+            return std::string("NONE");
 
         for(auto& pair : this->entities)
         {

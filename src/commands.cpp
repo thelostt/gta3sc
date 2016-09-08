@@ -468,7 +468,8 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
 
     // TODO would be quicker (and more pedantic!) if we checked equality with the following SET operations:
     //   SET_VAR_INT_TO_VAR_INT, SET_LVAR_INT_TO_LVAR_INT, SET_VAR_INT_TO_LVAR_INT, SET_LVAR_INT_TO_VAR_INT
-    if(commands.is_alternator(command, commands.set())
+    if(program.opt.entity_tracking
+    && commands.is_alternator(command, commands.set())
     && std::distance(begin, end) == 2)
     {
         script.assign_entity_type(**begin, **std::next(begin), program, commands);

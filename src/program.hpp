@@ -26,6 +26,8 @@ struct Options
     bool has_text_label_prefix = false;
     bool skip_single_ifs = false;
     bool optimize_zero_floats = false;
+    bool entity_tracking = true;
+
 };
 
 template<typename... Args>
