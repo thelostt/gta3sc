@@ -396,8 +396,8 @@ private:
         std::vector<Case> cases;
         std::vector<Case*>sorted_cases;
 
-        auto& opt_switch_start     = commands.switch_start();
-        auto& opt_switch_continued = commands.switch_continued();
+        auto opt_switch_start     = commands.switch_start();
+        auto opt_switch_continued = commands.switch_continued();
 
         auto continue_ptr = nullptr;
         auto break_ptr = make_internal_label();
