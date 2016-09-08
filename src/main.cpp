@@ -11,8 +11,8 @@
 #include "system.hpp"
 #include "cpp/argv.hpp"
 
-int compile(fs::path input, fs::path output, ProgramContext& program, const Commands& commands);
-int decompile(fs::path input, fs::path output, ProgramContext& program, const Commands& commands);
+int compile(fs::path input, fs::path output, ProgramContext& program);
+int decompile(fs::path input, fs::path output, ProgramContext& program);
 
 const char* help_message =
 R"(Usage: gta3sc [compile|decompile] file --config=<name> [options]
@@ -48,7 +48,9 @@ int main(int argc, char** argv)
     Options options;
     fs::path input, output;
     std::string config_name;
-    optional<Commands> commands; // can't construct Commands with no arguments
+    optional<ProgramContext> program; // delay construction of ProgramContext
+    std::map<std::string, uint32_t, iless> default_models;
+    std::map<std::string, uint32_t, iless> level_models;
 
     fs::path datadir;
     const char* levelfile = nullptr;
@@ -201,8 +203,6 @@ int main(int argc, char** argv)
         }
     }
 
-    ProgramContext program(std::move(options));
-
     if(!datadir.empty())
     {
         if(levelfile == nullptr)
@@ -223,8 +223,8 @@ int main(int argc, char** argv)
 
         try
         {
-            program.load_dat(datadir / "default.dat", true);
-            program.load_dat(datadir / levelfile, false);
+            default_models = load_dat(datadir / "default.dat", true);
+            level_models   = load_dat(datadir / levelfile, false);
         }
         catch(const ConfigError& e)
         {
@@ -242,12 +242,11 @@ int main(int argc, char** argv)
         config_files.emplace_back(config_name + "/constants.xml");
         if(datadir.empty()) config_files.emplace_back(config_name + "/default.xml");
 
-        commands = Commands::from_xml(config_files);
+        Commands commands = Commands::from_xml(config_files);
+        commands.add_default_models(default_models);
 
-        if(!datadir.empty())
-        {
-            (*commands).add_default_models(program);
-        }
+        program.emplace(std::move(options), std::move(commands));
+        program->setup_models(std::move(default_models), std::move(level_models));
     }
     catch(const ConfigError& e)
     {
@@ -261,15 +260,15 @@ int main(int argc, char** argv)
     switch(action)
     {
         case Action::Compile:
-            return compile(input, output, program, *commands);
+            return compile(input, output, *program);
         case Action::Decompile:
-            return decompile(input, output, program, *commands);
+            return decompile(input, output, *program);
         default:
             Unreachable();
     }
 }
 
-int compile(fs::path input, fs::path output, ProgramContext& program, const Commands& commands)
+int compile(fs::path input, fs::path output, ProgramContext& program)
 {
     if(output.empty())
     {
@@ -286,16 +285,16 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
         //const char* input = "gta3_src/main.sc";
 
         auto main = Script::create(program, input, ScriptType::Main);
-        auto symbols = SymTable::from_script(*main, commands, program);
+        auto symbols = SymTable::from_script(*main, program);
         symbols.apply_offset_to_vars(2);
 
         scripts.emplace_back(main);
 
         auto subdir = main->scan_subdir();
 
-        auto ext_scripts = read_and_scan_symbols(subdir, symbols.extfiles.begin(), symbols.extfiles.end(), ScriptType::MainExtension, commands, program);
-        auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, commands, program);
-        auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, commands, program);
+        auto ext_scripts = read_and_scan_symbols(subdir, symbols.extfiles.begin(), symbols.extfiles.end(), ScriptType::MainExtension, program);
+        auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
+        auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
 
         // Following steps wants a fully working syntax tree, so check for parser/lexer errors.
         if(program.has_error())
@@ -329,14 +328,14 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
 
         for(auto& script : scripts)
         {
-            script->annotate_tree(symbols, commands, program);
+            script->annotate_tree(symbols, program);
         }
 
         // not thread-safe
         std::vector<std::string> models = Script::compute_unknown_models(scripts);
 
         // not thread-safe
-        Script::verify_entity_types(scripts, program, commands, symbols);
+        Script::verify_entity_types(scripts, symbols, program);
 
         // CompilerContext wants an annotated ASTs, if we have any error, it's possible that
         // the AST is not correctly annotated.
@@ -347,7 +346,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
         gens.reserve(scripts.size());
         for(auto& script : scripts)
         {
-            CompilerContext cc(script, symbols, commands, program);
+            CompilerContext cc(script, symbols, program);
             cc.compile();
             gens.emplace_back(std::move(cc), program);
         }
@@ -412,8 +411,10 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
     return 0;
 }
 
-int decompile(fs::path input, fs::path output, ProgramContext& program, const Commands& commands)
+int decompile(fs::path input, fs::path output, ProgramContext& program)
 {
+    const Commands& commands = program.commands;
+
     FILE* outstream;
 
     if(output.empty())

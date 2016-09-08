@@ -58,9 +58,9 @@ Commands::Commands(std::multimap<std::string, Command> commands_,
     this->alt_IS_THING_GREATER_OR_EQUAL_TO_THING = find_alternator("IS_THING_GREATER_OR_EQUAL_TO_THING");
 }
 
-void Commands::add_default_models(const ProgramContext& program)
+void Commands::add_default_models(const std::map<std::string, uint32_t, iless>& default_models)
 {
-    for(auto& model_pair : program.default_models)
+    for(auto& model_pair : default_models)
     {
         this->enum_carpedmodels->values.emplace(model_pair);
     }
@@ -354,7 +354,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     var_node.set_annotation(*opt_var_base);
 
                     // TODO arg.out instead of !arg.allow_constant
-                    script.process_entity_type(var_node, arg.entity_type, !arg.allow_constant, program, commands);
+                    script.process_entity_type(var_node, arg.entity_type, !arg.allow_constant, program);
 
                     switch(idx_node.type())
                     {
@@ -435,7 +435,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                             else
                             {
                                 arg_node.set_annotation(*opt_var);
-                                script.process_entity_type(arg_node, arg.entity_type, !arg.allow_constant, program, commands);
+                                script.process_entity_type(arg_node, arg.entity_type, !arg.allow_constant, program);
                                 // TODO arg.out instead of !arg.allow_constant ^
                             }
                         }
@@ -472,7 +472,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
     && commands.is_alternator(command, commands.set())
     && std::distance(begin, end) == 2)
     {
-        script.assign_entity_type(**begin, **std::next(begin), program, commands);
+        script.assign_entity_type(**begin, **std::next(begin), program);
     }
 }
 

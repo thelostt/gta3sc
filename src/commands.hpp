@@ -136,13 +136,17 @@ public:
              std::map<std::string, EntityType> entities,
              std::map<std::string, shared_ptr<Enum>> enums);
 
+    Commands(const Commands&) = delete;
+
+    Commands(Commands&&) = default;
+
     ///
     static Commands from_xml(const std::vector<fs::path>& xml_list);
 
     /// Adds the default models associated with the program context into the CARPEDMODEL enum.
     ///
     /// \warning This method is not thread-safe.
-    void add_default_models(const ProgramContext& program);
+    void add_default_models(const std::map<std::string, uint32_t, iless>&);
 
     /// Matches the best command based on the alternators with the command name and arguments given a COMMAND node in the AST.
     ///

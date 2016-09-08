@@ -162,8 +162,8 @@ struct CompilerContext
 
     /// Note 1: The SyntaxTree of the script must have been anotated. (TODO explain how to annotate the tree?).
     /// Note 2: TODO explain how to generate a symbol table?
-    CompilerContext(shared_ptr<const Script> script, const SymTable& symbols, const Commands& commands, ProgramContext& program)
-        : script(std::move(script)), symbols(symbols), commands(commands), program(program)
+    CompilerContext(shared_ptr<const Script> script, const SymTable& symbols, ProgramContext& program)
+        : script(std::move(script)), symbols(symbols), commands(program.commands), program(program)
     {}
 
     /// Compiles everything on the Syntax Tree of the script.

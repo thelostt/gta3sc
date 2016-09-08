@@ -7,6 +7,7 @@
 #include "stdinc.h"
 #include "parser.hpp"
 #include "symtable.hpp"
+#include "commands.hpp"
 
 struct tag_nocontext_t {};
 constexpr tag_nocontext_t nocontext = {};
@@ -157,23 +158,24 @@ protected:
 class ProgramContext
 {
 public:
-    const Options opt;   ///< Compiler options / flags.
+    const Options opt;          ///< Compiler options / flags.
+    const Commands commands;    ///< Commands, Entities and Enums
 
 public:
-    explicit ProgramContext(Options opt) :
-        opt(std::move(opt))
-    {}
+    explicit ProgramContext(Options opt, Commands commands) :
+        opt(std::move(opt)), commands(std::move(commands))
+    {
+    }
 
     ProgramContext(const ProgramContext&) = delete;
     ProgramContext(ProgramContext&&) = delete;
 
-    /// \warning Not thread-safe.
-    /// \throws ConfigError on failure.
-    void load_ide(const fs::path& filepath, bool is_default_ide);
-
-    /// \warning Not thread-safe.
-    /// \throws ConfigError on failure.
-    void load_dat(const fs::path& filepath, bool is_default_dat);
+    void setup_models(std::map<std::string, uint32_t, iless> default_models,
+                      std::map<std::string, uint32_t, iless> level_models)
+    {
+        this->default_models = std::move(default_models);
+        this->level_models   = std::move(level_models);
+    }
 
     bool is_model_from_ide(const std::string& name) const;
 
@@ -260,3 +262,11 @@ protected:
     // TODO profile whether unordered_map is faster for the models table on current standard lib impls.
     // hmmm we'd need to lowercase the string for unordered_map since it hashes...
 };
+
+/// \warning Not thread-safe.
+/// \throws ConfigError on failure.
+extern void load_ide(const fs::path& filepath, bool is_default_ide, std::map<std::string, uint32_t, iless>& output);
+
+/// \warning Not thread-safe.
+/// \throws ConfigError on failure.
+extern auto load_dat(const fs::path& filepath, bool is_default_dat) -> std::map<std::string, uint32_t, iless>;

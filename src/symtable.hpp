@@ -64,7 +64,7 @@ public:
     /// For example, annotates whether a identifier is a variable, enum, label, etc.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void annotate_tree(const SymTable& symbols, const Commands& commands, ProgramContext& program);
+    void annotate_tree(const SymTable& symbols, ProgramContext& program);
 
     /// Scans the subdirectory (recursively) named after the name of this script file.
     /// \returns map of (filename, filepath) to all script files found.
@@ -88,29 +88,29 @@ public:
     ///
     /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
     /// of the scripts in the `scripts` vector should be running while this method is executed.
-    static void verify_entity_types(const std::vector<shared_ptr<Script>>& scripts, ProgramContext&, const Commands&, const SymTable& symtable);
+    static void verify_entity_types(const std::vector<shared_ptr<Script>>& scripts, const SymTable& symtable, ProgramContext&);
 
     /// Checks if the variable is being used as the correct entity type, and assign VarInfo to this Script.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output, ProgramContext&, const Commands&);
+    void process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output, ProgramContext&);
 
     /// Called when two things get assigned to the other, so entity typing can be checked.
     ///
     /// This is like process_entity_type, but called on assignment operations.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext&, const Commands&);
+    void assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext&);
     /// See assign_entity_type above.
     void assign_entity_type(const shared_ptr<Var>& dst, const shared_ptr<Var>& src,
-                            const SyntaxTree& error_helper, ProgramContext&, const Commands&);
+                            const SyntaxTree& error_helper, ProgramContext&);
 
     /// Send values from (arg_begin, arg_end) to the local variables in the target label.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
     void send_input_vars(const SyntaxTree& target_label_node,
                          SyntaxTree::const_iterator arg_begin, SyntaxTree::const_iterator arg_end,
-                         ProgramContext&, const Commands&);
+                         ProgramContext&);
 
     fs::path                path;
     ScriptType              type;
@@ -307,17 +307,17 @@ struct SymTable
 
 
     /// Construts a SymTable from the symbols in `script`.
-    static SymTable from_script(Script& script, const Commands& commands, ProgramContext& program)
+    static SymTable from_script(Script& script, ProgramContext& program)
     {
         SymTable symbols;
-        symbols.scan_symbols(script, commands, program);
+        symbols.scan_symbols(script, program);
         return symbols;
     }
 
     /// Scans all symbols in `script` and adds them to this table.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void scan_symbols(Script& script, const Commands& commands, ProgramContext& program);
+    void scan_symbols(Script& script, ProgramContext& program);
 
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
     void build_script_table(const std::vector<shared_ptr<Script>>& scripts);
@@ -432,22 +432,22 @@ struct SymTable
 };
 
 auto read_script(const std::string& filename, const std::map<std::string, fs::path, iless>& subdir,
-                 ScriptType type, const Commands& commands, ProgramContext& program) -> optional<shared_ptr<Script>>;
+                 ScriptType type, ProgramContext& program) -> optional<shared_ptr<Script>>;
 
 
 template<typename InputIt> inline
 auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
                            InputIt begin, InputIt end, ScriptType type,
-                           const Commands& commands, ProgramContext& program) -> std::vector<std::pair<shared_ptr<Script>, SymTable>>
+                           ProgramContext& program) -> std::vector<std::pair<shared_ptr<Script>, SymTable>>
 {
     std::vector<std::pair<shared_ptr<Script>, SymTable>> output;
 
     for(auto it = begin; it != end; ++it)
     {
-        if(auto opt_script = read_script(*it, subdir, type, commands, program))
+        if(auto opt_script = read_script(*it, subdir, type, program))
         {
-        shared_ptr<Script> script = std::move(*opt_script);
-            SymTable symtable = SymTable::from_script(*script, commands, program);
+            shared_ptr<Script> script = std::move(*opt_script);
+            SymTable symtable = SymTable::from_script(*script, program);
             output.emplace_back(std::make_pair(std::move(script), std::move(symtable)));
         }
     }

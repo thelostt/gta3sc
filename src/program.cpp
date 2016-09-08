@@ -64,7 +64,7 @@ static bool nextline(const char*& line, char* output, size_t output_size)
     }
 }
 
-void ProgramContext::load_ide(const fs::path& filepath, bool is_default_ide)
+void load_ide(const fs::path& filepath, bool is_default_ide, std::map<std::string, uint32_t, iless>& output)
 {
     std::string file_data;
 
@@ -107,10 +107,7 @@ void ProgramContext::load_ide(const fs::path& filepath, bool is_default_ide)
 
                 if(sscanf(buffer, "%u %63s", &id, model_name) != EOF)
                 {
-                    if(is_default_ide)
-                        this->default_models.emplace(model_name, id);
-                    else
-                        this->level_models.emplace(model_name, id);
+                    output.emplace(model_name, id);
                 }
                 else
                 {
@@ -135,9 +132,10 @@ void ProgramContext::load_ide(const fs::path& filepath, bool is_default_ide)
     }
 }
 
-void ProgramContext::load_dat(const fs::path& filepath, bool is_default_dat)
+auto load_dat(const fs::path& filepath, bool is_default_dat) -> std::map<std::string, uint32_t, iless>
 {
     std::string file_data;
+    std::map<std::string, uint32_t, iless> output;
 
     try
     {
@@ -159,9 +157,11 @@ void ProgramContext::load_dat(const fs::path& filepath, bool is_default_dat)
     {
         if(!strncmp(buffer, "IDE", 3))
         {
-            this->load_ide(gamedir / (buffer+4), is_default_dat);
+            load_ide(gamedir / (buffer+4), is_default_dat, output);
         }
     }
+
+    return output;
 }
 
 bool ProgramContext::is_model_from_ide(const std::string& name) const

@@ -90,8 +90,7 @@ auto Script::compute_unknown_models(const std::vector<shared_ptr<Script>>& scrip
     return models;
 }
 
-void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output,
-                                 ProgramContext& program, const Commands& commands)
+void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output, ProgramContext& program)
 {
     if(!program.opt.entity_tracking)
         return;
@@ -109,14 +108,14 @@ void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type
                 {
                     program.error(var_node,
                         "XXX variable has been already used to create entity typed  '{}'",
-                        commands.find_entity_name(varinfo.entity_type).value()
+                        program.commands.find_entity_name(varinfo.entity_type).value()
                     );
                 }
                 else
                 {
                     program.error(var_node,
                         "XXX variable has been previosly used as a entity typed  '{}'",
-                        commands.find_entity_name(varinfo.entity_type).value()
+                        program.commands.find_entity_name(varinfo.entity_type).value()
                     );
                 }
             }
@@ -136,7 +135,8 @@ void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type
             {
                 program.error(var_node,
                     "XXX variable expected to have entity typed '{}', but variable has entity typed '{}' ",
-                    commands.find_entity_name(arg_type).value(), commands.find_entity_name(varinfo.entity_type).value()
+                    program.commands.find_entity_name(arg_type).value(),
+                    program.commands.find_entity_name(varinfo.entity_type).value()
                 );
             }
 
@@ -145,7 +145,7 @@ void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type
     }
 }
 
-void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext& program, const Commands& commands)
+void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext& program)
 {
     if(!program.opt.entity_tracking)
         return;
@@ -155,12 +155,12 @@ void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, Pr
 
     if(opt_lhs_var && opt_rhs_var)
     {
-        this->assign_entity_type(*opt_lhs_var, *opt_rhs_var, rhs, program, commands);
+        this->assign_entity_type(*opt_lhs_var, *opt_rhs_var, rhs, program);
     }
 }
 
 void Script::assign_entity_type(const shared_ptr<Var>& dst_var, const shared_ptr<Var>& src_var,
-                                const SyntaxTree& error_helper, ProgramContext& program, const Commands& commands)
+                                const SyntaxTree& error_helper, ProgramContext& program)
 {
     if(!program.opt.entity_tracking)
         return;
@@ -184,7 +184,8 @@ void Script::assign_entity_type(const shared_ptr<Var>& dst_var, const shared_ptr
     {
         program.error(error_helper,
             "XXX destination variable has entity type '{}', but trying to assign variable with entity type '{}'",
-            commands.find_entity_name(lhs_type).value(), commands.find_entity_name(rhs_type).value()
+            program.commands.find_entity_name(lhs_type).value(),
+            program.commands.find_entity_name(rhs_type).value()
         );
     }
 
@@ -199,7 +200,7 @@ void Script::assign_entity_type(const shared_ptr<Var>& dst_var, const shared_ptr
 }
 
 void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
-                                 ProgramContext& program, const Commands& commands, const SymTable& symtable)
+                                 const SymTable& symtable, ProgramContext& program)
 {
     if(!program.opt.entity_tracking)
         return;
@@ -223,8 +224,8 @@ void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
                     program.error(**s1,
                         "XXX variable '{}' expected to have entity typed '{}', but had '{}' during its usage", // had 'NONE'
                         symtable.find_var_name(var).value(), 
-                        commands.find_entity_name(vinfo1.entity_type).value(),
-                        commands.find_entity_name(0).value()
+                        program.commands.find_entity_name(vinfo1.entity_type).value(),
+                        program.commands.find_entity_name(0).value()
                     );
                 }
             }
@@ -238,8 +239,8 @@ void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
                     program.error(**s1,
                         "XXX Variable '{}' has different entity types in two or more scripts. First seen as '{}', now as '{}'.",
                         symtable.find_var_name(var).value(),
-                        commands.find_entity_name(ait->second).value(),
-                        commands.find_entity_name(vinfo1.entity_type).value()
+                        program.commands.find_entity_name(ait->second).value(),
+                        program.commands.find_entity_name(vinfo1.entity_type).value()
                     );
                 }
             }
@@ -257,7 +258,7 @@ void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
 
 void Script::send_input_vars(const SyntaxTree& target_label_node,
                              SyntaxTree::const_iterator arg_begin, SyntaxTree::const_iterator arg_end,
-                             ProgramContext& program, const Commands& commands)
+                             ProgramContext& program)
 {
     // TODO handle TEXT_LABEL and TEXT_LABEL16 properly for CALL commands?
 
@@ -265,7 +266,7 @@ void Script::send_input_vars(const SyntaxTree& target_label_node,
     {
         if(auto opt_arg_var = arg_node.maybe_annotation<const shared_ptr<Var>&>())
         {
-            this->assign_entity_type(lvar, *opt_arg_var, arg_node, program, commands);
+            this->assign_entity_type(lvar, *opt_arg_var, arg_node, program);
 
             if((*opt_arg_var)->type != lvar->type)
             {
@@ -277,7 +278,7 @@ void Script::send_input_vars(const SyntaxTree& target_label_node,
         {
             auto& arg_var = arg_node.child(0).annotation<const shared_ptr<Var>&>();
 
-            this->assign_entity_type(lvar, arg_var, arg_node, program, commands);
+            this->assign_entity_type(lvar, arg_var, arg_node, program);
 
             if(arg_var->type != lvar->type)
             {
@@ -526,7 +527,7 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
     t1.count_set_total_number_of_missions += t2.count_set_total_number_of_missions;
 }
 
-void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramContext& program)
+void SymTable::scan_symbols(Script& script, ProgramContext& program)
 {
     std::function<bool(SyntaxTree&)> walker;
 
@@ -739,8 +740,10 @@ void SymTable::scan_symbols(Script& script, const Commands& commands, ProgramCon
     script.tree->walk(std::ref(walker));
 }
 
-void Script::annotate_tree(const SymTable& symbols, const Commands& commands, ProgramContext& program)
+void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 {
+    const Commands& commands = program.commands;
+
     std::function<bool(SyntaxTree&)> walker;
 
     bool had_mission_start = false;
@@ -775,7 +778,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
         {
             //auto arg_begin = node.child_count() > 2? std::advance(node.begin(), 2) : node.end();
             auto arg_begin = node.child_count() > 2? std::next(node.begin(), 2) : node.end();
-            this->send_input_vars(node.child(1), arg_begin, node.end(), program, commands);
+            this->send_input_vars(node.child(1), arg_begin, node.end(), program);
         }
     };
 
@@ -1212,7 +1215,7 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
 }
 
 auto read_script(const std::string& filename, const std::map<std::string, fs::path, iless>& subdir,
-                 ScriptType type, const Commands& commands, ProgramContext& program) -> optional<shared_ptr<Script>>
+                 ScriptType type, ProgramContext& program) -> optional<shared_ptr<Script>>
 {
     auto path_it = subdir.find(filename);
     if(path_it != subdir.end())
