@@ -1805,9 +1805,9 @@
     </Command>
     <Command ID="0x129" Name="CREATE_CHAR_INSIDE_CAR">
       <Args>
-        <Arg Type="INT" Desc="Ped type" Entity="CAR"/>
-        <Arg Type="INT" Desc="Model ID" Enum="PEDTYPE"/>
-        <Arg Type="INT" Desc="Car/vehicle" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
+        <Arg Type="INT" Desc="Ped type" Enum="PEDTYPE"/>
+        <Arg Type="INT" Desc="Model ID" Enum="CARPEDMODEL"/>
         <Arg Type="INT" Desc="Character/ped" Out="true" AllowConst="false" Entity="CHAR"/>
       </Args>
     </Command>
@@ -2954,10 +2954,10 @@
     </Command>
     <Command ID="0x1c8" Name="CREATE_CHAR_AS_PASSENGER">
       <Args>
-        <Arg Type="INT" Desc="Ped type" Entity="CAR"/>
-        <Arg Type="INT" Desc="Model ID" Enum="PEDTYPE"/>
-        <Arg Type="INT" Desc="Car/vehicle" Enum="CARPEDMODEL"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
+        <Arg Type="INT" Desc="Ped type" Enum="PEDTYPE"/>
+        <Arg Type="INT" Desc="Model ID" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Desc="Seat ID"/>
         <Arg Type="INT" Desc="Character/ped" Out="true" AllowConst="false" Entity="CHAR"/>
       </Args>
     </Command>

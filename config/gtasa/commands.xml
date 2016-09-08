@@ -1804,10 +1804,10 @@
     </Command>
     <Command ID="0x129" Name="CREATE_CHAR_INSIDE_CAR">
       <Args>
-        <Arg Type="INT" Desc="Ped type"/>
-        <Arg Type="INT" Desc="Model ID" Enum="MODEL"/>
-        <Arg Type="INT" Desc="Car/vehicle"/>
-        <Arg Type="INT" Desc="Character/ped" Out="true"/>
+        <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
+        <Arg Type="INT" Desc="Ped type" Enum="PEDTYPE"/>
+        <Arg Type="INT" Desc="Model ID" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Desc="Character/ped" Out="true" AllowConst="false" Entity="CHAR"/>
       </Args>
     </Command>
     <Command ID="0x12a" Name="WARP_PLAYER_FROM_CAR_TO_COORD" Supported="false">
@@ -2923,11 +2923,11 @@
     </Command>
     <Command ID="0x1c8" Name="CREATE_CHAR_AS_PASSENGER">
       <Args>
-        <Arg Type="INT" Desc="Ped type"/>
-        <Arg Type="INT" Desc="Model ID" Enum="MODEL"/>
-        <Arg Type="INT" Desc="Car/vehicle"/>
-        <Arg Type="INT"/>
-        <Arg Type="INT" Desc="Character/ped" Out="true"/>
+        <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
+        <Arg Type="INT" Desc="Ped type" Enum="PEDTYPE"/>
+        <Arg Type="INT" Desc="Model ID" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Desc="Seat ID"/>
+        <Arg Type="INT" Desc="Character/ped" Out="true" AllowConst="false" Entity="CHAR"/>
       </Args>
     </Command>
     <Command ID="0x1c9" Name="SET_CHAR_OBJ_KILL_CHAR_ON_FOOT" Supported="false">
