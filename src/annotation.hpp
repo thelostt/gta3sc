@@ -17,6 +17,12 @@ struct RepeatAnnotation
     shared_ptr<SyntaxTree> number_one;
 };
 
+struct SwitchCaseAnnotation
+{
+    const Command* is_var_eq_int; // always a valid pointer
+    // (cannot use const Command& because of std::any requiring a copy ctor for stack allocated objects)
+};
+
 struct IncDecAnnotation
 {
     const Command& op_var_with_one;

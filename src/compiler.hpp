@@ -146,6 +146,12 @@ struct CompilerContext
 {
     // TODO think about more guards?
 
+    struct LoopInfo
+    {
+        shared_ptr<Label> continue_label;   //< Where a CONTINUE should jump into (may be nullptr).
+        shared_ptr<Label> break_label;      //< Where a BREAK should jump into
+    };
+
     // Inputs
     ProgramContext&                 program;
     const Commands&                 commands;
@@ -157,14 +163,17 @@ struct CompilerContext
 
     // Helpers
     std::vector<shared_ptr<Label>> internal_labels;
-    shared_ptr<Scope> current_scope;
+    shared_ptr<Scope>              current_scope;
+    std::vector<LoopInfo>          loop_stack;
 
 
     /// Note 1: The SyntaxTree of the script must have been anotated. (TODO explain how to annotate the tree?).
     /// Note 2: TODO explain how to generate a symbol table?
     CompilerContext(shared_ptr<const Script> script, const SymTable& symbols, ProgramContext& program)
         : script(std::move(script)), symbols(symbols), commands(program.commands), program(program)
-    {}
+    {
+        this->loop_stack.reserve(16);
+    }
 
     /// Compiles everything on the Syntax Tree of the script.
     void compile()
@@ -273,10 +282,10 @@ private:
                 compile_repeat(node);
                 break;
             case NodeType::SWITCH:
-                // TODO SA
+                compile_switch(node);
                 break;
             case NodeType::BREAK:
-                // TODO after SA SWITCH is done
+                compile_break(node);
                 break;
             case NodeType::CONTINUE:
                 // TODO after SA SWITCH is done
@@ -334,11 +343,16 @@ private:
     {
         auto beg_ptr = make_internal_label();
         auto end_ptr = make_internal_label();
+
+        loop_stack.emplace_back(LoopInfo { beg_ptr, end_ptr });
+
         compile_label(beg_ptr);
         compile_conditions(while_node.child(0), end_ptr);
         compile_statements(while_node.child(1));
         compile_command(*this->commands.goto_(), { beg_ptr });
         compile_label(end_ptr);
+
+        loop_stack.pop_back();
     }
 
     void compile_repeat(const SyntaxTree& repeat_node)
@@ -349,14 +363,187 @@ private:
         auto& times = repeat_node.child(0);
         auto& var = repeat_node.child(1);
 
-        auto loop_ptr = make_internal_label();
+        auto continue_ptr = make_internal_label();
+        auto break_ptr    = make_internal_label();
+        auto loop_ptr     = make_internal_label();
+
+        loop_stack.emplace_back(LoopInfo { continue_ptr, break_ptr });
 
         compile_command(annotation.set_var_to_zero, { get_arg(var), get_arg(*annotation.number_zero) });
         compile_label(loop_ptr);
         compile_statements(repeat_node.child(2));
+        compile_label(continue_ptr);
         compile_command(annotation.add_var_with_one, { get_arg(var), get_arg(*annotation.number_one) });
         compile_command(annotation.is_var_geq_times, { get_arg(var), get_arg(times) });
         compile_command(*this->commands.goto_if_false(), { loop_ptr });
+        compile_label(break_ptr);
+
+        loop_stack.pop_back();
+    }
+
+    void compile_switch(const SyntaxTree& switch_node)
+    {
+        struct Case
+        {
+            int32_t                     value;
+            shared_ptr<Label>           target;
+            optional<const SyntaxTree&> case_node;
+            optional<const SyntaxTree&> statements;     // nullopt on case_default if no DEFAULT
+            optional<const Command&>    is_var_eq_int;
+        };
+
+        Case              case_default { 0, nullptr, nullopt, nullopt, nullopt };
+        std::vector<Case> cases;
+        std::vector<Case*>sorted_cases;
+
+        auto& opt_switch_start     = commands.switch_start();
+        auto& opt_switch_continued = commands.switch_continued();
+
+        auto continue_ptr = nullptr;
+        auto break_ptr = make_internal_label();
+
+        const SyntaxTree& var = switch_node.child(0);
+
+        cases.reserve(switch_node.child(1).child_count());
+        for(auto& case_node : switch_node.child(1))
+        {
+            switch(case_node->type())
+            {
+                case NodeType::CASE:
+                    cases.emplace_back(Case {
+                        case_node->child(0).annotation<int32_t>(),
+                        nullptr, *case_node, case_node->child(1),
+                        *case_node->annotation<const SwitchCaseAnnotation&>().is_var_eq_int
+                    });
+                    break;
+                case NodeType::DEFAULT:
+                    case_default = Case { 0, nullptr, *case_node, case_node->child(0), nullopt };
+                    break;
+                default:
+                    Unreachable();
+            }
+        }
+
+        loop_stack.emplace_back(LoopInfo { continue_ptr, break_ptr });
+
+        sorted_cases.resize(cases.size());
+        {
+            std::transform(cases.begin(), cases.end(), sorted_cases.begin(), std::addressof<Case>);
+            std::sort(sorted_cases.begin(), sorted_cases.end(), [](const Case* a, const Case* b) {
+                return a->value < b->value;
+            });
+
+            auto it = std::adjacent_find(sorted_cases.begin(), sorted_cases.end(), [](const Case* a, const Case* b) {
+                return a->value == b->value;
+            });
+
+            if(it != sorted_cases.end())
+            {
+                program.error((**it).case_node.value(), "XXX CASE happens twice");
+            }
+        }
+
+        if(cases.size() > 75)
+            program.error(switch_node, "XXX SWITCH contains more than 75 cases");
+
+        if(opt_switch_start && opt_switch_start->supported
+        && opt_switch_continued && opt_switch_continued->supported)
+        {
+            case_default.target = make_internal_label();
+            for(auto& xcase : cases) xcase.target = make_internal_label();
+
+            for(size_t i = 0; i < sorted_cases.size(); )
+            {
+                std::vector<ArgVariant> args;
+                args.reserve(18);
+
+                const Command& switch_op = (i == 0? *opt_switch_start : *opt_switch_continued);
+                size_t max_cases_here    = (i == 0? 7 : 9);
+
+                if(i == 0)
+                {
+                    args.emplace_back(get_arg(var));
+                    args.emplace_back(conv_int(sorted_cases.size()));
+                    args.emplace_back(conv_int(case_default.statements != nullopt));
+                    args.emplace_back(case_default.target);
+                }
+
+                for(size_t k = 0; k < max_cases_here; ++k, ++i)
+                {
+                    if(i < sorted_cases.size())
+                    {
+                        args.emplace_back(conv_int(sorted_cases[i]->value));
+                        args.emplace_back(sorted_cases[i]->target);
+                    }
+                    else
+                    {
+                        args.emplace_back(conv_int(-1));
+                        args.emplace_back(break_ptr);
+                    }
+                }
+
+                compile_command(switch_op, std::move(args));
+            }
+
+            for(auto& xcase : cases)
+            {
+                compile_label(xcase.target);
+                compile_statements(*xcase.statements);
+            }
+
+            compile_label(case_default.target);
+            if(case_default.statements)
+            {
+                compile_statements(*case_default.statements);
+            }
+
+            compile_label(break_ptr);
+        }
+        else
+        {
+            shared_ptr<Label> next_ptr = make_internal_label();
+
+            for(auto& xcase : cases)
+            {
+                xcase.target = next_ptr;
+                compile_label(next_ptr);
+                next_ptr = make_internal_label();
+                compile_command(*xcase.is_var_eq_int, { get_arg(var), conv_int(xcase.value) });
+                compile_command(*commands.goto_if_false(), { next_ptr });
+                compile_statements(*xcase.statements);
+            }
+
+            case_default.target = next_ptr;
+            compile_label(next_ptr);
+            if(case_default.statements)
+            {
+                compile_statements(*case_default.statements);
+            }
+
+            compile_label(break_ptr);
+        }
+
+        loop_stack.pop_back();
+    }
+
+    void compile_break(const SyntaxTree& break_node)
+    {
+        if(loop_stack.empty())
+        {
+            program.error(break_node, "XXX BREAK not inside a loop");
+            return;
+        }
+
+        auto& current_loop = loop_stack.back();
+
+        if(current_loop.continue_label != nullptr) // hacky way to check if we're not at a SWITCH
+        {
+            program.error(break_node, "XXX BREAK only works in SWITCH");
+            return;
+        }
+
+        Expects(current_loop.break_label != nullptr);
+        compile_command(*commands.goto_(), { current_loop.break_label });
     }
 
     void compile_expr(const SyntaxTree& eq_node, bool not_flag = false)

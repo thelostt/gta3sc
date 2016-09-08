@@ -23,12 +23,14 @@ struct Options
 
     /// Boolean flags
     bool pedantic = false;
+    bool guesser = false;
     bool use_half_float = false;
     bool has_text_label_prefix = false;
     bool skip_single_ifs = false;
     bool optimize_zero_floats = false;
     bool entity_tracking = true;
     bool script_name_check = true;
+    bool fswitch = false;
 
 };
 

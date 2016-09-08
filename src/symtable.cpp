@@ -1031,6 +1031,65 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 return false;
             }
 
+            case NodeType::SWITCH:
+            {
+                if(!program.opt.fswitch)
+                    program.error(node, "XXX SWITCH not enabled [-fswitch]");
+
+                auto& var = node.child(0);
+
+                auto ensure_break = [&](const SyntaxTree& statement_list)
+                {
+                    if(statement_list.child_count() > 0)
+                    {
+                        auto& last_statement = statement_list.child(statement_list.child_count() - 1);
+                        if(last_statement.type() != NodeType::BREAK)
+                            program.error(*statement_list.parent(), "XXX CASE does not end with a BREAK");
+                    }
+                };
+
+                for(auto& case_node : node.child(1))
+                {
+                    switch(case_node->type())
+                    {
+                        case NodeType::CASE:
+                        {
+                            try
+                            {
+                                auto& case_value = case_node->child(0);
+
+                                const Command& is_var_eq_int = commands.match_args(symbols, current_scope, commands.is_thing_equal_to_thing(), var, case_value);
+                                commands.annotate_args(symbols, current_scope, *this, program, is_var_eq_int, var, case_value);
+
+                                if(!case_value.maybe_annotation<const int32_t&>())
+                                    program.error(case_value, "XXX case value must be a integer constant");
+
+                                if(program.opt.pedantic && case_value.type() != NodeType::Integer)
+                                    program.error(case_value, "XXX case value must be a INT value [-pedantic]");
+
+                                case_node->set_annotation(SwitchCaseAnnotation { &is_var_eq_int });
+                            }
+                            catch(const BadAlternator& e)
+                            {
+                                program.error(e.error());
+                            }
+
+                            case_node->child(1).walk(std::ref(walker));
+                            ensure_break(case_node->child(1));
+                            break;
+                        }
+                        case NodeType::DEFAULT:
+                            case_node->child(0).walk(std::ref(walker));
+                            ensure_break(case_node->child(0));
+                            break;
+                        default:
+                            Unreachable();
+                    }
+                }
+
+                return false;
+            }
+
             case NodeType::Command:
             {
                 auto& command_name = node.child(0).text();
