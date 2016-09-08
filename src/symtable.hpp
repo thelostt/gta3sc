@@ -101,7 +101,16 @@ public:
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
     void assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext&, const Commands&);
-    
+    /// See assign_entity_type above.
+    void assign_entity_type(const shared_ptr<Var>& dst, const shared_ptr<Var>& src,
+                            const SyntaxTree& error_helper, ProgramContext&, const Commands&);
+
+    /// Send values from (arg_begin, arg_end) to the local variables in the target label.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
+    void send_input_vars(const SyntaxTree& target_label_node,
+                         SyntaxTree::const_iterator arg_begin, SyntaxTree::const_iterator arg_end,
+                         ProgramContext&, const Commands&);
 
     fs::path                path;
     ScriptType              type;
@@ -128,6 +137,10 @@ public:
     std::vector<std::pair<std::string, int32_t>> models;
 
     /// Information of the variable usage in this script.
+    ///
+    /// Do note this is how this script views the specified variable. Thus the variable isn't necessarly
+    /// declared in this script (for instance local variables of START_NEW_SCRIPT).
+    ///
     /// TODO explain further on which compilation step this value gets to be available.
     std::vector<std::pair<shared_ptr<Var>, VarInfo>> varinfo;
 
@@ -228,6 +241,18 @@ struct Var
 struct Scope
 {
     std::map<std::string, shared_ptr<Var>, iless> vars;
+
+    shared_ptr<Var> var_at(size_t index) const
+    {
+        size_t offset = index * 4;
+        for(auto& vpair : vars)
+        {
+            if(offset >= vpair.second->offset()
+            && offset < vpair.second->end_offset())
+                return vpair.second;
+        }
+        return nullptr;
+    }
 };
 
 /// Label information.

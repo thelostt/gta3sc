@@ -1,3 +1,4 @@
+#include "stdinc.h"
 #include "symtable.hpp"
 #include "commands.hpp"
 #include "program.hpp"
@@ -154,37 +155,46 @@ void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, Pr
 
     if(opt_lhs_var && opt_rhs_var)
     {
-        EntityType lhs_type = 0;
-        EntityType rhs_type = 0;
+        this->assign_entity_type(*opt_lhs_var, *opt_rhs_var, rhs, program, commands);
+    }
+}
 
-        {
-        auto opt_lhsinfo = this->find_varinfo(*opt_lhs_var);
-        auto opt_rhsinfo = this->find_varinfo(*opt_rhs_var);
+void Script::assign_entity_type(const shared_ptr<Var>& dst_var, const shared_ptr<Var>& src_var,
+                                const SyntaxTree& error_helper, ProgramContext& program, const Commands& commands)
+{
+    if(!program.opt.entity_tracking)
+        return;
+
+    EntityType lhs_type = 0;
+    EntityType rhs_type = 0;
+
+    {
+        auto opt_lhsinfo = this->find_varinfo(dst_var);
+        auto opt_rhsinfo = this->find_varinfo(src_var);
         if(opt_lhsinfo) lhs_type = opt_lhsinfo->entity_type;
         if(opt_rhsinfo) rhs_type = opt_rhsinfo->entity_type;
-        }
+    }
 
-        // NONE = NONE
-        if(lhs_type == 0 && rhs_type == 0)
-            return;
+    // NONE = NONE
+    if(lhs_type == 0 && rhs_type == 0)
+        return;
 
-        // ENTITY = NONE or ENTITY = ENTITY (with different types)
-        if(lhs_type != 0 && lhs_type != rhs_type)
-        {
-            program.error(lhs,
-                "XXX variable has entity type '{}', but trying to assign variable with entity type '{}'",
-                commands.find_entity_name(lhs_type).value(), commands.find_entity_name(rhs_type).value()
-            );
-        }
+    // ENTITY = NONE or ENTITY = ENTITY (with different types)
+    if(lhs_type != 0 && lhs_type != rhs_type)
+    {
+        program.error(error_helper,
+            "XXX destination variable has entity type '{}', but trying to assign variable with entity type '{}'",
+            commands.find_entity_name(lhs_type).value(), commands.find_entity_name(rhs_type).value()
+        );
+    }
 
-        // NONE = ENTITY or ENTITY = ENTITY
-        if(rhs_type != 0)
-        {
-            auto& lhsinfo = this->add_or_find_varinfo(*opt_lhs_var);
-            auto& rhsinfo = this->find_varinfo(*opt_rhs_var).value();
-            lhsinfo.entity_assigned = true;
-            lhsinfo.entity_type     = rhsinfo.entity_type;
-        }
+    // NONE = ENTITY or ENTITY = ENTITY
+    if(rhs_type != 0)
+    {
+        auto& lhsinfo = this->add_or_find_varinfo(dst_var);
+        auto& rhsinfo = this->find_varinfo(src_var).value();
+        lhsinfo.entity_assigned = true;
+        lhsinfo.entity_type     = rhsinfo.entity_type;
     }
 }
 
@@ -210,10 +220,11 @@ void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
             {
                 if(assigned_vars.find(var) == assigned_vars.end())
                 {
-                    program.error(nocontext,
-                        "XXX variable '{}' expected to have entity typed '{}', but had 'NONE' during its usage",
-                        symtable.find_var_name(var).value(),
-                        commands.find_entity_name(vinfo1.entity_type).value()
+                    program.error(**s1,
+                        "XXX variable '{}' expected to have entity typed '{}', but had '{}' during its usage", // had 'NONE'
+                        symtable.find_var_name(var).value(), 
+                        commands.find_entity_name(vinfo1.entity_type).value(),
+                        commands.find_entity_name(0).value()
                     );
                 }
             }
@@ -224,8 +235,8 @@ void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
             {
                 if(ait->second != vinfo1.entity_type)
                 {
-                    program.error(nocontext,
-                        "XXX Variable '{}' has different entity types in two or more scripts. First seen as '{}', then as '{}'.",
+                    program.error(**s1,
+                        "XXX Variable '{}' has different entity types in two or more scripts. First seen as '{}', now as '{}'.",
                         symtable.find_var_name(var).value(),
                         commands.find_entity_name(ait->second).value(),
                         commands.find_entity_name(vinfo1.entity_type).value()
@@ -240,6 +251,88 @@ void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
                     assigned_vars.emplace(var, vinfo1.entity_type);
                 }
             }
+        }
+    }
+}
+
+void Script::send_input_vars(const SyntaxTree& target_label_node,
+                             SyntaxTree::const_iterator arg_begin, SyntaxTree::const_iterator arg_end,
+                             ProgramContext& program, const Commands& commands)
+{
+    // TODO handle TEXT_LABEL and TEXT_LABEL16 properly for CALL commands?
+
+    auto check_var_matches = [&](const SyntaxTree& arg_node, const shared_ptr<Var>& lvar) -> bool
+    {
+        if(auto opt_arg_var = arg_node.maybe_annotation<const shared_ptr<Var>&>())
+        {
+            this->assign_entity_type(lvar, *opt_arg_var, arg_node, program, commands);
+
+            if((*opt_arg_var)->type != lvar->type)
+            {
+                program.error(arg_node, "XXX type mismatch in target label");
+                return false;
+            }
+        }
+        else if(arg_node.type() == NodeType::Array)
+        {
+            auto& arg_var = arg_node.child(0).annotation<const shared_ptr<Var>&>();
+
+            this->assign_entity_type(lvar, arg_var, arg_node, program, commands);
+
+            if(arg_var->type != lvar->type)
+            {
+                program.error(arg_node, "XXX type mismatch in target label");
+                return false;
+            }
+        }
+        else
+        {
+            program.error(arg_node, "XXX type mismatch in target label");
+            return false;
+        }
+        return true;
+    };
+
+    if(auto opt_target_label = target_label_node.maybe_annotation<const shared_ptr<Label>&>())
+    {
+        if(auto& target_scope = (*opt_target_label)->scope)
+        {
+            size_t target_var_index = 0;
+            for(auto arg = arg_begin; arg != arg_end; ++arg)
+            {
+                auto lvar = target_scope->var_at(target_var_index++);
+
+                if(!lvar)
+                {
+                    program.error(**arg, "XXX not enough vars in target label");
+                    break;
+                }
+
+                switch(lvar->type)
+                {
+                    case VarType::Int:
+                        if((**arg).maybe_annotation<const int32_t&>())
+                            break;
+                        check_var_matches(**arg, lvar);
+                        break;
+                    case VarType::Float:
+                        if((**arg).maybe_annotation<const float&>())
+                            break;
+                        check_var_matches(**arg, lvar);
+                        break;
+                    case VarType::TextLabel:
+                    case VarType::TextLabel16:
+                        program.error(**arg, "XXX local vars in target label type mismatch (LVAR_TEXT_LABEL not allowed)");
+                        break;
+                    default:
+                        Unreachable();
+                }
+            }
+        }
+        else
+        {
+            program.error(target_label_node, "XXX Expected scope in target label. Add a '{{' before the target label.");
+            // TODO ^ instruction should be different between III/VC (before or after)
         }
     }
 }
@@ -676,6 +769,16 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
         }
     };
 
+    auto handle_start_new_script = [&](const SyntaxTree& node)
+    {
+        if(node.child_count() >= 2) // ensure XML definition is correct
+        {
+            //auto arg_begin = node.child_count() > 2? std::advance(node.begin(), 2) : node.end();
+            auto arg_begin = node.child_count() > 2? std::next(node.begin(), 2) : node.end();
+            this->send_input_vars(node.child(1), arg_begin, node.end(), program, commands);
+        }
+    };
+
     auto find_command_for_expr = [&](const SyntaxTree& op) -> optional<Commands::alternator_pair>
     {
         switch(op.type())
@@ -945,7 +1048,9 @@ void Script::annotate_tree(const SymTable& symbols, const Commands& commands, Pr
                         commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));
 
-                        if(commands.equal(command, commands.set_collectable1_total()))
+                        if(commands.equal(command, commands.start_new_script()))
+                            handle_start_new_script(node);
+                        else if(commands.equal(command, commands.set_collectable1_total()))
                             replace_arg0(node, symbols.count_collectable1);
                         else if(commands.equal(command, commands.set_total_number_of_missions()))
                             replace_arg0(node, symbols.count_mission_passed);
