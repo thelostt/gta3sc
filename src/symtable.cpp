@@ -89,6 +89,152 @@ auto Script::compute_unknown_models(const std::vector<shared_ptr<Script>>& scrip
     return models;
 }
 
+void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output,
+                                 ProgramContext& program, const Commands& commands)
+{
+    if(arg_type != 0)
+    {
+        auto& var = var_node.annotation<const shared_ptr<Var>&>();
+        auto& varinfo = this->add_or_find_varinfo(var);
+
+        if(is_output)
+        {
+            if(varinfo.entity_type != 0 && varinfo.entity_type != arg_type)
+            {
+                if(varinfo.entity_assigned)
+                {
+                    program.error(var_node,
+                        "XXX variable has been already used to create entity typed  '{}'",
+                        commands.find_entity_name(varinfo.entity_type).value()
+                    );
+                }
+                else
+                {
+                    program.error(var_node,
+                        "XXX variable has been previosly used as a entity typed  '{}'",
+                        commands.find_entity_name(varinfo.entity_type).value()
+                    );
+                }
+            }
+
+            varinfo.entity_type = arg_type;
+            varinfo.entity_assigned = true;
+        }
+        else
+        {
+            if(varinfo.entity_type == 0)
+            {
+                // Do not error, maybe it was assigned in another script.
+                // We'll check this in verify_entity_types.
+                varinfo.entity_used_before_assign = true;
+            }
+            else if(varinfo.entity_type != arg_type)
+            {
+                program.error(var_node,
+                    "XXX variable expected to have entity typed '{}', but variable has entity typed '{}' ",
+                    commands.find_entity_name(arg_type).value(), commands.find_entity_name(varinfo.entity_type).value()
+                );
+            }
+
+            varinfo.entity_type = arg_type;
+        }
+    }
+}
+
+void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext& program, const Commands& commands)
+{
+    auto opt_lhs_var = lhs.maybe_annotation<const shared_ptr<Var>&>();
+    auto opt_rhs_var = rhs.maybe_annotation<const shared_ptr<Var>&>();
+
+    if(opt_lhs_var && opt_rhs_var)
+    {
+        EntityType lhs_type = 0;
+        EntityType rhs_type = 0;
+
+        {
+        auto opt_lhsinfo = this->find_varinfo(*opt_lhs_var);
+        auto opt_rhsinfo = this->find_varinfo(*opt_rhs_var);
+        if(opt_lhsinfo) lhs_type = opt_lhsinfo->entity_type;
+        if(opt_rhsinfo) rhs_type = opt_rhsinfo->entity_type;
+        }
+
+        // NONE = NONE
+        if(lhs_type == 0 && rhs_type == 0)
+            return;
+
+        // ENTITY = NONE or ENTITY = ENTITY (with different types)
+        if(lhs_type != 0 && lhs_type != rhs_type)
+        {
+            program.error(lhs,
+                "XXX variable has entity type '{}', but trying to assign variable with entity type '{}'",
+                commands.find_entity_name(lhs_type).value(), commands.find_entity_name(rhs_type).value()
+            );
+        }
+
+        // NONE = ENTITY or ENTITY = ENTITY
+        if(rhs_type != 0)
+        {
+            auto& lhsinfo = this->add_or_find_varinfo(*opt_lhs_var);
+            auto& rhsinfo = this->find_varinfo(*opt_rhs_var).value();
+            lhsinfo.entity_assigned = true;
+            lhsinfo.entity_type     = rhsinfo.entity_type;
+        }
+    }
+}
+
+void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
+                                 ProgramContext& program, const Commands& commands, const SymTable& symtable)
+{
+    /// Keep track of entities assigned in previous scripts.
+    std::map<shared_ptr<Var>, EntityType> assigned_vars;
+
+    for(auto s1 = scripts.begin(); s1 != scripts.end(); ++s1)
+    {
+        for(auto& vinfo_pair : (*s1)->varinfo)
+        {
+            auto& var    = vinfo_pair.first;
+            auto& vinfo1 = vinfo_pair.second;
+
+            // If at this script the variable has been used as a entity before being assigned a entity,
+            // ensure any previous script assigned a entity to the variable.
+            if(vinfo1.entity_used_before_assign)
+            {
+                if(assigned_vars.find(var) == assigned_vars.end())
+                {
+                    program.error(nocontext,
+                        "XXX variable '{}' expected to have entity typed '{}', but had 'NONE' during its usage",
+                        symtable.find_var_name(var).value(),
+                        commands.find_entity_name(vinfo1.entity_type).value()
+                    );
+                }
+            }
+
+            // Check mismatch entity with previous scripts.
+            auto ait = assigned_vars.find(var);
+            if(ait != assigned_vars.end())
+            {
+                if(ait->second != vinfo1.entity_type)
+                {
+                    program.error(nocontext,
+                        "XXX Variable '{}' has different entity types in two or more scripts. First seen as '{}', then as '{}'.",
+                        symtable.find_var_name(var).value(),
+                        commands.find_entity_name(ait->second).value(),
+                        commands.find_entity_name(vinfo1.entity_type).value()
+                    );
+                }
+            }
+            else
+            {
+                // If this script assigned a entity to the variable, let's keep that info.
+                if(vinfo1.entity_assigned)
+                {
+                    assigned_vars.emplace(var, vinfo1.entity_type);
+                }
+            }
+        }
+    }
+}
+
 std::map<std::string, fs::path, iless> Script::scan_subdir() const
 {
     auto output = std::map<std::string, fs::path, iless>();

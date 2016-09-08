@@ -333,6 +333,9 @@ int compile(fs::path input, fs::path output, ProgramContext& program, const Comm
         // not thread-safe
         std::vector<std::string> models = Script::compute_unknown_models(scripts);
 
+        // not thread-safe
+        Script::verify_entity_types(scripts, program, commands, symbols);
+
         // CompilerContext wants an annotated ASTs, if we have any error, it's possible that
         // the AST is not correctly annotated.
         if(program.has_error())

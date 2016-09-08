@@ -9,8 +9,11 @@
 //      we throw a exception (which is costful) and we also build up a ProgramError object (also costful).
 //      Please improve this out.
 
-Commands::Commands(std::multimap<std::string, Command> commands_, std::map<std::string, shared_ptr<Enum>> enums_)
-    : commands(std::move(commands_)), enums(std::move(enums_))
+Commands::Commands(std::multimap<std::string, Command> commands_,
+                   std::map<std::string, EntityType> entities_,
+                   std::map<std::string, shared_ptr<Enum>> enums_)
+
+    : commands(std::move(commands_)), enums(std::move(enums_)), entities(std::move(entities_))
 {
     auto it_carpedmodel = this->enums.find("CARPEDMODEL");
     auto it_model       = this->enums.find("MODEL");
@@ -350,6 +353,9 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     Expects(opt_var_base != nullopt);
                     var_node.set_annotation(*opt_var_base);
 
+                    // TODO arg.out instead of !arg.allow_constant
+                    script.process_entity_type(var_node, arg.entity_type, !arg.allow_constant, program, commands);
+
                     switch(idx_node.type())
                     {
                         case NodeType::Integer:
@@ -427,7 +433,11 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                              if(arg_node.is_annotated())
                                 Expects(arg_node.maybe_annotation<const shared_ptr<Var>&>());
                             else
+                            {
                                 arg_node.set_annotation(*opt_var);
+                                script.process_entity_type(arg_node, arg.entity_type, !arg.allow_constant, program, commands);
+                                // TODO arg.out instead of !arg.allow_constant ^
+                            }
                         }
                         else if(is_model_enum)
                         {
@@ -454,6 +464,14 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
             default:
                 Unreachable();
         }
+    }
+
+    // TODO would be quicker (and more pedantic!) if we checked equality with the following SET operations:
+    //   SET_VAR_INT_TO_VAR_INT, SET_LVAR_INT_TO_LVAR_INT, SET_VAR_INT_TO_LVAR_INT, SET_LVAR_INT_TO_VAR_INT
+    if(commands.is_alternator(command, commands.set())
+    && std::distance(begin, end) == 2)
+    {
+        script.assign_entity_type(**begin, **std::next(begin), program, commands);
     }
 }
 
@@ -633,7 +651,10 @@ static void parse_enum_node(std::map<std::string, shared_ptr<Enum>>& enums, cons
 }
 
 static std::pair<std::string, Command>
-  parse_command_node(const rapidxml::xml_node<>* cmd_node, const std::map<std::string, shared_ptr<Enum>>& enums)
+  parse_command_node(
+      const rapidxml::xml_node<>* cmd_node,
+      std::map<std::string, EntityType>& entities,
+      const std::map<std::string, shared_ptr<Enum>>& enums)
 {
     using namespace rapidxml;
 
@@ -674,7 +695,6 @@ static std::pair<std::string, Command>
 
             // TODO OUT
             // TODO REF
-            // TODO ENTITY
             // Cannot build with a initializer list, VS goes mad :(
             Command::Arg arg;
             arg.type = xml_to_argtype(type_attrib->value());
@@ -682,6 +702,7 @@ static std::pair<std::string, Command>
             arg.allow_constant = xml_to_bool(allow_const_attrib, true);
             arg.allow_global_var= xml_to_bool(allow_gvar_attrib, true);
             arg.allow_local_var = xml_to_bool(allow_lvar_attrib, true);
+            arg.entity_type = 0;
 
             if(enum_attrib)
             {
@@ -691,6 +712,12 @@ static std::pair<std::string, Command>
                     arg.enums.emplace_back(eit->second);
                     arg.enums.shrink_to_fit();
                 }
+            }
+
+            if(entity_attrib)
+            {
+                auto it = entities.emplace(entity_attrib->value(), EntityType(1 + entities.size())).first;
+                arg.entity_type = it->second;
             }
 
             args.emplace_back(std::move(arg));
@@ -725,6 +752,7 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
     std::vector<std::pair<int, xml_node<>*>> xml_sections;
 
     std::multimap<std::string, Command>     commands;
+    std::map<std::string, EntityType>       entities;
     std::map<std::string, shared_ptr<Enum>> enums;
 
     // fundamental enums
@@ -788,7 +816,7 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
             {
                 if(!strcmp(cmd_node->name(), "Command"))
                 {
-                    auto cmd_pair = parse_command_node(cmd_node, enums);
+                    auto cmd_pair = parse_command_node(cmd_node, entities, enums);
                     commands.emplace(std::move(cmd_pair));
                 }
             }
@@ -805,5 +833,5 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
         }
     }
 
-    return Commands(std::move(commands), std::move(enums));
+    return Commands(std::move(commands), std::move(entities), std::move(enums));
 }

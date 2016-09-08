@@ -36,6 +36,7 @@ using dynamic_bitset = std::vector<bool>;
 
 class SyntaxTree;
 class ProgramContext;
+struct Commands;
 struct Command;
 struct Var;
 struct Script;
@@ -43,6 +44,9 @@ struct Scope;
 struct SymTable;
 struct CodeGenerator;
 struct CodeGeneratorBase;
+
+using EntityType = uint16_t;
+
 
 #ifndef _MSC_VER
 #   define __debugbreak()

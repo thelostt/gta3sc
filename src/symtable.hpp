@@ -35,6 +35,22 @@ struct Label;
 /// Represents a *.sc script file.
 struct Script : std::enable_shared_from_this<Script>
 {
+public:
+    /// Variable Information (information is local to this Script object)
+    struct VarInfo
+    {
+        /// The type of the entity (see commands.hpp).
+        EntityType entity_type = 0;
+
+        /// Whether a entity was assigned (with CREATE_CAR and such) to this variable.
+        /// This is not set if the entity was only sent to commands (such as SET_CAR_COORDINATES).
+        bool entity_assigned = false;
+
+        /// Whether the entity was used (with e.g. SET_CAR_COORDINATES) before being created (with e.g. CREATE_CAR).
+        bool entity_used_before_assign = false;
+    };
+
+public:
     static shared_ptr<Script> create(ProgramContext& program, fs::path path_, ScriptType type)
     {
         auto p = std::make_shared<Script>(program, std::move(path_), type, priv_ctor());
@@ -68,6 +84,25 @@ struct Script : std::enable_shared_from_this<Script>
     /// of the scripts in the `scripts` vector should be running while this method is executed.
     static auto compute_unknown_models(const std::vector<shared_ptr<Script>>& scripts) -> std::vector<std::string>;
 
+    /// Verifies if all entity types in all scripts match.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
+    /// of the scripts in the `scripts` vector should be running while this method is executed.
+    static void verify_entity_types(const std::vector<shared_ptr<Script>>& scripts, ProgramContext&, const Commands&, const SymTable& symtable);
+
+    /// Checks if the variable is being used as the correct entity type, and assign VarInfo to this Script.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
+    void process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output, ProgramContext&, const Commands&);
+
+    /// Called when two things get assigned to the other, so entity typing can be checked.
+    ///
+    /// This is like process_entity_type, but called on assignment operations.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
+    void assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext&, const Commands&);
+    
+
     fs::path                path;
     ScriptType              type;
     shared_ptr<TokenStream> tstream;        // may be nullptr
@@ -92,6 +127,10 @@ struct Script : std::enable_shared_from_this<Script>
     /// TODO explain further on which compilation step this value gets to be available.
     std::vector<std::pair<std::string, int32_t>> models;
 
+    /// Information of the variable usage in this script.
+    /// TODO explain further on which compilation step this value gets to be available.
+    std::vector<std::pair<shared_ptr<Var>, VarInfo>> varinfo;
+
 public:
     optional<int32_t> find_model(const std::string& name) const
     {
@@ -113,6 +152,37 @@ public:
     int32_t find_model_at(uint32_t i) const
     {
         return this->models.at(i).second;
+    }
+
+    optional<const VarInfo&> find_varinfo(const shared_ptr<Var>& var) const
+    {
+        auto it = std::find_if(varinfo.begin(), varinfo.end(), [&](const auto& mpair) {
+            return mpair.first == var;
+        });
+
+        if(it != varinfo.end())
+            return it->second;
+
+        return nullopt;
+    }
+
+    optional<VarInfo&> find_varinfo(const shared_ptr<Var>& var)
+    {
+        if(auto opt = const_cast<const Script&>(*this).find_varinfo(var))
+        {
+            auto& k = *opt;
+            auto& r = const_cast<VarInfo&>(k);
+            return r;
+        }
+        return nullopt;
+    }
+
+    // \warning All references to varinfos may be invalidated after a call to this method.
+    VarInfo& add_or_find_varinfo(const shared_ptr<Var>& var)
+    {
+        if(auto opt = find_varinfo(var))
+            return *opt;
+        return this->varinfo.emplace(varinfo.end(), var, VarInfo{})->second;
     }
 
 private:
@@ -274,6 +344,25 @@ struct SymTable
         return nullopt;
     }
 
+    optional<std::string> find_var_name(const shared_ptr<Var>& var) const
+    {
+        for(auto& v : this->global_vars)
+        {
+            if(v.second == var)
+                return v.first;
+        }
+
+        for(auto& scope : this->local_scopes)
+        {
+            for(auto& v : scope->vars)
+            {
+                if(v.second == var)
+                    return v.first;
+            }
+        }
+
+        return nullopt;
+    }
 
     /// Adds a new label to the table, returns `nullopt` if it already exists.
     optional<shared_ptr<Label>> add_label(const std::string& name, shared_ptr<const Scope> scope, shared_ptr<const Script> script)

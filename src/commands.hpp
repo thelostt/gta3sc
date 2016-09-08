@@ -44,6 +44,7 @@ struct Command
         bool allow_global_var : 1;  /// Allow global variables
         bool allow_local_var : 1;   /// Allow local variables
         std::vector<shared_ptr<Enum>> enums;
+        EntityType entity_type;     /// Entity type of this argument. Zero means none.
 
         Arg()
         {}
@@ -92,6 +93,7 @@ protected:
     std::multimap<std::string, Command> commands;
     std::multimap<uint16_t, const Command*> commands_by_id; // TODO use shared_ptr<Command>!?
     std::map<std::string, shared_ptr<Enum>> enums;
+    std::map<std::string, EntityType> entities;
 
 public:
     using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
@@ -131,6 +133,7 @@ protected:
 
 public:
     Commands(std::multimap<std::string, Command> commands,
+             std::map<std::string, EntityType> entities,
              std::map<std::string, shared_ptr<Enum>> enums);
 
     ///
@@ -256,6 +259,24 @@ public:
         return this->enum_models;
     }
 
+    optional<std::string> find_entity_name(EntityType type) const
+    {
+        if(type == 0)
+            return "NONE";
+
+        for(auto& pair : this->entities)
+        {
+            if(pair.second == type)
+                return pair.first;
+        }
+
+        return nullopt;
+    }
+
+    bool is_alternator(const Command& command, alternator_pair alt) const
+    {
+        return this->equal(command, alt);
+    }
 
     // --- Important Commands ---
 
