@@ -35,6 +35,8 @@ Options:
   -f[no-]entity-tracking   Tracks entity types in variables.
   -f[no-]script-name-check Checks if there's duplicated SCRIPT_NAMEs.
   -f[no-]switch            Enables the SWITCH statement.
+  -fbreak-continue         Allows the use of BREAK and CONTINUE in all
+                           statements, including WHILE and REPEAT.
 )";
 
 enum class Action
@@ -176,6 +178,10 @@ int main(int argc, char** argv)
             else if(optflag(argv, "switch", &flag))
             {
                 options.fswitch = flag;
+            }
+            else if(optflag(argv, "break-continue", nullptr))
+            {
+                options.allow_break_continue = true;
             }
             else
             {

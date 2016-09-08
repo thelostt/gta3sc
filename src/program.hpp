@@ -31,6 +31,7 @@ struct Options
     bool entity_tracking = true;
     bool script_name_check = true;
     bool fswitch = false;
+    bool allow_break_continue = false;
 
 };
 

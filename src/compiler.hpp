@@ -288,8 +288,7 @@ private:
                 compile_break(node);
                 break;
             case NodeType::CONTINUE:
-                // TODO after SA SWITCH is done
-                // this is specific to this compiler, be pedantic!
+                compile_continue(node);
                 break;
             case NodeType::VAR_INT:
             case NodeType::LVAR_INT:
@@ -528,22 +527,46 @@ private:
 
     void compile_break(const SyntaxTree& break_node)
     {
-        if(loop_stack.empty())
+        for(auto it = loop_stack.rbegin(); it != loop_stack.rend(); ++it)
         {
-            program.error(break_node, "XXX BREAK not inside a loop");
+            if(it->break_label)
+            {
+                if(!program.opt.allow_break_continue)
+                {
+                    // When allow_break_continue=false, allow the use of BREAK only within a SWITCH.
+                    // Checking continue_label is a hacky way to verify if `it` is a SWITCH.
+                    if(it->continue_label != nullptr || it != loop_stack.rbegin())
+                    {
+                        program.error(break_node, "XXX BREAK only works in SWITCH [-fbreak-continue]");
+                    }
+                }
+
+                compile_command(*commands.goto_(), { it->break_label });
+                return;
+            }
+        }
+
+        program.error(break_node, "XXX BREAK outside of a loop");
+    }
+
+    void compile_continue(const SyntaxTree& continue_node)
+    {
+        if(!program.opt.allow_break_continue)
+        {
+            program.error(continue_node, "XXX CONTINUE not supported [-fbreak-continue]");
             return;
         }
 
-        auto& current_loop = loop_stack.back();
-
-        if(current_loop.continue_label != nullptr) // hacky way to check if we're not at a SWITCH
+        for(auto it = loop_stack.rbegin(); it != loop_stack.rend(); ++it)
         {
-            program.error(break_node, "XXX BREAK only works in SWITCH");
-            return;
+            if(it->continue_label)
+            {
+                compile_command(*commands.goto_(), { it->continue_label });
+                return;
+            }
         }
 
-        Expects(current_loop.break_label != nullptr);
-        compile_command(*commands.goto_(), { current_loop.break_label });
+        program.error(continue_node, "XXX CONTINUE outside of a loop");
     }
 
     void compile_expr(const SyntaxTree& eq_node, bool not_flag = false)
