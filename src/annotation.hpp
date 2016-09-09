@@ -1,6 +1,12 @@
 #pragma once
 #include "stdinc.h"
 
+struct StringAnnotation
+{
+    bool        is_varlen;
+    std::string string;
+};
+
 struct ModelAnnotation
 {
     weak_ptr<const Script> where;       // weak to avoid circular reference

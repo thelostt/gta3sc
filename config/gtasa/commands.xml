@@ -10657,13 +10657,13 @@
     <Command ID="0x6d1" Name="SET">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL16"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x6d2" Name="SET">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="TEXT_LABEL16"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x6d5" Name="CREATE_CHECKPOINT">
@@ -13115,7 +13115,7 @@
     </Command>
     <Command ID="0x8c4" Name="CLEAR_BIT">
       <Args>
-        <Arg Type="LVAR" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
@@ -13431,13 +13431,13 @@
     <Command ID="0x8f9" Name="IS_THING_EQUAL_TO_THING">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL16"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x8fa" Name="IS_THING_EQUAL_TO_THING">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="TEXT_LABEL16"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x8fb" Name="SET_COORD_BLIP_APPEARANCE">

@@ -790,9 +790,10 @@ private:
                     }
                     return label;
                 }
-                else if(auto opt_text = arg_node.maybe_annotation<std::string>())
+                else if(auto opt_text = arg_node.maybe_annotation<const StringAnnotation&>())
                 {
-                    return CompiledString{ CompiledString::Type::TextLabel8, std::move(*opt_text) };
+                    auto type = opt_text->is_varlen? CompiledString::Type::StringVar : CompiledString::Type::TextLabel8;
+                    return CompiledString{ type, opt_text->string };
                 }
                 else if(auto opt_umodel = arg_node.maybe_annotation<const ModelAnnotation&>())
                 {

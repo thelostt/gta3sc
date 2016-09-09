@@ -10,6 +10,8 @@ enum class ArgType : uint8_t
     Integer,
     Float,
     TextLabel,
+    TextLabel16,
+    String,
     Constant,
 };
 

@@ -380,17 +380,20 @@ inline void generate_code(const CompiledString& str, CodeGenerator& codegen)
     switch(str.type)
     {
         case CompiledString::Type::TextLabel8:
+            Expects(str.storage.size() <= 8);  // enforced on annotation
             if(codegen.program.opt.has_text_label_prefix)
                 codegen.emplace_u8(9);
             codegen.emplace_chars(8, str.storage.c_str());
             break;
         case CompiledString::Type::TextLabel16:
+            Expects(str.storage.size() <= 16); // enforced on annotation
             codegen.emplace_u8(0xF);
             codegen.emplace_chars(16, str.storage.c_str());
             break;
         case CompiledString::Type::StringVar:
+            Expects(str.storage.size() <= 127);  // enforced on annotation
             codegen.emplace_u8(0xE);
-            codegen.emplace_u8(static_cast<uint8_t>(str.storage.size())); // TODO CHECK SIZE <= 127!
+            codegen.emplace_u8(static_cast<uint8_t>(str.storage.size()));
             codegen.emplace_chars(str.storage.size(), str.storage.c_str());
             break;
         case CompiledString::Type::String128:
@@ -427,30 +430,30 @@ inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
         {
             switch(v.var->type)
             {
-            case VarType::Int:
-            case VarType::Float:
-                codegen.emplace_u8(global? 0x2 : 0x3);
-                break;
-            case VarType::TextLabel:
-                codegen.emplace_u8(global? 0xA : 0xB);
-                break;
-            case VarType::TextLabel16:
-                codegen.emplace_u8(global? 0x10 : 0x11);
-                break;
+                case VarType::Int:
+                case VarType::Float:
+                    codegen.emplace_u8(global? 0x2 : 0x3);
+                    break;
+                case VarType::TextLabel:
+                    codegen.emplace_u8(global? 0xA : 0xB);
+                    break;
+                case VarType::TextLabel16:
+                    codegen.emplace_u8(global? 0x10 : 0x11);
+                    break;
             }
 
             codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() + get<int32_t>(*v.index) * 4 : v.var->index + get<int32_t>(*v.index)));
         }
         else
         {
-            // TODO ArgType::TextLabel16 and ArgType::TextLabel (SA)
+            // TODO TextLabel16 and TextLabel (SA)
             auto& indexVar = get<shared_ptr<Var>>(*v.index);
             switch(v.var->type)
             {
-            case VarType::Int:
-            case VarType::Float:
-                codegen.emplace_u8(global? 0x7 : 0x8);
-                break;
+                case VarType::Int:
+                case VarType::Float:
+                    codegen.emplace_u8(global? 0x7 : 0x8);
+                    break;
             }
 
             codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() : v.var->index));
