@@ -19,6 +19,7 @@ R"(Usage: gta3sc [compile|decompile] file --config=<name> [options]
 Options:
   --help                   Display this information
   -o <file>                Place the output into <file>
+  --headerless             Does not generate a header on the output SCM.
   --config=<name>          Which compilation configurations to use (gta3,gtavc,
                            gtasa). This effectively reads the data files at
                            '/config/<name>/' and sets some appropriate flags.
@@ -115,6 +116,10 @@ int main(int argc, char** argv)
             else if(optget(argv, nullptr, "--guesser", 0))
             {
                 options.guesser = true;
+            }
+            else if(optget(argv, nullptr, "--headerless", 0))
+            {
+                options.headerless = true;
             }
             else if(const char* name = optget(argv, nullptr, "--config", 1))
             {
@@ -433,7 +438,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 fclose(f);
             });
 
-            if(true)
+            if(!program.opt.headerless)
             {
                 CodeGeneratorData hgen(header, program);
                 hgen.generate();

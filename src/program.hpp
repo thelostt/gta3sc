@@ -22,6 +22,7 @@ struct Options
     // TODO maybe use bitfields?
 
     /// Boolean flags
+    bool headerless = false;
     bool pedantic = false;
     bool guesser = false;
     bool use_half_float = false;
