@@ -824,6 +824,13 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
         }
     };
 
+    auto handle_start_new_streamed_script = [&](const SyntaxTree& node)
+    {
+        // Type checking and entity passing isn't handled according to analyzes of
+        // the original San Andreas SCM. TODO include a compiler flag to do so?
+        // The implementation is as simple as calling handle_start_new_script :)
+    };
+
     auto handle_script_name = [&](const SyntaxTree& node)
     {
         if(!program.opt.script_name_check)
@@ -1183,6 +1190,45 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 }
                 else
                 {
+                    // Hack to give integer-based streamed script arguments a filename based argument. Not sure if this
+                    // is according to R* semantics, after all streamed scripts are all guessed. TODO rethink?
+                    if(command_name == "REGISTER_SCRIPT_BRAIN_FOR_CODE_USE"
+                    || command_name == "REGISTER_ATTRACTOR_SCRIPT_BRAIN_FOR_CODE_USE"
+                    || command_name == "STREAM_SCRIPT"
+                    || command_name == "HAS_STREAMED_SCRIPT_LOADED"
+                    || command_name == "MARK_STREAMED_SCRIPT_AS_NO_LONGER_NEEDED"
+                    || command_name == "REMOVE_STREAMED_SCRIPT"
+                    || command_name == "REGISTER_STREAMED_SCRIPT"
+                    || command_name == "START_NEW_STREAMED_SCRIPT"
+                    || command_name == "GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT"
+                    || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED"
+                    || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT")
+                    {
+                        //|| command_name == "REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE" -- unsupported
+                        //|| command_name == "ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR" -- unsupported
+                        if(node.child_count() >= 2)
+                        {
+                            if(auto opt_script = symbols.find_script(node.child(1).text()))
+                            {
+                                if((*opt_script)->type == ScriptType::StreamedScript)
+                                {
+                                    auto annotation = StreamedFileAnnotation { (*opt_script)->streamed_id.value() };
+                                    node.child(1).set_annotation(annotation);
+                                }
+                                else
+                                {
+                                    program.error(node.child(1), "XXX script is not a streamed script declared with REGISTER_STREAMED_SCRIPT");
+                                    node.child(1).set_annotation(StreamedFileAnnotation{-1});
+                                }
+                            }
+                            else
+                            {
+                                program.error(node.child(1), "XXX script never declared with REGISTER_STREAMED_SCRIPT");
+                                node.child(1).set_annotation(StreamedFileAnnotation{-1});
+                            }
+                        }
+                    }
+
                     try
                     {
                         const Command& command = commands.match(node, symbols, current_scope);
@@ -1191,6 +1237,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                         if(commands.equal(command, commands.start_new_script()))
                             handle_start_new_script(node);
+                        else if(commands.equal(command, commands.start_new_streamed_script()))
+                            handle_start_new_streamed_script(node);
                         else if(commands.equal(command, commands.script_name()))
                             handle_script_name(node);
                         else if(commands.equal(command, commands.set_collectable1_total()))

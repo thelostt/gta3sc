@@ -114,6 +114,7 @@ protected:
     optional<const Command&> cmd_LAUNCH_MISSION;
     optional<const Command&> cmd_LOAD_AND_LAUNCH_MISSION_INTERNAL;
     optional<const Command&> cmd_START_NEW_SCRIPT;
+    optional<const Command&> cmd_START_NEW_STREAMED_SCRIPT;
     optional<const Command&> cmd_TERMINATE_THIS_SCRIPT;
     optional<const Command&> cmd_SCRIPT_NAME;
     optional<const Command&> cmd_RET;
@@ -331,6 +332,11 @@ public:
     optional<const Command&> start_new_script() const
     {
         return this->cmd_START_NEW_SCRIPT;
+    }
+
+    optional<const Command&> start_new_streamed_script() const
+    {
+        return this->cmd_START_NEW_STREAMED_SCRIPT;
     }
 
     optional<const Command&> terminate_this_script() const

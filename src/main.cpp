@@ -271,6 +271,12 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
+    if(!options.guesser && options.streamed_scripts)
+    {
+        fprintf(stderr, "gta3sc: error: use of -fstreamed_scripts only available in guesser mode [--guesser]\n");
+        return EXIT_FAILURE;
+    }
+
     if(!datadir.empty())
     {
         if(levelfile == nullptr)

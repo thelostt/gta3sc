@@ -809,6 +809,10 @@ private:
                     int32_t i32 = opt_umodel->where.lock()->find_model_at(opt_umodel->id);
                     return conv_int(i32);
                 }
+                else if(auto opt_streamed = arg_node.maybe_annotation<const StreamedFileAnnotation&>())
+                {
+                    return conv_int(opt_streamed->id);
+                }
                 else
                 {
                     Unreachable();

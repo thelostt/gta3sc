@@ -303,10 +303,10 @@ struct SymTable
     // IMPORTANT! Make sure whenever you add any new field to this object, to update merge() accordingly !!!!!!!!//
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
 
-    std::map<std::string, shared_ptr<Script>>       scripts;
-    std::map<std::string, shared_ptr<Label>, iless> labels;
-    std::map<std::string, shared_ptr<Var>, iless>   global_vars;
-    std::vector<std::shared_ptr<Scope>>             local_scopes;
+    std::map<std::string, shared_ptr<Script>, iless> scripts;
+    std::map<std::string, shared_ptr<Label>, iless>  labels;
+    std::map<std::string, shared_ptr<Var>, iless>    global_vars;
+    std::vector<std::shared_ptr<Scope>>              local_scopes;
 
     std::vector<std::string>    extfiles;   /// GOSUB_FILE scripts
     std::vector<std::string>    subscript;  /// LAUNCH_MISSION scripts
