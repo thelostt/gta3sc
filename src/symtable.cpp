@@ -790,6 +790,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
     bool had_mission_start = false;
     bool had_mission_end   = false;
+    bool had_script_start  = false;
+    bool had_script_end    = false;
 
     std::shared_ptr<Scope> current_scope = nullptr;
     bool is_condition_block = false;
@@ -942,26 +944,41 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 return false;
 
             case NodeType::MISSION_START:
+            case NodeType::SCRIPT_START:
             {
-                if(!had_mission_start)
-                {
-                    had_mission_start = true;
+                bool& had_start = node.type() == NodeType::MISSION_START? std::ref(had_mission_start) : 
+                                  node.type() == NodeType::SCRIPT_START? std::ref(had_script_start) : Unreachable();
+                auto dir_start  = node.type() == NodeType::MISSION_START? "MISSION_START" :
+                                  node.type() == NodeType::SCRIPT_START? "SCRIPT_START" : Unreachable();
 
+                if(!had_start)
+                {
+                    had_start = true;
                     if(num_statements != 1)
-                        program.error(node, "XXX MISSION_START must be the first line of subscript or mission script.");
+                        program.error(node, "XXX {} must be the first line of subscript or mission script.", dir_start);
                 }
                 else
                 {
-                    program.error(node, "XXX more than one MISSION_START in script.");
+                    program.error(node, "XXX more than one {} in script.", dir_start);
                 }
                 return false;
             }
 
             case NodeType::MISSION_END:
+            case NodeType::SCRIPT_END:
             {
-                if(!had_mission_end)
+                bool& had_start = node.type() == NodeType::MISSION_END? std::ref(had_mission_start) :
+                                  node.type() == NodeType::SCRIPT_END? std::ref(had_script_start) : Unreachable();
+                bool& had_end   = node.type() == NodeType::MISSION_END? std::ref(had_mission_end) :
+                                  node.type() == NodeType::SCRIPT_END? std::ref(had_script_end) : Unreachable();
+                auto dir_start  = node.type() == NodeType::MISSION_END? "MISSION_START" :
+                                  node.type() == NodeType::SCRIPT_END? "SCRIPT_START" : Unreachable();
+                auto dir_end    = node.type() == NodeType::MISSION_END? "MISSION_END" :
+                                  node.type() == NodeType::SCRIPT_END? "SCRIPT_END" : Unreachable();
+
+                if(!had_end)
                 {
-                    had_mission_end = true;
+                    had_end = true;
 
                     if(commands.terminate_this_script() && commands.terminate_this_script()->supported)
                     {
@@ -973,12 +990,12 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         program.fatal_error(nocontext, "XXX TERMINATE_THIS_SCRIPT undefined or unsupported");
                     }
 
-                    if(!had_mission_start)
-                        program.error(node, "XXX MISSION_END without a MISSION_START.");
+                    if(!had_start)
+                        program.error(node, "XXX {} without a {}.", dir_end, dir_start);
                 }
                 else
                 {
-                    program.error(node, "XXX more than one MISSION_END in script.");
+                    program.error(node, "XXX more than one {} in script.", dir_end);
                 }
                 return false;
             }
@@ -1399,6 +1416,17 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             program.error(*this, "Mission script or subscript does not contain MISSION_START");
         else if(!had_mission_end)
             program.error(*this, "Mission script or subscript does not contain MISSION_END");
+    }
+    else if(this->type == ScriptType::StreamedScript)
+    {
+        if(!had_script_start)
+            program.error(*this, "Streamed script does not contain SCRIPT_START");
+        else if(!had_script_end)
+            program.error(*this, "Streamed script does not contain SCRIPT_END");
+    }
+    else if(had_mission_start || had_script_start)
+    {
+        program.error(*this, "Cannot use MISSION_START or SCRIPT_START in this script type");
     }
 }
 

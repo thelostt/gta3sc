@@ -251,8 +251,10 @@ private:
                 compile_command(node, not_flag);
                 break;
             case NodeType::MISSION_START:
+            case NodeType::SCRIPT_START:
                 break;
             case NodeType::MISSION_END:
+            case NodeType::SCRIPT_END:
                 compile_mission_end(node, not_flag);
                 break;
             case NodeType::Greater:
