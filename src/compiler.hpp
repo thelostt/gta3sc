@@ -527,6 +527,20 @@ private:
 
     void compile_break(const SyntaxTree& break_node)
     {
+        if(!program.opt.allow_break_continue)
+        {
+            if(!break_node.maybe_annotation<const SwitchCaseBreakAnnotation&>())
+            {
+                program.error(break_node, "XXX BREAK only allowed at the end of a SWITCH CASE [-fbreak-continue]");
+            }
+            else
+            {
+                Expects(!loop_stack.empty());
+                compile_command(*commands.goto_(), { loop_stack.back().break_label });
+            }
+            return;
+        }
+
         for(auto it = loop_stack.rbegin(); it != loop_stack.rend(); ++it)
         {
             if(it->break_label)

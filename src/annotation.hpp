@@ -23,6 +23,11 @@ struct SwitchCaseAnnotation
     // (cannot use const Command& because of std::any requiring a copy ctor for stack allocated objects)
 };
 
+struct SwitchCaseBreakAnnotation
+{
+    // annotated on the last statement (if BREAK) of a CASE/DEFAULT
+};
+
 struct IncDecAnnotation
 {
     const Command& op_var_with_one;

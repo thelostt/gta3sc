@@ -1043,14 +1043,19 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                 auto& var = node.child(0);
 
-                auto ensure_break = [&](const SyntaxTree& statement_list)
+                auto ensure_break = [&](SyntaxTree& statement_list)
                 {
                     if(statement_list.child_count() > 0)
                     {
                         auto& last_statement = statement_list.child(statement_list.child_count() - 1);
-                        if(last_statement.type() != NodeType::BREAK)
-                            program.error(*statement_list.parent(), "XXX CASE does not end with a BREAK");
+                        if(last_statement.type() == NodeType::BREAK)
+                        {
+                            last_statement.set_annotation(SwitchCaseBreakAnnotation {});
+                            return;
+                        }
                     }
+
+                    program.error(*statement_list.parent(), "XXX CASE does not end with a BREAK");
                 };
 
                 for(auto& case_node : node.child(1))
