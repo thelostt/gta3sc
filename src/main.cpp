@@ -37,6 +37,10 @@ Options:
   -f[no-]switch            Enables the SWITCH statement.
   -fbreak-continue         Allows the use of BREAK and CONTINUE in all
                            statements, including WHILE and REPEAT.
+  -f[no-]scope-then-label  When combined with -pedantic, outputs a error message
+                           whenever a label is used before a curly bracket
+                           instead of after.
+                           
 )";
 
 enum class Action
@@ -124,6 +128,7 @@ int main(int argc, char** argv)
                     options.has_text_label_prefix = false;
                     options.skip_single_ifs = false;
                     options.fswitch = false;
+                    options.scope_then_label = false;
                 }
                 else if(config_name == "gtavc")
                 {
@@ -132,6 +137,7 @@ int main(int argc, char** argv)
                     options.has_text_label_prefix = false;
                     options.skip_single_ifs = false;
                     options.fswitch = false;
+                    options.scope_then_label = true;
                 }
                 else if(config_name == "gtasa")
                 {
@@ -140,6 +146,7 @@ int main(int argc, char** argv)
                     options.has_text_label_prefix = true;
                     options.skip_single_ifs = false;
                     options.fswitch = true;
+                    options.scope_then_label = true;
                 }
                 else
                 {
@@ -182,6 +189,10 @@ int main(int argc, char** argv)
             else if(optflag(argv, "break-continue", nullptr))
             {
                 options.allow_break_continue = true;
+            }
+            else if(optflag(argv, "scope-then-label", &flag))
+            {
+                options.scope_then_label = flag;
             }
             else
             {

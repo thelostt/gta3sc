@@ -639,6 +639,11 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 {
                     auto& label_name = next_scoped_label->child(0).text();
                     
+                    if(program.opt.pedantic && program.opt.scope_then_label)
+                    {
+                        program.error(node, "XXX since VC the label should be inside the scope [-pedantic]");
+                    }
+
                     auto opt_label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
                     if(!opt_label_ptr)
                     {

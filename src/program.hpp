@@ -32,6 +32,7 @@ struct Options
     bool script_name_check = true;
     bool fswitch = false;
     bool allow_break_continue = false;
+    bool scope_then_label = false;
 
 };
 
@@ -60,7 +61,7 @@ inline std::string format_error(const char* type,
         message.push_back(':');
     }
 
-    if(colno)
+    if(lineno && colno)
     {
         message += std::to_string(colno);
         message.push_back(':');
@@ -79,7 +80,7 @@ inline std::string format_error(const char* type,
 
     message += fmt::format(msg, std::forward<Args>(args)...);
 
-    if(tstream_ptr)
+    if(tstream_ptr && lineno)
     {
         message += fmt::format("\n {}\n {:>{}}", tstream_ptr->get_line(lineno), "^", colno);
     }
