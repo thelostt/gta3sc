@@ -120,6 +120,7 @@ protected:
     optional<const Command&> cmd_GOTO;
     optional<const Command&> cmd_GOTO_IF_FALSE;
     optional<const Command&> cmd_ANDOR;
+    optional<const Command&> cmd_REGISTER_STREAMED_SCRIPT_INTERNAL;
     alternator_pair          alt_SET;
     alternator_pair          alt_CSET;
     alternator_pair          alt_TERMINATE_THIS_CUSTOM_SCRIPT;
@@ -425,6 +426,11 @@ public:
     alternator_pair is_thing_greater_or_equal_to_thing() const
     {
         return this->alt_IS_THING_GREATER_OR_EQUAL_TO_THING;
+    }
+
+    optional<const Command&> register_streamed_script_internal() const
+    {
+        return this->cmd_REGISTER_STREAMED_SCRIPT_INTERNAL;
     }
 
 protected:

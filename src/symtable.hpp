@@ -21,6 +21,7 @@ enum class ScriptType
     MainExtension,  /// Imported using GOSUB_FILE
     Subscript,      /// Imported using LAUNCH_MISSION
     Mission,        /// Imported using LOAD_AND_LAUNCH_MISSION
+    StreamedScript, /// Imported using REGISTER_STREAMED_SCRIPT
 };
 
 /// Converts VAR_INT, LVAR_FLOAT, etc tokens into the VarType enum.
@@ -137,6 +138,10 @@ public:
     /// If `this->type == ScriptType::Mission`, contains the index of this mission.
     /// This value is made available just before the AST annotation step.
     optional<uint16_t>      mission_id;
+
+    /// If `this->type == ScriptType::StreamedScript`, contains the index of this streamed script.
+    /// This value is made available just before the AST annotation step.
+    optional<uint16_t>      streamed_id;
 
     /// List of unknown models referenced by this script.
     /// TODO explain further on which compilation step this value gets to be available.
@@ -306,6 +311,7 @@ struct SymTable
     std::vector<std::string>    extfiles;   /// GOSUB_FILE scripts
     std::vector<std::string>    subscript;  /// LAUNCH_MISSION scripts
     std::vector<std::string>    mission;    /// LOAD_AND_LAUNCH_MISSION scripts
+    std::vector<std::string>    streamed;   /// Streamed scripts
 
     int32_t count_collectable1 = 0;
     int32_t count_mission_passed = 0;

@@ -291,9 +291,18 @@ inline size_t CompiledScmHeader::compiled_size() const
         case CompiledScmHeader::Version::Liberty:
         case CompiledScmHeader::Version::Miami:
         {
-            auto size_globals = (std::max)(this->size_global_vars_space, 8u);
+            auto size_globals = this->size_global_vars_space;
             return 8 + (size_globals - 8) + 8 + 4 + (24 * (1 + this->models.size()))
                 + 8 + 4 + 4 + 2 + 2 + (4 * this->num_missions);
+            break;
+        }
+        case CompiledScmHeader::Version::SanAndreas:
+        {
+            auto size_globals = this->size_global_vars_space;
+            return 8 + (size_globals - 8) + 8 + 4 + (24 * (1 + this->models.size()))
+                + 8 + 4 + 4 + 2 + 2 + (4 * this->num_missions) + 4 //<SA
+                + 8 + 4 + 4 + (28 * (1 + this->num_streamed))
+                + 8 + 4 + 8 + 4 + 1 + 1 + 2;
             break;
         }
         default:
@@ -362,7 +371,8 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
 {
     codegen.emplace_u8(1);
 
-    if(label_ptr->script->type == ScriptType::Mission)
+    if(label_ptr->script->type == ScriptType::Mission
+    || label_ptr->script->type == ScriptType::StreamedScript)
     {
         assert(label_ptr->script == codegen.script); // enforced on compiler.hpp/cpp
 
@@ -488,7 +498,15 @@ inline void generate_code(const CompiledHex& hex, CodeGenerator& codegen)
 inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& codegen)
 {
     assert(header.version == CompiledScmHeader::Version::Liberty
-        || header.version == CompiledScmHeader::Version::Miami);
+        || header.version == CompiledScmHeader::Version::Miami
+        || header.version == CompiledScmHeader::Version::SanAndreas);
+
+    auto nextseg_id = [v = header.version, current_segid = 0u]() mutable
+    {
+        if(v == CompiledScmHeader::Version::SanAndreas)
+            return current_segid++;
+        return 0u;
+    };
 
     auto goto_rel = [&codegen](int32_t skip_bytes)
     {
@@ -505,52 +523,124 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
 
     uint32_t head_size            = header.compiled_size();
     uint32_t main_size            = head_size;
+    uint32_t multifile_size       = head_size;
     uint32_t largest_mission_size = 0;
+    uint32_t largest_streamed_size = 0 ;
 
     std::vector<shared_ptr<const Script>> missions;
+    std::vector<shared_ptr<const Script>> streameds;
 
     char target_id = (header.version == CompiledScmHeader::Version::Liberty? '\0' : // original III main.scm doesn't use 'l' yet
                       header.version == CompiledScmHeader::Version::Miami? 'm' :
+                      header.version == CompiledScmHeader::Version::SanAndreas? 's' :
                       Unreachable());
 
     missions.reserve(header.num_missions);
+    streameds.reserve(header.num_streamed);
+
     for(auto& sc : header.scripts)
     {
-        if(sc->type != ScriptType::Mission)
+        if(sc->type == ScriptType::Mission)
         {
-            main_size += sc->size.value();
+            missions.emplace_back(sc);
+            multifile_size += sc->size.value();
+            if(largest_mission_size < sc->size.value())
+                largest_mission_size = *sc->size;
+        }
+        else if(sc->type == ScriptType::StreamedScript)
+        {
+            streameds.emplace_back(sc);
+            if(largest_streamed_size < sc->size.value())
+                largest_streamed_size = *sc->size;
         }
         else
         {
-            missions.emplace_back(sc);
-            if(largest_mission_size < sc->size.value())
-                largest_mission_size = *sc->size;
+            main_size += sc->size.value();
+            multifile_size += sc->size.value();
         }
     }
 
     // Variables segment
-    auto size_globals = (std::max)(header.size_global_vars_space, 8u);
+    auto size_globals = header.size_global_vars_space;
     goto_rel(size_globals - 8);
     codegen.emplace_i8(target_id);
     codegen.emplace_fill(size_globals - 8, 0);
 
     // Models segment
     goto_rel(4 + (24 * (1 + header.models.size())));
-    codegen.emplace_u8(0);
+    codegen.emplace_u8(nextseg_id());
     codegen.emplace_u32(1 + header.models.size());
     codegen.emplace_chars(24, "");
     for(auto& model : header.models)
         codegen.emplace_chars(24, model.c_str());
 
     // SCM info segment
-    goto_rel(4 + 4 + 2 + 2 + (4 * missions.size()));
-    codegen.emplace_u8(0);
-    codegen.emplace_u32(main_size);
-    codegen.emplace_u32(largest_mission_size);
-    codegen.emplace_u16(static_cast<uint16_t>(missions.size()));
-    codegen.emplace_u16(0); // number_of_exclusive_missions
-    for(auto& script_ptr : missions)
-        codegen.emplace_i32(script_ptr->offset.value());
+    {
+        int32_t rel_offset = 4 + 4 + 2 + 2 + (4 * missions.size()) +
+                            (header.version == CompiledScmHeader::Version::SanAndreas? 4 : 0);
+        goto_rel(rel_offset);
+        codegen.emplace_u8(nextseg_id());
+        codegen.emplace_u32(main_size);
+        codegen.emplace_u32(largest_mission_size);
+        codegen.emplace_u16(static_cast<uint16_t>(missions.size()));
+        codegen.emplace_u16(0); // number_of_exclusive_missions
+
+        if(header.version == CompiledScmHeader::Version::SanAndreas)
+        {
+            codegen.emplace_u32(0); // TODO Highest number of locals used in mission
+        }
+
+        for(auto& script_ptr : missions)
+            codegen.emplace_i32(script_ptr->offset.value());
+    }
+
+    // Streamed scripts segment
+    if(header.version == CompiledScmHeader::Version::SanAndreas)
+    {
+        uint32_t virtual_offset = multifile_size;
+
+        goto_rel(4 + 4 + (28 * (1 + streameds.size())));
+        codegen.emplace_u8(nextseg_id());
+        codegen.emplace_u32(largest_streamed_size);
+        codegen.emplace_u32(static_cast<uint32_t>(1 + streameds.size()));
+
+        for(auto& script_ptr : streameds)
+        {
+            auto name = script_ptr->path.stem().u8string();
+            std::transform(name.begin(), name.end(), name.begin(), ::toupper); // TODO UTF-8 able?
+            codegen.emplace_chars(20, name.c_str());
+            codegen.emplace_u32(virtual_offset);
+            codegen.emplace_u32(*script_ptr->size);
+            virtual_offset += *script_ptr->size;
+        }
+
+        // AAA script
+        {
+            codegen.emplace_chars(20, "AAA");
+            codegen.emplace_u32(0);
+            codegen.emplace_u32(8);
+        }
+    }
+
+    // Unknown segment
+    if(header.version == CompiledScmHeader::Version::SanAndreas)
+    {
+        goto_rel(4);
+        codegen.emplace_u8(nextseg_id());
+        codegen.emplace_u32(0);
+    }
+
+    // Unknown segment 2
+    if(header.version == CompiledScmHeader::Version::SanAndreas)
+    {
+        goto_rel(4 + 1 + 1 + 2);
+        codegen.emplace_u8(nextseg_id());
+        codegen.emplace_u32(size_globals - 8);
+        codegen.emplace_u8(62);  // TODO Number of allocated externals (with 07D3, 0884, 0928 or 0929) 
+        codegen.emplace_u8(2);  // Unknown / Unused
+        codegen.emplace_u16(0); // Unknown / Unused
+    }
+
 }
 
 inline void generate_code(const CompiledData& data, CodeGenerator& codegen)

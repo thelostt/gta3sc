@@ -415,6 +415,7 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
         bool found_extfile   = std::any_of(this->extfiles.begin(), this->extfiles.end(), searcher);
         bool found_subscript = std::any_of(this->subscript.begin(), this->subscript.end(), searcher);
         bool found_mission   = std::any_of(this->mission.begin(), this->mission.end(), searcher);
+        bool found_streamed  = std::any_of(this->streamed.begin(), this->streamed.end(), searcher);
 
         if(found_extfile && type != ScriptType::MainExtension)
         {
@@ -431,14 +432,20 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
             program.error(command, "XXX incompatible, previous declaration blabla");
             return false;
         }
+        else if(found_streamed && type != ScriptType::StreamedScript)
+        {
+            program.error(command, "XXX incompatible, previous declaration blabla");
+            return false;
+        }
         else 
         {
             // still not added to its list?
-            if(!found_extfile && !found_subscript && !found_mission)
+            if(!found_extfile && !found_subscript && !found_mission && !found_streamed)
             {
                 auto refvector = (type == ScriptType::MainExtension? std::ref(this->extfiles) :
                     type == ScriptType::Subscript? std::ref(this->subscript) :
-                    type == ScriptType::Mission? std::ref(this->mission) : Unreachable());
+                    type == ScriptType::Mission? std::ref(this->mission) :
+                    type == ScriptType::StreamedScript? std::ref(this->streamed) : Unreachable());
 
                 refvector.get().emplace_back(std::move(script_name));
             }
@@ -488,7 +495,7 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
         std::inserter(int_gvars, int_gvars.begin()),
         t1.global_vars.value_comp());
 
-    // TODO check for conflicting extfiles, subscripts and mission
+    // TODO check for conflicting extfiles, subscripts, mission and streamed
 
     if(int_labels.size() > 0)
     {
@@ -537,6 +544,9 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
 
     t1.mission.reserve(t1.mission.size() + t2.mission.size());
     std::move(t2.mission.begin(), t2.mission.end(), std::back_inserter(t1.mission));
+
+    t1.streamed.reserve(t1.streamed.size() + t2.streamed.size());
+    std::move(t2.streamed.begin(), t2.streamed.end(), std::back_inserter(t1.streamed));
 
     t1.count_progress += t2.count_progress;
     t1.count_collectable1 += t2.count_collectable1;
@@ -678,6 +688,8 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     table.add_script(ScriptType::Subscript, node, program);
                 else if(command_name == "GOSUB_FILE")
                     table.add_script(ScriptType::MainExtension, node, program);
+                else if(command_name == "REGISTER_STREAMED_SCRIPT")
+                    table.add_script(ScriptType::StreamedScript, node, program);
                 else if(command_name == "CREATE_COLLECTABLE1")
                     ++table.count_collectable1;
                 else if(command_name == "REGISTER_MISSION_PASSED" || command_name == "REGISTER_ODDJOB_MISSION_PASSED")
@@ -1153,6 +1165,20 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     else
                     {
                         program.fatal_error(nocontext, "XXX GOSUB_FILE undefined or unsupported");
+                    }
+                }
+                else if(command_name == "REGISTER_STREAMED_SCRIPT")
+                {
+                    if(commands.register_streamed_script_internal() && commands.register_streamed_script_internal()->supported)
+                    {
+                        const Command& command = *commands.register_streamed_script_internal();
+                        shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                        node.child(1).set_annotation(int32_t(script->streamed_id.value()));
+                        node.set_annotation(std::cref(command));
+                    }
+                    else
+                    {
+                        program.fatal_error(nocontext, "XXX REGISTER_STREAMED_SCRIPT_INTERNAL undefined or unsupported");
                     }
                 }
                 else

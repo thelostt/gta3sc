@@ -57,6 +57,7 @@ Commands::Commands(std::multimap<std::string, Command> commands_,
     this->alt_IS_THING_EQUAL_TO_THING       = find_alternator("IS_THING_EQUAL_TO_THING");
     this->alt_IS_THING_GREATER_THAN_THING   = find_alternator("IS_THING_GREATER_THAN_THING");
     this->alt_IS_THING_GREATER_OR_EQUAL_TO_THING = find_alternator("IS_THING_GREATER_OR_EQUAL_TO_THING");
+    this->cmd_REGISTER_STREAMED_SCRIPT_INTERNAL = find_command("REGISTER_STREAMED_SCRIPT_INTERNAL");
 }
 
 void Commands::add_default_models(const std::map<std::string, uint32_t, iless>& default_models)

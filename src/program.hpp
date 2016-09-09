@@ -19,9 +19,16 @@ struct HaltJobException : public std::exception
 
 struct Options
 {
-    // TODO maybe use bitfields?
+    enum class HeaderVersion : uint8_t
+    {
+        None,
+        GTA3,
+        GTAVC,
+        GTASA,
+    };
 
     /// Boolean flags
+    // TODO maybe use bitfields?
     bool headerless = false;
     bool pedantic = false;
     bool guesser = false;
@@ -36,6 +43,23 @@ struct Options
     bool scope_then_label = false;
     bool farrays = false;
 
+    // 8 bit stuff
+    HeaderVersion header = HeaderVersion::None;
+
+    // TEnum = CompiledScmHeader::Version or DecompiledScmHeader::Version
+    // If this->header is HeaderVersion::None, the behaviour is undefined.
+    template<typename TEnum>
+    auto get_header() const -> TEnum
+    {
+        switch(this->header)
+        {
+            case HeaderVersion::None: Unreachable();
+            case HeaderVersion::GTA3: return TEnum::Liberty;
+            case HeaderVersion::GTAVC: return TEnum::Miami;
+            case HeaderVersion::GTASA: return TEnum::SanAndreas;
+            default: Unreachable();
+        }
+    }
 };
 
 template<typename... Args>
