@@ -820,9 +820,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
         if(node.child_count() == 2) // ensure XML definition is correct
         {
             // why does it segfault with const StringAnnotation& ???
-            if(auto opt_script_name = node.child(1).maybe_annotation<StringAnnotation>())
+            if(auto opt_script_name = node.child(1).maybe_annotation<const StringAnnotation&>())
             {
-                if(!this->script_names.emplace(std::move(opt_script_name->string)).second)
+                if(!this->script_names.emplace(opt_script_name->string).second)
                 {
                     program.error(node, "XXX script name has already been used");
                 }
