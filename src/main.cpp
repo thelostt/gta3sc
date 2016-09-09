@@ -40,7 +40,7 @@ Options:
   -f[no-]scope-then-label  When combined with -pedantic, outputs a error message
                            whenever a label is used before a curly bracket
                            instead of after.
-                           
+  -f[no-]arrays            Enables the use of arrays.
 )";
 
 enum class Action
@@ -129,6 +129,7 @@ int main(int argc, char** argv)
                     options.skip_single_ifs = false;
                     options.fswitch = false;
                     options.scope_then_label = false;
+                    options.farrays = false;
                 }
                 else if(config_name == "gtavc")
                 {
@@ -138,6 +139,7 @@ int main(int argc, char** argv)
                     options.skip_single_ifs = false;
                     options.fswitch = false;
                     options.scope_then_label = true;
+                    options.farrays = false;
                 }
                 else if(config_name == "gtasa")
                 {
@@ -147,6 +149,7 @@ int main(int argc, char** argv)
                     options.skip_single_ifs = false;
                     options.fswitch = true;
                     options.scope_then_label = true;
+                    options.farrays = true;
                 }
                 else
                 {
@@ -193,6 +196,10 @@ int main(int argc, char** argv)
             else if(optflag(argv, "scope-then-label", &flag))
             {
                 options.scope_then_label = flag;
+            }
+            else if(optflag(argv, "arrays", &flag))
+            {
+                options.farrays = flag;
             }
             else
             {

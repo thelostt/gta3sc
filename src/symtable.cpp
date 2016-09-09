@@ -736,6 +736,11 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                         count = array_counter;
                     }
 
+                    if(!program.opt.farrays && count)
+                    {
+                        program.error(varnode, "XXX arrays not supported [-farrays]");
+                    }
+
                     auto it = target.emplace(name, std::make_shared<Var>(global, vartype, index, count));
                     auto var_ptr = it.first->second;
 

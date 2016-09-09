@@ -33,6 +33,7 @@ struct Options
     bool fswitch = false;
     bool allow_break_continue = false;
     bool scope_then_label = false;
+    bool farrays = false;
 
 };
 
