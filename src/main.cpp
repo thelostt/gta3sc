@@ -44,6 +44,8 @@ Options:
                            whenever a label is used before a curly bracket
                            instead of after.
   -f[no-]arrays            Enables the use of arrays.
+  -f[no-]streamed-scripts  Enables the use of streamed scripts and generates an
+                           associated script.img archive.
 )";
 
 enum class Action
@@ -138,6 +140,7 @@ int main(int argc, char** argv)
                     options.fswitch = false;
                     options.scope_then_label = false;
                     options.farrays = false;
+                    options.streamed_scripts = false;
                 }
                 else if(config_name == "gtavc")
                 {
@@ -149,6 +152,7 @@ int main(int argc, char** argv)
                     options.fswitch = false;
                     options.scope_then_label = true;
                     options.farrays = false;
+                    options.streamed_scripts = false;
                 }
                 else if(config_name == "gtasa")
                 {
@@ -160,6 +164,7 @@ int main(int argc, char** argv)
                     options.fswitch = true;
                     options.scope_then_label = true;
                     options.farrays = true;
+                    options.streamed_scripts = true;
                 }
                 else
                 {
@@ -210,6 +215,10 @@ int main(int argc, char** argv)
             else if(optflag(argv, "arrays", &flag))
             {
                 options.farrays = flag;
+            }
+            else if(optflag(argv, "streamed-scripts", &flag))
+            {
+                options.streamed_scripts = flag;
             }
             else
             {
@@ -466,7 +475,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 //return;
             }
 
-            if(true)
+            if(program.opt.streamed_scripts)
             {
                 script_img = u8fopen(fs::path(output).replace_filename("script.img"), "wb");
                 if(!script_img)
@@ -491,7 +500,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     into_script_img.emplace_back(std::cref(gen));
             }
 
-            if(true)
+            if(program.opt.streamed_scripts)
             {
                 // TODO endian independent img building
 
@@ -526,7 +535,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 aaa_scm.size_global_space = header.size_global_vars_space - 8;
                 aaa_scm.num_streams_allocated = 62; // TODO
 
-                CdHeader cd_header { {'V','E','R','2'}, 1 + into_script_img.size() };
+                CdHeader cd_header { {'V','E','R','2'}, static_cast<uint32_t>(1 + into_script_img.size()) };
                 std::vector<CdEntry> directory;
                 directory.reserve(1 + into_script_img.size());
 

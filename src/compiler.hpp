@@ -109,7 +109,7 @@ struct CompiledScmHeader
     CompiledScmHeader(Version version, size_t size_globals,
                       std::vector<std::string> models_,
                       const std::vector<shared_ptr<Script>>& scripts) :
-        version(version), size_global_vars_space(std::max(8u, size_globals)),
+        version(version), size_global_vars_space(std::max(size_t(8), size_globals)),
         models(std::move(models_)), num_missions(0), num_streamed(0)
     {
         this->scripts.reserve(scripts.size());

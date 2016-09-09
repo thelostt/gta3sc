@@ -42,6 +42,7 @@ struct Options
     bool allow_break_continue = false;
     bool scope_then_label = false;
     bool farrays = false;
+    bool streamed_scripts = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;
