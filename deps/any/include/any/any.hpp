@@ -1,38 +1,21 @@
-///
-/// Implementation of N4562 std::experimental::any plus a proposed fix on LWG Defect 2509.
-///
-/// See also:
-///   + http://en.cppreference.com/w/cpp/experimental/any
-///   + http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4562.html#any
-///   + https://cplusplus.github.io/LWG/lwg-active.html#2509
-///
-///
-///
-/// This is free and unencumbered software released into the public domain.
-/// 
-/// Anyone is free to copy, modify, publish, use, compile, sell, or
-/// distribute this software, either in source code form or as a compiled
-/// binary, for any purpose, commercial or non - commercial, and by any
-/// means.
-/// 
-/// In jurisdictions that recognize copyright laws, the author or authors
-/// of this software dedicate any and all copyright interest in the
-/// software to the public domain.We make this dedication for the benefit
-/// of the public at large and to the detriment of our heirs and
-/// successors.We intend this dedication to be an overt act of
-/// relinquishment in perpetuity of all present and future rights to this
-/// software under copyright law.
-/// 
-/// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-/// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-/// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-/// IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR
-/// OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
-/// ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
-/// OTHER DEALINGS IN THE SOFTWARE.
-/// 
-/// For more information, please refer to <http://unlicense.org/>
-///
+//
+// Implementation of N4562 std::experimental::any (merged into C++17) for C++11 compilers.
+//
+// See also:
+//   + http://en.cppreference.com/w/cpp/any
+//   + http://en.cppreference.com/w/cpp/experimental/any
+//   + http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2015/n4562.html#any
+//   + https://cplusplus.github.io/LWG/lwg-active.html#2509
+//
+//
+// Copyright (c) 2016 Denilson das Mercês Amorim
+//
+// Distributed under the Boost Software License, Version 1.0. (See accompanying
+// file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
+//
+#ifndef LINB_ANY_HPP
+#define LINB_ANY_HPP
+#pragma once
 #include <typeinfo>
 #include <type_traits>
 #include <stdexcept>
@@ -71,7 +54,7 @@ public:
     /// Constructs an object of type any with a state equivalent to the original state of other.
     /// rhs is left in a valid but otherwise unspecified state.
     any(any&& rhs) noexcept :
-    vtable(rhs.vtable)
+        vtable(rhs.vtable)
     {
         if(!rhs.empty())
         {
@@ -88,11 +71,13 @@ public:
 
     /// Constructs an object of type any that contains an object of type T direct-initialized with std::forward<ValueType>(value).
     ///
-    /// T shall satisfy the CopyConstructible requirements, except for the requirements for MoveConstructible.
-    /// (this is unlike N4562 specifies, see LWG Defect 2509).
-    template<typename ValueType, typename = std::enable_if_t<!std::is_same<std::decay_t<ValueType>, any>::value>>
+    /// T shall satisfy the CopyConstructible requirements, otherwise the program is ill-formed.
+    /// This is because an `any` may be copy constructed into another `any` at any time, so a copy should always be allowed.
+    template<typename ValueType, typename = typename std::enable_if<!std::is_same<typename std::decay<ValueType>::type, any>::value>::type>
     any(ValueType&& value)
     {
+        static_assert(std::is_copy_constructible<typename std::decay<ValueType>::type>::value,
+            "T shall satisfy the CopyConstructible requirements.");
         this->construct(std::forward<ValueType>(value));
     }
 
@@ -115,11 +100,13 @@ public:
 
     /// Has the same effect as any(std::forward<ValueType>(value)).swap(*this). No effect if a exception is thrown.
     ///
-    /// T shall satisfy the CopyConstructible requirements, except for the requirements for MoveConstructible.
-    /// (this is unlike N4562 specifies, see LWG Defect 2509).
-    template<typename ValueType, typename = std::enable_if_t<!std::is_same<std::decay_t<ValueType>, any>::value>>
+    /// T shall satisfy the CopyConstructible requirements, otherwise the program is ill-formed.
+    /// This is because an `any` may be copy constructed into another `any` at any time, so a copy should always be allowed.
+    template<typename ValueType, typename = typename std::enable_if<!std::is_same<typename std::decay<ValueType>::type, any>::value>::type>
     any& operator=(ValueType&& value)
     {
+        static_assert(std::is_copy_constructible<typename std::decay<ValueType>::type>::value,
+            "T shall satisfy the CopyConstructible requirements.");
         any(std::forward<ValueType>(value)).swap(*this);
         return *this;
     }
@@ -180,8 +167,10 @@ private: // Storage and Virtual Method Table
 
     union storage_union
     {
-        void*                                                       dynamic;
-        std::aligned_storage_t<2 * sizeof(void*), alignof(void*)>   stack;      // 2 words for e.g. shared_ptr
+        using stack_storage_t = typename std::aligned_storage<2 * sizeof(void*), std::alignment_of<void*>::value>::type;
+
+        void*               dynamic;
+        stack_storage_t     stack;      // 2 words for e.g. shared_ptr
     };
 
     /// Base VTable specification.
@@ -277,18 +266,18 @@ private: // Storage and Virtual Method Table
 
     /// Whether the type T must be dynamically allocated or can be stored on the stack.
     template<typename T>
-    static constexpr bool requires_allocation()
-    {
-        return !(std::is_nothrow_move_constructible<T>::value      // N4562 Â§6.3/3 [any.class]
-            && sizeof(T) <= sizeof(storage_union::stack)
-            && alignof(T) <= alignof(decltype(storage_union::stack)));
-    }
+    struct requires_allocation :
+        std::integral_constant<bool,
+                !(std::is_nothrow_move_constructible<T>::value      // N4562 §6.3/3 [any.class]
+                  && sizeof(T) <= sizeof(storage_union::stack)
+                  && std::alignment_of<T>::value <= std::alignment_of<storage_union::stack_storage_t>::value)>
+    {};
 
     /// Returns the pointer to the vtable of the type T.
     template<typename T>
     static vtable_type* vtable_for_type()
     {
-        using VTableType = std::conditional_t<requires_allocation<T>(), vtable_dynamic<T>, vtable_stack<T>>;
+        using VTableType = typename std::conditional<requires_allocation<T>::value, vtable_dynamic<T>, vtable_stack<T>>::type;
         static vtable_type table = {
             VTableType::type, VTableType::destroy,
             VTableType::copy, VTableType::move,
@@ -328,7 +317,7 @@ protected:
     template<typename T>
     const T* cast() const noexcept
     {
-        return requires_allocation<T>()?
+        return requires_allocation<typename std::decay<T>::type>::value?
             reinterpret_cast<const T*>(storage.dynamic) :
             reinterpret_cast<const T*>(&storage.stack);
     }
@@ -337,7 +326,7 @@ protected:
     template<typename T>
     T* cast() noexcept
     {
-        return requires_allocation<T>()?
+        return requires_allocation<typename std::decay<T>::type>::value?
             reinterpret_cast<T*>(storage.dynamic) :
             reinterpret_cast<T*>(&storage.stack);
     }
@@ -351,27 +340,29 @@ private:
     template<typename ValueType>
     void construct(ValueType&& value)
     {
-        using T = std::decay_t<ValueType>;
+        using T = typename std::decay<ValueType>::type;
 
         this->vtable = vtable_for_type<T>();
 
-        if(requires_allocation<T>())
+        if(requires_allocation<T>::value)
             storage.dynamic = new T(std::forward<ValueType>(value));
         else
             new (&storage.stack) T(std::forward<ValueType>(value));
     }
 };
 
+
+
 namespace detail
 {
     template<typename ValueType>
-    inline ValueType any_cast_move_if_true(std::remove_reference_t<ValueType>* p, std::true_type)
+    inline ValueType any_cast_move_if_true(typename std::remove_reference<ValueType>::type* p, std::true_type)
     {
         return std::move(*p);
     }
 
     template<typename ValueType>
-    inline ValueType any_cast_move_if_true(std::remove_reference_t<ValueType>* p, std::false_type)
+    inline ValueType any_cast_move_if_true(typename std::remove_reference<ValueType>::type* p, std::false_type)
     {
         return *p;
     }
@@ -381,7 +372,7 @@ namespace detail
 template<typename ValueType>
 inline ValueType any_cast(const any& operand)
 {
-    auto p = any_cast<std::add_const_t<std::remove_reference_t<ValueType>>>(&operand);
+    auto p = any_cast<typename std::add_const<typename std::remove_reference<ValueType>::type>::type>(&operand);
     if(p == nullptr) throw bad_any_cast();
     return *p;
 }
@@ -390,24 +381,33 @@ inline ValueType any_cast(const any& operand)
 template<typename ValueType>
 inline ValueType any_cast(any& operand)
 {
-    auto p = any_cast<std::remove_reference_t<ValueType>>(&operand);
+    auto p = any_cast<typename std::remove_reference<ValueType>::type>(&operand);
     if(p == nullptr) throw bad_any_cast();
     return *p;
 }
 
-/// If ValueType is MoveConstructible and isn't a lvalue reference, performs
-/// std::move(*any_cast<remove_reference_t<ValueType>>(&operand)), otherwise
-/// *any_cast<remove_reference_t<ValueType>>(&operand). Throws bad_any_cast on failure.
+///
+/// If ANY_IMPL_ANYCAST_MOVEABLE is not defined, does as N4562 specifies:
+///     Performs *any_cast<remove_reference_t<ValueType>>(&operand), or throws bad_any_cast on failure.
+///
+/// If ANY_IMPL_ANYCAST_MOVEABLE is defined, does as LWG Defect 2509 specifies:
+///     If ValueType is MoveConstructible and isn't a lvalue reference, performs
+///     std::move(*any_cast<remove_reference_t<ValueType>>(&operand)), otherwise
+///     *any_cast<remove_reference_t<ValueType>>(&operand). Throws bad_any_cast on failure.
+///
 template<typename ValueType>
 inline ValueType any_cast(any&& operand)
 {
+#ifdef ANY_IMPL_ANY_CAST_MOVEABLE
     // https://cplusplus.github.io/LWG/lwg-active.html#2509
-
     using can_move = std::integral_constant<bool,
         std::is_move_constructible<ValueType>::value
         && !std::is_lvalue_reference<ValueType>::value>;
+#else
+    using can_move = std::false_type;
+#endif
 
-    auto p = any_cast<std::remove_reference_t<ValueType>>(&operand);
+    auto p = any_cast<typename std::remove_reference<ValueType>::type>(&operand);
     if(p == nullptr) throw bad_any_cast();
     return detail::any_cast_move_if_true<ValueType>(p, can_move());
 }
@@ -443,3 +443,5 @@ namespace std
         lhs.swap(rhs);
     }
 }
+
+#endif
