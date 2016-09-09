@@ -36,7 +36,7 @@ Commands::Commands(std::multimap<std::string, Command> commands_,
     this->cmd_SWITCH_CONTINUED              = find_command("SWITCH_CONTINUED");
     this->cmd_GOSUB_FILE                    = find_command("GOSUB_FILE");
     this->cmd_LAUNCH_MISSION                = find_command("LAUNCH_MISSION");
-    this->cmd_LOAD_AND_LAUNCH_MISSION       = find_command("LOAD_AND_LAUNCH_MISSION");
+    this->cmd_LOAD_AND_LAUNCH_MISSION_INTERNAL = find_command("LOAD_AND_LAUNCH_MISSION_INTERNAL");
     this->cmd_START_NEW_SCRIPT              = find_command("START_NEW_SCRIPT");
     this->cmd_TERMINATE_THIS_SCRIPT         = find_command("TERMINATE_THIS_SCRIPT");
     this->cmd_SCRIPT_NAME                   = find_command("SCRIPT_NAME");

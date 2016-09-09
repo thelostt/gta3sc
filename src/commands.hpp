@@ -112,7 +112,7 @@ protected:
     optional<const Command&> cmd_GOSUB_FILE;
     optional<const Command&> cmd_RETURN;
     optional<const Command&> cmd_LAUNCH_MISSION;
-    optional<const Command&> cmd_LOAD_AND_LAUNCH_MISSION;
+    optional<const Command&> cmd_LOAD_AND_LAUNCH_MISSION_INTERNAL;
     optional<const Command&> cmd_START_NEW_SCRIPT;
     optional<const Command&> cmd_TERMINATE_THIS_SCRIPT;
     optional<const Command&> cmd_SCRIPT_NAME;
@@ -322,9 +322,9 @@ public:
         return this->cmd_LAUNCH_MISSION;
     }
 
-    optional<const Command&> load_and_launch_mission() const
+    optional<const Command&> load_and_launch_mission_internal() const
     {
-        return this->cmd_LOAD_AND_LAUNCH_MISSION;
+        return this->cmd_LOAD_AND_LAUNCH_MISSION_INTERNAL;
     }
 
     optional<const Command&> start_new_script() const

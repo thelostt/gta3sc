@@ -1113,16 +1113,16 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // TODO use `const Commands&` to identify these?
                 if(command_name == "LOAD_AND_LAUNCH_MISSION")
                 {
-                    if(commands.load_and_launch_mission() && commands.load_and_launch_mission()->supported)
+                    if(commands.load_and_launch_mission_internal() && commands.load_and_launch_mission_internal()->supported)
                     {
-                        const Command& command = *commands.load_and_launch_mission();
+                        const Command& command = *commands.load_and_launch_mission_internal();
                         shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
                         node.child(1).set_annotation(int32_t(script->mission_id.value()));
                         node.set_annotation(std::cref(command));
                     }
                     else
                     {
-                        program.fatal_error(nocontext, "XXX LOAD_AND_LAUNCH_MISSION undefined or unsupported");
+                        program.fatal_error(nocontext, "XXX LOAD_AND_LAUNCH_MISSION_INTERNAL undefined or unsupported");
                     }
                 }
                 else if(command_name == "LAUNCH_MISSION")
