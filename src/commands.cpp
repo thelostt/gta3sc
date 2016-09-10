@@ -46,6 +46,7 @@ Commands::Commands(std::multimap<std::string, Command> commands_,
     this->cmd_GOTO                          = find_command("GOTO");
     this->cmd_GOTO_IF_FALSE                 = find_command("GOTO_IF_FALSE");
     this->cmd_ANDOR                         = find_command("ANDOR");
+    this->cmd_SAVE_STRING_TO_DEBUG_FILE     = find_command("SAVE_STRING_TO_DEBUG_FILE");
     this->alt_SET                           = find_alternator("SET");
     this->alt_CSET                          = find_alternator("CSET");
     this->alt_TERMINATE_THIS_CUSTOM_SCRIPT  = find_alternator("TERMINATE_THIS_CUSTOM_SCRIPT");
@@ -416,7 +417,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                 else if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
                 {
                     if(arg_node.is_annotated())
-                        Expects(arg_node.maybe_annotation<const StringAnnotation&>());
+                        Expects(arg_node.maybe_annotation<const TextLabelAnnotation&>());
                     else
                     {
                         size_t text_limit = arg.type == ArgType::TextLabel?    7 :
@@ -428,7 +429,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                             program.error(arg_node, "XXX string identifier too long, max size is {}", text_limit);
                         }
 
-                        arg_node.set_annotation(StringAnnotation { arg.type == ArgType::AnyTextLabel, arg_node.text() });
+                        arg_node.set_annotation(TextLabelAnnotation { arg.type == ArgType::AnyTextLabel, arg_node.text() });
                     }
                 }
                 else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Constant || arg.type == ArgType::Any)
@@ -615,8 +616,8 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::Any;
     else if(!strcmp(string, "LABEL"))
         return ArgType::Label;
-    else if(!strcmp(string, "BUFFER"))
-        return ArgType::Buffer128;
+    else if(!strcmp(string, "BUFFER32"))
+        return ArgType::Buffer32;
     else if(!strcmp(string, "CONST"))
         return ArgType::Constant;
     else if(!strcmp(string, "TEXT_LABEL"))

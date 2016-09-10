@@ -1,9 +1,14 @@
 #pragma once
 #include "stdinc.h"
 
-struct StringAnnotation
+struct TextLabelAnnotation
 {
     bool        is_varlen;
+    std::string string;
+};
+
+struct String128Annotation
+{
     std::string string;
 };
 
@@ -45,3 +50,11 @@ struct StreamedFileAnnotation
 {
     int32_t id;
 };
+
+// TODO move those functions to somewhere else?
+
+inline std::string remove_quotes(const std::string& string)
+{
+    Expects(string.front() == '"' && string.back() == '"');
+    return std::string(string.begin() + 1, string.begin() + string.size() - 1);
+}

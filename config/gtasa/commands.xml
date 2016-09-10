@@ -9046,7 +9046,10 @@
     <Command ID="0x5b5" Name="APPLY_COLLISION_ON_OBJECT" Supported="false"/>
     <Command ID="0x5b6" Name="SAVE_STRING_TO_DEBUG_FILE">
       <Args>
-        <Arg Type="BUFFER" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="BUFFER32" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="BUFFER32" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="BUFFER32" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="BUFFER32" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x5b7" Name="TASK_PLAYER_ON_FOOT"/>

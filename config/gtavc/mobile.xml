@@ -147,7 +147,10 @@
     </Command>
     <Command ID="0x5c2" Name="SAVE_STRING_TO_DEBUG_FILE" Supported="true">
       <Args>
-        <Arg AllowConst="true" AllowGlobalVar="false" AllowLocalVar="false" Desc="Buffer" Optional="false" Out="false" Ref="false" Type="BUFFER"/>
+        <Arg Type="BUFFER32" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="BUFFER32" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="BUFFER32" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="BUFFER32" Desc="Buffer" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
   </Commands>

@@ -800,7 +800,7 @@ private:
                     }
                     return label;
                 }
-                else if(auto opt_text = arg_node.maybe_annotation<const StringAnnotation&>())
+                else if(auto opt_text = arg_node.maybe_annotation<const TextLabelAnnotation&>())
                 {
                     auto type = opt_text->is_varlen? CompiledString::Type::StringVar : CompiledString::Type::TextLabel8;
                     return CompiledString{ type, opt_text->string };
@@ -825,6 +825,14 @@ private:
             case NodeType::String:
             {
                 // TODO
+                if(auto opt_buffer = arg_node.maybe_annotation<const String128Annotation&>())
+                {
+                    return CompiledString { CompiledString::Type::String128, opt_buffer->string };
+                }
+                else
+                {
+                    Unreachable();
+                }
                 break;
             }
 

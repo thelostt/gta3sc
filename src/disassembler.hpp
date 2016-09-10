@@ -368,11 +368,11 @@ private:
             !stop_it && it != command.args.end();
             (it->optional? it : ++it), ++argument_id)
         {
-            if(it->type == ArgType::Buffer128)
+            if(it->type == ArgType::Buffer32)
             {
-                if(!fetch_chars(offset, 128))
+                if(!fetch_chars(offset, 32))
                     return nullopt;
-                offset += 128;
+                offset += 32;
                 continue;
             }
 
@@ -543,9 +543,9 @@ private:
             !stop_it && it != command.args.end();
             it->optional? it : ++it)
         {
-            if(it->type == ArgType::Buffer128)
+            if(it->type == ArgType::Buffer32)
             {
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*fetch_chars(offset, 128)) });
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*fetch_chars(offset, 32)) });
                 offset += 128;
                 continue;
             }

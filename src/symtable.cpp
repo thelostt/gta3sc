@@ -840,8 +840,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
         if(node.child_count() == 2) // ensure XML definition is correct
         {
-            // why does it segfault with const StringAnnotation& ???
-            if(auto opt_script_name = node.child(1).maybe_annotation<const StringAnnotation&>())
+            // why does it segfault with const TextLabelAnnotation& ???
+            if(auto opt_script_name = node.child(1).maybe_annotation<const TextLabelAnnotation&>())
             {
                 if(!this->script_names.emplace(opt_script_name->string).second)
                 {
@@ -1147,7 +1147,42 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 auto& command_name = node.child(0).text();
 
                 // TODO use `const Commands&` to identify these?
-                if(command_name == "LOAD_AND_LAUNCH_MISSION")
+                if(command_name == "SAVE_STRING_TO_DEBUG_FILE")
+                {
+                    if(commands.save_string_to_debug_file() && commands.save_string_to_debug_file()->supported)
+                    {
+                        const Command& command = *commands.save_string_to_debug_file();
+                        if(node.child_count() < 2)
+                        {
+                            program.error(node, "XXX too few arguments for SAVE_STRING_TO_DEBUG_FILE");
+                        }
+                        else if(node.child_count() > 2)
+                        {
+                            program.error(node, "XXX anything but a single string argument is underspecified for SAVE_STRING_TO_DEBUG_FILE");
+                        }
+                        else if(node.child(1).type() != NodeType::String)
+                        {
+                            program.error(node.child(1), "XXX param must be a string literal");
+                        }
+                        else
+                        {
+                            auto debug_string = remove_quotes(node.child(1).text());
+
+                            if(debug_string.size() > 127)
+                            {
+                                program.error(node.child(1), "XXX string too long, only 127 chars allowed");
+                            }
+
+                            node.child(1).set_annotation(String128Annotation { std::move(debug_string) });
+                            node.set_annotation(std::cref(command));
+                        }
+                    }
+                    else
+                    {
+                        program.fatal_error(node, "XXX SAVE_STRING_TO_DEBUG_FILE undefined or unsupported");
+                    }
+                }
+                else if(command_name == "LOAD_AND_LAUNCH_MISSION")
                 {
                     if(commands.load_and_launch_mission_internal() && commands.load_and_launch_mission_internal()->supported)
                     {
@@ -1158,7 +1193,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     }
                     else
                     {
-                        program.fatal_error(nocontext, "XXX LOAD_AND_LAUNCH_MISSION_INTERNAL undefined or unsupported");
+                        program.fatal_error(node, "XXX LOAD_AND_LAUNCH_MISSION_INTERNAL undefined or unsupported");
                     }
                 }
                 else if(command_name == "LAUNCH_MISSION")
@@ -1172,7 +1207,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     }
                     else
                     {
-                        program.fatal_error(nocontext, "XXX LAUNCH_MISSION undefined or unsupported");
+                        program.fatal_error(node, "XXX LAUNCH_MISSION undefined or unsupported");
                     }
                 }
                 else if(command_name == "GOSUB_FILE")
@@ -1188,7 +1223,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     }
                     else
                     {
-                        program.fatal_error(nocontext, "XXX GOSUB_FILE undefined or unsupported");
+                        program.fatal_error(node, "XXX GOSUB_FILE undefined or unsupported");
                     }
                 }
                 else if(command_name == "REGISTER_STREAMED_SCRIPT")
@@ -1202,7 +1237,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     }
                     else
                     {
-                        program.fatal_error(nocontext, "XXX REGISTER_STREAMED_SCRIPT_INTERNAL undefined or unsupported");
+                        program.fatal_error(node, "XXX REGISTER_STREAMED_SCRIPT_INTERNAL undefined or unsupported");
                     }
                 }
                 else

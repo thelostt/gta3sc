@@ -6,7 +6,7 @@ enum class ArgType : uint8_t
 {
     Any,
     Label,
-    Buffer128,
+    Buffer32,
     Integer,
     Float,
     TextLabel,
@@ -122,6 +122,7 @@ protected:
     optional<const Command&> cmd_GOTO_IF_FALSE;
     optional<const Command&> cmd_ANDOR;
     optional<const Command&> cmd_REGISTER_STREAMED_SCRIPT_INTERNAL;
+    optional<const Command&> cmd_SAVE_STRING_TO_DEBUG_FILE;
     alternator_pair          alt_SET;
     alternator_pair          alt_CSET;
     alternator_pair          alt_TERMINATE_THIS_CUSTOM_SCRIPT;
@@ -377,6 +378,11 @@ public:
     optional<const Command&> andor() const
     {
         return this->cmd_ANDOR;
+    }
+
+    optional<const Command&> save_string_to_debug_file() const
+    {
+        return this->cmd_SAVE_STRING_TO_DEBUG_FILE;
     }
 
     alternator_pair set() const
