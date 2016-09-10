@@ -91,6 +91,8 @@ statement
 keyStatement
 	:	WS* MISSION_START newLine -> MISSION_START
 	|	WS* MISSION_END newLine -> MISSION_END
+	|	WS* SCRIPT_START newLine -> SCRIPT_START
+	|	WS* SCRIPT_END newLine -> SCRIPT_END
 	;
 
 //////
@@ -328,6 +330,9 @@ CONTINUE	:	C O N T I N U E ; // custom keyword
 
 MISSION_START : M I S S I O N '_' S T A R T ;
 MISSION_END   : M I S S I O N '_' E N D ;
+SCRIPT_START  : S C R I P T '_' S T A R T ; // custom keyword
+SCRIPT_END    : S C R I P T '_' E N D ; // custom keyword
+
 
 VAR_INT   			:	 V A R '_' I N T ;
 LVAR_INT  			:	 L V A R '_' I N T ;

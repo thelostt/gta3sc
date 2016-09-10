@@ -415,6 +415,7 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
         bool found_extfile   = std::any_of(this->extfiles.begin(), this->extfiles.end(), searcher);
         bool found_subscript = std::any_of(this->subscript.begin(), this->subscript.end(), searcher);
         bool found_mission   = std::any_of(this->mission.begin(), this->mission.end(), searcher);
+        bool found_streamed  = std::any_of(this->streamed.begin(), this->streamed.end(), searcher);
 
         if(found_extfile && type != ScriptType::MainExtension)
         {
@@ -431,14 +432,20 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
             program.error(command, "XXX incompatible, previous declaration blabla");
             return false;
         }
+        else if(found_streamed && type != ScriptType::StreamedScript)
+        {
+            program.error(command, "XXX incompatible, previous declaration blabla");
+            return false;
+        }
         else 
         {
             // still not added to its list?
-            if(!found_extfile && !found_subscript && !found_mission)
+            if(!found_extfile && !found_subscript && !found_mission && !found_streamed)
             {
                 auto refvector = (type == ScriptType::MainExtension? std::ref(this->extfiles) :
                     type == ScriptType::Subscript? std::ref(this->subscript) :
-                    type == ScriptType::Mission? std::ref(this->mission) : Unreachable());
+                    type == ScriptType::Mission? std::ref(this->mission) :
+                    type == ScriptType::StreamedScript? std::ref(this->streamed) : Unreachable());
 
                 refvector.get().emplace_back(std::move(script_name));
             }
@@ -488,7 +495,7 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
         std::inserter(int_gvars, int_gvars.begin()),
         t1.global_vars.value_comp());
 
-    // TODO check for conflicting extfiles, subscripts and mission
+    // TODO check for conflicting extfiles, subscripts, mission and streamed
 
     if(int_labels.size() > 0)
     {
@@ -537,6 +544,9 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
 
     t1.mission.reserve(t1.mission.size() + t2.mission.size());
     std::move(t2.mission.begin(), t2.mission.end(), std::back_inserter(t1.mission));
+
+    t1.streamed.reserve(t1.streamed.size() + t2.streamed.size());
+    std::move(t2.streamed.begin(), t2.streamed.end(), std::back_inserter(t1.streamed));
 
     t1.count_progress += t2.count_progress;
     t1.count_collectable1 += t2.count_collectable1;
@@ -678,6 +688,8 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     table.add_script(ScriptType::Subscript, node, program);
                 else if(command_name == "GOSUB_FILE")
                     table.add_script(ScriptType::MainExtension, node, program);
+                else if(command_name == "REGISTER_STREAMED_SCRIPT")
+                    table.add_script(ScriptType::StreamedScript, node, program);
                 else if(command_name == "CREATE_COLLECTABLE1")
                     ++table.count_collectable1;
                 else if(command_name == "REGISTER_MISSION_PASSED" || command_name == "REGISTER_ODDJOB_MISSION_PASSED")
@@ -778,6 +790,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
     bool had_mission_start = false;
     bool had_mission_end   = false;
+    bool had_script_start  = false;
+    bool had_script_end    = false;
 
     std::shared_ptr<Scope> current_scope = nullptr;
     bool is_condition_block = false;
@@ -810,6 +824,13 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             auto arg_begin = node.child_count() > 2? std::next(node.begin(), 2) : node.end();
             this->send_input_vars(node.child(1), arg_begin, node.end(), program);
         }
+    };
+
+    auto handle_start_new_streamed_script = [&](const SyntaxTree& node)
+    {
+        // Type checking and entity passing isn't handled according to analyzes of
+        // the original San Andreas SCM. TODO include a compiler flag to do so?
+        // The implementation is as simple as calling handle_start_new_script :)
     };
 
     auto handle_script_name = [&](const SyntaxTree& node)
@@ -923,26 +944,41 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 return false;
 
             case NodeType::MISSION_START:
+            case NodeType::SCRIPT_START:
             {
-                if(!had_mission_start)
-                {
-                    had_mission_start = true;
+                bool& had_start = node.type() == NodeType::MISSION_START? std::ref(had_mission_start) : 
+                                  node.type() == NodeType::SCRIPT_START? std::ref(had_script_start) : Unreachable();
+                auto dir_start  = node.type() == NodeType::MISSION_START? "MISSION_START" :
+                                  node.type() == NodeType::SCRIPT_START? "SCRIPT_START" : Unreachable();
 
+                if(!had_start)
+                {
+                    had_start = true;
                     if(num_statements != 1)
-                        program.error(node, "XXX MISSION_START must be the first line of subscript or mission script.");
+                        program.error(node, "XXX {} must be the first line of subscript or mission script.", dir_start);
                 }
                 else
                 {
-                    program.error(node, "XXX more than one MISSION_START in script.");
+                    program.error(node, "XXX more than one {} in script.", dir_start);
                 }
                 return false;
             }
 
             case NodeType::MISSION_END:
+            case NodeType::SCRIPT_END:
             {
-                if(!had_mission_end)
+                bool& had_start = node.type() == NodeType::MISSION_END? std::ref(had_mission_start) :
+                                  node.type() == NodeType::SCRIPT_END? std::ref(had_script_start) : Unreachable();
+                bool& had_end   = node.type() == NodeType::MISSION_END? std::ref(had_mission_end) :
+                                  node.type() == NodeType::SCRIPT_END? std::ref(had_script_end) : Unreachable();
+                auto dir_start  = node.type() == NodeType::MISSION_END? "MISSION_START" :
+                                  node.type() == NodeType::SCRIPT_END? "SCRIPT_START" : Unreachable();
+                auto dir_end    = node.type() == NodeType::MISSION_END? "MISSION_END" :
+                                  node.type() == NodeType::SCRIPT_END? "SCRIPT_END" : Unreachable();
+
+                if(!had_end)
                 {
-                    had_mission_end = true;
+                    had_end = true;
 
                     if(commands.terminate_this_script() && commands.terminate_this_script()->supported)
                     {
@@ -954,12 +990,12 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         program.fatal_error(nocontext, "XXX TERMINATE_THIS_SCRIPT undefined or unsupported");
                     }
 
-                    if(!had_mission_start)
-                        program.error(node, "XXX MISSION_END without a MISSION_START.");
+                    if(!had_start)
+                        program.error(node, "XXX {} without a {}.", dir_end, dir_start);
                 }
                 else
                 {
-                    program.error(node, "XXX more than one MISSION_END in script.");
+                    program.error(node, "XXX more than one {} in script.", dir_end);
                 }
                 return false;
             }
@@ -1113,16 +1149,16 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // TODO use `const Commands&` to identify these?
                 if(command_name == "LOAD_AND_LAUNCH_MISSION")
                 {
-                    if(commands.load_and_launch_mission() && commands.load_and_launch_mission()->supported)
+                    if(commands.load_and_launch_mission_internal() && commands.load_and_launch_mission_internal()->supported)
                     {
-                        const Command& command = *commands.load_and_launch_mission();
+                        const Command& command = *commands.load_and_launch_mission_internal();
                         shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
                         node.child(1).set_annotation(int32_t(script->mission_id.value()));
                         node.set_annotation(std::cref(command));
                     }
                     else
                     {
-                        program.fatal_error(nocontext, "XXX LOAD_AND_LAUNCH_MISSION undefined or unsupported");
+                        program.fatal_error(nocontext, "XXX LOAD_AND_LAUNCH_MISSION_INTERNAL undefined or unsupported");
                     }
                 }
                 else if(command_name == "LAUNCH_MISSION")
@@ -1155,8 +1191,61 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         program.fatal_error(nocontext, "XXX GOSUB_FILE undefined or unsupported");
                     }
                 }
+                else if(command_name == "REGISTER_STREAMED_SCRIPT")
+                {
+                    if(commands.register_streamed_script_internal() && commands.register_streamed_script_internal()->supported)
+                    {
+                        const Command& command = *commands.register_streamed_script_internal();
+                        shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                        node.child(1).set_annotation(int32_t(script->streamed_id.value()));
+                        node.set_annotation(std::cref(command));
+                    }
+                    else
+                    {
+                        program.fatal_error(nocontext, "XXX REGISTER_STREAMED_SCRIPT_INTERNAL undefined or unsupported");
+                    }
+                }
                 else
                 {
+                    // Hack to give integer-based streamed script arguments a filename based argument. Not sure if this
+                    // is according to R* semantics, after all streamed scripts are all guessed. TODO rethink?
+                    if(command_name == "REGISTER_SCRIPT_BRAIN_FOR_CODE_USE"
+                    || command_name == "REGISTER_ATTRACTOR_SCRIPT_BRAIN_FOR_CODE_USE"
+                    || command_name == "STREAM_SCRIPT"
+                    || command_name == "HAS_STREAMED_SCRIPT_LOADED"
+                    || command_name == "MARK_STREAMED_SCRIPT_AS_NO_LONGER_NEEDED"
+                    || command_name == "REMOVE_STREAMED_SCRIPT"
+                    || command_name == "REGISTER_STREAMED_SCRIPT"
+                    || command_name == "START_NEW_STREAMED_SCRIPT"
+                    || command_name == "GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT"
+                    || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED"
+                    || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT")
+                    {
+                        //|| command_name == "REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE" -- unsupported
+                        //|| command_name == "ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR" -- unsupported
+                        if(node.child_count() >= 2)
+                        {
+                            if(auto opt_script = symbols.find_script(node.child(1).text()))
+                            {
+                                if((*opt_script)->type == ScriptType::StreamedScript)
+                                {
+                                    auto annotation = StreamedFileAnnotation { (*opt_script)->streamed_id.value() };
+                                    node.child(1).set_annotation(annotation);
+                                }
+                                else
+                                {
+                                    program.error(node.child(1), "XXX script is not a streamed script declared with REGISTER_STREAMED_SCRIPT");
+                                    node.child(1).set_annotation(StreamedFileAnnotation{-1});
+                                }
+                            }
+                            else
+                            {
+                                program.error(node.child(1), "XXX script never declared with REGISTER_STREAMED_SCRIPT");
+                                node.child(1).set_annotation(StreamedFileAnnotation{-1});
+                            }
+                        }
+                    }
+
                     try
                     {
                         const Command& command = commands.match(node, symbols, current_scope);
@@ -1165,6 +1254,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                         if(commands.equal(command, commands.start_new_script()))
                             handle_start_new_script(node);
+                        else if(commands.equal(command, commands.start_new_streamed_script()))
+                            handle_start_new_streamed_script(node);
                         else if(commands.equal(command, commands.script_name()))
                             handle_script_name(node);
                         else if(commands.equal(command, commands.set_collectable1_total()))
@@ -1325,6 +1416,17 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             program.error(*this, "Mission script or subscript does not contain MISSION_START");
         else if(!had_mission_end)
             program.error(*this, "Mission script or subscript does not contain MISSION_END");
+    }
+    else if(this->type == ScriptType::StreamedScript)
+    {
+        if(!had_script_start)
+            program.error(*this, "Streamed script does not contain SCRIPT_START");
+        else if(!had_script_end)
+            program.error(*this, "Streamed script does not contain SCRIPT_END");
+    }
+    else if(had_mission_start || had_script_start)
+    {
+        program.error(*this, "Cannot use MISSION_START or SCRIPT_START in this script type");
     }
 }
 

@@ -20,6 +20,8 @@ Options:
   --help                   Display this information
   -o <file>                Place the output into <file>
   --headerless             Does not generate a header on the output SCM.
+  --header=<version>       Generates the specified header version (gta3,gtavc,
+                           gtasa). Ignored if --headerless specified.
   --config=<name>          Which compilation configurations to use (gta3,gtavc,
                            gtasa). This effectively reads the data files at
                            '/config/<name>/' and sets some appropriate flags.
@@ -42,6 +44,8 @@ Options:
                            whenever a label is used before a curly bracket
                            instead of after.
   -f[no-]arrays            Enables the use of arrays.
+  -f[no-]streamed-scripts  Enables the use of streamed scripts and generates an
+                           associated script.img archive.
 )";
 
 enum class Action
@@ -129,32 +133,38 @@ int main(int argc, char** argv)
                 if(config_name == "gta3")
                 {
                     levelfile = "gta3.dat";
+                    options.header = Options::HeaderVersion::GTA3;
                     options.use_half_float = true;
                     options.has_text_label_prefix = false;
                     options.skip_single_ifs = false;
                     options.fswitch = false;
                     options.scope_then_label = false;
                     options.farrays = false;
+                    options.streamed_scripts = false;
                 }
                 else if(config_name == "gtavc")
                 {
                     levelfile = "gta_vc.dat";
+                    options.header = Options::HeaderVersion::GTAVC;
                     options.use_half_float = false;
                     options.has_text_label_prefix = false;
                     options.skip_single_ifs = false;
                     options.fswitch = false;
                     options.scope_then_label = true;
                     options.farrays = false;
+                    options.streamed_scripts = false;
                 }
                 else if(config_name == "gtasa")
                 {
                     levelfile = "gta.dat";
+                    options.header = Options::HeaderVersion::GTASA;
                     options.use_half_float = false;
                     options.has_text_label_prefix = true;
                     options.skip_single_ifs = false;
                     options.fswitch = true;
                     options.scope_then_label = true;
                     options.farrays = true;
+                    options.streamed_scripts = true;
                 }
                 else
                 {
@@ -206,6 +216,10 @@ int main(int argc, char** argv)
             {
                 options.farrays = flag;
             }
+            else if(optflag(argv, "streamed-scripts", &flag))
+            {
+                options.streamed_scripts = flag;
+            }
             else
             {
                 fprintf(stderr, "gta3sc: error: unregonized argument '%s'\n", *argv);
@@ -254,6 +268,12 @@ int main(int argc, char** argv)
     if(!options.guesser && options.fswitch)
     {
         fprintf(stderr, "gta3sc: error: use of -fswitch only available in guesser mode [--guesser]\n");
+        return EXIT_FAILURE;
+    }
+
+    if(!options.guesser && options.streamed_scripts)
+    {
+        fprintf(stderr, "gta3sc: error: use of -fstreamed_scripts only available in guesser mode [--guesser]\n");
         return EXIT_FAILURE;
     }
 
@@ -349,6 +369,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         auto ext_scripts = read_and_scan_symbols(subdir, symbols.extfiles.begin(), symbols.extfiles.end(), ScriptType::MainExtension, program);
         auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
         auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
+        auto streamed_scripts = read_and_scan_symbols(subdir, symbols.streamed.begin(), symbols.streamed.end(), ScriptType::StreamedScript, program);
 
         // Following steps wants a fully working syntax tree, so check for parser/lexer errors.
         if(program.has_error())
@@ -373,6 +394,16 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 symbols.merge(std::move(x.second), program);
                 scripts.emplace_back(x.first); // maybe move
                 scripts.back()->mission_id = static_cast<uint16_t>(i++);
+            }
+        }
+
+        {
+            size_t i = 0;
+            for(auto& x : streamed_scripts)
+            {
+                symbols.merge(std::move(x.second), program);
+                scripts.emplace_back(x.first); // maybe move
+                scripts.back()->streamed_id = static_cast<uint16_t>(i++);
             }
         }
 
@@ -418,7 +449,8 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             global_vars_size = (*highest_var)->end_offset();
         }
 
-        CompiledScmHeader header(CompiledScmHeader::Version::Liberty, symbols.size_global_vars(), models, scripts);
+        CompiledScmHeader header(program.opt.get_header<CompiledScmHeader::Version>(),
+                                 symbols.size_global_vars(), models, scripts);
 
         // not thread-safe
         Expects(gens.size() == scripts.size());
@@ -432,11 +464,32 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         for(auto& gen : gens)
             gen.generate();
 
-        if(FILE* f = u8fopen(output, "wb"))
+        auto generate_output = [&]
         {
+            FILE *f = 0, *script_img = 0;
+            std::vector<std::reference_wrapper<const CodeGenerator>> into_script_img;
+
             auto guard = make_scope_guard([&] {
-                fclose(f);
+                if(f) fclose(f);
+                if(script_img) fclose(script_img);
             });
+
+            f = u8fopen(output, "wb");
+            if(f == nullptr)
+            {
+                program.fatal_error(nocontext, "XXX  failed to open output for writing");
+                //return;
+            }
+
+            if(program.opt.streamed_scripts)
+            {
+                script_img = u8fopen(fs::path(output).replace_filename("script.img"), "wb");
+                if(!script_img)
+                {
+                    program.fatal_error(nocontext, "XXX failed to open script.img for writing");
+                    //return;
+                }
+            }
 
             if(!program.opt.headerless)
             {
@@ -447,13 +500,109 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             for(auto& gen : gens)
             {
-                write_file(f, gen.buffer(), gen.buffer_size());
+                if(gen.script->type != ScriptType::StreamedScript)
+                    write_file(f, gen.buffer(), gen.buffer_size());
+                else
+                    into_script_img.emplace_back(std::cref(gen));
             }
-        }
-        else
-        {
-            program.error(nocontext, "XXX");
-        }
+
+            if(program.opt.streamed_scripts)
+            {
+                // TODO endian independent img building
+
+                struct alignas(4) CdHeader
+                {
+                    char magic[4];
+                    uint32_t num_entries;
+                };
+
+                struct alignas(4) CdEntry
+                {
+                    uint32_t offset;                // in sectors
+                    uint16_t streaming_size;        // in sectors
+                    uint16_t size_in_archive = 0;   // in sectors
+                    char     filename[24];
+                };
+
+                struct alignas(4) AAAScript
+                {
+                    uint32_t size_global_space;
+                    uint8_t num_streams_allocated;
+                    uint8_t unknown1  = 2;
+                    uint16_t unknown2 = 0;
+                };
+
+                auto round_2kb = [](size_t size) -> size_t
+                {
+                    return (size + 2048 - 1) & ~(2048 - 1);
+                };
+
+                AAAScript aaa_scm;
+                aaa_scm.size_global_space = header.size_global_vars_space - 8;
+                aaa_scm.num_streams_allocated = 62; // TODO
+
+                CdHeader cd_header { {'V','E','R','2'}, static_cast<uint32_t>(1 + into_script_img.size()) };
+                std::vector<CdEntry> directory;
+                directory.reserve(1 + into_script_img.size());
+
+                std::string temp_filename;
+                size_t files_offset = round_2kb(sizeof(CdHeader) + ((1 + into_script_img.size()) * sizeof(CdEntry)));
+                size_t end_offset = 0;
+
+                auto add_entry = [&](const char* filename, size_t size)
+                {
+                    CdEntry next_entry;
+
+                    if(directory.empty())
+                        next_entry.offset = round_2kb(files_offset) / 2048;
+                    else
+                        next_entry.offset = directory.back().offset + directory.back().streaming_size;
+
+                    next_entry.streaming_size = static_cast<uint16_t>(round_2kb(size) / 2048);
+
+                    strncpy(next_entry.filename, filename, 23);
+                    next_entry.filename[23] = 0;
+
+                    directory.emplace_back(next_entry);
+                };
+
+                add_entry("aaa.scm", 8);
+                for(auto& into : into_script_img)
+                {
+                    const Script& script = *into.get().script;
+                    temp_filename = script.path.stem().u8string();
+                    temp_filename += ".scm";
+                    add_entry(temp_filename.c_str(), script.size.value());
+                }
+
+                // TODO, fseek past eof isn't well-defined by the standard, do it in another way
+                // TODO check return status of fseek
+                
+                if(directory.empty())
+                    end_offset = files_offset;
+                else
+                    end_offset = (directory.back().offset + directory.back().streaming_size) * 2048;
+
+                fseek(script_img, end_offset - 1, SEEK_SET);
+                fputc(0, script_img);
+                fseek(script_img, 0, SEEK_SET);
+
+                write_file(script_img, &cd_header, sizeof(cd_header));
+                write_file(script_img, directory.data(), sizeof(CdEntry) * directory.size());
+
+                fseek(script_img, directory[0].offset * 2048, SEEK_SET); // aaa.scm
+                write_file(script_img, &aaa_scm, sizeof(aaa_scm));
+
+                for(size_t i = 0; i < into_script_img.size(); ++i)
+                {
+                    const CodeGenerator& gen = into_script_img[i].get();
+                    fseek(script_img, directory[1+i].offset * 2048, SEEK_SET);
+                    write_file(script_img, gen.buffer(), gen.buffer_size());
+                }
+            }
+        };
+
+        generate_output();
 
         if(program.has_error())
             throw HaltJobException();

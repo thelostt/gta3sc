@@ -112,14 +112,16 @@ protected:
     optional<const Command&> cmd_GOSUB_FILE;
     optional<const Command&> cmd_RETURN;
     optional<const Command&> cmd_LAUNCH_MISSION;
-    optional<const Command&> cmd_LOAD_AND_LAUNCH_MISSION;
+    optional<const Command&> cmd_LOAD_AND_LAUNCH_MISSION_INTERNAL;
     optional<const Command&> cmd_START_NEW_SCRIPT;
+    optional<const Command&> cmd_START_NEW_STREAMED_SCRIPT;
     optional<const Command&> cmd_TERMINATE_THIS_SCRIPT;
     optional<const Command&> cmd_SCRIPT_NAME;
     optional<const Command&> cmd_RET;
     optional<const Command&> cmd_GOTO;
     optional<const Command&> cmd_GOTO_IF_FALSE;
     optional<const Command&> cmd_ANDOR;
+    optional<const Command&> cmd_REGISTER_STREAMED_SCRIPT_INTERNAL;
     alternator_pair          alt_SET;
     alternator_pair          alt_CSET;
     alternator_pair          alt_TERMINATE_THIS_CUSTOM_SCRIPT;
@@ -322,14 +324,19 @@ public:
         return this->cmd_LAUNCH_MISSION;
     }
 
-    optional<const Command&> load_and_launch_mission() const
+    optional<const Command&> load_and_launch_mission_internal() const
     {
-        return this->cmd_LOAD_AND_LAUNCH_MISSION;
+        return this->cmd_LOAD_AND_LAUNCH_MISSION_INTERNAL;
     }
 
     optional<const Command&> start_new_script() const
     {
         return this->cmd_START_NEW_SCRIPT;
+    }
+
+    optional<const Command&> start_new_streamed_script() const
+    {
+        return this->cmd_START_NEW_STREAMED_SCRIPT;
     }
 
     optional<const Command&> terminate_this_script() const
@@ -425,6 +432,11 @@ public:
     alternator_pair is_thing_greater_or_equal_to_thing() const
     {
         return this->alt_IS_THING_GREATER_OR_EQUAL_TO_THING;
+    }
+
+    optional<const Command&> register_streamed_script_internal() const
+    {
+        return this->cmd_REGISTER_STREAMED_SCRIPT_INTERNAL;
     }
 
 protected:

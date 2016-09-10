@@ -36,8 +36,9 @@ Commands::Commands(std::multimap<std::string, Command> commands_,
     this->cmd_SWITCH_CONTINUED              = find_command("SWITCH_CONTINUED");
     this->cmd_GOSUB_FILE                    = find_command("GOSUB_FILE");
     this->cmd_LAUNCH_MISSION                = find_command("LAUNCH_MISSION");
-    this->cmd_LOAD_AND_LAUNCH_MISSION       = find_command("LOAD_AND_LAUNCH_MISSION");
+    this->cmd_LOAD_AND_LAUNCH_MISSION_INTERNAL = find_command("LOAD_AND_LAUNCH_MISSION_INTERNAL");
     this->cmd_START_NEW_SCRIPT              = find_command("START_NEW_SCRIPT");
+    this->cmd_START_NEW_STREAMED_SCRIPT     = find_command("START_NEW_STREAMED_SCRIPT");
     this->cmd_TERMINATE_THIS_SCRIPT         = find_command("TERMINATE_THIS_SCRIPT");
     this->cmd_SCRIPT_NAME                   = find_command("SCRIPT_NAME");
     this->cmd_RETURN                        = find_command("RETURN");
@@ -57,6 +58,7 @@ Commands::Commands(std::multimap<std::string, Command> commands_,
     this->alt_IS_THING_EQUAL_TO_THING       = find_alternator("IS_THING_EQUAL_TO_THING");
     this->alt_IS_THING_GREATER_THAN_THING   = find_alternator("IS_THING_GREATER_THAN_THING");
     this->alt_IS_THING_GREATER_OR_EQUAL_TO_THING = find_alternator("IS_THING_GREATER_OR_EQUAL_TO_THING");
+    this->cmd_REGISTER_STREAMED_SCRIPT_INTERNAL = find_command("REGISTER_STREAMED_SCRIPT_INTERNAL");
 }
 
 void Commands::add_default_models(const std::map<std::string, uint32_t, iless>& default_models)
@@ -151,6 +153,11 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
         case ArgType::Float:
         case ArgType::Any:
         {
+            // Hack for streamed scripts (!!!)
+            // Before match is called, the node is manually annotated with the streamed script id.
+            if(node.maybe_annotation<const StreamedFileAnnotation&>())
+                break;
+
             if(arg.allow_constant && arg.type != ArgType::Float)
             {
                 if(commands.find_constant_for_arg(node.text(), arg))
@@ -402,7 +409,12 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
 
             case NodeType::Identifier:
             {
-                if(arg.type == ArgType::Label)
+                if(arg_node.maybe_annotation<const StreamedFileAnnotation&>())
+                {
+                    // hack for streamed script filenames instead of int value
+                    // do nothing
+                }
+                else if(arg.type == ArgType::Label)
                 {
                     if(arg_node.is_annotated())
                         Expects(arg_node.maybe_annotation<const shared_ptr<Label>&>());

@@ -96,6 +96,7 @@ struct CompiledScmHeader
     {
         Liberty,
         Miami,
+        SanAndreas,
     };
 
     Version                               version;
@@ -103,17 +104,19 @@ struct CompiledScmHeader
     std::vector<std::string>              models;
     std::vector<shared_ptr<const Script>> scripts;   // used to find size of main, size of highest mission and mission offsets
     uint32_t                              num_missions;
+    uint32_t                              num_streamed;
 
     CompiledScmHeader(Version version, size_t size_globals,
                       std::vector<std::string> models_,
                       const std::vector<shared_ptr<Script>>& scripts) :
-        version(version), size_global_vars_space(size_globals),
-        models(std::move(models_)), num_missions(0)
+        version(version), size_global_vars_space(std::max(size_t(8), size_globals)),
+        models(std::move(models_)), num_missions(0), num_streamed(0)
     {
         this->scripts.reserve(scripts.size());
         for(auto& sc : scripts)
         {
-            this->num_missions += (sc->type == ScriptType::Mission? 1 : 0);
+            if(sc->type == ScriptType::Mission) ++this->num_missions;
+            else if(sc->type == ScriptType::StreamedScript) ++this->num_streamed;
             this->scripts.emplace_back(sc);
         }
     }
@@ -248,8 +251,10 @@ private:
                 compile_command(node, not_flag);
                 break;
             case NodeType::MISSION_START:
+            case NodeType::SCRIPT_START:
                 break;
             case NodeType::MISSION_END:
+            case NodeType::SCRIPT_END:
                 compile_mission_end(node, not_flag);
                 break;
             case NodeType::Greater:
@@ -783,10 +788,15 @@ private:
                 else if(auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>())
                 {
                     auto label = std::move(*opt_label);
-                    if(label->script->type == ScriptType::Mission)
+                    if(label->script->type == ScriptType::Mission
+                    || label->script->type == ScriptType::StreamedScript)
                     {
                         if(this->script != label->script)
-                            program.error(arg_node, "Reference to mission label '{}' outside of its mission script.", arg_node.text());
+                        {
+                            auto sckind = label->script->type == ScriptType::Mission? "mission" :
+                                          label->script->type == ScriptType::StreamedScript? "streamed" : Unreachable();
+                            program.error(arg_node, "Reference to {} label '{}' outside of its {} script.", sckind, arg_node.text(), sckind);
+                        }
                     }
                     return label;
                 }
@@ -800,6 +810,10 @@ private:
                     assert(opt_umodel->where.expired() == false);
                     int32_t i32 = opt_umodel->where.lock()->find_model_at(opt_umodel->id);
                     return conv_int(i32);
+                }
+                else if(auto opt_streamed = arg_node.maybe_annotation<const StreamedFileAnnotation&>())
+                {
+                    return conv_int(opt_streamed->id);
                 }
                 else
                 {
