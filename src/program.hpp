@@ -1,8 +1,3 @@
-// TODO find a better name for this file / class!?
-// program does not mean global as in 'for the whole program', it's just a context to be passed around.
-
-// NOTE: not thread-safe context?
-
 #pragma once
 #include "stdinc.h"
 #include "parser.hpp"

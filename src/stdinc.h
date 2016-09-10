@@ -28,7 +28,6 @@
 
 // TODO make all maps and such be transparently comparable
 // TODO transform lots of structs into class; make members private;
-// TODO better organization of this (stdinc.h), perhaps put stuff in other utility headers
 
 using std::shared_ptr;
 using std::weak_ptr;

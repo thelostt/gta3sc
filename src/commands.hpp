@@ -18,7 +18,6 @@ enum class ArgType : uint8_t
 /// Stores constant values associated with a identifier.
 struct Enum
 {
-    // TODO pendantically, only ints are allowed, but maybe later we can add floats and strings.
     std::map<std::string, int32_t, iless> values;
     bool is_global = false;
 
@@ -93,7 +92,7 @@ struct Commands
 {
 protected:
     std::multimap<std::string, Command> commands;
-    std::multimap<uint16_t, const Command*> commands_by_id; // TODO use shared_ptr<Command>!?
+    std::multimap<uint16_t, const Command*> commands_by_id;
     std::map<std::string, shared_ptr<Enum>> enums;
     std::map<std::string, EntityType> entities;
 

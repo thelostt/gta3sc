@@ -1481,7 +1481,6 @@ auto read_script(const std::string& filename, const std::map<std::string, fs::pa
     }
     else
     {
-        // TODO is this safe to continue compilation or is it fatal?
         program.error(nocontext, "File '{}' does not exist in '{}' subdirectory.", filename, "main");
         return nullopt;
     }

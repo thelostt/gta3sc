@@ -119,21 +119,6 @@ static bool match_var(const SyntaxTree& node, const Commands& commands, const Co
     return false; // var doesn't exist
 }
 
-static void match_integer_constant(const SyntaxTree& node, const SymTable& symbols)
-{
-    switch(node.type())
-    {
-        case NodeType::Integer:
-            return;
-        case NodeType::Identifier:
-            // TODO constants
-            throw BadAlternator(node, "XXX match_integer_constant");
-            break;
-        default:
-            throw BadAlternator(node, "XXX match_integer_constant not constant");
-    }
-}
-
 static void match_identifier(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
 {
     switch(arg.type)
@@ -226,7 +211,7 @@ template<typename Iter> static
 const Command& match_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
     Commands::alternator_pair alternator_range, Iter begin, Iter end) // Iter should meet SyntaxTree** requiriments
 {
-    int TMP_bad_alter_id = -1; // TODO REMOVE ME
+    int TMP_bad_alter_id = -1;
     auto num_target_args = (size_t)std::distance(begin, end);
 
     for(auto it = alternator_range.first; it != alternator_range.second; ++it)
@@ -322,7 +307,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
 
             if(bad_alternative)
             {
-                TMP_bad_alter_id = (int) args_readen;
+                TMP_bad_alter_id = (int)args_readen;
                 break; // try another alternative
             }
         }

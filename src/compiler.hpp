@@ -147,8 +147,6 @@ struct CompiledData
 /// Transforms an annotated syntax tree into a intermediate representation (vector of pseudo-instructions).
 struct CompilerContext
 {
-    // TODO think about more guards?
-
     struct LoopInfo
     {
         shared_ptr<Label> continue_label;   //< Where a CONTINUE should jump into (may be nullptr).
@@ -825,7 +823,6 @@ private:
 
             case NodeType::String:
             {
-                // TODO
                 if(auto opt_buffer = arg_node.maybe_annotation<const String128Annotation&>())
                 {
                     return CompiledString { CompiledString::Type::String128, opt_buffer->string };

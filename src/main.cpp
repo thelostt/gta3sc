@@ -127,7 +127,6 @@ int main(int argc, char** argv)
             {
                 config_name = name;
 
-                // TODO instead of hard-coding the flags, use a XML?
                 if(config_name == "gta3")
                 {
                     levelfile = "gta3.dat";
