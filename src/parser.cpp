@@ -39,8 +39,7 @@ std::shared_ptr<SyntaxTree> SyntaxTree::from_raw_tree(pANTLR3_BASE_TREE node, co
             break;
         }
 
-        case LONG_STRING:
-        case SHORT_STRING:
+        case STRING:
         {
             data = (const char*) node->getText(node)->chars;
             break;

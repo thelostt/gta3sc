@@ -277,15 +277,9 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                         bad_alternative = true;
                     }
                     break;
-                /*
-                case NodeType::ShortString:
-                    bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::TextLabel) && it_alter_arg->allow_constant);
+                case NodeType::String:
+                    // TODO (Buffer128, extension for labels)
                     break;
-                case NodeType::LongString:
-                    bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::TextLabel) || argtype_matches(it_alter_arg->type, ArgType::Buffer128));
-                    bad_alternative = bad_alternative || !it_alter_arg->allow_constant;;
-                    break;
-                */
                 default:
                     Unreachable();
             }
@@ -338,16 +332,11 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     arg_node.set_annotation(std::stof(arg_node.text()));
                 break;
             }
-
-            /*
-            case NodeType::ShortString:
-            case NodeType::LongString:
+            case NodeType::String:
             {
-                // TODO unescape and annotate SA
+                // TODO unescape and annotate
                 break;
             }
-            */
-
             case NodeType::Array:
             {
                 Expects(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any);

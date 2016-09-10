@@ -34,8 +34,7 @@ token_map = {
     "FILENAME": "Filename",
     "INTEGER": "Integer",
     "FLOAT": "Float",
-    "LONG_STRING": "LongString",
-    "SHORT_STRING": "ShortString",
+    "STRING": "String",
 };
 
 # Any token name on this list won't be passed to our C++ enum

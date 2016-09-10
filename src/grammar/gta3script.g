@@ -287,8 +287,7 @@ argument
 		|FLOAT -> FLOAT
 		|IDENTIFIER '[' idx=(IDENTIFIER|INTEGER) WS* ']' -> ^(ARRAY IDENTIFIER $idx)
 		|IDENTIFIER -> IDENTIFIER
-		|LONG_STRING -> LONG_STRING
-		|SHORT_STRING -> SHORT_STRING)
+		|STRING -> STRING)
 	;
 	
 //////
@@ -355,11 +354,8 @@ INTEGER     :   ('-'|'+')? (HEX_LITERAL|OCT_LITERAL|DEC_LITERAL)
 FLOAT		:	('-'|'+')? FLOAT_LITERAL
 			;
 
-LONG_STRING	 :  '"' ( ESC_SEQ | ~('\\'|'"') )* '"'
+STRING	     :  '"' ( ESC_SEQ | ~('\\'|'"') )* '"'
    			 ;
-
-SHORT_STRING :  '\'' ( ESC_SEQ | ~('\\'|'\'') )* '\''
-    		 ;
 
 COMMENT
     :   '//' ~('\n'|'\r')* {$channel=HIDDEN;}

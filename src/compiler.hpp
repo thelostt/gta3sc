@@ -822,15 +822,9 @@ private:
                 break;
             }
 
-            case NodeType::ShortString:
+            case NodeType::String:
             {
-                // TODO SA
-                break;
-            }
-
-            case NodeType::LongString:
-            {
-                // TODO SA
+                // TODO
                 break;
             }
 
