@@ -146,9 +146,42 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
         case ArgType::TextLabel:
         case ArgType::TextLabel16:
         case ArgType::AnyTextLabel:
-            // Nothing to do, identifiers can be text labels with no checks.
-            // TODO check for vars (SA)
-            break;
+        {
+            if(arg.allow_global_var || arg.allow_local_var)
+            {
+                if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
+                {
+                    auto& var = *opt_var;
+                    if(var->type == VarType::TextLabel || var->type == VarType::TextLabel16)
+                    {
+                        if(var->type == VarType::TextLabel
+                            && (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel))
+                        {
+                            if((var->global && arg.allow_global_var) || (!var->global && arg.allow_local_var))
+                                break;
+                            throw BadAlternator(node, "XXX");
+                        }
+                        else if(var->type == VarType::TextLabel16
+                            && (arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel))
+                        {
+                            if((var->global && arg.allow_global_var) || (!var->global && arg.allow_local_var))
+                                break;
+                            throw BadAlternator(node, "XXX");
+                        }
+                        else
+                        {
+                            // Will give a warning in annotation. But yeah, continue to literal.
+                        }
+                    }
+                }
+            }
+
+            // Any identifier is a text label literal.
+            if(arg.allow_constant)
+                break;
+
+            throw BadAlternator(node, "XXX");
+        }
 
         case ArgType::Integer:
         case ArgType::Float:
@@ -280,7 +313,8 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     break;
                 case NodeType::String:
                     // SAVE_STRING_TO_DEBUG_FILE(ArgType::Buffer32) implemented manually.
-                    Unreachable();
+                    //program.error(*it_target_arg, "XXX string literal only allowed for SAVE_STRING_TO_DEBUG_FILE");
+                    bad_alternative = true;
                     break;
                 default:
                     Unreachable();
@@ -421,21 +455,60 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                 }
                 else if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
                 {
-                    if(arg_node.is_annotated())
-                        Expects(arg_node.maybe_annotation<const TextLabelAnnotation&>());
-                    else
+                    shared_ptr<Var> var_to_use;
+
+                    if(arg.allow_global_var || arg.allow_local_var)
                     {
-                        size_t text_limit = arg.type == ArgType::TextLabel?    7 :
-                                            arg.type == ArgType::TextLabel16? 15 : // unused
-                                            arg.type == ArgType::AnyTextLabel?     127 : Unreachable();
-
-                        if(arg_node.text().size() > text_limit)
+                        if(auto opt_var = symbols.find_var(arg_node.text(), scope_ptr))
                         {
-                            program.error(arg_node, "XXX string identifier too long, max size is {}", text_limit);
+                            auto& var = *opt_var;
+                            if(var->type == VarType::TextLabel || var->type == VarType::TextLabel16)
+                            {
+                                if(var->type == VarType::TextLabel
+                                    && (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel))
+                                {
+                                    var_to_use = var;
+                                }
+                                else if(var->type == VarType::TextLabel16
+                                    && (arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel))
+                                {
+                                    var_to_use = var;
+                                }
+                                else
+                                {
+                                    program.warning(arg_node, "XXX text label matches a variable of different text label type");
+                                }
+                            }
                         }
-
-                        arg_node.set_annotation(TextLabelAnnotation { arg.type == ArgType::AnyTextLabel, arg_node.text() });
                     }
+
+                    if(var_to_use)
+                    {
+                        if(arg_node.is_annotated())
+                            Expects(arg_node.maybe_annotation<const shared_ptr<Var>&>());
+                        else
+                            arg_node.set_annotation(var_to_use);
+                    }
+                    else if(arg.allow_constant)
+                    {
+                        if(arg_node.is_annotated())
+                            Expects(arg_node.maybe_annotation<const TextLabelAnnotation&>());
+                        else
+                        {
+                            size_t text_limit = arg.type == ArgType::TextLabel?    7 :
+                                                arg.type == ArgType::TextLabel16?  15 :
+                                                arg.type == ArgType::AnyTextLabel? 127 : Unreachable();
+
+                            if(arg_node.text().size() > text_limit)
+                            {
+                                program.error(arg_node, "XXX string identifier too long, max size is {}", text_limit);
+                            }
+
+                            arg_node.set_annotation(TextLabelAnnotation { arg.type != ArgType::TextLabel, arg_node.text() });
+                        }
+                    }
+                    else
+                        Unreachable();
                 }
                 else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Constant || arg.type == ArgType::Any)
                 {

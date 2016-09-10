@@ -724,6 +724,12 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     return false;
                 }
 
+                if(!program.opt.text_label_vars
+                    && (vartype == VarType::TextLabel || vartype == VarType::TextLabel16))
+                {
+                    program.error(node, "XXX var text label not allowed");
+                }
+
                 auto& target = global? table.global_vars : current_scope->vars;
                 auto& index = global? global_index : local_index;
                 size_t max_index = global? (65536 / 4) : 16; // TODO SA locals limit is different

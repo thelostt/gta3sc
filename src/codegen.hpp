@@ -409,6 +409,8 @@ inline void generate_code(const CompiledString& str, CodeGenerator& codegen)
         case CompiledString::Type::String128:
             codegen.emplace_chars(128, str.storage.c_str());
             break;
+        default:
+            Unreachable();
     }
 }
 
@@ -430,6 +432,8 @@ inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
             case VarType::TextLabel16:
                 codegen.emplace_u8(global? 0x10 : 0x11);
                 break;
+            default:
+                Unreachable();
         }
 
         codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() : v.var->index));
@@ -450,13 +454,14 @@ inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
                 case VarType::TextLabel16:
                     codegen.emplace_u8(global? 0x10 : 0x11);
                     break;
+                default:
+                    Unreachable();
             }
 
             codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() + get<int32_t>(*v.index) * 4 : v.var->index + get<int32_t>(*v.index)));
         }
         else
         {
-            // TODO TextLabel16 and TextLabel (SA)
             auto& indexVar = get<shared_ptr<Var>>(*v.index);
             switch(v.var->type)
             {
@@ -464,6 +469,14 @@ inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
                 case VarType::Float:
                     codegen.emplace_u8(global? 0x7 : 0x8);
                     break;
+                case VarType::TextLabel:
+                    codegen.emplace_u8(global? 0xC : 0xD);
+                    break;
+                case VarType::TextLabel16:
+                    codegen.emplace_u8(global? 0x12 : 0x13);
+                    break;
+                default:
+                    Unreachable();
             }
 
             codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() : v.var->index));

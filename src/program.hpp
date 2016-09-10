@@ -43,6 +43,7 @@ struct Options
     bool scope_then_label = false;
     bool farrays = false;
     bool streamed_scripts = false;
+    bool text_label_vars = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;

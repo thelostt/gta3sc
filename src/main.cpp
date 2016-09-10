@@ -46,6 +46,7 @@ Options:
   -f[no-]arrays            Enables the use of arrays.
   -f[no-]streamed-scripts  Enables the use of streamed scripts and generates an
                            associated script.img archive.
+  -f[no-]text-label-vars   Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
 )";
 
 enum class Action
@@ -141,6 +142,7 @@ int main(int argc, char** argv)
                     options.scope_then_label = false;
                     options.farrays = false;
                     options.streamed_scripts = false;
+                    options.text_label_vars = false;
                 }
                 else if(config_name == "gtavc")
                 {
@@ -153,6 +155,7 @@ int main(int argc, char** argv)
                     options.scope_then_label = true;
                     options.farrays = false;
                     options.streamed_scripts = false;
+                    options.text_label_vars = false;
                 }
                 else if(config_name == "gtasa")
                 {
@@ -165,6 +168,7 @@ int main(int argc, char** argv)
                     options.scope_then_label = true;
                     options.farrays = true;
                     options.streamed_scripts = true;
+                    options.text_label_vars = true;
                 }
                 else
                 {
