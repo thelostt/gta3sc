@@ -788,14 +788,15 @@ private:
                 else if(auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>())
                 {
                     auto label = std::move(*opt_label);
-                    if(label->script->type == ScriptType::Mission
+                    if(program.opt.use_local_offsets
+                    || label->script->type == ScriptType::Mission
                     || label->script->type == ScriptType::StreamedScript)
                     {
                         if(this->script != label->script)
                         {
-                            auto sckind = label->script->type == ScriptType::Mission? "mission" :
-                                          label->script->type == ScriptType::StreamedScript? "streamed" : Unreachable();
-                            program.error(arg_node, "Reference to {} label '{}' outside of its {} script.", sckind, arg_node.text(), sckind);
+                            auto sckind_ = label->script->type == ScriptType::Mission? "mission " :
+                                          label->script->type == ScriptType::StreamedScript? "streamed " : "";
+                            program.error(arg_node, "Reference to {}label '{}' outside of its {}script.", sckind_, arg_node.text(), sckind_);
                         }
                     }
                     return label;

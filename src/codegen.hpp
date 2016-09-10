@@ -371,7 +371,8 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
 {
     codegen.emplace_u8(1);
 
-    if(label_ptr->script->type == ScriptType::Mission
+    if(codegen.program.opt.use_local_offsets
+    || label_ptr->script->type == ScriptType::Mission
     || label_ptr->script->type == ScriptType::StreamedScript)
     {
         assert(label_ptr->script == codegen.script); // enforced on compiler.hpp/cpp

@@ -47,6 +47,7 @@ Options:
   -f[no-]streamed-scripts  Enables the use of streamed scripts and generates an
                            associated script.img archive.
   -f[no-]text-label-vars   Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
+  -fuse-local-offsets      Codegen references labels only by its local offset.
 )";
 
 enum class Action
@@ -223,6 +224,10 @@ int main(int argc, char** argv)
             else if(optflag(argv, "streamed-scripts", &flag))
             {
                 options.streamed_scripts = flag;
+            }
+            else if(optflag(argv, "use-local-offsets", nullptr))
+            {
+                options.use_local_offsets = true;
             }
             else
             {

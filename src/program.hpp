@@ -44,6 +44,7 @@ struct Options
     bool farrays = false;
     bool streamed_scripts = false;
     bool text_label_vars = false;
+    bool use_local_offsets = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;
