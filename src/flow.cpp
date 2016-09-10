@@ -564,7 +564,7 @@ void sort_natural_loops(const BlockList& block_list, std::vector<BlockList::Loop
             if(&other_loop == &this_loop)
                 continue;
 
-            const Block& other_loop_head = block_list.block(this_loop.head);
+            const Block& other_loop_head = block_list.block(other_loop.head);
 
             // TODO what if this_loop_head == other_loop_head
 
@@ -579,6 +579,12 @@ void sort_natural_loops(const BlockList& block_list, std::vector<BlockList::Loop
     {
         return num_loops_inside[&a] < num_loops_inside[&b];
     });
+
+    for(auto& l : loops)
+    {
+        l.num_loops_inside = num_loops_inside[&l];
+    }
+
 #else
     // does this work?
     std::sort(loops.begin(), loops.end(), [&](const BlockList::Loop& a, const BlockList::Loop& b)

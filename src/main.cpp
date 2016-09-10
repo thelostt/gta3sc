@@ -766,7 +766,7 @@ int decompile(fs::path input, fs::path output, ProgramContext& program, const Co
             fprintf(outstream, "\n");
         }
     }
-    else if(false)
+    else if(true)
     {
         BlockList block_list = find_basic_blocks(commands, main_segment_asm, mission_segments_asm);
         find_edges(block_list, commands);

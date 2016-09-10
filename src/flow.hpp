@@ -148,6 +148,7 @@ struct BlockList
     {
         BlockId head;
         BlockId tail;
+        size_t num_loops_inside = 0; // Loop list is sorted by this
         std::vector<BlockId> blocks; // TODO is this needed?
 
         explicit Loop(BlockId head, BlockId tail) :
@@ -366,11 +367,29 @@ inline void depth_first(tag_spawn_graph_t tag, const BlockList& block_list, cons
 
 
 
+inline optional<size_t> find_andor_pos(const Block& block, const BlockList& block_list)
+{
+    size_t andor_pos = 0;
+    for(auto it = block.begin(block_list), end = block.end(block_list); it != end; ++it, ++andor_pos)
+    {
+        if(is<DecompiledCommand>(it->data))
+        {
+            const auto& dcmd = get<DecompiledCommand>(it->data);
+            if(dcmd.id == 214) // ANDOR
+            {
+                return andor_pos;
+            }
+        }
+    }
+    return nullopt;
+}
+
 struct StatementNode : public std::enable_shared_from_this<StatementNode>
 {
     enum class Type : uint8_t
     {
         Block,
+        Group,
         //DoWhile,
         While,
         If,
@@ -423,7 +442,7 @@ struct StatementNode : public std::enable_shared_from_this<StatementNode>
         }
     }
 
-    void unlink_preds(const shared_ptr<StatementNode>& new_succ, const shared_ptr<StatementNode> except = nullptr)
+    void unlink_preds(const shared_ptr<StatementNode>& new_succ = nullptr, const shared_ptr<StatementNode> except = nullptr)
     {
         auto this_ptr = this->shared_from_this(); // keep me alive for the lifetime of this procedure
 
@@ -437,11 +456,32 @@ struct StatementNode : public std::enable_shared_from_this<StatementNode>
             }
             else
             {
-                std::replace(pred_ptr->succ.begin(), pred_ptr->succ.end(), this_ptr, new_succ);
-                new_succ->pred.emplace_back(pred_ptr);
-                it = this->pred.erase(it);
+                if(new_succ)
+                {
+                    std::replace(pred_ptr->succ.begin(), pred_ptr->succ.end(), this_ptr, new_succ);
+                    new_succ->pred.emplace_back(pred_ptr);
+                    it = this->pred.erase(it);
+                }
+                else
+                {
+                    pred_ptr->succ.erase(std::find(pred_ptr->succ.begin(), pred_ptr->succ.end(), this_ptr));
+                    it = this->pred.erase(it);
+                }
             }
         }
+    }
+
+    shared_ptr<StatementNode> first_successor_with_many_preds()
+    {
+        if(this->pred.size() >= 2)
+            return this->shared_from_this();
+
+        if(this->succ.size() == 1)
+        {
+            return this->succ[0]->first_successor_with_many_preds();
+        }
+
+        return nullptr;
     }
 
 
@@ -465,6 +505,19 @@ struct StatementBlock : public StatementNode
     {}
 };
 
+struct StatementGroup : public StatementNode
+{
+    // isolated nodes
+    shared_ptr<StatementNode> first;
+    shared_ptr<StatementNode> last;
+
+    static shared_ptr<StatementGroup> group(shared_ptr<StatementNode> first, shared_ptr<StatementNode> last);
+
+    StatementGroup() :
+        StatementNode(Type::Group)
+    {}
+};
+
 struct StatementBreak : public StatementNode
 {
     StatementBreak() : StatementNode(Type::Break)
@@ -482,27 +535,59 @@ struct StatementWhile : public StatementNode
     {
     }
 
-    void setup(const shared_ptr<StatementBlock>& stmt_loop_head, const shared_ptr<StatementBlock>& stmt_loop_tail)
+    void setup(const BlockList& block_list, const shared_ptr<StatementBlock>& stmt_loop_head, const shared_ptr<StatementBlock>& stmt_loop_tail)
     {
         auto this_ptr = this->shared_from_this();
 
         this->loop_head = stmt_loop_head;
         this->loop_tail = stmt_loop_tail;
 
-        Expects(this->loop_head->succ.size() == 2);
-        auto break_node = this->loop_head->succ[0]; // else pointer
+        shared_ptr<StatementNode> break_node;
+
+        if(this->loop_head->succ.size() == 1)
+        {
+            break_node = nullptr;
+        }
+        else
+        {
+            Expects(this->loop_head->succ.size() == 2);
+            break_node = this->loop_head->succ[0]; // else pointer
+
+            if(break_node->type == Type::Block)
+            {
+                auto& loop_head_block = block_list.block(loop_head->block_id);
+                auto& loop_tail_block = block_list.block(loop_tail->block_id);
+                auto& break_block = block_list.block(std::static_pointer_cast<StatementBlock>(break_node)->block_id);
+                if(break_block.dominated_by(loop_head->block_id)        // is break inside
+                && break_block.postdominated_by(loop_tail->block_id))   // the loop?
+                {
+                    break_node = nullptr;
+                }
+            }
+        }
 
         this->loop_head->unlink_preds(this_ptr, this->loop_tail);
 
-        this->loop_head->replace_successor(break_node, std::make_shared<StatementBreak>());
-        this->add_successor(break_node);
+        if(break_node)
+        {
+            this->loop_head->replace_successor(break_node, std::make_shared<StatementBreak>());
+            this->add_successor(break_node);
+        }
 
-        ++this->loop_tail->block_until;
+        if(break_node)
+        {
+            ++this->loop_tail->block_until;
+        }
     }
 
     shared_ptr<StatementNode> continue_node()
     {
         return this->loop_head;
+    }
+
+    bool has_break_node() const
+    {
+        return this->succ.size() != 0;
     }
 
     shared_ptr<StatementNode> break_node()
@@ -513,6 +598,49 @@ struct StatementWhile : public StatementNode
 
     void structure_break_continue();
 };
+
+struct StatementIf : public StatementNode
+{
+    // the following nodes are isolated
+    shared_ptr<StatementBlock> cond_block;  // before true/false blocks
+    shared_ptr<StatementNode>  true_block;
+    shared_ptr<StatementNode>  false_block;
+    size_t                     andor_pos = 0;
+
+    StatementIf() : StatementNode(Type::If)
+    {
+    }
+
+    void setup(const BlockList& block_list,
+               const shared_ptr<StatementBlock>& cond_block, const shared_ptr<StatementNode>& post_block,
+               const shared_ptr<StatementNode>& stmt_true, const shared_ptr<StatementNode>& stmt_false)
+    {
+        auto this_ptr = this->shared_from_this();
+
+        this->cond_block = cond_block;
+        this->true_block = stmt_true;
+        this->false_block = stmt_false;
+
+        // unlink things from cond_block
+        this->true_block->unlink_preds();
+        if(this->false_block) this->false_block->unlink_preds();
+
+        // unlink things from true/false blocks
+        post_block->remove_predecessor(this->true_block);
+        if(this->false_block)
+            post_block->remove_predecessor(this->false_block);
+        else
+            post_block->remove_predecessor(this->cond_block);
+
+        this->cond_block->add_successor(this_ptr);
+        this->add_successor(post_block);
+
+        this->andor_pos = find_andor_pos(block_list.block(this->cond_block->block_id), block_list).value();
+        this->cond_block->block_until = block_list.block(this->cond_block->block_id).length - this->andor_pos;
+    }
+};
+
+
 
 //
 // Depth First on Statements
@@ -580,6 +708,37 @@ inline shared_ptr<StatementNode> to_statements(const BlockList& block_list, Bloc
     return to_statements_internal(block_list, entry_point, block2node);
 }
 
+inline shared_ptr<StatementGroup> StatementGroup::group(shared_ptr<StatementNode> first, shared_ptr<StatementNode> last)
+{
+    auto group_ptr = std::make_shared<StatementGroup>();
+
+    group_ptr->first = first;
+    group_ptr->last  = last;
+
+    Expects(first->succ.size() == 1);
+    first->unlink_preds(group_ptr);
+    if(last->succ.size())
+    {
+        Expects(last->succ.size() == 1);
+        auto next_ptr = last->succ[0];
+        next_ptr->remove_predecessor(last);
+        group_ptr->add_successor(next_ptr);
+    }
+    
+    #ifdef _DEBUG
+    {
+        shared_ptr<StatementNode> node;
+        for(node = first; node->succ.size(); node = node->succ[0])
+        {
+            Expects(node->succ.size() == 1);
+        }
+        Expects(node == last);
+    }
+    #endif
+
+    return group_ptr;
+}
+
 inline shared_ptr<StatementNode> structure_dowhile(const BlockList& block_list,
                                                    shared_ptr<StatementNode> entry_node,
                                                    const std::vector<BlockList::Loop>& loops) // sorted loops
@@ -608,17 +767,141 @@ inline shared_ptr<StatementNode> structure_dowhile(const BlockList& block_list,
 
         // Statements for this loop not in entry_node tree.
         if(!stmt_loop_head || !stmt_loop_tail)
+        {
+            assert(!stmt_loop_head && !stmt_loop_tail);
             continue;
+        }
 
         auto node_while = std::make_shared<StatementWhile>();
-        node_while->setup(stmt_loop_head, stmt_loop_tail);
+        node_while->setup(block_list, stmt_loop_head, stmt_loop_tail);
 
         if(entry_node == stmt_loop_head)
         {
             entry_node = node_while;
         }
     }
-    
+
+    return entry_node;
+}
+
+inline shared_ptr<StatementNode> structure_groups(const BlockList& block_list, shared_ptr<StatementNode> entry_node)
+{
+    while(true)
+    {
+        shared_ptr<StatementNode> stmt_first;
+        shared_ptr<StatementNode> stmt_last;
+
+        depth_first(entry_node, true, [&](const shared_ptr<StatementNode>& node)
+        {
+            if(node->succ.size() == 1)
+            {
+                shared_ptr<StatementNode> last = node;
+
+                while(true)
+                {
+                    if(last->succ.size() == 1)
+                    {
+                        auto next = last->succ[0];
+                        if(next->succ.size() <= 1 && next->pred.size() == 1
+                         && next != node)
+                            last = next;
+                        else
+                            break;
+                    }
+                    else if(last->succ.size() == 0)
+                    {
+                        break;
+                    }
+                }
+
+                if(last != node)
+                {
+                    stmt_first = node;
+                    stmt_last = last;
+                    return false;
+                }
+            }
+            return true;
+        });
+
+        if(stmt_first)
+        {
+            auto node_group = StatementGroup::group(stmt_first, stmt_last);
+            if(entry_node == stmt_first)
+                entry_node = node_group;
+        }
+        else
+        {
+            break;
+        }
+    }
+    return entry_node;
+}
+
+inline shared_ptr<StatementNode> structure_ifs(const BlockList& block_list, shared_ptr<StatementNode> entry_node)
+{
+    while(true)
+    {
+        shared_ptr<StatementBlock> stmt_cond;
+        shared_ptr<StatementNode> stmt_post;
+        shared_ptr<StatementNode> stmt_true;
+        shared_ptr<StatementNode> stmt_false;
+
+        depth_first(entry_node, true, [&](const shared_ptr<StatementNode>& node)
+        {
+            if(node->type == StatementNode::Type::Block)
+            {
+                auto stmt_block = std::static_pointer_cast<StatementBlock>(node);
+
+                if(stmt_block->succ.size() == 2)
+                {
+                    auto& true_block  = stmt_block->succ[1];
+                    auto& false_block = stmt_block->succ[0];
+
+                    //if(true_block->first_successor_with_many_preds() == false_block) // TODO check dominance
+                    if(true_block->succ.size() == 1 && true_block->succ[0] == false_block)
+                    {
+                        stmt_cond  = stmt_block;
+                        stmt_post  = false_block;
+                        stmt_true  = true_block;
+                        stmt_false = nullptr;
+                        return false;
+                    }
+                    else if(true_block->succ.size() == 1 && false_block->succ.size() == 1
+                        && true_block->succ[0] == false_block->succ[0])
+                    {
+                        stmt_cond = stmt_block;
+                        stmt_post = true_block->succ[0];
+                        stmt_true = true_block;
+                        stmt_false = false_block;
+                        return false;
+                    }
+                }
+            }
+            else if(node->type == StatementNode::Type::While)
+            {
+                auto stmt_while = std::static_pointer_cast<StatementWhile>(node);
+                structure_ifs(block_list, stmt_while->loop_head);
+            }
+            else if(node->type == StatementNode::Type::Group)
+            {
+                auto stmt_group = std::static_pointer_cast<StatementGroup>(node);
+                structure_ifs(block_list, stmt_group->first);
+            }
+            return true;
+        });
+
+        if(stmt_cond)
+        {
+            auto node_if = std::make_shared<StatementIf>();
+            node_if->setup(block_list, stmt_cond, stmt_post, stmt_true, stmt_false);
+            entry_node = structure_groups(block_list, entry_node); // TODO optimize dont structure everything
+        }
+        else
+        {
+            break;
+        }
+    }
     return entry_node;
 }
 

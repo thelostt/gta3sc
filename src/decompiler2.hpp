@@ -36,6 +36,8 @@ protected:
     // TODO something else than map
     std::map<const StatementNode*, bool> generated;
 
+    size_t num_tabs = 0;
+
 public:
     // TODO this takes a copy of the vector<DecompiledData>, maybe take ref?
     DecompilerContext2(const Commands& commands, std::vector<DecompiledData> decompiled,
@@ -82,7 +84,8 @@ public:
             {
                 auto entry_node = to_statements(block_list, proc_entry.block_id);
                 entry_node = structure_dowhile(block_list, entry_node, loops);
-
+                entry_node = structure_groups(block_list, entry_node);
+                entry_node = structure_ifs(block_list, entry_node);
                 output = this->generate_source(entry_node);
             }
         }
@@ -107,9 +110,31 @@ public:
 
     std::string generate_source(const shared_ptr<StatementNode>& node);
     std::string generate_source(const shared_ptr<StatementBlock>& node);
+    std::string generate_source(const shared_ptr<StatementGroup>& node);
     std::string generate_source(const shared_ptr<StatementWhile>& node);
+    std::string generate_source(const shared_ptr<StatementIf>& node);
     std::string generate_source(const Block& block, size_t from, size_t until);
-    std::string generate_conditions(const shared_ptr<StatementBlock>& node);
+    std::string generate_conditions(const shared_ptr<StatementBlock>& node, size_t andor_pos);
+
+    void enter_identation()
+    {
+        ++num_tabs;
+    }
+
+    void exit_identation()
+    {
+        assert(num_tabs > 0);
+        --num_tabs;
+    }
+
+    std::string line(const std::string& xline)
+    {
+        std::string output;
+        output.reserve(num_tabs + xline.size());
+        output.assign(num_tabs, '\t');
+        output.append(xline);
+        return output;
+    }
 };
 
 
@@ -231,7 +256,7 @@ inline std::string decompile_data(const DecompiledCommand& ccmd, size_t index, D
     }
 
     output.push_back('\n');
-    return output;
+    return context.line(output);
 }
 
 inline std::string decompile_data(const DecompiledLabelDef& label, size_t data_index, DecompilerContext2& context)
@@ -286,22 +311,22 @@ inline std::string decompile_data(const DecompiledLabelDef& label, size_t data_i
         output += fmt::format("\n{}_{}:\n", context.script_name, label.offset);
     }
 
-    return output;
+    return context.line(output);
 }
 
-inline std::string decompile_data(const DecompiledHex& hex, size_t index, DecompilerContext2&)
+inline std::string decompile_data(const DecompiledHex& hex, size_t index, DecompilerContext2& context)
 {
     std::string output;
     output.reserve(sizeof("\nHEX\n") + (hex.data.size() * 3) + sizeof("\nENDHEX\n\n") + 32);
 
-    output += "\nHEX\n";
+    output += context.line("\nHEX\n");
     for(auto& x : hex.data)
     {
         char buffer[3 + 1];
         snprintf(buffer, sizeof(buffer), "%.2X ", x);
         output.append(std::begin(buffer), std::end(buffer) - 1);
     }
-    output += "\nENDHEX\n\n";
+    output += context.line("\nENDHEX\n\n");
     return output;
 }
 
@@ -325,10 +350,14 @@ inline std::string DecompilerContext2::generate_source(const shared_ptr<Statemen
     {
         case StatementNode::Type::Block:
             return generate_source(static_pointer_cast<StatementBlock>(node));
+        case StatementNode::Type::Group:
+            return generate_source(static_pointer_cast<StatementGroup>(node));
         case StatementNode::Type::While:
             return generate_source(static_pointer_cast<StatementWhile>(node));
+        case StatementNode::Type::If:
+            return generate_source(static_pointer_cast<StatementIf>(node));
         case StatementNode::Type::Break:
-            return "BREAK\n";
+            return this->line("BREAK\n");
         default:
             Unreachable();
     }
@@ -362,16 +391,73 @@ inline std::string DecompilerContext2::generate_source(const shared_ptr<Statemen
     }
 }
 
+inline std::string DecompilerContext2::generate_source(const shared_ptr<StatementGroup>& node)
+{
+    std::string output;
+    auto it = node->first;
+    while(true)
+    {
+        output += generate_source(it);
+        if(it == node->last)
+            break;
+        else
+            it = it->succ[0];
+    }
+    if(node->succ.size())
+        output += generate_source(node->succ[0]);
+    return output;
+}
+
 inline std::string DecompilerContext2::generate_source(const shared_ptr<StatementWhile>& node)
 {
     using std::static_pointer_cast;
     std::string output;
-    output += "WHILE ";
-    this->generated[node->loop_head.get()] = true;
-    output += generate_conditions(node->loop_head);
-    output += generate_source(node->loop_head->succ[1]);
-    output += "ENDWHILE\n";
-    output += generate_source(node->break_node());
+    if(node->has_break_node())
+    {
+        {
+            auto& b = block_list.block(node->loop_head->block_id);
+            if(b.length >= 1) output += generate_source(b, 0, b.length - 1);
+        }
+
+        output += this->line("WHILE ");
+        this->generated[node->loop_head.get()] = true;
+        output += generate_conditions(node->loop_head, 1);
+        this->enter_identation();
+        output += generate_source(node->loop_head->succ[1]);
+        this->exit_identation();
+        output += this->line("ENDWHILE\n");
+        output += generate_source(node->break_node());
+    }
+    else
+    {
+        // Expects no conditions
+        this->enter_identation();
+        this->generated[node->loop_head.get()] = true;
+        output += generate_source(node->loop_head);
+        this->exit_identation();
+    }
+    return output;
+}
+
+inline std::string DecompilerContext2::generate_source(const shared_ptr<StatementIf>& node)
+{
+    using std::static_pointer_cast;
+    std::string output;
+    output += this->line("IF ");
+    output += generate_conditions(node->cond_block, node->andor_pos);
+    this->enter_identation();
+    output += generate_source(node->true_block);
+    this->exit_identation();
+    if(node->false_block)
+    {
+        output += this->line("ELSE");
+        this->enter_identation();
+        output += generate_source(node->false_block);
+        this->exit_identation();
+    }
+    output += this->line("ENDIF\n");
+    if(node->succ.size())
+        output += generate_source(node->succ[0]);
     return output;
 }
 
@@ -385,26 +471,31 @@ inline std::string DecompilerContext2::generate_source(const Block& block, size_
     return output;
 }
 
-inline std::string DecompilerContext2::generate_conditions(const shared_ptr<StatementBlock>& node)
+inline std::string DecompilerContext2::generate_conditions(const shared_ptr<StatementBlock>& node, size_t andor_pos)
 {
     const Block& block = this->block_list.block(node->block_id);
 
     std::string output;
 
-    const auto& dcmd = get<DecompiledCommand>((block.begin(block_list) + 1)->data);
+    const auto& dcmd = get<DecompiledCommand>((block.begin(block_list) + andor_pos)->data);
     size_t argc = get_imm32(dcmd.args[0]).value();
     bool first_iter = true;
+    auto saved_num_tabs = this->num_tabs;
 
-    for(auto it = block.begin(block_list) + 2, end = block.end(block_list) - 1; it != end; ++it)
+    for(auto it = block.begin(block_list) + andor_pos + 1, end = block.end(block_list) - 1; it != end; ++it)
     {
         if(!first_iter)
-        {
             output += (argc >= 1 && argc <= 8)? "AND " : "OR ";
-        }
+        else
+            this->num_tabs = 0;
         
         output += decompile_data(*it, -1, *this);
 
-        first_iter = false;
+        if(first_iter)
+        {
+            first_iter = false;
+            this->num_tabs = saved_num_tabs;
+        }
     }
     return output;
 
