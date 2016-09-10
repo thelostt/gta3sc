@@ -98,7 +98,30 @@ inline char* optflag(char**& argv, const char* flagname, bool* flag)
 {
     assert(*argv != nullptr);
 
-    if(flag && !strncmp(*argv, "-fno-", 5))
+    char temp_c_f[4], temp_c_fno[8];
+    const char* c_f   = "-f";
+    const char* c_fno = "-fno-";
+
+    // in case one wants to use e.g. -m instead of -f
+    if(flagname[0] == '-')
+    {
+        if(flagname[1] != 'f')
+        {
+            assert(flagname[1] != 0);
+
+            strcpy(temp_c_f, c_f);
+            strcpy(temp_c_fno, c_fno);
+            temp_c_f[1] = flagname[1];
+            temp_c_fno[1] = flagname[1];
+
+            c_f = temp_c_f;
+            c_fno = temp_c_fno;
+        }
+
+        flagname += 2;
+    }
+
+    if(flag && !strncmp(*argv, c_fno, 5))
     {
         *argv += 5;
         if(char* val = optget(argv, nullptr, flagname, 0))
@@ -112,7 +135,7 @@ inline char* optflag(char**& argv, const char* flagname, bool* flag)
         }
     }
 
-    if(!strncmp(*argv, "-f", 2))
+    if(!strncmp(*argv, c_f, 2))
     {
         *argv += 2;
         if(char* val = optget(argv, nullptr, flagname, 0))
@@ -128,3 +151,4 @@ inline char* optflag(char**& argv, const char* flagname, bool* flag)
 
     return nullptr;
 }
+

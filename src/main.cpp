@@ -19,9 +19,6 @@ R"(Usage: gta3sc [compile|decompile] file --config=<name> [options]
 Options:
   --help                   Display this information
   -o <file>                Place the output into <file>
-  --headerless             Does not generate a header on the output SCM.
-  --header=<version>       Generates the specified header version (gta3,gtavc,
-                           gtasa). Ignored if --headerless specified.
   --config=<name>          Which compilation configurations to use (gta3,gtavc,
                            gtasa). This effectively reads the data files at
                            '/config/<name>/' and sets some appropriate flags.
@@ -31,23 +28,26 @@ Options:
   -pedantic                Forbid the usage of extensions not in R* compiler.
   --guesser                Allows the use of language features not completly
                            known or understood by the modding community.
-  -f[no-]half-float        Codegen uses GTA III half-float format.
-  -f[no-]text-label-prefix Codegen uses GTA SA text label data type.
-  -f[no-]skip-if           Omits compiling ANDOR for single condition statements.
-  -f[no-]optimize-zero     Compiles 0.0 as 0, using a 8 bit data type.
-  -f[no-]entity-tracking   Tracks entity types in variables.
-  -f[no-]script-name-check Checks if there's duplicated SCRIPT_NAMEs.
-  -f[no-]switch            Enables the SWITCH statement.
+  -fentity-tracking        Tracks entity types in variables.
+  -fscript-name-check      Checks for duplicate SCRIPT_NAMEs.
   -fbreak-continue         Allows the use of BREAK and CONTINUE in all
                            statements, including WHILE and REPEAT.
-  -f[no-]scope-then-label  When combined with -pedantic, outputs a error message
+  -fstreamed-scripts       Enables the use of streamed scripts and generates an
+                           associated script.img archive.
+  -fscope-then-label       When combined with -pedantic, outputs a error message
                            whenever a label is used before a curly bracket
                            instead of after.
-  -f[no-]arrays            Enables the use of arrays.
-  -f[no-]streamed-scripts  Enables the use of streamed scripts and generates an
-                           associated script.img archive.
-  -f[no-]text-label-vars   Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
-  -fuse-local-offsets      Codegen references labels only by its local offset.
+  -fswitch                 Enables the SWITCH statement.
+  -farrays                 Enables the use of arrays.
+  -ftext-label-vars        Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
+  -mno-header              Does not generate a header on the output SCM.
+  -mheader=<version>       Generates the specified header version (gta3,gtavc,
+                           gtasa).
+  -mlocal-offsets          Codegen references labels only by its local offset.
+  -mq11.4                  Codegen uses GTA III half-float format.
+  -mtyped-text-label       Codegen uses GTA SA text label data type.
+  -mskip-if                Omits compiling ANDOR on single condition statements.
+  -moptimize-zero          Compiles 0.0 as 0, using a 8 bit data type.
 )";
 
 enum class Action
@@ -123,10 +123,6 @@ int main(int argc, char** argv)
             {
                 options.guesser = true;
             }
-            else if(optget(argv, nullptr, "--headerless", 0))
-            {
-                options.headerless = true;
-            }
             else if(const char* name = optget(argv, nullptr, "--config", 1))
             {
                 config_name = name;
@@ -181,51 +177,69 @@ int main(int argc, char** argv)
             {
                 datadir = path;
             }
-            else if(optflag(argv, "half-float", &flag))
+            else if(const char* ver = optget(argv, nullptr, "-mheader", 1))
+            {
+                if(!strcmp(ver, "gta3"))
+                    options.header = Options::HeaderVersion::GTA3;
+                else if(!strcmp(ver, "gtavc"))
+                    options.header = Options::HeaderVersion::GTAVC;
+                else if(!strcmp(ver, "gtasa"))
+                    options.header = Options::HeaderVersion::GTASA;
+                else
+                {
+                    fprintf(stderr, "gta3sc: error: invalid header version, must be 'gta3', 'gtavc' or 'gtasa'.\n");
+                    return EXIT_FAILURE;
+                }
+            }
+            else if(optflag(argv, "-mno-header", nullptr))
+            {
+                options.headerless = true;
+            }
+            else if(optflag(argv, "-mq11.4", &flag))
             {
                 options.use_half_float = flag;
             }
-            else if(optflag(argv, "text-label-prefix", &flag))
+            else if(optflag(argv, "-mtyped-text-label", &flag))
             {
                 options.has_text_label_prefix = flag;
             }
-            else if(optflag(argv, "skip-if", &flag))
+            else if(optflag(argv, "-mskip-if", &flag))
             {
                 options.skip_single_ifs = flag;
             }
-            else if(optflag(argv, "optimize-zero", &flag))
+            else if(optflag(argv, "-moptimize-zero", &flag))
             {
                 options.optimize_zero_floats = flag;
             }
-            else if(optflag(argv, "entity-tracking", &flag))
+            else if(optflag(argv, "-fentity-tracking", &flag))
             {
                 options.entity_tracking = flag;
             }
-            else if(optflag(argv, "script-name-check", &flag))
+            else if(optflag(argv, "-fscript-name-check", &flag))
             {
                 options.script_name_check = flag;
             }
-            else if(optflag(argv, "switch", &flag))
+            else if(optflag(argv, "-fswitch", &flag))
             {
                 options.fswitch = flag;
             }
-            else if(optflag(argv, "break-continue", nullptr))
+            else if(optflag(argv, "-fbreak-continue", nullptr))
             {
                 options.allow_break_continue = true;
             }
-            else if(optflag(argv, "scope-then-label", &flag))
+            else if(optflag(argv, "-fscope-then-label", &flag))
             {
                 options.scope_then_label = flag;
             }
-            else if(optflag(argv, "arrays", &flag))
+            else if(optflag(argv, "-farrays", &flag))
             {
                 options.farrays = flag;
             }
-            else if(optflag(argv, "streamed-scripts", &flag))
+            else if(optflag(argv, "-fstreamed-scripts", &flag))
             {
                 options.streamed_scripts = flag;
             }
-            else if(optflag(argv, "use-local-offsets", nullptr))
+            else if(optflag(argv, "-mlocal-offsets", nullptr))
             {
                 options.use_local_offsets = true;
             }
