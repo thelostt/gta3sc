@@ -14177,15 +14177,15 @@
     </Command>
     <Command ID="0x98b" Name="STRING_CAT16">
       <Args>
-        <Arg Type="TEXT_LABEL"/>
-        <Arg Type="TEXT_LABEL"/>
-        <Arg Type="TEXT_LABEL" Out="true"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL16" Out="true"/>
       </Args>
     </Command>
     <Command ID="0x98c" Name="STRING_CAT8">
       <Args>
-        <Arg Type="TEXT_LABEL"/>
-        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="TEXT_LABEL" Out="true"/>
       </Args>
     </Command>
