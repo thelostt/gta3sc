@@ -279,7 +279,8 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     }
                     break;
                 case NodeType::String:
-                    // TODO (Buffer128, extension for labels)
+                    // SAVE_STRING_TO_DEBUG_FILE(ArgType::Buffer32) implemented manually.
+                    Unreachable();
                     break;
                 default:
                     Unreachable();
@@ -325,6 +326,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     arg_node.set_annotation(static_cast<int32_t>(std::stoi(arg_node.text(), nullptr, 0)));
                 break;
             }
+
             case NodeType::Float:
             {
                 if(arg_node.is_annotated())
@@ -333,11 +335,14 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     arg_node.set_annotation(std::stof(arg_node.text()));
                 break;
             }
+
             case NodeType::String:
             {
-                // TODO unescape and annotate
+                // SAVE_STRING_TO_DEBUG_FILE(ArgType::Buffer32) implemented manually.
+                Unreachable();
                 break;
             }
+
             case NodeType::Array:
             {
                 Expects(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any);
