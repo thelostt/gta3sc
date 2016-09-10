@@ -84,10 +84,10 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
                 is_good = (arg.type == ArgType::Float || arg.type == ArgType::Any);
                 break;
             case VarType::TextLabel:
-                is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::String || arg.type == ArgType::Any);
+                is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel || arg.type == ArgType::Any);
                 break;
             case VarType::TextLabel16:
-                is_good = (arg.type == ArgType::TextLabel16 || arg.type == ArgType::String || arg.type == ArgType::Any);
+                is_good = (arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel || arg.type == ArgType::Any);
                 break;
             default:
                 Unreachable();
@@ -144,7 +144,7 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
 
         case ArgType::TextLabel:
         case ArgType::TextLabel16:
-        case ArgType::String:
+        case ArgType::AnyTextLabel:
             // Nothing to do, identifiers can be text labels with no checks.
             // TODO check for vars (SA)
             break;
@@ -424,7 +424,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                         arg_node.set_annotation(label_ptr);
                     }
                 }
-                else if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::String)
+                else if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
                 {
                     if(arg_node.is_annotated())
                         Expects(arg_node.maybe_annotation<const StringAnnotation&>());
@@ -432,14 +432,14 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     {
                         size_t text_limit = arg.type == ArgType::TextLabel?    7 :
                                             arg.type == ArgType::TextLabel16? 15 : // unused
-                                            arg.type == ArgType::String?     127 : Unreachable();
+                                            arg.type == ArgType::AnyTextLabel?     127 : Unreachable();
 
                         if(arg_node.text().size() > text_limit)
                         {
                             program.error(arg_node, "XXX string identifier too long, max size is {}", text_limit);
                         }
 
-                        arg_node.set_annotation(StringAnnotation { arg.type == ArgType::String, arg_node.text() });
+                        arg_node.set_annotation(StringAnnotation { arg.type == ArgType::AnyTextLabel, arg_node.text() });
                     }
                 }
                 else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Constant || arg.type == ArgType::Any)
@@ -622,8 +622,6 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::Integer;
     else if(!strcmp(string, "FLOAT"))
         return ArgType::Float;
-    else if(!strcmp(string, "TEXT_LABEL"))
-        return ArgType::TextLabel;
     else if(!strcmp(string, "ANY"))
         return ArgType::Any;
     else if(!strcmp(string, "LABEL"))
@@ -632,10 +630,12 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::Buffer128;
     else if(!strcmp(string, "CONST"))
         return ArgType::Constant;
-    else if(!strcmp(string, "STRING"))
-        return ArgType::String;
+    else if(!strcmp(string, "TEXT_LABEL"))
+        return ArgType::TextLabel;
     else if(!strcmp(string, "TEXT_LABEL16"))
         return ArgType::TextLabel16;
+    else if(!strcmp(string, "ANY_TEXT_LABEL"))
+        return ArgType::AnyTextLabel;
     else
         throw ConfigError("Unexpected Type attribute: {}", string);
 }

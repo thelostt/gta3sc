@@ -3768,7 +3768,7 @@
     <Command ID="0x245" Name="SET_ANIM_GROUP_FOR_CHAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x246" Name="SET_ANIM_GROUP_FOR_PLAYER" Supported="false">
@@ -5951,7 +5951,7 @@
     <Command ID="0x38f" Name="LOAD_SPRITE">
       <Args>
         <Arg Type="INT"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x390" Name="LOAD_TEXTURE_DICTIONARY">
@@ -5969,7 +5969,7 @@
     <Command ID="0x393" Name="SET_CHAR_ANIM_SPEED">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
@@ -7954,17 +7954,17 @@
     <Command ID="0x4ec" Name="SET_ZONE_CIVILIAN_CAR_INFO" Supported="false"/>
     <Command ID="0x4ed" Name="REQUEST_ANIMATION">
       <Args>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
       </Args>
     </Command>
     <Command ID="0x4ee" Name="HAS_ANIMATION_LOADED">
       <Args>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
       </Args>
     </Command>
     <Command ID="0x4ef" Name="REMOVE_ANIMATION">
       <Args>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
       </Args>
     </Command>
     <Command ID="0x4f0" Name="IS_CHAR_WAITING_FOR_WORLD_COLLISION">
@@ -8080,7 +8080,7 @@
     <Command ID="0x500" Name="IS_PLAYER_WEARING">
       <Args>
         <Arg Type="INT" Desc="Player"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="INT" Desc="Ped body part ID"/>
       </Args>
     </Command>
@@ -8679,7 +8679,7 @@
     </Command>
     <Command ID="0x569" Name="LOAD_UNCOMPRESSED_ANIM" Supported="false">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x56a" Name="WAS_CUTSCENE_SKIPPED"/>
@@ -9529,7 +9529,7 @@
     <Command ID="0x605" Name="TASK_PLAY_ANIM">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="INT" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -9587,27 +9587,27 @@
     <Command ID="0x611" Name="IS_CHAR_PLAYING_ANIM">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
       </Args>
     </Command>
     <Command ID="0x612" Name="SET_CHAR_ANIM_PLAYING_FLAG">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
     <Command ID="0x613" Name="GET_CHAR_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
     <Command ID="0x614" Name="SET_CHAR_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
@@ -9637,7 +9637,7 @@
     <Command ID="0x61a" Name="GET_CHAR_ANIM_TOTAL_TIME">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="INT" Desc="Time (ms)" Out="true"/>
       </Args>
     </Command>
@@ -9850,7 +9850,7 @@
     <Command ID="0x64a" Name="ADD_PEDMODEL_AS_ATTRACTOR_USER"/>
     <Command ID="0x64b" Name="CREATE_FX_SYSTEM">
       <Args>
-        <Arg Type="STRING" Desc="Particle name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Particle name"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
@@ -9936,46 +9936,46 @@
     <Command ID="0x65d" Name="VIEW_INTEGER_VARIABLE">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x65e" Name="VIEW_FLOAT_VARIABLE">
       <Args>
         <Arg Type="FLOAT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x65f" Name="WATCH_INTEGER_VARIABLE">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x660" Name="WATCH_FLOAT_VARIABLE">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x661" Name="BREAKPOINT">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x662" Name="WRITE_DEBUG">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x663" Name="WRITE_DEBUG_WITH_INT">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x664" Name="WRITE_DEBUG_WITH_FLOAT">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
@@ -10006,7 +10006,7 @@
     </Command>
     <Command ID="0x669" Name="CREATE_FX_SYSTEM_ON_CHAR">
       <Args>
-        <Arg Type="STRING" Desc="Particle name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Particle name"/>
         <Arg Type="INT" Desc="Character/ped"/>
         <Arg Type="FLOAT" Desc="X offset"/>
         <Arg Type="FLOAT" Desc="Y offset"/>
@@ -10017,7 +10017,7 @@
     </Command>
     <Command ID="0x66a" Name="CREATE_FX_SYSTEM_ON_CHAR_WITH_DIRECTION">
       <Args>
-        <Arg Type="STRING" Desc="Particle name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Particle name"/>
         <Arg Type="INT" Desc="Character/ped"/>
         <Arg Type="FLOAT" Desc="X offset"/>
         <Arg Type="FLOAT" Desc="Y offset"/>
@@ -10031,7 +10031,7 @@
     </Command>
     <Command ID="0x66b" Name="CREATE_FX_SYSTEM_ON_CAR">
       <Args>
-        <Arg Type="STRING" Desc="Particle name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Particle name"/>
         <Arg Type="INT" Desc="Car/vehicle"/>
         <Arg Type="FLOAT" Desc="X offset"/>
         <Arg Type="FLOAT" Desc="Y offset"/>
@@ -10042,7 +10042,7 @@
     </Command>
     <Command ID="0x66c" Name="CREATE_FX_SYSTEM_ON_CAR_WITH_DIRECTION">
       <Args>
-        <Arg Type="STRING" Desc="Particle name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Particle name"/>
         <Arg Type="INT" Desc="Car/vehicle"/>
         <Arg Type="FLOAT" Desc="X offset"/>
         <Arg Type="FLOAT" Desc="Y offset"/>
@@ -10056,7 +10056,7 @@
     </Command>
     <Command ID="0x66d" Name="CREATE_FX_SYSTEM_ON_OBJECT">
       <Args>
-        <Arg Type="STRING" Desc="Particle name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Particle name"/>
         <Arg Type="INT" Desc="Object"/>
         <Arg Type="FLOAT" Desc="X offset"/>
         <Arg Type="FLOAT" Desc="Y offset"/>
@@ -10067,7 +10067,7 @@
     </Command>
     <Command ID="0x66e" Name="CREATE_FX_SYSTEM_ON_OBJECT_WITH_DIRECTION">
       <Args>
-        <Arg Type="STRING" Desc="Particle name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Particle name"/>
         <Arg Type="INT" Desc="Object"/>
         <Arg Type="FLOAT" Desc="X offset"/>
         <Arg Type="FLOAT" Desc="Y offset"/>
@@ -10099,7 +10099,7 @@
     <Command ID="0x674" Name="CUSTOM_PLATE_FOR_NEXT_CAR">
       <Args>
         <Arg Type="INT" Desc="Model ID" Enum="MODEL"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x675" Name="CREATE_PED_GENERATOR_AT_ATTRACTOR"/>
@@ -10658,13 +10658,13 @@
     <Command ID="0x6d1" Name="SET">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x6d2" Name="SET">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x6d5" Name="CREATE_CHECKPOINT">
@@ -10951,7 +10951,7 @@
         <Arg Type="FLOAT" Desc="Z offset"/>
         <Arg Type="INT" Desc="Ped bone ID"/>
         <Arg Type="INT"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="INT" Desc="Animation file (IFP)"/>
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
@@ -11362,8 +11362,8 @@
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
-        <Arg Type="STRING" Desc="Animation name"/>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
       </Args>
     </Command>
     <Command ID="0x756" Name="TASK_GO_ON_PATROL" Supported="false"/>
@@ -11373,8 +11373,8 @@
     <Command ID="0x75a" Name="PLAY_OBJECT_ANIM">
       <Args>
         <Arg Type="INT" Desc="Object"/>
-        <Arg Type="STRING" Desc="Animation name"/>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -11491,17 +11491,17 @@
     <Command ID="0x775" Name="CREATE_OIL_PUDDLE"/>
     <Command ID="0x776" Name="REQUEST_IPL">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x777" Name="REMOVE_IPL">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x778" Name="REMOVE_IPL_DISCREETLY">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x779" Name="TASK_OPEN_PASSENGER_DOOR"/>
@@ -12149,7 +12149,7 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Angle"/>
         <Arg Type="FLOAT" Desc="Radius"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="INT" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -12180,7 +12180,7 @@
     </Command>
     <Command ID="0x80b" Name="SAVE_TEXT_LABEL_TO_DEBUG_FILE">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x80c" Name="GET_CHAR_BREATH"/>
@@ -12214,8 +12214,8 @@
     <Command ID="0x812" Name="TASK_PLAY_ANIM_NON_INTERRUPTABLE">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -12353,8 +12353,8 @@
     <Command ID="0x829" Name="TASK_DIE_NAMED_ANIM">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
@@ -12402,28 +12402,28 @@
     <Command ID="0x836" Name="SET_OBJECT_ANIM_SPEED">
       <Args>
         <Arg Type="INT" Desc="Object"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
     <Command ID="0x837" Name="IS_OBJECT_PLAYING_ANIM">
       <Args>
         <Arg Type="INT" Desc="Object"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
       </Args>
     </Command>
     <Command ID="0x838" Name="SET_OBJECT_ANIM_PLAYING_FLAG"/>
     <Command ID="0x839" Name="GET_OBJECT_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="FLOAT" Out="true"/>
       </Args>
     </Command>
     <Command ID="0x83a" Name="SET_OBJECT_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Desc="Object"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
@@ -12749,8 +12749,8 @@
     <Command ID="0x87b" Name="GIVE_PLAYER_CLOTHES_OUTSIDE_SHOP">
       <Args>
         <Arg Type="INT" Desc="Player"/>
-        <Arg Type="STRING"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="INT" Desc="Ped body part ID"/>
       </Args>
     </Command>
@@ -12820,7 +12820,7 @@
     <Command ID="0x88a" Name="TASK_PLAY_ANIM_WITH_FLAGS">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="INT" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -12925,7 +12925,7 @@
         <Arg Type="FLOAT" Desc="X offset"/>
         <Arg Type="FLOAT" Desc="Y offset"/>
         <Arg Type="FLOAT" Desc="Z offset"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x8a1" Name="GET_CHAR_MAP_ATTRACTOR_STATUS"/>
@@ -13385,8 +13385,8 @@
     </Command>
     <Command ID="0x8f0" Name="APPEND_TO_NEXT_CUTSCENE">
       <Args>
-        <Arg Type="STRING"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x8f1" Name="GET_NAME_OF_INFO_ZONE">
@@ -13432,13 +13432,13 @@
     <Command ID="0x8f9" Name="IS_THING_EQUAL_TO_THING">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x8fa" Name="IS_THING_EQUAL_TO_THING">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x8fb" Name="SET_COORD_BLIP_APPEARANCE">
@@ -13593,7 +13593,7 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Radius"/>
         <Arg Type="INT" Desc="Model ID" Enum="MODEL"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="INT" Desc="Character/ped" Out="true"/>
       </Args>
     </Command>
@@ -14280,8 +14280,8 @@
         <Arg Type="FLOAT" Desc="Z offset"/>
         <Arg Type="INT" Desc="Ped bone ID"/>
         <Arg Type="INT"/>
-        <Arg Type="STRING" Desc="Animation name"/>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
     </Command>
@@ -14330,7 +14330,7 @@
     </Command>
     <Command ID="0x9a9" Name="GET_HASH_KEY">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
@@ -14635,7 +14635,7 @@
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT" Desc="Time (ms)"/>
-        <Arg Type="STRING"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="INT" Desc="Car generator" Out="true"/>
       </Args>
     </Command>
@@ -14904,8 +14904,8 @@
     <Command ID="0xa1a" Name="TASK_PLAY_ANIM_SECONDARY">
       <Args>
         <Arg Type="INT" Desc="Character/ped"/>
-        <Arg Type="STRING" Desc="Animation file (IFP)"/>
-        <Arg Type="STRING" Desc="Animation name"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
