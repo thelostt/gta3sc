@@ -371,14 +371,25 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
 {
     codegen.emplace_u8(1);
 
-    if(codegen.program.opt.use_local_offsets
-    || label_ptr->script->type == ScriptType::Mission
-    || label_ptr->script->type == ScriptType::StreamedScript)
+    auto emplace_local_offset = [&](int32_t offset)
+    {
+        if(offset == 0)
+            codegen.program.error(nocontext, "XXX reference to zero offset");
+        codegen.emplace_i32(-offset);
+    };
+
+    if(codegen.program.opt.use_local_offsets)
+    {
+        int32_t absolute_offset = static_cast<int32_t>(label_ptr->offset());
+        emplace_local_offset(absolute_offset);
+    }
+    else if(label_ptr->script->type == ScriptType::Mission
+         || label_ptr->script->type == ScriptType::StreamedScript)
     {
         assert(label_ptr->script == codegen.script); // enforced on compiler.hpp/cpp
 
         int32_t local_offset = static_cast<int32_t>(label_ptr->local_offset.value());
-        codegen.emplace_i32(-local_offset);
+        emplace_local_offset(local_offset);
     }
     else
     {

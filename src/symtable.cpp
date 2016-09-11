@@ -50,6 +50,18 @@ std::pair<bool, VarType> token_to_vartype(NodeType token_type)
     }
 }
 
+bool Label::may_branch_from(const Script& other_script, ProgramContext& program) const
+{
+    if(program.opt.use_local_offsets
+    || this->script->type == ScriptType::Mission
+    || this->script->type == ScriptType::StreamedScript)
+    {
+        if(&other_script != this->script.get())
+            return false;
+    }
+    return true;
+}
+
 void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, size_t header_size)
 {
     size_t offset = header_size;

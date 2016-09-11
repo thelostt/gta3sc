@@ -286,10 +286,13 @@ struct Label
     {}
 
     /// Returns the global offset for this label.
-    uint32_t offset()
+    uint32_t offset() const
     {
         return script->offset.value() + this->local_offset.value();
     }
+
+    /// Can a GOTO in `other_script` branch into this label?
+    bool may_branch_from(const Script& other_script, ProgramContext& program) const;
 };
 
 

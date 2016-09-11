@@ -43,7 +43,8 @@ Options:
   -mno-header              Does not generate a header on the output SCM.
   -mheader=<version>       Generates the specified header version (gta3,gtavc,
                            gtasa).
-  -mlocal-offsets          Codegen references labels only by its local offset.
+  -mlocal-offsets          Label offsets are referenced locally and relative
+                           to the offset 0 of the compiled script.
   -mq11.4                  Codegen uses GTA III half-float format.
   -mtyped-text-label       Codegen uses GTA SA text label data type.
   -mskip-if                Omits compiling ANDOR on single condition statements.
@@ -494,13 +495,16 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         CompiledScmHeader header(program.opt.get_header<CompiledScmHeader::Version>(),
                                  symbols.size_global_vars(), models, scripts);
 
+        size_t header_size = program.opt.headerless? 0 : header.compiled_size();
+
         // not thread-safe
         Expects(gens.size() == scripts.size());
         for(size_t i = 0; i < gens.size(); ++i) // zip
         {
             scripts[i]->size = gens[i].compute_labels();                    // <- maybe???! this is actually thread safe
         }                                                                   //
-        Script::compute_script_offsets(scripts, header.compiled_size());    // <- but this isn't
+        Script::compute_script_offsets(scripts, header_size);               // <- but this isn't
+            
 
 
         for(auto& gen : gens)
