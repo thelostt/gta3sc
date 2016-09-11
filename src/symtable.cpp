@@ -814,6 +814,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
     bool had_mission_end   = false;
     bool had_script_start  = false;
     bool had_script_end    = false;
+    int  current_cutskip   = 0;
 
     std::shared_ptr<Scope> current_scope = nullptr;
     bool is_condition_block = false;
@@ -1321,6 +1322,26 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             replace_arg0(node, symbols.count_mission_passed);
                         else if(commands.equal(command, commands.set_progress_total()))
                             replace_arg0(node, symbols.count_progress);
+                        else if(commands.equal(command, commands.skip_cutscene_start()))
+                        {
+                            if(!program.opt.skip_cutscene)
+                                program.error(node, "XXX SKIP_CUTSCENE_START not allowed [-fskip-cutscene]");
+
+                            if(current_cutskip++ > 0)
+                                program.error(node, "XXX SKIP_CUTSCENE_START inside another SKIP_CUTSCENE_START");
+                            else
+                                node.set_annotation(CommandSkipCutsceneStartAnnotation{});
+                        }
+                        else if(commands.equal(command, commands.skip_cutscene_end()))
+                        {
+                            if(!program.opt.skip_cutscene)
+                                program.error(node, "XXX SKIP_CUTSCENE_END not allowed [-fskip-cutscene]");
+
+                            if(current_cutskip == 0)
+                                program.error(node, "XXX SKIP_CUTSCENE_END without SKIP_CUTSCENE_START");
+                            else if(--current_cutskip == 0)
+                                node.set_annotation(CommandSkipCutsceneEndAnnotation{});
+                        }
                     }
                     catch(const BadAlternator& e)
                     {
@@ -1484,6 +1505,11 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
     else if(had_mission_start || had_script_start)
     {
         program.error(*this, "Cannot use MISSION_START or SCRIPT_START in this script type");
+    }
+
+    if(current_cutskip != 0)
+    {
+        program.error(*this, "XXX missing SKIP_CUTSCENE_END");
     }
 }
 

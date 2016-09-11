@@ -166,7 +166,7 @@ struct CompilerContext
     std::vector<shared_ptr<Label>> internal_labels;
     shared_ptr<Scope>              current_scope;
     std::vector<LoopInfo>          loop_stack;
-
+    shared_ptr<Label>              label_skip_cutscene_end;
 
     /// Note 1: The SyntaxTree of the script must have been anotated. (TODO explain how to annotate the tree?).
     /// Note 2: TODO explain how to generate a symbol table?
@@ -643,8 +643,38 @@ private:
 
     void compile_command(const SyntaxTree& command_node, bool not_flag = false)
     {
-        const Command& command = command_node.annotation<std::reference_wrapper<const Command>>();
-        return compile_command(command, get_args(command, command_node), not_flag);
+        if(command_node.maybe_annotation<CommandSkipCutsceneStartAnnotation>())
+        {
+            Expects(this->label_skip_cutscene_end == nullptr);
+            if(auto opt_command = this->commands.skip_cutscene_start_internal())
+            {
+                this->label_skip_cutscene_end = make_internal_label();
+                compile_command(*opt_command, { this->label_skip_cutscene_end }, not_flag);
+            }
+            else
+            {
+                program.error(nocontext, "XXX SKIP_CUTSCENE_START_INTERNAL undefined or unsupported");
+            }
+        }
+        else if(command_node.maybe_annotation<CommandSkipCutsceneEndAnnotation>())
+        {
+            Expects(this->label_skip_cutscene_end != nullptr);
+            if(auto opt_command = this->commands.skip_cutscene_end())
+            {
+                compile_label(this->label_skip_cutscene_end);
+                compile_command(*opt_command, {}, not_flag);
+                this->label_skip_cutscene_end = nullptr;
+            }
+            else
+            {
+                program.error(nocontext, "XXX SKIP_CUTSCENE_END undefined or unsupported");
+            }
+        }
+        else
+        {
+            const Command& command = command_node.annotation<std::reference_wrapper<const Command>>();
+            compile_command(command, get_args(command, command_node), not_flag);
+        }
     }
 
     void compile_mission_end(const SyntaxTree& me_node, bool not_flag = false)

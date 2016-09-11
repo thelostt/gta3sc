@@ -122,6 +122,9 @@ protected:
     optional<const Command&> cmd_ANDOR;
     optional<const Command&> cmd_REGISTER_STREAMED_SCRIPT_INTERNAL;
     optional<const Command&> cmd_SAVE_STRING_TO_DEBUG_FILE;
+    optional<const Command&> cmd_SKIP_CUTSCENE_START;
+    optional<const Command&> cmd_SKIP_CUTSCENE_END;
+    optional<const Command&> cmd_SKIP_CUTSCENE_START_INTERNAL;
     alternator_pair          alt_SET;
     alternator_pair          alt_CSET;
     alternator_pair          alt_TERMINATE_THIS_CUSTOM_SCRIPT;
@@ -382,6 +385,21 @@ public:
     optional<const Command&> save_string_to_debug_file() const
     {
         return this->cmd_SAVE_STRING_TO_DEBUG_FILE;
+    }
+
+    optional<const Command&> skip_cutscene_start() const
+    {
+        return this->cmd_SKIP_CUTSCENE_START;
+    }
+
+    optional<const Command&> skip_cutscene_end() const
+    {
+        return this->cmd_SKIP_CUTSCENE_END;
+    }
+
+    optional<const Command&> skip_cutscene_start_internal() const
+    {
+        return this->cmd_SKIP_CUTSCENE_START_INTERNAL;
     }
 
     alternator_pair set() const

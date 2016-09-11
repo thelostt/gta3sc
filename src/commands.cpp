@@ -47,6 +47,9 @@ Commands::Commands(std::multimap<std::string, Command> commands_,
     this->cmd_GOTO_IF_FALSE                 = find_command("GOTO_IF_FALSE");
     this->cmd_ANDOR                         = find_command("ANDOR");
     this->cmd_SAVE_STRING_TO_DEBUG_FILE     = find_command("SAVE_STRING_TO_DEBUG_FILE");
+    this->cmd_SKIP_CUTSCENE_START           = find_command("SKIP_CUTSCENE_START");
+    this->cmd_SKIP_CUTSCENE_END             = find_command("SKIP_CUTSCENE_END");
+    this->cmd_SKIP_CUTSCENE_START_INTERNAL  = find_command("SKIP_CUTSCENE_START_INTERNAL");
     this->alt_SET                           = find_alternator("SET");
     this->alt_CSET                          = find_alternator("CSET");
     this->alt_TERMINATE_THIS_CUSTOM_SCRIPT  = find_alternator("TERMINATE_THIS_CUSTOM_SCRIPT");

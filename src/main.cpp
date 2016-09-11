@@ -53,6 +53,7 @@ Options:
   -fmission-var-limit=<n>  The index limit of mission local variables. Defaults
                            to -flocal-var-limit if not set.
   -ftimer-index=<n>        The local variable index of TIMERA.
+  -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START and SKIP_CUTSCENE_END.
 )";
 
 enum class Action
@@ -145,6 +146,7 @@ int main(int argc, char** argv)
                     options.farrays = false;
                     options.streamed_scripts = false;
                     options.text_label_vars = false;
+                    options.skip_cutscene = false;
                     options.timer_index = 16;
                     options.local_var_limit = 16;
                     options.mission_var_limit = nullopt;
@@ -161,6 +163,7 @@ int main(int argc, char** argv)
                     options.farrays = false;
                     options.streamed_scripts = false;
                     options.text_label_vars = false;
+                    options.skip_cutscene = false;
                     options.timer_index = 16;
                     options.local_var_limit = 16;
                     options.mission_var_limit = nullopt;
@@ -177,6 +180,7 @@ int main(int argc, char** argv)
                     options.farrays = true;
                     options.streamed_scripts = true;
                     options.text_label_vars = true;
+                    options.skip_cutscene = true;
                     options.timer_index = 32;
                     options.local_var_limit = 32;
                     options.mission_var_limit = 1024;
@@ -253,6 +257,10 @@ int main(int argc, char** argv)
             {
                 options.streamed_scripts = flag;
             }
+            else if(optflag(argv, "-fskip-cutscene", &flag))
+            {
+                options.skip_cutscene = flag;
+            }
             else if(optflag(argv, "-mlocal-offsets", nullptr))
             {
                 options.use_local_offsets = true;
@@ -317,6 +325,12 @@ int main(int argc, char** argv)
     if(!options.guesser && options.streamed_scripts)
     {
         fprintf(stderr, "gta3sc: error: use of -fstreamed_scripts only available in guesser mode [--guesser]\n");
+        return EXIT_FAILURE;
+    }
+
+    if(!options.guesser && options.skip_cutscene)
+    {
+        fprintf(stderr, "gta3sc: error: use of -fskip-cutscene only available in guesser mode [--guesser]\n");
         return EXIT_FAILURE;
     }
 

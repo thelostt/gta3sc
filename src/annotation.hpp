@@ -51,6 +51,17 @@ struct StreamedFileAnnotation
     int32_t id;
 };
 
+// Instead of a const Command&, annotate this
+struct CommandSkipCutsceneStartAnnotation
+{
+};
+
+// Instead of a const Command&, annotate this
+struct CommandSkipCutsceneEndAnnotation
+{
+};
+
+
 // TODO move those functions to somewhere else?
 
 inline std::string remove_quotes(const std::string& string)

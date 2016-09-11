@@ -40,6 +40,7 @@ struct Options
     bool streamed_scripts = false;
     bool text_label_vars = false;
     bool use_local_offsets = false;
+    bool skip_cutscene = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;
