@@ -2,9 +2,7 @@
 
 [![Build Status](https://travis-ci.org/thelink2012/gta3sc.svg?branch=master)](https://travis-ci.org/thelink2012/gta3sc)
 
-This is a native script compiler/decompiler for the so called [gta3script](http://www.gtamodding.com/wiki/SCM_language) language.
-
-It's very experimental at the moment and works only for GTA III and GTA Vice City, though it is able to compile lots of scripts, including the ones [War Drum Studios](http://gta.wikia.com/wiki/War_Drum_Studios) left on the GTA III 10th Anniversary release.
+This is a native script compiler/decompiler for the so called [GTA3script](http://www.gtamodding.com/wiki/SCM_language) language, used to design the mission scripts of the 3D Universe of the series.
 
 Due to its design, it can also be used as a framework for working with SCM data. See the README.md in the [src directory](src) for a technical overview. There's also a experimental Dynamic Recompiler in the [dynarec-x86](https://github.com/thelink2012/gta3sc/tree/dynarec-x86) branch.
 
