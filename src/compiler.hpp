@@ -786,7 +786,7 @@ private:
                 else if(auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>())
                 {
                     auto label = std::move(*opt_label);
-                    if(label->may_branch_from(*this->script, program))
+                    if(!label->may_branch_from(*this->script, program))
                     {
                         auto sckind_ = label->script->type == ScriptType::Mission? "mission " :
                                         label->script->type == ScriptType::StreamedScript? "streamed " : "";
