@@ -85,10 +85,10 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
                 is_good = (arg.type == ArgType::Float || arg.type == ArgType::Any);
                 break;
             case VarType::TextLabel:
-                is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel || arg.type == ArgType::Any);
+                is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel);
                 break;
             case VarType::TextLabel16:
-                is_good = (arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel || arg.type == ArgType::Any);
+                is_good = (arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel);
                 break;
             default:
                 Unreachable();
@@ -103,7 +103,27 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
 
 static bool match_var(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
 {
-    if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
+    optional<shared_ptr<Var>> opt_var;
+
+    if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
+    {
+        bool allow_vars = (arg.allow_global_var || arg.allow_local_var);
+        if(arg.allow_constant && allow_vars)
+        {
+            if(node.text().size() && node.text().front() == '$')
+                opt_var = symbols.find_var(node.text().substr(1), scope_ptr);
+        }
+        else if(allow_vars)
+        {
+            opt_var = symbols.find_var(node.text(), scope_ptr);
+        }
+    }
+    else
+    {
+        opt_var = symbols.find_var(node.text(), scope_ptr);
+    }
+
+    if(opt_var != nullopt)
     {
         try
         {
@@ -116,6 +136,7 @@ static bool match_var(const SyntaxTree& node, const Commands& commands, const Co
             throw BadAlternator(node, error);
         }
     }
+
     return false; // var doesn't exist
 }
 
@@ -132,36 +153,10 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
         case ArgType::TextLabel16:
         case ArgType::AnyTextLabel:
         {
-            if(arg.allow_global_var || arg.allow_local_var)
-            {
-                if(auto opt_var = symbols.find_var(node.text(), scope_ptr))
-                {
-                    auto& var = *opt_var;
-                    if(var->type == VarType::TextLabel || var->type == VarType::TextLabel16)
-                    {
-                        if(var->type == VarType::TextLabel
-                            && (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel))
-                        {
-                            if((var->global && arg.allow_global_var) || (!var->global && arg.allow_local_var))
-                                break;
-                            throw BadAlternator(node, "XXX");
-                        }
-                        else if(var->type == VarType::TextLabel16
-                            && (arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel))
-                        {
-                            if((var->global && arg.allow_global_var) || (!var->global && arg.allow_local_var))
-                                break;
-                            throw BadAlternator(node, "XXX");
-                        }
-                        else
-                        {
-                            // Will give a warning in annotation. But yeah, continue to literal.
-                        }
-                    }
-                }
-            }
+            if(match_var(node, commands, arg, symbols, scope_ptr))
+                break;
 
-            // Any identifier is a text label literal.
+            // If not a var ($), any identifier may be a text label literal.
             if(arg.allow_constant)
                 break;
 
@@ -444,25 +439,23 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
 
                     if(arg.allow_global_var || arg.allow_local_var)
                     {
-                        if(auto opt_var = symbols.find_var(arg_node.text(), scope_ptr))
+                        optional<std::string> varname;
+
+                        if(arg.allow_constant)
                         {
-                            auto& var = *opt_var;
-                            if(var->type == VarType::TextLabel || var->type == VarType::TextLabel16)
+                            if(arg_node.text().size() && arg_node.text().front() == '$')
+                                varname.emplace(arg_node.text().substr(1));
+                        }
+                        else
+                        {
+                            varname.emplace(arg_node.text());
+                        }
+
+                        if(varname != nullopt)
+                        {
+                            if(auto opt_var = symbols.find_var(*varname, scope_ptr))
                             {
-                                if(var->type == VarType::TextLabel
-                                    && (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel))
-                                {
-                                    var_to_use = var;
-                                }
-                                else if(var->type == VarType::TextLabel16
-                                    && (arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel))
-                                {
-                                    var_to_use = var;
-                                }
-                                else
-                                {
-                                    program.warning(arg_node, "XXX text label matches a variable of different text label type");
-                                }
+                                var_to_use = *opt_var;
                             }
                         }
                     }
