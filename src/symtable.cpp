@@ -639,10 +639,8 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 {
                     local_index = 0;
                     current_scope = table.add_scope();
-                    // TODO timer indices are different on SA
-                    // TODO should we cache the shared_ptr of the timers to avoid allocation on each scope?
-                    current_scope->vars.emplace("TIMERA", std::make_shared<Var>(false, VarType::Int, 16, nullopt));
-                    current_scope->vars.emplace("TIMERB", std::make_shared<Var>(false, VarType::Int, 17, nullopt));
+                    current_scope->vars.emplace("TIMERA", std::make_shared<Var>(false, VarType::Int, program.opt.timer_index + 0, nullopt));
+                    current_scope->vars.emplace("TIMERB", std::make_shared<Var>(false, VarType::Int, program.opt.timer_index + 1, nullopt));
                 }
 
                 if(next_scoped_label)
@@ -732,7 +730,14 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                 auto& target = global? table.global_vars : current_scope->vars;
                 auto& index = global? global_index : local_index;
-                size_t max_index = global? (65536 / 4) : 16; // TODO SA locals limit is different
+                size_t max_index;
+                
+                if(global)
+                    max_index = (65536 / 4);
+                else if(script.type == ScriptType::Mission)
+                    max_index = program.opt.mission_var_limit.value_or(program.opt.local_var_limit);
+                else
+                    max_index = program.opt.local_var_limit;
 
                 for(size_t i = 0, max = node.child_count(); i < max; ++i)
                 {

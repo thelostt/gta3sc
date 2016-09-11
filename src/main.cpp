@@ -48,6 +48,10 @@ Options:
   -mtyped-text-label       Codegen uses GTA SA text label data type.
   -mskip-if                Omits compiling ANDOR on single condition statements.
   -moptimize-zero          Compiles 0.0 as 0, using a 8 bit data type.
+  -flocal-var-limit=<n>    The index limit of local variables.
+  -fmission-var-limit=<n>  The index limit of mission local variables. Defaults
+                           to -flocal-var-limit if not set.
+  -ftimer-index=<n>        The local variable index of TIMERA.
 )";
 
 enum class Action
@@ -92,6 +96,7 @@ int main(int argc, char** argv)
     try
     {
         bool flag;
+        uint32_t temp_i32;
 
         while(*argv)
         {
@@ -139,6 +144,9 @@ int main(int argc, char** argv)
                     options.farrays = false;
                     options.streamed_scripts = false;
                     options.text_label_vars = false;
+                    options.timer_index = 16;
+                    options.local_var_limit = 16;
+                    options.mission_var_limit = nullopt;
                 }
                 else if(config_name == "gtavc")
                 {
@@ -152,6 +160,9 @@ int main(int argc, char** argv)
                     options.farrays = false;
                     options.streamed_scripts = false;
                     options.text_label_vars = false;
+                    options.timer_index = 16;
+                    options.local_var_limit = 16;
+                    options.mission_var_limit = nullopt;
                 }
                 else if(config_name == "gtasa")
                 {
@@ -165,6 +176,9 @@ int main(int argc, char** argv)
                     options.farrays = true;
                     options.streamed_scripts = true;
                     options.text_label_vars = true;
+                    options.timer_index = 32;
+                    options.local_var_limit = 32;
+                    options.mission_var_limit = 1024;
                 }
                 else
                 {
@@ -241,6 +255,12 @@ int main(int argc, char** argv)
             else if(optflag(argv, "-mlocal-offsets", nullptr))
             {
                 options.use_local_offsets = true;
+            }
+            else if(optint(argv, "-ftimer-index", &options.timer_index)) {}
+            else if(optint(argv, "-flocal-var-limit", &options.local_var_limit)) {}
+            else if(optint(argv, "-fmission_var_limit", &temp_i32))
+            {
+                options.mission_var_limit = temp_i32;
             }
             else
             {

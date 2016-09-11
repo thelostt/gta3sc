@@ -5,7 +5,6 @@
 #include <cstddef>
 #include <climits>
 #include <stdexcept>
-#include "optional.hpp"
 
 /// Thrown when the option formating is wrong in a `optget` or `optflag`.
 struct invalid_opt : std::runtime_error
@@ -152,3 +151,36 @@ inline char* optflag(char**& argv, const char* flagname, bool* flag)
     return nullptr;
 }
 
+///
+/// Checks if current position of `argv` is `longopt`.
+///
+/// If it is, returns a non null pointer, and `out` is modified to contain the integer value on the option.
+/// It also increments `argv` accordingly, so that its past the argument just read.
+///
+/// Otherwise, returns nullptr and argv nor out is not modified.
+///
+template<typename T>
+inline const char* optint(char**& argv, const char* longopt, T* out, int base = 10)
+{
+    if(const char* value = optget(argv, nullptr, longopt, 1))
+    {
+        try
+        {
+            long long integer = std::stoll(value, 0, base);
+            if(integer >= std::numeric_limits<T>::min() && integer <= std::numeric_limits<T>::max())
+            {
+                *out = static_cast<T>(integer);
+                return value;
+            }
+            else
+            {
+                throw invalid_opt(fmt::format("argument '{}' value is too little or too big: '{}'.", longopt, value));
+            }
+        }
+        catch(const std::exception&)
+        {
+            throw invalid_opt(fmt::format("argument '{}' expectes a integer, got '{}'.", longopt, value));
+        }
+    }
+    return nullptr;
+}
