@@ -20,16 +20,17 @@ matrix:
         - mkdir $HOME/clang+llvm
         - tar xf $LLVM_ARCHIVE_PATH -C $HOME/clang+llvm --strip-components 1
         - export PATH=$HOME/clang+llvm/bin:$PATH
+install:
+  - sudo pip install lit
 script:
   - if [ "$CXX" == "g++" ]; then export CXX="g++-6"; fi
   - if [ "$CXX" == "clang++" ];  then export CXX="clang++"; fi
   - $CXX --version
+  - lit --version
   - mkdir build
   - cd build
   - cmake .. && make
   - cd ..
-  - PATH=$(pwd)/build:$PATH
-  - cd test
-  - sh test.sh
-  - cd ..
+  - export GTA3SC=$(readlink -f build/gta3sc)
+  - lit test --verbose
 
