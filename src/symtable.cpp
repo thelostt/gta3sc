@@ -354,10 +354,13 @@ std::map<std::string, fs::path, iless> Script::scan_subdir() const
     auto output = std::map<std::string, fs::path, iless>();
     auto subdir = this->path.parent_path() / this->path.stem();
 
-    for(auto& entry : fs::recursive_directory_iterator(subdir))
+    if(fs::exists(subdir) && fs::is_directory(subdir))
     {
-        auto filename = entry.path().filename().generic_u8string();
-        output.emplace(std::move(filename), entry.path());
+        for(auto& entry : fs::recursive_directory_iterator(subdir))
+        {
+            auto filename = entry.path().filename().generic_u8string();
+            output.emplace(std::move(filename), entry.path());
+        }
     }
 
     return output;
