@@ -28,6 +28,7 @@ Options:
   -pedantic                Forbid the usage of extensions not in R* compiler.
   --guesser                Allows the use of language features not completly
                            known or understood by the modding community.
+  -fsyntax-only            Only checks the syntax, i.e. doesn't generate code.
   -fentity-tracking        Tracks entity types in variables.
   -fscript-name-check      Checks for duplicate SCRIPT_NAMEs.
   -fbreak-continue         Allows the use of BREAK and CONTINUE in all
@@ -271,6 +272,10 @@ int main(int argc, char** argv)
             {
                 options.mission_var_limit = temp_i32;
             }
+            else if(optflag(argv, "-fsyntax-only", nullptr))
+            {
+                options.fsyntax_only = true;
+            }
             else
             {
                 fprintf(stderr, "gta3sc: error: unregonized argument '%s'\n", *argv);
@@ -403,6 +408,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 {
     if(output.empty())
     {
+        // if fsyntax-only bla bla
         // TODO .cs .scc
         output = input;
         output.replace_extension(".scm");
@@ -500,6 +506,10 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         if(program.has_error())
             throw HaltJobException();
 
+        // Do not perform code gen if checking only syntax
+        if(program.opt.fsyntax_only)
+            return 0;
+
         size_t global_vars_size = 0;
         if(auto highest_var = symbols.highest_global_var())
         {
@@ -541,7 +551,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 //return;
             }
 
-            if(program.opt.streamed_scripts)
+            if(program.opt.streamed_scripts && !program.opt.headerless)
             {
                 script_img = u8fopen(fs::path(output).replace_filename("script.img"), "wb");
                 if(!script_img)
@@ -566,7 +576,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     into_script_img.emplace_back(std::cref(gen));
             }
 
-            if(program.opt.streamed_scripts)
+            if(script_img != nullptr)
             {
                 // TODO endian independent img building
 
@@ -668,9 +678,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             throw HaltJobException();
 
     } catch(const HaltJobException&) {
-        // TODO put a error message of compilation failed instead of zeroing output!??!!!
-        FILE* f = u8fopen(output, "wb");
-        if(f) fclose(f);
+        fprintf(stderr, "gta3sc: compilation failed\n");
         return EXIT_FAILURE;
     }
 

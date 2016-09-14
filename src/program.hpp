@@ -41,6 +41,7 @@ struct Options
     bool text_label_vars = false;
     bool use_local_offsets = false;
     bool skip_cutscene = false;
+    bool fsyntax_only = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;

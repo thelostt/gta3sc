@@ -39,11 +39,11 @@ EXPECTED_WARNING    = 2
 
 RE_COMMENT1 = re.compile("^expected-((?:error)|(?:warning))(-re)?()(@[+-]?\d+)? {{(.*)}}") # () to align with...
 RE_COMMENT2 = re.compile("^expected-((?:error)|(?:warning))(-re)?@([^:]+)(:\d+) {{(.*)}}") # ...groups here
-RE_CCERROR = re.compile("^([^:]+):(\d+:)?(\d+:)?( (?:(?:error)|(?:warning)):)? (.*)$")
+RE_CCERROR = re.compile("^((?:\w:[\\/])?[^:]+):(\d+:)?(\d+:)?( (?:(?:error)|(?:warning)):)? (.*)$")
 
 class DiagInfo:
     def __init__(self, location, lineno, diagtype, diagtext, rawtext=None):
-        self.location = location
+        self.location = location.replace('\\', '/')
         self.lineno   = lineno       # may be None for cc output
         self.diagtype = diagtype     # may be None for cc output
         self.diagtext = diagtext
@@ -145,7 +145,7 @@ def main(ccout, sourcefile, sourcename):
 
     ccdiags_lines = ccout.readlines()
 
-    if False:
+    if True:
         for line in ccdiags_lines:
             sys.stderr.write(line)
     

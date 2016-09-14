@@ -1,2 +1,3 @@
 /src/grammar/autogen/* linguist-vendored
 *.g linguist-language=ANTLR
+*.sh text eol=lf

@@ -1139,9 +1139,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                 if(!case_value.maybe_annotation<const int32_t&>())
                                     program.error(case_value, "XXX case value must be a integer constant");
 
-                                if(program.opt.pedantic && case_value.type() != NodeType::Integer)
-                                    program.error(case_value, "XXX case value must be a INT value [-pedantic]");
-
                                 case_node->set_annotation(SwitchCaseAnnotation { &is_var_eq_int });
                             }
                             catch(const BadAlternator& e)
