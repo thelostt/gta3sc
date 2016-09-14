@@ -171,5 +171,12 @@ def main(ccout, sourcefile, sourcename):
         sys.exit(1)
 
 if __name__ == "__main__":
+
+    # Hack for Python3
+    try:
+        basestring
+    except NameError:
+        basestring = str
+
     with open(sys.argv[1]) as sourcefile:
         main(ccout=sys.stdin, sourcefile=sourcefile, sourcename=sys.argv[1])
