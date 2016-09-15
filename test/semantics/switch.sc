@@ -1,4 +1,4 @@
-// Tests the -fswitch flag.
+// Tests the SWITCH semantics
 // RUN: %dis %gta3sc %s --config=gta3 -fsyntax-only -fswitch -pedantic --guesser 2>&1 | %verify %s
 VAR_INT n j
 

@@ -1402,17 +1402,28 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                 break;
                         }
 
-                        if(message)
+                        auto a_var = a.maybe_annotation<shared_ptr<Var>>();
+                        auto c_var = c.maybe_annotation<shared_ptr<Var>>();
+
+                        if(a_var && c_var && a_var == c_var)
                         {
-                            auto a_var = a.maybe_annotation<shared_ptr<Var>>();
-                            auto c_var = c.maybe_annotation<shared_ptr<Var>>();
-
-                            if(a_var && c_var && a_var == c_var)
+                            if(message)
                                 program.error(node, message);
-                        }
 
-                        node.set_annotation(std::cref(cmd_set));
-                        op.set_annotation(std::cref(cmd_op));
+                            const Command& cmd_set2 = commands.match_args(symbols, current_scope, alter_cmds1, a, c);
+                            commands.annotate_args(symbols, current_scope, *this, program, cmd_set, a, c);
+
+                            const Command& cmd_op2 = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, b);
+                            commands.annotate_args(symbols, current_scope, *this, program, cmd_op, a, b);
+
+                            node.set_annotation(std::cref(cmd_set2));
+                            op.set_annotation(std::cref(cmd_op2));
+                        }
+                        else
+                        {
+                            node.set_annotation(std::cref(cmd_set));
+                            op.set_annotation(std::cref(cmd_op));
+                        }
                     }
                     else
                     {
