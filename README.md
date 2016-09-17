@@ -20,7 +20,7 @@ Then `make` or use the generated project files.
 
 ## Using
 
-The compiler/decompiler is invoked by the file extension of the input file _(first argument)_, or from the action `compile` or `decompile`.
+The compiler/decompiler is invoked by the file extension of the input file, or from the action `compile` or `decompile`.
 
 **Compilation example:**
 
@@ -40,3 +40,11 @@ To get further instructions, try getting help from the utility.
 
     gta3sc --help
 
+
+## Testing
+
+Ensuring a compiler is working correctly is a must. To help us on this task we use [llvm-lit](http://llvm.org/docs/CommandGuide/lit.html). While on the root of this tree, use the following command to run all the tests.
+
+    lit test --verbose
+   
+For further details, please refer to the [README.md](./test/README.md) on the test directory.
