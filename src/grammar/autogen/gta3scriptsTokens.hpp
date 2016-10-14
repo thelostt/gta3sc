@@ -60,4 +60,9 @@ enum class Token
 	VAR_TEXT_LABEL = 93,
 	VAR_TEXT_LABEL16 = 94,
 	WHILE = 96,
+
+
+    // Manually added
+    ScopeBegin = 1000,
+    ScopeEnd,
 };
