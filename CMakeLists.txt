@@ -25,6 +25,7 @@ include_directories(
   deps/rapidxml
   deps/cppformat
   deps/optional/include
+  deps/expected/include
   deps/any/include
   deps/variant/include
   deps/libantlr3c-3.4/include

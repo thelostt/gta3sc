@@ -65,4 +65,7 @@ enum class Token
     // Manually added
     ScopeBegin = 1000,
     ScopeEnd,
+
+    // Aliases manually added
+    NewLine = Ignore,
 };

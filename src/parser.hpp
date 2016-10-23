@@ -9,8 +9,17 @@ struct ANTLR3_COMMON_TOKEN_struct;
 struct ANTLR3_INPUT_STREAM_struct;
 struct ANTLR3_BASE_TREE_struct;
 
+struct ParserContext;
+
 #include "grammar/autogen/gta3scriptsTokens.hpp"
 using NodeType = Token;
+
+struct TokenData
+{
+    Token  type;
+    size_t begin;
+    size_t end;
+};
 
 class TokenStream : public std::enable_shared_from_this<TokenStream>
 {
@@ -51,13 +60,17 @@ public:
     /// \throws std::logic_error if lineno does not exist.
     std::string get_line(size_t lineno) const;
 
+    /// For debugging purposes.
+    std::string to_string() const;
 
 protected:
     friend class SyntaxTree;
 
+    /*
     ANTLR3_COMMON_TOKEN_STREAM_struct* get() const {
         return tokstream;
     }
+    */
 
 private:
     ProgramContext& program;
@@ -67,10 +80,16 @@ private:
     std::string             data;
     std::vector<size_t>     line_offset;
 
+protected:
+    std::vector<TokenData>  tokens;
+private:
+
+    /*
     // ANTLR stuff.
     ANTLR3_INPUT_STREAM_struct* istream;
     gta3scriptLexer_Ctx_struct* lexer;
     ANTLR3_COMMON_TOKEN_STREAM_struct* tokstream;
+    */
 
     explicit TokenStream(ProgramContext&, optional<std::string> data, const char* stream_name);
 
@@ -126,7 +145,8 @@ public:
         return this->colno;
     }
 
-    // contains state changes
+    //// contains state changes
+    // TODO string_view
     const std::string& text() const
     {
         return this->data;
@@ -165,7 +185,7 @@ public:
     }
 
 
-    std::string to_string() const;
+    std::string to_string(size_t level = 0) const;
 
     // left to right, including visiting childs of left before going to the right
     // does **not** visit myself
@@ -230,6 +250,14 @@ public:
         return !this->udata.empty();
     }
 
+    // TODO less public
+    void add_child(shared_ptr<SyntaxTree> child)
+    {
+        child->parent_ = std::weak_ptr<SyntaxTree>(this->shared_from_this());
+        this->childs.emplace_back(std::move(child));
+    }
+
+
 public:
     /// Builds a temporary SyntaxTree which isn't dynamically allocated (for shared_ptr).
     /// Careful, `shared_from_this()` returns null for these.
@@ -240,6 +268,7 @@ public:
 
 protected:
     friend class TokenStream;
+    friend struct ParserContext;
 
     struct InputStream
     {
@@ -263,9 +292,20 @@ private:
     uint32_t                                    lineno;     //< Line number (starting from 1)
     uint32_t                                    colno;      //< Column number (starting from 1)
     
+    TokenData                                   token;
 
+    public:
+    // TODO less public
     explicit SyntaxTree(int type, std::string data)
         : type_(NodeType(type)), data(std::move(data))
     {
+    }
+    // TODO less public
+    explicit SyntaxTree(NodeType type, shared_ptr<InputStream>& instream, const TokenData& token)
+        : type_(type), instream(instream), token(token)
+    {
+        // TODO use string_view instead
+        auto tstream_ptr = instream->tstream.lock();
+        this->data = tstream_ptr->text().substr(token.begin, token.end - token.begin);
     }
 };
