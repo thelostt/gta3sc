@@ -589,7 +589,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
         {
             try
             {
-                return std::stoi(node.child(1).text());
+                return std::stoi(node.child(1).text().to_string());
             }
             catch(const std::logic_error&)
             {
@@ -614,7 +614,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
             {
                 shared_ptr<SyntaxTree> parent = node.parent();   // should always be available for this rule
 
-                auto next = parent->find(node);
+                auto next = std::find(parent->begin(), parent->end(), node.shared_from_this());
                 if(next != parent->end() && ++next != parent->end()
                     && (*next)->type() == NodeType::Scope)
                 {
@@ -625,7 +625,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 {
                     auto& label_name = node.child(0).text();
                     
-                    auto opt_label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
+                    auto opt_label_ptr = table.add_label(label_name.to_string(), current_scope, script.shared_from_this());
                     if(!opt_label_ptr)
                     {
                         program.error(node, "XXX Label {} already exists", label_name);
@@ -666,7 +666,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                         program.error(node, "XXX since VC the label should be inside the scope [-pedantic]");
                     }
 
-                    auto opt_label_ptr = table.add_label(label_name, current_scope, script.shared_from_this());
+                    auto opt_label_ptr = table.add_label(label_name.to_string(), current_scope, script.shared_from_this());
                     if(!opt_label_ptr)
                     {
                         program.error(node, "XXX Label {} already exists", label_name);
@@ -678,7 +678,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     next_scoped_label = nullptr;
                 }
 
-                node.walk(std::ref(walker));
+                node.child(0).depth_first(std::ref(walker));
 
                 node.set_annotation(std::move(current_scope));
 
@@ -762,7 +762,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                     if(varnode.child_count())
                     {
-                        auto array_counter = std::stol(varnode.child(0).text(), nullptr, 0);
+                        auto array_counter = std::stol(varnode.child(0).text().to_string(), nullptr, 0);
 
                         if(array_counter <= 0)
                         {
@@ -804,7 +804,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
         }
     };
 
-    script.tree->walk(std::ref(walker));
+    script.tree->depth_first(std::ref(walker));
 }
 
 void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
@@ -944,11 +944,11 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 });
 
                 is_condition_block = true;
-                node.child(i).walk_inclusive(std::ref(walker));
+                node.child(i).depth_first(std::ref(walker));
             }
             else
             {
-                node.child(i).walk_inclusive(std::ref(walker));
+                node.child(i).depth_first(std::ref(walker));
             }
         }
     };
@@ -1037,7 +1037,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 Expects(current_scope == nullptr);
 
                 current_scope = node.annotation<shared_ptr<Scope>>();
-                node.walk(std::ref(walker));
+                node.child(0).depth_first(std::ref(walker));
                 // guard sets current_scope to nullptr
 
                 return false;
@@ -1061,13 +1061,13 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 auto& var = node.child(1);
 
                 // TODO cache this or dunno?
-                SyntaxTree number_zero = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "0") :
-                                          times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "0.0") :
-                                          (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, "0"))); // int as fallback
+                SyntaxTree number_zero = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, int32_t(0)) :
+                                          times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, float(0.0)) :
+                                          (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, int32_t(0)))); // int as fallback
 
-                SyntaxTree number_one = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, "1") :
-                                         times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, "1.0") :
-                                         (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, "1"))); // int as fallback
+                SyntaxTree number_one = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, int32_t(1)) :
+                                         times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, float(1.0)) :
+                                         (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, int32_t(1)))); // int as fallback
 
                 if(program.opt.pedantic && times.type() != NodeType::Integer)
                 {
@@ -1077,7 +1077,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // Walk on the REPEAT body before matching the base commands.
                 // This will allow error messages in the body to be displayed even if
                 // the base matching throws BadAlternator.
-                node.child(2).walk(std::ref(walker));
+                node.child(2).depth_first(std::ref(walker));
 
                 try
                 {
@@ -1149,12 +1149,12 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                 program.error(e.error());
                             }
 
-                            case_node->child(1).walk(std::ref(walker));
+                            case_node->child(1).depth_first(std::ref(walker));
                             ensure_break(case_node->child(1));
                             break;
                         }
                         case NodeType::DEFAULT:
-                            case_node->child(0).walk(std::ref(walker));
+                            case_node->child(0).depth_first(std::ref(walker));
                             ensure_break(case_node->child(0));
                             break;
                         default:
@@ -1196,7 +1196,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                 program.error(node.child(1), "XXX string too long, only 127 chars allowed");
                             }
 
-                            node.child(1).set_annotation(String128Annotation { std::move(debug_string) });
+                            node.child(1).set_annotation(String128Annotation { debug_string.to_string() });
                             node.set_annotation(std::cref(command));
                         }
                     }
@@ -1465,9 +1465,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 auto varinfo = std::move(*opt_varinfo);
 
                 // TODO cache this or dunno?
-                SyntaxTree number_one = (varinfo->type == VarType::Int? SyntaxTree::temporary(NodeType::Integer, "1") :
-                                         varinfo->type == VarType::Float? SyntaxTree::temporary(NodeType::Float, "1.0") :
-                                         (program.error(var_ident, "XXX {} must be int or float", opkind), SyntaxTree::temporary(NodeType::Integer, "1")) ); // int as fallback
+                SyntaxTree number_one = (varinfo->type == VarType::Int? SyntaxTree::temporary(NodeType::Integer, int32_t(1)) :
+                                         varinfo->type == VarType::Float? SyntaxTree::temporary(NodeType::Float, float(1.0)) :
+                                         (program.error(var_ident, "XXX {} must be int or float", opkind), SyntaxTree::temporary(NodeType::Integer, int32_t(1)))); // int as fallback
 
 
                 try
@@ -1497,7 +1497,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
         }
     };
 
-    this->tree->walk(std::ref(walker));
+    this->tree->depth_first(std::ref(walker));
 
     if(this->type == ScriptType::Mission || this->type == ScriptType::Subscript)
     {

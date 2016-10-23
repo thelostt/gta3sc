@@ -140,8 +140,14 @@ inline std::string format_error(const char* type, const SyntaxTree& base_context
         }
     }
 
+    size_t lineno, colno;
+    {
+        auto tstream = context->token_stream().lock();
+        std::tie(lineno, colno) = tstream->linecol_from_offset(context->offset());
+    }
+
     return format_error(type, context->token_stream().lock(),
-                              context->filename().c_str(), context->line(), context->column(),
+                              context->filename().c_str(), lineno, colno,
                               msg, std::forward<Args>(args)...);
 }
 
@@ -213,7 +219,7 @@ public:
         this->level_models   = std::move(level_models);
     }
 
-    bool is_model_from_ide(const std::string& name) const;
+    bool is_model_from_ide(const string_view& name) const;
 
     bool has_error() const
     {

@@ -47,6 +47,11 @@ struct CodeGeneratorBase;
 
 using EntityType = uint16_t;
 
+template<typename Key, typename Value>
+using transparent_map = std::map<Key, Value, std::less<>>;
+
+template<typename Key, typename Value>
+using transparent_multimap = std::multimap<Key, Value, std::less<>>;
 
 #ifndef _MSC_VER
 #   define __debugbreak()

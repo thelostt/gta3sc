@@ -99,6 +99,7 @@ set(GTA3SC_SRC_MISC
   src/cpp/optional.hpp
   src/cpp/scope_guard.hpp
   src/cpp/variant.hpp
+  src/cpp/string_view.hpp
 )
 
 add_executable(gta3sc ${GTA3SC_SRC_MISC} ${GTA3SC_SRC_AUTOGEN} ${GTA3SC_SRC_MAIN})

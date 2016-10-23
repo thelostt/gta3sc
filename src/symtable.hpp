@@ -159,7 +159,7 @@ public:
     std::set<std::string, iless> script_names;
 
 public:
-    optional<int32_t> find_model(const std::string& name) const
+    optional<int32_t> find_model(const string_view& name) const
     {
         auto it = std::find_if(models.begin(), models.end(), [&](const auto& mpair) {
             return iequal_to()(mpair.first, name);
@@ -169,11 +169,11 @@ public:
         return nullopt;
     }
 
-    int32_t add_or_find_model(const std::string& name)
+    int32_t add_or_find_model(const string_view& name)
     {
         if(auto opt = this->find_model(name))
             return *opt;
-        return this->models.emplace(models.end(), name, models.size())->second;
+        return this->models.emplace(models.end(), name.to_string(), models.size())->second;
     }
 
     int32_t find_model_at(uint32_t i) const
@@ -221,9 +221,8 @@ public:
         : type(type)
     {
         this->path = std::move(path_);
-        this->tstream.reset(new TokenStream(program, this->path)); // use new instead of make_shared,
-                                                          // we don't want weak_ptr to leave the TokenStream on memory.
-        this->tree = SyntaxTree::compile(program, *this->tstream);
+        this->tstream = TokenStream::tokenize(program, this->path); // TODO what if returns nullptr
+        this->tree = SyntaxTree::compile(program, *this->tstream); // TODO what if returns nullptr
     }
 
     // TODO a flag to not use tstream (free up memory)?
@@ -363,7 +362,7 @@ struct SymTable
 
     /// Finds global var `name` or local var `name` in `current_scope`. `current_scope` may be nullptr,
     /// otherwise it must be a scope owned by this symbol table.
-    optional<shared_ptr<Var>> find_var(const std::string& name, const shared_ptr<Scope>& current_scope) const
+    optional<shared_ptr<Var>> find_var(const string_view& name, const shared_ptr<Scope>& current_scope) const
     {
         auto itg = global_vars.find(name);
         if(itg != global_vars.end())
@@ -408,16 +407,16 @@ struct SymTable
     }
 
     /// Adds a new label to the table, returns `nullopt` if it already exists.
-    optional<shared_ptr<Label>> add_label(const std::string& name, shared_ptr<const Scope> scope, shared_ptr<const Script> script)
+    optional<shared_ptr<Label>> add_label(std::string name, shared_ptr<const Scope> scope, shared_ptr<const Script> script)
     {
-        auto it = this->labels.emplace(name, std::make_shared<Label>(scope, script));
+        auto it = this->labels.emplace(std::move(name), std::make_shared<Label>(scope, script));
         if(it.second == false)
             return nullopt;
         return it.first->second;
     }
 
     /// Finds label `name` in this table.
-    optional<shared_ptr<Label>> find_label(const std::string& name) const
+    optional<shared_ptr<Label>> find_label(const string_view& name) const
     {
         auto it = this->labels.find(name);
         if(it != this->labels.end())
@@ -429,7 +428,7 @@ struct SymTable
     /// Returns false and sends a error to `program` if declaration conflicts with previosly ones.
     bool add_script(ScriptType type, const SyntaxTree& command, ProgramContext& program);
 
-    optional<shared_ptr<Script>> find_script(const std::string& filename) const
+    optional<shared_ptr<Script>> find_script(const string_view& filename) const
     {
         auto it = this->scripts.find(filename);
         if(it != this->scripts.end())

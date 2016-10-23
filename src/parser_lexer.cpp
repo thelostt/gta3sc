@@ -4,6 +4,8 @@
 
 // TODO std::runtime_error to CompilerError or something
 
+using TokenData = TokenStream::TokenData;
+
 struct LexerContext
 {
     ProgramContext& program;
@@ -474,50 +476,41 @@ static void lex(LexerContext& lexer, const char* begin, const char* end)
 // TokenStream
 //
 
-TokenStream::TokenStream(ProgramContext& program, std::string data_, const char* stream_name)
-    : program(program), data(std::move(data_)), sname(stream_name)
+std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, std::string data, const char* stream_name)
 {
     // TODO check for errors?!
     LexerContext lexer(program);
-    lex(lexer, this->data.c_str(), this->data.c_str() + this->data.size());
-    this->tokens = std::move(lexer.tokens);
-    this->calc_lines(); // TODO maybe make this call optional?
+    lex(lexer, data.c_str(), data.c_str() + data.size());
 
-    puts(this->to_string().c_str());
-    puts("---------------------------\n");
-    //throw 0;//TODO REMOVE ME
+    // Use new instead of make_shared, we don't want weak_ptr to leave the TokenStream on memory.
+    return shared_ptr<TokenStream>(new TokenStream(program, stream_name, std::move(data), std::move(lexer.tokens)));
+
 }
 
-TokenStream::TokenStream(ProgramContext& program, optional<std::string> data_, const char* stream_name)
-    : TokenStream(program, (data_? std::move(data_.value()) : throw std::runtime_error("")), stream_name) // TODO simplify this line
+std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, const fs::path& path)
 {
+    if(auto opt_data = read_file_utf8(path))
+    {
+        return TokenStream::tokenize(program, *opt_data, path.generic_u8string().c_str());
+    }
+    else
+    {
+        program.error(nocontext, "XXX fail read file {}", path.generic_u8string());
+        return nullptr;
+    }
 }
 
-TokenStream::TokenStream(ProgramContext& program, const fs::path& path)
-    : TokenStream(program, read_file_utf8(path), path.generic_u8string().c_str())
+TokenStream::TokenStream(ProgramContext& program, const char* stream_name, std::string data, std::vector<TokenData> tokens)
+    : program(program), data(std::move(data)), stream_name(stream_name), tokens(std::move(tokens))
 {
+    this->calc_lines();
 }
 
 TokenStream::TokenStream(TokenStream&& rhs)
-    : program(rhs.program)
+    : program(rhs.program), tokens(std::move(rhs.tokens)), line_offset(std::move(line_offset)),
+      stream_name(std::move(rhs.stream_name)), data(std::move(rhs.data))
 {
-    *this = std::move(rhs);
-}
-
-TokenStream& TokenStream::operator=(TokenStream&& rhs)
-{
-    this->tokens = std::move(rhs.tokens);
-    this->sname = std::move(rhs.sname);
-    this->data = std::move(rhs.data);
-    this->line_offset = std::move(rhs.line_offset);
-
     Ensures(&rhs.program == &this->program);
-
-    return *this;
-}
-
-TokenStream::~TokenStream()
-{
 }
 
 void TokenStream::calc_lines()
@@ -553,6 +546,33 @@ std::string TokenStream::get_line(size_t lineno) const
     for(end = start; *end && *end != '\n' && *end != '\r'; ++end) {}
 
     return std::string(start, end);
+}
+
+size_t TokenStream::offset_for_line(size_t lineno) const
+{
+    size_t i = (lineno - 1);
+    if(i < line_offset.size())
+        return line_offset[i];
+    else
+        throw std::logic_error("Bad `lineno` in TokenStream::offset_for_line");
+}
+
+auto TokenStream::linecol_from_offset(size_t offset) const -> std::pair<size_t, size_t>
+{
+    for(auto it = line_offset.begin(), end = line_offset.end(); it != end; ++it)
+    {
+        auto next_it = std::next(it);
+        size_t next_line_offset = (next_it != end)? *next_it : SIZE_MAX;
+        
+        if(offset >= *it && offset < next_line_offset)
+        {
+            size_t lineno = size_t(std::distance(line_offset.begin(), it) + 1);
+            size_t colno  = (offset - *it) + 1;
+            return std::make_pair(lineno, colno);
+        }
+    }
+
+    throw std::logic_error("bad offset on linecol_from_offset");
 }
 
 std::string TokenStream::to_string() const

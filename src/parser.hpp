@@ -3,87 +3,55 @@
 
 struct ParserContext;
 
+// TODO REMOVE
 #include "grammar/autogen/gta3scriptsTokens.hpp"
 using NodeType = Token;
-
-struct TokenData
-{
-    Token  type;
-    size_t begin;
-    size_t end;
-};
 
 class TokenStream : public std::enable_shared_from_this<TokenStream>
 {
 public:
-    explicit TokenStream(ProgramContext&, const fs::path& path);
-    explicit TokenStream(ProgramContext&, std::string data, const char* stream_name);
-    ~TokenStream();
+    struct TokenData
+    {
+        Token  type;    //< Type of token
+        size_t begin;   //< Offset for token in TokenStream::data
+        size_t end;     //< Offset for token in TokenStream::data (end)
+    };
 
-    TokenStream(const TokenStream&) = delete;
+public:
+    const std::string             stream_name;  //< Name of this stream (usually name of the source file).
+    const std::string             data;         //< UTF-8 source file.
+    const std::vector<TokenData>  tokens;       //< Tokenized source file.
+
+public:
+    static std::shared_ptr<TokenStream> tokenize(ProgramContext&, const fs::path&);
+    static std::shared_ptr<TokenStream> tokenize(ProgramContext&, std::string data, const char* stream_name);
     TokenStream(TokenStream&&);
-    TokenStream& operator=(const TokenStream&) = delete;
-    TokenStream& operator=(TokenStream&&);
-
-    const std::string& name() const
-    {
-        return this->sname;
-    }
-
-    const std::string& text() const
-    {
-        return this->data;
-    }
+    TokenStream(const TokenStream&) = delete;
 
     /// Gets the byte offset in this->text() that the specified line number (1-based) is in.
     ///
     /// \throws std::logic_error if lineno does not exist.
-    size_t offset_for_line(size_t lineno) const
-    {
-        size_t i = (lineno - 1);
-        if(i < line_offset.size())
-            return line_offset[i];
-        else
-            throw std::logic_error("Bad `lineno` in TokenStream::offset_for_line");
-    }
+    size_t offset_for_line(size_t lineno) const;
 
-    /// (1-based)
+    /// Gets the content of the specified line number (1-based).
     ///
     /// \throws std::logic_error if lineno does not exist.
     std::string get_line(size_t lineno) const;
 
+    /// Gets the (lineno, colno) (1-based) of the specified offset in the stream data.
+    ///
+    /// \throws std::logic_error if offset is out of range.
+    std::pair<size_t, size_t> linecol_from_offset(size_t offset) const;
+
     /// For debugging purposes.
     std::string to_string() const;
 
-protected:
-    friend class SyntaxTree;
-
-    /*
-    ANTLR3_COMMON_TOKEN_STREAM_struct* get() const {
-        return tokstream;
-    }
-    */
-
 private:
-    ProgramContext& program;
-
-    // My stuff.
-    std::string             sname;
-    std::string             data;
+    ProgramContext&         program;
     std::vector<size_t>     line_offset;
 
-protected:
-    std::vector<TokenData>  tokens;
-private:
-
-    /*
-    // ANTLR stuff.
-    ANTLR3_INPUT_STREAM_struct* istream;
-    gta3scriptLexer_Ctx_struct* lexer;
-    ANTLR3_COMMON_TOKEN_STREAM_struct* tokstream;
-    */
-
     explicit TokenStream(ProgramContext&, optional<std::string> data, const char* stream_name);
+    explicit TokenStream(ProgramContext&, const char* stream_name, std::string data, std::vector<TokenData>);
 
     void calc_lines();
 };
@@ -93,82 +61,70 @@ class SyntaxTree : public std::enable_shared_from_this<SyntaxTree>
 public:
     using const_iterator = std::vector<std::shared_ptr<SyntaxTree>>::const_iterator;
 
-    SyntaxTree(const SyntaxTree&) = delete;            // expensive, make a explicit method if needed
-    SyntaxTree(SyntaxTree&&);
-    SyntaxTree& operator=(const SyntaxTree&) = delete; // expensive, make a explicit method if needed
-    SyntaxTree& operator=(SyntaxTree&&);
-    
+public:
     static std::shared_ptr<SyntaxTree> compile(ProgramContext&, const TokenStream& tstream);
-
-    const_iterator begin() const
-    {
-        return this->childs.begin();
-    }
-
-    const_iterator end() const
-    {
-        return this->childs.end();
-    }
-
-    const_iterator find(const SyntaxTree& child) const
-    {
-        return std::find_if(begin(), end(), [&](const std::shared_ptr<SyntaxTree>& node) {
-            return node.get() == std::addressof(child);
-        });
-    }
-
-    std::string filename() const
-    {
-        return this->instream? *this->instream->filename : "";
-    }
-
-    weak_ptr<const TokenStream> token_stream() const
-    {
-        return this->instream? this->instream->tstream : weak_ptr<const TokenStream>();
-    }
-
-    uint32_t line() const
-    {
-        return this->lineno;
-    }
-
-    uint32_t column() const
-    {
-        return this->colno;
-    }
-
-    //// contains state changes
-    // TODO string_view
-    const std::string& text() const
-    {
-        return this->data;
-    }
-
-    bool has_text() const
-    {
-        return !this->text().empty();
-    }
-
-    size_t child_count() const
-    {
-        return this->childs.size();
-    }
+    SyntaxTree(const SyntaxTree&) = delete;
+    SyntaxTree(SyntaxTree&&);
     
-    const SyntaxTree& child(size_t i) const
+    /// Builds a temporary SyntaxTree which isn't dynamically allocated (for shared_ptr).
+    ///
+    /// \warning Be careful, `shared_from_this()` returns null for these.
+    template<typename T>
+    static SyntaxTree temporary(NodeType type, T udatax)
     {
-        return *this->childs[i];
+        return SyntaxTree(type, any(std::move(udatax)));
     }
 
-    SyntaxTree& child(size_t i)
-    {
-        return *this->childs[i];
-    }
-
+    /// Gets the type of this node.
     NodeType type() const
     {
         return this->type_;
     }
 
+    /// Text associated with the token in this node.
+    string_view text() const
+    {
+        auto source_data = this->instream->tstream.lock()->data.c_str();
+        return string_view(source_data + this->token.begin, this->token.end - this->token.begin);
+    }
+
+    /// Checks if `text().empty()`.
+    bool has_text() const
+    {
+        return this->token.begin != this->token.end;
+    }
+
+    /// Iterator to childs (begin).
+    const_iterator begin() const
+    {
+        return this->childs.begin();
+    }
+
+    /// Iterator to childs (end).
+    const_iterator end() const
+    {
+        return this->childs.end();
+    }
+
+    /// Number of childs on this node.
+    size_t child_count() const
+    {
+        return this->childs.size();
+    }
+    
+    /// Gets the child at the specified index.
+    const SyntaxTree& child(size_t i) const
+    {
+        return *this->childs[i];
+    }
+
+    /// Gets the child at the specified index.
+    SyntaxTree& child(size_t i)
+    {
+        return *this->childs[i];
+    }
+
+    /// Gets the parent node, or `nullptr` if none.
     std::shared_ptr<SyntaxTree> parent() const
     {
         if(this->parent_)
@@ -176,59 +132,50 @@ public:
         return nullptr;
     }
 
-
-    std::string to_string(size_t level = 0) const;
-
-    // left to right, including visiting childs of left before going to the right
-    // does **not** visit myself
-    // bool(SyntaxTree)
-    template<typename Functor>
-    void walk(Functor fun) //const
+    // Adds a child to this node.
+    void add_child(shared_ptr<SyntaxTree> child)
     {
-        auto fun_ref = std::ref(fun);
-        for(size_t i = 0, max = this->child_count(); i < max; ++i)
+        child->parent_ = std::weak_ptr<SyntaxTree>(this->shared_from_this());
+        this->childs.emplace_back(std::move(child));
+    }
+
+    /// Performs a pre-ordered depth-first traversal on this tree.
+    ///
+    /// Does not go any deeper in a node that `fun()` returns false.
+    template<typename Functor>  // Functor = bool(SyntaxTree)
+    void depth_first(Functor fun) //const
+    {
+        if(fun(*this))
         {
-            auto& child = this->child(i);
-            if(fun(child)) child.walk(fun_ref);
+            for(size_t i = 0, max = this->child_count(); i < max; ++i)
+            {
+                this->child(i).depth_first(std::ref(fun));
+            }
         }
     }
 
-    // left to right, including visiting childs of left before going to the right
-    // does not visit myself
-    // bool(SyntaxTree)
-    template<typename Functor>
-    void walk_inclusive(Functor fun) //const
-    {
-        fun(*this);
-        this->walk(std::ref(fun));
-    }
-
-    // left to right, no childs
-    // does **not** visit myself
-    // void(SyntaxTree)
-    template<typename Functor>
-    void walk_top(Functor fun) //const
-    {
-        auto fun_ref = std::ref(fun);
-        for(size_t i = 0, max = this->child_count(); i < max; ++i)
-        {
-            fun(this->child(i));
-        }
-    }
-
+    /// Sets the annotation for this node.
     template<typename ValueType>
     void set_annotation(ValueType&& v)
     {
         this->udata = std::forward<ValueType>(v);
     }
 
-    template<typename T> // you can get a ref by using e.g. <int&> instead of <int>
+    /// Gets the annotation of this node, previosly set with `set_annotation`.
+    ///
+    /// Note: You can get a ref by using e.g. `<int&>` instead of `<int>`.
+    ///
+    /// \throws bad_any_cast if there's no annotation on this node.
+    template<typename T> // 
     T annotation() const
     {
         return any_cast<T>(this->udata);
     }
 
-    template<typename T> // you can get a ref by using e.g. <int&> instead of <int>
+    /// Gets the annotation of this node, previosly set with `set_annotation`, or `nullopt` if not set.
+    ///
+    /// Note: You can get a ref by using e.g. `<int&>` instead of `<int>`.
+    template<typename T>
     optional<T> maybe_annotation() const
     {
         using TNoRef = std::remove_reference_t<T>;
@@ -237,26 +184,33 @@ public:
         return nullopt;
     }
 
+    /// Checks if this node has been annotated.
     bool is_annotated() const
     {
         return !this->udata.empty();
     }
 
-    // TODO less public
-    void add_child(shared_ptr<SyntaxTree> child)
+    /// Filename of the input stream associated with this SyntaxTree, or empty if none.
+    std::string filename() const
     {
-        child->parent_ = std::weak_ptr<SyntaxTree>(this->shared_from_this());
-        this->childs.emplace_back(std::move(child));
+        return this->instream? *this->instream->filename : "";
     }
 
-
-public:
-    /// Builds a temporary SyntaxTree which isn't dynamically allocated (for shared_ptr).
-    /// Careful, `shared_from_this()` returns null for these.
-    static SyntaxTree temporary(NodeType type, std::string data)
+    /// Input stream associated with this SyntaxTree, or `nullptr` if none.
+    weak_ptr<const TokenStream> token_stream() const
     {
-        return SyntaxTree((int)type, std::move(data));
+        return this->instream? this->instream->tstream : weak_ptr<const TokenStream>();
     }
+
+    /// Offset to this token in the input stream data.
+    size_t offset() const
+    {
+        return this->token.begin;
+    }
+
+    /// For debugging purposes.
+    std::string to_string(size_t level = 0) const;
+
 
 protected:
     friend class TokenStream;
@@ -269,32 +223,22 @@ protected:
     };
 
 private:
-
-    // This data structure assumes all those members are constant for the entire lifetime of this object!
-    // ...except for udata
-    NodeType                                    type_;
-    std::string                                 data;
+    NodeType                                    type_;  // const NodeType
+    TokenStream::TokenData                      token;
     std::vector<std::shared_ptr<SyntaxTree>>    childs;
     optional<std::weak_ptr<SyntaxTree>>         parent_;
     any                                         udata;
-    shared_ptr<InputStream>                     instream;   //<
-    uint32_t                                    lineno;     //< Line number (starting from 1)
-    uint32_t                                    colno;      //< Column number (starting from 1)
-    
-    TokenData                                   token;
+    shared_ptr<InputStream>                     instream;
 
-    public:
-    // TODO less public
-    explicit SyntaxTree(int type, std::string data)
-        : type_(NodeType(type)), data(std::move(data))
+public:
+    explicit SyntaxTree(NodeType type, any udata)
+        : type_(type), udata(udata), instream(nullptr)
     {
+        // this->token will be trash, fix it? TODO
     }
-    // TODO less public
-    explicit SyntaxTree(NodeType type, shared_ptr<InputStream>& instream, const TokenData& token)
+
+    explicit SyntaxTree(NodeType type, shared_ptr<InputStream>& instream, const TokenStream::TokenData& token)
         : type_(type), instream(instream), token(token)
     {
-        // TODO use string_view instead
-        auto tstream_ptr = instream->tstream.lock();
-        this->data = tstream_ptr->text().substr(token.begin, token.end - token.begin);
     }
 };

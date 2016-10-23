@@ -7,6 +7,7 @@
 #include "cpp/expected.hpp"
 #pragma warning(pop)
 
+using TokenData      = TokenStream::TokenData;
 using token_iterator = std::vector<TokenData>::const_iterator;
 
 struct ParserContext
@@ -19,7 +20,7 @@ struct ParserContext
         program(program), tstream(tstream)
     {
         this->instream = std::make_shared<SyntaxTree::InputStream>();
-        this->instream->filename = std::make_shared<std::string>(tstream.name());
+        this->instream->filename = std::make_shared<std::string>(tstream.stream_name);
         this->instream->tstream = tstream.shared_from_this();
     }
 };
@@ -381,14 +382,14 @@ static ParserResult parser(ParserContext& parser, token_iterator begin, token_it
 //
 
 SyntaxTree::SyntaxTree(SyntaxTree&& rhs)
-    : type_(rhs.type_), data(std::move(rhs.data)), childs(std::move(rhs.childs)), parent_(std::move(rhs.parent_)),
-      udata(std::move(rhs.udata)),
-      instream(std::move(rhs.instream)), lineno(rhs.lineno), colno(rhs.colno)
+    : type_(rhs.type_), token(std::move(rhs.token)), childs(std::move(rhs.childs)), parent_(std::move(rhs.parent_)),
+      udata(std::move(rhs.udata)), instream(std::move(rhs.instream))
 {
     rhs.type_ = NodeType::Ignore;
     rhs.parent_ = nullopt;
 }
 
+/*
 SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
 {
     this->data = std::move(rhs.data);
@@ -397,12 +398,10 @@ SyntaxTree& SyntaxTree::operator=(SyntaxTree&& rhs)
     this->parent_ = std::move(rhs.parent_);
     this->udata = std::move(udata);
     this->instream = std::move(rhs.instream);
-    this->lineno = rhs.lineno;
-    this->colno = rhs.colno;
     rhs.type_ = NodeType::Ignore;
     rhs.parent_ = nullopt;
     return *this;
-}
+}*/
 
 std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const TokenStream& tstream)
 {
@@ -414,7 +413,7 @@ std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const T
     {
         puts(presult->second->to_string().c_str());
         puts("---------------------------\n");
-        throw 0; // TODO remove me
+        //throw 0; // TODO remove me
         return presult->second;
     }
     else

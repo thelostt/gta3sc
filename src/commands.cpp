@@ -9,9 +9,9 @@
 //      we throw a exception (which is costful) and we also build up a ProgramError object (also costful).
 //      Please improve this out.
 
-Commands::Commands(std::multimap<std::string, Command> commands_,
+Commands::Commands(transparent_multimap<std::string, Command> commands_,
                    std::map<std::string, EntityType> entities_,
-                   std::map<std::string, shared_ptr<Enum>> enums_)
+                   transparent_map<std::string, shared_ptr<Enum>> enums_)
 
     : commands(std::move(commands_)), enums(std::move(enums_)), entities(std::move(entities_))
 {
@@ -340,7 +340,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                 if(arg_node.is_annotated())
                     Expects(arg_node.maybe_annotation<const int32_t&>());
                 else
-                    arg_node.set_annotation(static_cast<int32_t>(std::stoi(arg_node.text(), nullptr, 0)));
+                    arg_node.set_annotation(static_cast<int32_t>(std::stoi(arg_node.text().to_string(), nullptr, 0)));
                 break;
             }
 
@@ -349,7 +349,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                 if(arg_node.is_annotated())
                     Expects(arg_node.maybe_annotation<const float&>());
                 else
-                    arg_node.set_annotation(std::stof(arg_node.text()));
+                    arg_node.set_annotation(std::stof(arg_node.text().to_string()));
                 break;
             }
 
@@ -387,7 +387,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                             if(idx_node.is_annotated())
                                 Expects(idx_node.maybe_annotation<const int32_t&>());
                             else
-                                idx_node.set_annotation(static_cast<int32_t>(std::stoi(idx_node.text(), nullptr, 0)));
+                                idx_node.set_annotation(static_cast<int32_t>(std::stoi(idx_node.text().to_string(), nullptr, 0)));
                             break;
                         case NodeType::Identifier:
                             if(auto opt_var_idx = symbols.find_var(idx_node.text(), scope_ptr))
@@ -485,7 +485,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                                 program.error(arg_node, "XXX string identifier too long, max size is {}", text_limit);
                             }
 
-                            arg_node.set_annotation(TextLabelAnnotation { arg.type != ArgType::TextLabel, arg_node.text() });
+                            arg_node.set_annotation(TextLabelAnnotation { arg.type != ArgType::TextLabel, arg_node.text().to_string() });
                         }
                     }
                     else
@@ -580,7 +580,7 @@ void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope
     return ::annotate_internal(*this, symbols, scope_ptr, script, program, command, begin, end);
 }
 
-optional<int32_t> Commands::find_constant(const std::string& value, bool context_free_only) const
+optional<int32_t> Commands::find_constant(const string_view& value, bool context_free_only) const
 {
     // TODO mayyybe speed up this? we didn't profile or anything.
     for(auto& enum_pair : enums)
@@ -594,7 +594,7 @@ optional<int32_t> Commands::find_constant(const std::string& value, bool context
     return nullopt;
 }
 
-optional<int32_t> Commands::find_constant_all(const std::string& value) const
+optional<int32_t> Commands::find_constant_all(const string_view& value) const
 {
     // TODO mayyybe speed up this? we didn't profile or anything.
     for(auto& enum_pair : enums)
@@ -606,7 +606,7 @@ optional<int32_t> Commands::find_constant_all(const std::string& value) const
 }
 
 
-optional<int32_t> Commands::find_constant_for_arg(const std::string& value, const Command::Arg& arg) const
+optional<int32_t> Commands::find_constant_for_arg(const string_view& value, const Command::Arg& arg) const
 {
     if(arg.type == ArgType::Constant)
     {
@@ -689,7 +689,7 @@ static ArgType xml_to_argtype(const char* string)
         throw ConfigError("Unexpected Type attribute: {}", string);
 }
 
-static void parse_enum_node(std::map<std::string, shared_ptr<Enum>>& enums, const rapidxml::xml_node<>* enum_node)
+static void parse_enum_node(transparent_map<std::string, shared_ptr<Enum>>& enums, const rapidxml::xml_node<>* enum_node)
 {
     using namespace rapidxml;
 
@@ -737,7 +737,7 @@ static std::pair<std::string, Command>
   parse_command_node(
       const rapidxml::xml_node<>* cmd_node,
       std::map<std::string, EntityType>& entities,
-      const std::map<std::string, shared_ptr<Enum>>& enums)
+      const transparent_map<std::string, shared_ptr<Enum>>& enums)
 {
     using namespace rapidxml;
 
@@ -834,9 +834,9 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
     std::vector<XmlData> xml_vector;
     std::vector<std::pair<int, xml_node<>*>> xml_sections;
 
-    std::multimap<std::string, Command>     commands;
-    std::map<std::string, EntityType>       entities;
-    std::map<std::string, shared_ptr<Enum>> enums;
+    transparent_multimap<std::string, Command>     commands;
+    std::map<std::string, EntityType>              entities;
+    transparent_map<std::string, shared_ptr<Enum>> enums;
 
     // fundamental enums
     enums.emplace("MODEL", std::make_shared<Enum>(Enum { {}, false, }));
