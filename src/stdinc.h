@@ -22,6 +22,7 @@
 #include "cpp/optional.hpp"
 #include "cpp/filesystem.hpp"
 #include "cpp/scope_guard.hpp"
+#include "cpp/string_view.hpp"
 #include "cpp/icompare.hpp"
 #include "cpp/contracts.hpp"
 #include "cpp/file.hpp"
