@@ -1,14 +1,6 @@
 #pragma once
 #include "stdinc.h"
 
-// forward ANTLR structs
-struct gta3scriptLexer_Ctx_struct;
-struct gta3scriptParser_Ctx_struct;
-struct ANTLR3_COMMON_TOKEN_STREAM_struct;
-struct ANTLR3_COMMON_TOKEN_struct;
-struct ANTLR3_INPUT_STREAM_struct;
-struct ANTLR3_BASE_TREE_struct;
-
 struct ParserContext;
 
 #include "grammar/autogen/gta3scriptsTokens.hpp"
@@ -275,9 +267,6 @@ protected:
         shared_ptr<std::string>     filename;   //< Name of the input file. Stored also here because tstream may get deallocated.
         weak_ptr<const TokenStream> tstream;    //< Input token stream, if still allocated.
     };
-
-    static std::shared_ptr<SyntaxTree> from_raw_tree(ANTLR3_BASE_TREE_struct*,
-                                                     const shared_ptr<InputStream>& instream = nullptr);
 
 private:
 

@@ -77,7 +77,8 @@ set(GTA3SC_SRC_MAIN
   src/disassembler.hpp
   src/error.hpp
   src/main.cpp
-  src/parser.cpp
+  src/parser_lexer.cpp
+  src/parser_syntax.cpp
   src/parser.hpp
   src/program.cpp
   src/program.hpp
