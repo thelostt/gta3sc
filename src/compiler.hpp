@@ -303,6 +303,8 @@ private:
             case NodeType::LVAR_TEXT_LABEL16:
                 // Nothing to do, vars already known from symbol table.
                 break;
+            case NodeType::Ignore:
+                break;
             default:
                 Unreachable();
         }

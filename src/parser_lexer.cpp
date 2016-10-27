@@ -156,7 +156,7 @@ static void lex_command(LexerContext& lexer, const char* begin, const char* end,
     };
 
     #define DEFINE_KEYCOMMAND(kw)       KeyCommand { #kw, sizeof(#kw) - 1, Token::##kw }
-    #define DEFINE_KEYSYMBOL(sym, tok)  KeyCommand { #sym, sizeof(#sym) - 1, tok }
+    #define DEFINE_KEYSYMBOL(sym, tok)  KeyCommand { sym, sizeof(sym) - 1, tok }
     static const KeyCommand keycommands[] = {
         DEFINE_KEYSYMBOL("{", Token::ScopeBegin),
         DEFINE_KEYSYMBOL("}", Token::ScopeEnd),
@@ -454,6 +454,10 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
         lex_newline(lexer, it, end, begin_pos + std::distance(const_buffer_ptr, it));
         return;
     }
+
+    // it == end
+    lex_newline(lexer, it, end, begin_pos + std::distance(const_buffer_ptr, it));
+    return;
 }
 
 static void lex(LexerContext& lexer, const char* begin, const char* end)
@@ -583,4 +587,41 @@ std::string TokenStream::to_string() const
         output += fmt::format("({}) '{}'\n", (int)(token.type), std::string(this->data.c_str() + token.begin, this->data.c_str() + token.end));
     }
     return output;
+}
+
+auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifier, std::string>
+{
+    size_t begin_index = std::string::npos;
+    bool is_number_index = true;
+
+    for(size_t i = 0; i < value.size(); ++i)
+    {
+        if(value[i] == '[')
+        {
+            begin_index = i;
+        }
+        else if(value[i] == ']')
+        {
+            auto ident = value.substr(0, begin_index);
+            auto index = value.substr(begin_index + 1,  i - (begin_index + 1));
+            try
+            {
+                if(is_number_index)
+                    return Miss2Identifier { ident.to_string(), std::stoi(index.to_string()) };
+                else
+                    return Miss2Identifier { ident.to_string(), index.to_string() };
+            }
+            catch(const std::out_of_range&)
+            {
+                return make_unexpected<std::string>("XXX index out of range");
+            }
+        }
+        else if(begin_index != std::string::npos)
+        {
+            if(value[i] < '0' || value[i] > '9')
+                is_number_index = false;
+        }
+    }
+
+    return Miss2Identifier { value.to_string(), nullopt };
 }

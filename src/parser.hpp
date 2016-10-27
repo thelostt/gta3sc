@@ -7,6 +7,14 @@ struct ParserContext;
 #include "grammar/autogen/gta3scriptsTokens.hpp"
 using NodeType = Token;
 
+struct Miss2Identifier
+{
+    std::string                         identifier;
+    optional<variant<int, std::string>> index;
+
+    static auto match(const string_view& value) -> expected<Miss2Identifier, std::string>;
+};
+
 class TokenStream : public std::enable_shared_from_this<TokenStream>
 {
 public:
@@ -15,6 +23,12 @@ public:
         Token  type;    //< Type of token
         size_t begin;   //< Offset for token in TokenStream::data
         size_t end;     //< Offset for token in TokenStream::data (end)
+    };
+
+    struct TokenInfo
+    {
+        shared_ptr<const TokenStream> tstream;
+        TokenData                     token;
     };
 
 public:
@@ -84,6 +98,7 @@ public:
     /// Text associated with the token in this node.
     string_view text() const
     {
+        Expects(this->instream != nullptr);
         auto source_data = this->instream->tstream.lock()->data.c_str();
         return string_view(source_data + this->token.begin, this->token.end - this->token.begin);
     }
@@ -91,7 +106,9 @@ public:
     /// Checks if `text().empty()`.
     bool has_text() const
     {
-        return this->token.begin != this->token.end;
+        if(this->instream)
+            return (this->token.begin != this->token.end);
+        return false;
     }
 
     /// Iterator to childs (begin).
@@ -137,6 +154,18 @@ public:
     {
         child->parent_ = std::weak_ptr<SyntaxTree>(this->shared_from_this());
         this->childs.emplace_back(std::move(child));
+    }
+
+    // Steals the childs from the other tree.
+    void take_childs(shared_ptr<SyntaxTree>& other)
+    {
+        for(auto& child : other->childs)
+        {
+            child->parent_ = std::weak_ptr<SyntaxTree>(this->shared_from_this());
+            this->childs.emplace_back(child);
+        }
+
+        other->childs.clear();
     }
 
     /// Performs a pre-ordered depth-first traversal on this tree.
@@ -205,6 +234,7 @@ public:
     /// Offset to this token in the input stream data.
     size_t offset() const
     {
+        Expects(this->instream != nullptr);
         return this->token.begin;
     }
 
@@ -224,21 +254,26 @@ protected:
 
 private:
     NodeType                                    type_;  // const NodeType
-    TokenStream::TokenData                      token;
+    TokenStream::TokenData                      token;      // invalid if (instream == nullptr)
+    shared_ptr<InputStream>                     instream;   // may be nullptr
     std::vector<std::shared_ptr<SyntaxTree>>    childs;
     optional<std::weak_ptr<SyntaxTree>>         parent_;
     any                                         udata;
-    shared_ptr<InputStream>                     instream;
+
 
 public:
     explicit SyntaxTree(NodeType type, any udata)
-        : type_(type), udata(udata), instream(nullptr)
+        : type_(type), instream(nullptr), udata(udata)
     {
-        // this->token will be trash, fix it? TODO
     }
 
     explicit SyntaxTree(NodeType type, shared_ptr<InputStream>& instream, const TokenStream::TokenData& token)
         : type_(type), instream(instream), token(token)
+    {
+    }
+
+    explicit SyntaxTree(NodeType type)
+        : type_(type), instream(nullptr)
     {
     }
 };

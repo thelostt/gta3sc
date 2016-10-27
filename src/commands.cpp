@@ -1,3 +1,4 @@
+#include "stdinc.h"
 #include "commands.hpp"
 #include "symtable.hpp"
 #include "error.hpp"

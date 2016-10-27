@@ -120,6 +120,16 @@ inline std::string format_error(const char* type,
 }
 
 template<typename... Args>
+inline std::string format_error(const char* type, const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
+{
+    size_t lineno, colno;
+    std::tie(lineno, colno) = context.tstream->linecol_from_offset(context.token.begin);
+    return format_error(type, context.tstream,
+                              context.tstream->stream_name.c_str(), lineno, colno,
+                              msg, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
 inline std::string format_error(const char* type, const SyntaxTree& base_context, const char* msg, Args&&... args)
 {
     const SyntaxTree* context = &base_context;
@@ -138,6 +148,11 @@ inline std::string format_error(const char* type, const SyntaxTree& base_context
                 break;
             }
         }
+    }
+
+    if(context->token_stream().expired()) // !context->has_text()
+    {
+        return format_error("internal_error", nocontext, "context->token_stream() == nullptr during format_error");
     }
 
     size_t lineno, colno;
@@ -169,6 +184,11 @@ inline std::string format_error(const char* type, tag_nocontext_t, const char* m
 class ProgramError
 {
 public:
+    template<typename... Args>
+    ProgramError(const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
+        : message_(format_error("error", context, msg, std::forward<Args>(args)...))
+    {}
+
     template<typename... Args>
     ProgramError(const SyntaxTree& context, const char* msg, Args&&... args)
         : message_(format_error("error", context, msg, std::forward<Args>(args)...))
@@ -239,6 +259,12 @@ public:
 
     template<typename... Args>
     void error(const SyntaxTree& context, const char* msg, Args&&... args)
+    {
+        return error(ProgramError(context, msg, std::forward<Args>(args)...));
+    }
+
+    template<typename... Args>
+    void error(const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
     {
         return error(ProgramError(context, msg, std::forward<Args>(args)...));
     }

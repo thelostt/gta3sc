@@ -20,6 +20,9 @@ if(CMAKE_COMPILER_IS_CLANGXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-parentheses-equality -Wno-tautological-compare")
 endif()
 
+# MSVC ITERATOR_DEBUG_LEVEL=2 breaks expected-lite
+add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
+
 include_directories(
   deps
   deps/rapidxml
@@ -34,37 +37,6 @@ include_directories(
 
 add_library(cppformat
   deps/cppformat/cppformat/format.cc
-)
-
-add_library(antlr3
-  deps/libantlr3c-3.4/src/antlr3baserecognizer.c
-  deps/libantlr3c-3.4/src/antlr3basetreeadaptor.c
-  deps/libantlr3c-3.4/src/antlr3basetree.c
-  deps/libantlr3c-3.4/src/antlr3bitset.c
-  deps/libantlr3c-3.4/src/antlr3collections.c
-  deps/libantlr3c-3.4/src/antlr3commontoken.c
-  deps/libantlr3c-3.4/src/antlr3commontreeadaptor.c
-  deps/libantlr3c-3.4/src/antlr3commontree.c
-  deps/libantlr3c-3.4/src/antlr3commontreenodestream.c
-  deps/libantlr3c-3.4/src/antlr3convertutf.c
-  deps/libantlr3c-3.4/src/antlr3cyclicdfa.c
-  #deps/libantlr3c-3.4/src/antlr3debughandlers.c
-  deps/libantlr3c-3.4/src/antlr3encodings.c
-  deps/libantlr3c-3.4/src/antlr3exception.c
-  deps/libantlr3c-3.4/src/antlr3filestream.c
-  deps/libantlr3c-3.4/src/antlr3inputstream.c
-  deps/libantlr3c-3.4/src/antlr3intstream.c
-  deps/libantlr3c-3.4/src/antlr3lexer.c
-  deps/libantlr3c-3.4/src/antlr3parser.c
-  deps/libantlr3c-3.4/src/antlr3rewritestreams.c
-  deps/libantlr3c-3.4/src/antlr3string.c
-  deps/libantlr3c-3.4/src/antlr3tokenstream.c
-  deps/libantlr3c-3.4/src/antlr3treeparser.c
-)
-
-set(GTA3SC_SRC_AUTOGEN
-  src/grammar/autogen/gta3scriptLexer.c
-  src/grammar/autogen/gta3scriptParser.c
 )
 
 set(GTA3SC_SRC_MAIN
@@ -100,14 +72,14 @@ set(GTA3SC_SRC_MISC
   src/cpp/scope_guard.hpp
   src/cpp/variant.hpp
   src/cpp/string_view.hpp
+  src/cpp/small_vector.hpp
 )
 
-add_executable(gta3sc ${GTA3SC_SRC_MISC} ${GTA3SC_SRC_AUTOGEN} ${GTA3SC_SRC_MAIN})
-source_group("autogen" FILES ${GTA3SC_SRC_AUTOGEN})
+add_executable(gta3sc ${GTA3SC_SRC_MISC} ${GTA3SC_SRC_MAIN})
 source_group("cpp" FILES ${GTA3SC_SRC_MISC})
 source_group("" FILES ${GTA3SC_SRC_MAIN})
 
-target_link_libraries(gta3sc cppformat antlr3)
+target_link_libraries(gta3sc cppformat)
 
 if(CMAKE_COMPILER_IS_GNUXX OR CMAKE_COMPILER_IS_CLANGXX)
   target_link_libraries(gta3sc stdc++fs)
