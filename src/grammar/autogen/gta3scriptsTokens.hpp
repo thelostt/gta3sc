@@ -62,9 +62,16 @@ enum class Token
 	WHILE = 96,
 
 
-    // Manually added
+    // Manually added (tokens)
     ScopeBegin = 1000,
     ScopeEnd,
+    EqPlus,
+    EqMinus,
+    EqTimes,
+    EqDivide,
+    EqTimedPlus,
+    EqTimedMinus,
+
 
     // Aliases manually added
     NewLine = Ignore,

@@ -276,4 +276,6 @@ public:
         : type_(type), instream(nullptr)
     {
     }
+
+    shared_ptr<SyntaxTree> clone();
 };

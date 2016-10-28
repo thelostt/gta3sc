@@ -22,6 +22,78 @@ struct LexerContext
     {}
 };
 
+struct KeyCommand
+{
+    const char* keyword;
+    size_t      length;
+    Token       token;
+};
+
+#define DEFINE_KEYCOMMAND(kw)       KeyCommand { #kw, sizeof(#kw) - 1, Token::##kw }
+#define DEFINE_KEYSYMBOL(sym, tok)  KeyCommand { sym, sizeof(sym) - 1, tok }
+static const KeyCommand keycommands[] = {
+    DEFINE_KEYSYMBOL("{", Token::ScopeBegin),
+    DEFINE_KEYSYMBOL("}", Token::ScopeEnd),
+    //DEFINE_KEYCOMMAND(NOT),
+    //DEFINE_KEYCOMMAND(AND),
+    //DEFINE_KEYCOMMAND(OR),
+    //DEFINE_KEYCOMMAND(IF),
+    DEFINE_KEYCOMMAND(ELSE),
+    DEFINE_KEYCOMMAND(ENDIF),
+    //DEFINE_KEYCOMMAND(WHILE),
+    DEFINE_KEYCOMMAND(ENDWHILE),
+    DEFINE_KEYCOMMAND(REPEAT),
+    DEFINE_KEYCOMMAND(ENDREPEAT),
+    DEFINE_KEYCOMMAND(SWITCH),
+    DEFINE_KEYCOMMAND(ENDSWITCH),
+    DEFINE_KEYCOMMAND(CASE),
+    DEFINE_KEYCOMMAND(DEFAULT),
+    DEFINE_KEYCOMMAND(BREAK),
+    DEFINE_KEYCOMMAND(CONTINUE),
+    DEFINE_KEYCOMMAND(MISSION_START),
+    DEFINE_KEYCOMMAND(MISSION_END),
+    DEFINE_KEYCOMMAND(SCRIPT_START),
+    DEFINE_KEYCOMMAND(SCRIPT_END),
+    DEFINE_KEYCOMMAND(VAR_INT),
+    DEFINE_KEYCOMMAND(LVAR_INT),
+    DEFINE_KEYCOMMAND(VAR_FLOAT),
+    DEFINE_KEYCOMMAND(LVAR_FLOAT),
+    DEFINE_KEYCOMMAND(VAR_TEXT_LABEL),
+    DEFINE_KEYCOMMAND(LVAR_TEXT_LABEL),
+    DEFINE_KEYCOMMAND(VAR_TEXT_LABEL16),
+    DEFINE_KEYCOMMAND(LVAR_TEXT_LABEL16),
+};
+
+static const KeyCommand expr_symbols[] = {
+    // Order matters (by length)
+    // 3-length
+    DEFINE_KEYSYMBOL("+=@", Token::EqTimedPlus),
+    DEFINE_KEYSYMBOL("-=@", Token::EqTimedMinus),
+    // 2-length
+    DEFINE_KEYSYMBOL("+=", Token::EqPlus),
+    DEFINE_KEYSYMBOL("-=", Token::EqMinus),
+    DEFINE_KEYSYMBOL("*=", Token::EqTimes),
+    DEFINE_KEYSYMBOL("/=", Token::EqDivide),
+    DEFINE_KEYSYMBOL("++", Token::Increment),
+    DEFINE_KEYSYMBOL("--", Token::Decrement),
+    DEFINE_KEYSYMBOL("=#", Token::Cast),
+    DEFINE_KEYSYMBOL("+@", Token::TimedPlus),
+    DEFINE_KEYSYMBOL("-@", Token::TimedMinus),
+    DEFINE_KEYSYMBOL("<=", Token::LesserEqual),
+    DEFINE_KEYSYMBOL(">=", Token::GreaterEqual),
+    // 1-length
+    DEFINE_KEYSYMBOL("=", Token::Equal),
+    DEFINE_KEYSYMBOL("+", Token::Plus),
+    DEFINE_KEYSYMBOL("-", Token::Minus),
+    DEFINE_KEYSYMBOL("*", Token::Times),
+    DEFINE_KEYSYMBOL("/", Token::Divide),
+    DEFINE_KEYSYMBOL("<", Token::Lesser),
+    DEFINE_KEYSYMBOL(">", Token::Greater),
+};
+#undef DEFINE_KEYCOMMAND
+#undef DEFINE_KEYSYMBOL
+
+
 static bool lex_iswhite(int c)
 {
     return c == ' ' || c == '\t' || c == '(' || c == ')' || c == ',' || c == '\r';
@@ -143,55 +215,43 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
 
 static void lex_expr(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos)
 {
-    // TODO
+    for(auto it = begin; it != end; )
+    {
+        if(lex_iswhite(*it))
+        {
+            ++it;
+            continue;
+        }
+
+        bool found_symbol  = false;
+        size_t length_left = (size_t)(std::distance(it, end));
+
+        for(auto& symbol : expr_symbols)
+        {
+            if(length_left >= symbol.length
+            && !strncmp(it, symbol.keyword, symbol.length))
+            {
+                size_t pos = (begin_pos + std::distance(begin, it));
+                lexer.tokens.emplace_back(TokenData{ symbol.token, pos, pos + symbol.length });
+                it += symbol.length;
+                found_symbol = true;
+                break;
+            }
+        }
+
+        if(found_symbol)
+            continue;
+
+        auto tok_begin = it;
+        while(it != end && !lex_iswhite(*it) && !lex_isexprc(*it)) ++it;
+        auto tok_end = it;
+
+        it = lex_token(lexer, tok_begin, tok_end, begin_pos + std::distance(begin, tok_begin));
+    }
 }
 
 static void lex_command(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos, bool had_keycommand)
 {
-    struct KeyCommand
-    {
-        const char* keyword;
-        size_t      length;
-        Token       token;
-    };
-
-    #define DEFINE_KEYCOMMAND(kw)       KeyCommand { #kw, sizeof(#kw) - 1, Token::##kw }
-    #define DEFINE_KEYSYMBOL(sym, tok)  KeyCommand { sym, sizeof(sym) - 1, tok }
-    static const KeyCommand keycommands[] = {
-        DEFINE_KEYSYMBOL("{", Token::ScopeBegin),
-        DEFINE_KEYSYMBOL("}", Token::ScopeEnd),
-        //DEFINE_KEYCOMMAND(NOT),
-        //DEFINE_KEYCOMMAND(AND),
-        //DEFINE_KEYCOMMAND(OR),
-        //DEFINE_KEYCOMMAND(IF),
-        DEFINE_KEYCOMMAND(ELSE),
-        DEFINE_KEYCOMMAND(ENDIF),
-        //DEFINE_KEYCOMMAND(WHILE),
-        DEFINE_KEYCOMMAND(ENDWHILE),
-        DEFINE_KEYCOMMAND(REPEAT),
-        DEFINE_KEYCOMMAND(ENDREPEAT),
-        DEFINE_KEYCOMMAND(SWITCH),
-        DEFINE_KEYCOMMAND(ENDSWITCH),
-        DEFINE_KEYCOMMAND(CASE),
-        DEFINE_KEYCOMMAND(DEFAULT),
-        DEFINE_KEYCOMMAND(BREAK),
-        DEFINE_KEYCOMMAND(CONTINUE),
-        DEFINE_KEYCOMMAND(MISSION_START),
-        DEFINE_KEYCOMMAND(MISSION_END),
-        DEFINE_KEYCOMMAND(SCRIPT_START),
-        DEFINE_KEYCOMMAND(SCRIPT_END),
-        DEFINE_KEYCOMMAND(VAR_INT),
-        DEFINE_KEYCOMMAND(LVAR_INT),
-        DEFINE_KEYCOMMAND(VAR_FLOAT),
-        DEFINE_KEYCOMMAND(LVAR_FLOAT),
-        DEFINE_KEYCOMMAND(VAR_TEXT_LABEL),
-        DEFINE_KEYCOMMAND(LVAR_TEXT_LABEL),
-        DEFINE_KEYCOMMAND(VAR_TEXT_LABEL16),
-        DEFINE_KEYCOMMAND(LVAR_TEXT_LABEL16),
-    };
-    #undef DEFINE_KEYCOMMAND
-    #undef DEFINE_KEYSYMBOL
-
     auto it = begin;
     if(auto opt_cmdtok = lex_gettok(it, end))
     {
@@ -340,7 +400,8 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
         {
             auto& first_token = *opt_first_token;
 
-            if(!strncasecmp(first_token.first, "IF", first_token.second))
+            if(first_token.second == sizeof("IF") - 1
+                && !strncasecmp(first_token.first, "IF", first_token.second))
             {
                 size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
                 size_t tok_end   = tok_begin + first_token.second;
@@ -350,7 +411,8 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
                 it = lex_skiptok(first_token.first + first_token.second, end);
                 had_keycommand = true;
             }
-            else if(!strncasecmp(first_token.first, "WHILE", first_token.second))
+            else if(first_token.second == sizeof("WHILE") - 1
+                && !strncasecmp(first_token.first, "WHILE", first_token.second))
             {
                 size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
                 size_t tok_end   = tok_begin + first_token.second;
@@ -370,7 +432,8 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
         {
             auto& first_token = *opt_first_token;
 
-            if(!strncasecmp(first_token.first, "AND", first_token.second))
+            if(first_token.second == sizeof("AND") - 1
+                && !strncasecmp(first_token.first, "AND", first_token.second))
             {
                 size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
                 size_t tok_end   = tok_begin + first_token.second;
@@ -380,7 +443,8 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
                 it = lex_skiptok(first_token.first + first_token.second, end);
                 had_keycommand = true;
             }
-            else if(!strncasecmp(first_token.first, "OR", first_token.second))
+            else if(first_token.second == sizeof("OR") - 1
+                && !strncasecmp(first_token.first, "OR", first_token.second))
             {
                 size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
                 size_t tok_end   = tok_begin + first_token.second;
@@ -400,7 +464,8 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
         {
             auto& first_token = *opt_first_token;
 
-            if(!strncasecmp(first_token.first, "NOT", first_token.second))
+            if(first_token.second == sizeof("NOT") - 1
+                && !strncasecmp(first_token.first, "NOT", first_token.second))
             {
                 size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
                 size_t tok_end   = tok_begin + first_token.second;
