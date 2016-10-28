@@ -63,6 +63,7 @@ public:
 private:
     ProgramContext&         program;
     std::vector<size_t>     line_offset;
+    size_t                  max_offset;
 
     explicit TokenStream(ProgramContext&, optional<std::string> data, const char* stream_name);
     explicit TokenStream(ProgramContext&, const char* stream_name, std::string data, std::vector<TokenData>);

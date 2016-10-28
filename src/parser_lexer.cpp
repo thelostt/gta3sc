@@ -99,9 +99,19 @@ static bool lex_iswhite(int c)
     return c == ' ' || c == '\t' || c == '(' || c == ')' || c == ',' || c == '\r';
 }
 
-static bool lex_isexprc(int c)
+static bool lex_isexprc(const char* it, const char* end)
 {
-    return c == '+' || c == '-' || c == '*' || c == '/' || c == '=' || c == '<' || c == '>';
+    if(*it == '-')
+    {
+        auto next = std::next(it);
+        if(next != end)
+        {
+            if(*next == '.' || (*next >= '0' && *next <= '9'))
+                return false;
+        }
+        return true;
+    }
+    return (*it == '+' || *it == '*' || *it == '/' || *it == '=' || *it == '<' || *it == '>');
 }
 
 static auto lex_gettok(const char* begin, const char* end) -> optional<std::pair<const char*, size_t>>
@@ -145,6 +155,14 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
         {
             auto tok_pair = lex_gettok(begin, end).value();
             auto tok_end = (tok_pair.first + tok_pair.second);
+
+            // e.g. 4x4_1.sc is a identifier, not a number
+            if(tok_pair.second >= 3 && !strncasecmp(tok_end - 3, ".sc", 3))
+            {
+                it = tok_pair.first + tok_pair.second;
+                lexer.tokens.emplace_back(TokenData{ Token::Identifier, begin_pos, begin_pos + std::distance(begin, it) });
+                return it;
+            }
 
             bool is_float = false;
             bool has_error = false;
@@ -229,6 +247,7 @@ static void lex_expr(LexerContext& lexer, const char* begin, const char* end, si
         for(auto& symbol : expr_symbols)
         {
             if(length_left >= symbol.length
+            && lex_isexprc(it, end) // for special minus checking
             && !strncmp(it, symbol.keyword, symbol.length))
             {
                 size_t pos = (begin_pos + std::distance(begin, it));
@@ -243,7 +262,7 @@ static void lex_expr(LexerContext& lexer, const char* begin, const char* end, si
             continue;
 
         auto tok_begin = it;
-        while(it != end && !lex_iswhite(*it) && !lex_isexprc(*it)) ++it;
+        while(it != end && !lex_iswhite(*it) && !lex_isexprc(it, end)) ++it;
         auto tok_end = it;
 
         it = lex_token(lexer, tok_begin, tok_end, begin_pos + std::distance(begin, tok_begin));
@@ -483,7 +502,7 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
     {
         auto begin_expr = it;
 
-        if(lex_isexprc(*it))
+        if(lex_isexprc(it, end))
         {
             lex_expr(lexer, begin_expr, end, begin_pos + std::distance(const_buffer_ptr, begin_expr));
             lex_newline(lexer, begin_expr, end, begin_pos + std::distance(const_buffer_ptr, begin_expr));
@@ -491,7 +510,7 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
         }
 
         auto tok_begin = it;
-        while(it != end && !lex_iswhite(*it) && !lex_isexprc(*it)) ++it;
+        while(it != end && !lex_iswhite(*it) && !lex_isexprc(it, end)) ++it;
         auto tok_end = it;
 
         assert(tok_begin != tok_end);
@@ -500,7 +519,7 @@ static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos
         {
             while(it != end && lex_iswhite(*it)) ++it;
 
-            if(it != end && lex_isexprc(*it))
+            if(it != end && lex_isexprc(it, end))
             {
                 lex_expr(lexer, begin_expr, end, begin_pos + std::distance(const_buffer_ptr, begin_expr));
                 lex_newline(lexer, begin_expr, end, begin_pos + std::distance(const_buffer_ptr, begin_expr));
@@ -600,6 +619,7 @@ void TokenStream::calc_lines()
     }
 
     this->line_offset.shrink_to_fit();
+    this->max_offset = this->data.size();
 }
 
 std::string TokenStream::get_line(size_t lineno) const
@@ -628,7 +648,7 @@ auto TokenStream::linecol_from_offset(size_t offset) const -> std::pair<size_t, 
     for(auto it = line_offset.begin(), end = line_offset.end(); it != end; ++it)
     {
         auto next_it = std::next(it);
-        size_t next_line_offset = (next_it != end)? *next_it : SIZE_MAX;
+        size_t next_line_offset = (next_it != end)? *next_it : this->max_offset;
         
         if(offset >= *it && offset < next_line_offset)
         {

@@ -29,16 +29,16 @@ struct ParserSuccess
 
 struct ParserError
 {
-    ParserStatus     state;
+    ParserStatus    state;
     std::string     error;
-    token_iterator  it_stop;
+    token_iterator  context;
 
-    ParserError(ParserStatus state) :
-        state(state)
+    explicit ParserError(ParserStatus state, token_iterator context) :
+        state(state), context(std::move(context))
     {}
 
-    explicit ParserError(ParserStatus state, token_iterator it_stop, std::string error) :
-        state(state), it_stop(std::move(it_stop)), error(std::move(error))
+    explicit ParserError(ParserStatus state, token_iterator context, std::string error) :
+        state(state), context(std::move(context)), error(std::move(error))
     {}
 };
 
@@ -58,7 +58,7 @@ struct ParserContext
 };
 
 
-using ParserFailure = small_vector<ParserError, 1>;
+using ParserFailure = std::vector<ParserError>; // TODO small_vector<ParserError, 1>
 
 using ParserState = variant<ParserSuccess, ParserFailure>;
 
@@ -70,9 +70,11 @@ using ParserRule = ParserResult(*)(ParserContext&, token_iterator, token_iterato
 static ParserResult parse_command_statement(ParserContext& parser, token_iterator begin, token_iterator end);
 static ParserResult parse_statement(ParserContext& parser, token_iterator begin, token_iterator end);
 
-static auto make_error(ParserError error) -> ParserState
+template<typename... Args>
+static auto make_error(Args&&... args) -> ParserState
 {
-    return ParserState(ParserFailure { std::move(error) });
+    auto e = ParserError(std::forward<Args>(args)...);
+    return ParserState(ParserFailure{ std::move(e) });
 }
 
 static void add_error(ParserState& opt, ParserError e)
@@ -116,7 +118,7 @@ static bool expect_newline(ParserState& state, token_iterator it, token_iterator
 {
     if(it != end && it->type != Token::NewLine)
     {
-        add_error(state, make_error(ParserError(ParserStatus::Error, std::prev(it), "XXX expected newline after this token")));
+        add_error(state, make_error(ParserStatus::Error, std::prev(it), "XXX expected newline after this token"));
         return false;
     }
     return true;
@@ -133,7 +135,7 @@ static bool expect_endtoken(ParserState& state, token_iterator begin, token_iter
                            type == Token::ENDSWITCH? "ENDSWITCH" :
                            throw std::logic_error("Missing expect_endtoken implementation");
 
-        add_error(state, make_error(ParserError(ParserStatus::Error, begin, fmt::format("XXX missing {} for this", what))));
+        add_error(state, make_error(ParserStatus::Error, begin, fmt::format("XXX missing {} for this", what)));
         return false;
     }
     return true;
@@ -147,7 +149,7 @@ static ParserState giveup_to_expected(ParserState state, const char* what)
         for(auto& e : get<ParserFailure>(state))
         {
             if(e.state == ParserStatus::GiveUp)
-                add_error(new_state, ParserError(ParserStatus::Error, e.it_stop, fmt::format("expected {}", what)));
+                add_error(new_state, ParserError(ParserStatus::Error, e.context, fmt::format("expected {}", what)));
             else
                 add_error(new_state, std::move(e)); 
         }
@@ -170,7 +172,7 @@ static token_iterator parser_aftertoken(token_iterator it, token_iterator end, T
 static ParserResult parse_oneof(ParserContext& parser,
                                  token_iterator begin, token_iterator end)
 {
-    return std::make_pair(end, make_error(ParserError(ParserStatus::GiveUp, begin, "")));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin, ""));
 }
 
 template<typename RuleFunc, typename... Args>
@@ -244,7 +246,7 @@ static ParserResult parse_newline(ParserContext& parser, token_iterator begin, t
     {
         return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Ignore, parser.instream, *begin)));
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 static ParserResult parse_identifier(ParserContext& parser, token_iterator begin, token_iterator end)
@@ -253,7 +255,7 @@ static ParserResult parse_identifier(ParserContext& parser, token_iterator begin
     {
         return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Identifier, parser.instream, *begin)));
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
@@ -298,7 +300,7 @@ static ParserResult parse_scope_statement(ParserContext& parser, token_iterator 
             return std::make_pair(it, std::move(state));
         }
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
@@ -315,7 +317,7 @@ static ParserResult parse_argument(ParserContext& parser, token_iterator begin, 
 {
     if(begin == end)
     {
-        return std::make_pair(end, make_error(ParserStatus::GiveUp));
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
     }
     else if(begin->type == Token::Integer)
     {
@@ -337,7 +339,7 @@ static ParserResult parse_argument(ParserContext& parser, token_iterator begin, 
         shared_ptr<SyntaxTree> node(new SyntaxTree(NodeType::String, parser.instream, *begin));
         return std::make_pair(std::next(begin), ParserSuccess(std::move(node)));
     }
-    return std::make_pair(std::next(begin), make_error(ParserStatus::GiveUp));
+    return std::make_pair(std::next(begin), make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
@@ -358,7 +360,7 @@ static ParserResult parse_argument(ParserContext& parser, token_iterator begin, 
 static ParserResult parse_expression_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
     if(begin == end)
-        return std::make_pair(end, make_error(ParserStatus::GiveUp));
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Helper Rules
@@ -379,28 +381,34 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
             auto it = begin;
             std::tie(it, lhs) = match_lhs(parser, it, end);
             
-            if(it != end && (opa = match_op(it->type)))
+            if(!parser_isgiveup(lhs))
             {
-                auto op_it  = it;
-                std::tie(it, rhs) = match_rhs(parser, std::next(it), end);
-
-                add_error(state, giveup_to_expected(lhs, "left of expression"));
-                add_error(state, giveup_to_expected(rhs, "right of expression"));
-
-                if(is<ParserSuccess>(state))
+                if(it != end && (opa = match_op(it->type)))
                 {
-                    shared_ptr<SyntaxTree> tree(new SyntaxTree(opa.value(), parser.instream, *op_it));
-                    tree->add_child(get<ParserSuccess>(lhs).tree);
-                    tree->add_child(get<ParserSuccess>(rhs).tree);
-                    return std::make_pair(it, ParserSuccess(std::move(tree)));
-                }
-                else
-                {
-                    return std::make_pair(it, std::move(state));
+                    auto op_it  = it;
+                    std::tie(it, rhs) = match_rhs(parser, std::next(it), end);
+
+                    if(!parser_isgiveup(rhs))
+                    {
+                        add_error(state, lhs);
+                        add_error(state, rhs);
+
+                        if(is<ParserSuccess>(state))
+                        {
+                            shared_ptr<SyntaxTree> tree(new SyntaxTree(opa.value(), parser.instream, *op_it));
+                            tree->add_child(get<ParserSuccess>(lhs).tree);
+                            tree->add_child(get<ParserSuccess>(rhs).tree);
+                            return std::make_pair(it, ParserSuccess(std::move(tree)));
+                        }
+                        else
+                        {
+                            return std::make_pair(it, std::move(state));
+                        }
+                    }
                 }
             }
         }
-        return std::make_pair(end, make_error(ParserStatus::GiveUp));
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
     };
 
     /*
@@ -424,7 +432,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
                 return std::make_pair(it, std::move(state));
             }
         }
-        return std::make_pair(end, make_error(ParserStatus::GiveUp));
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
     };
 
     /*
@@ -499,7 +507,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
                 }
             }
         }
-        return std::make_pair(end, make_error(ParserStatus::GiveUp));
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
     };
 
     /*
@@ -585,7 +593,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
                 }
             }
         }
-        return std::make_pair(end, make_error(ParserStatus::GiveUp));
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
     };
 
     /*
@@ -642,7 +650,7 @@ static ParserResult parse_actual_command_statement(ParserContext& parser, token_
             return std::make_pair(it, giveup_to_expected(std::move(arguments), "argument"));
         }
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
@@ -738,7 +746,7 @@ static ParserResult parse_keycommand_statement(ParserContext& parser, token_iter
             return std::make_pair(std::next(it), ParserSuccess(new SyntaxTree(type, parser.instream, *begin)));
         }
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
@@ -757,7 +765,7 @@ static ParserResult parse_label_statement(ParserContext& parser, token_iterator 
         tree->add_child(shared_ptr<SyntaxTree> { new SyntaxTree(NodeType::Identifier, parser.instream, temp__) });
         return std::make_pair(std::next(begin), ParserSuccess(std::move(tree)));
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
@@ -805,7 +813,7 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
 
             if(is<ParserSuccess>(idents) && get<ParserSuccess>(idents).tree->child_count() == 0)
             {
-                return std::make_pair(it, make_error(ParserError(ParserStatus::Error, begin, "XXX expected identifier after this token")));
+                return std::make_pair(it, make_error(ParserStatus::Error, begin, "XXX expected identifier after this token"));
             }
 
             if(is<ParserSuccess>(idents))
@@ -820,7 +828,7 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
             }
         }
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
@@ -846,7 +854,7 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
 static ParserResult parse_condition_list(ParserContext& parser, token_iterator begin, token_iterator end)
 {
     if(begin == end)
-        return std::make_pair(end, make_error(ParserStatus::GiveUp));
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 
     auto match_andor = [](Token type) -> optional<NodeType>
     {
@@ -875,12 +883,9 @@ static ParserResult parse_condition_list(ParserContext& parser, token_iterator b
                 if(!is_andor)
                 {
                     is_andor = true;
-                    if(is<ParserSuccess>(state))
-                    {
-                        shared_ptr<SyntaxTree> newtree(new SyntaxTree(*opt_type));
-                        newtree->add_child(std::move(tree));
-                        tree = std::move(newtree);
-                    }
+                    shared_ptr<SyntaxTree> newtree(new SyntaxTree(*opt_type));
+                    if(tree) newtree->add_child(std::move(tree));
+                    tree = std::move(newtree);
                 }
                 else
                 {
@@ -960,7 +965,7 @@ static ParserResult parse_while_statement(ParserContext& parser, token_iterator 
             return std::make_pair(it, std::move(state));
         }
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
@@ -1033,7 +1038,7 @@ static ParserResult parse_if_statement(ParserContext& parser, token_iterator beg
             return std::make_pair(it, std::move(state));
         }
     }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 
@@ -1113,37 +1118,54 @@ std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const T
 {
     ParserContext parser_ctx(program, tstream);
 
-    ParserResult presult = parser(parser_ctx, tstream.tokens.data(), tstream.tokens.data() + tstream.tokens.size());
+    auto begin = tstream.tokens.data();
+    auto end = tstream.tokens.data() + tstream.tokens.size();
 
-    if(is<ParserSuccess>(presult.second))
+    shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::Block));
+
+    ParserState statement;
+    bool any_error = false;
+
+    for(auto it = begin; it != end; )
+    {
+        std::tie(it, statement) = parse_statement(parser_ctx, it, end);
+        if(is<ParserSuccess>(statement))
+        {
+            if(!any_error)
+                tree->add_child(get<ParserSuccess>(statement).tree);
+        }
+        else
+        {
+            any_error = true;
+            auto state = giveup_to_expected(get<ParserFailure>(statement), "statement");
+            for(auto& fail : get<ParserFailure>(state))
+            {
+                if(fail.context == end)
+                {
+                    program.error(nocontext, fail.error.c_str());
+                }
+                else
+                {
+                    TokenStream::TokenInfo token_info{ tstream.shared_from_this(), *fail.context };
+                    program.error(token_info, fail.error.c_str());
+                }
+            }
+        }
+    }
+
+    if(!any_error)
     {
         if(true)
         {
-            auto& k = get<ParserSuccess>(presult.second);
-            puts(get<ParserSuccess>(presult.second).tree->to_string().c_str());
-            puts("---------------------------\n");
+            //puts(tree->to_string().c_str());
+            //puts("---------------------------\n");
             //throw 0; // TODO remove me
-            return get<ParserSuccess>(presult.second).tree;
+            return tree;
         }
         throw 2; // TODO remove me
     }
     else
     {
-        for(auto& error : get<ParserFailure>(presult.second))
-        {
-            if(error.state == ParserStatus::GiveUp)
-                continue;
-
-            if(error.it_stop == tstream.tokens.data() + tstream.tokens.size()) // == end
-            {
-                program.error(nocontext, error.error.c_str());
-            }
-            else 
-            {
-                TokenStream::TokenInfo token_info{ tstream.shared_from_this(), *error.it_stop };
-                program.error(token_info, error.error.c_str());
-            }
-        }
         throw 1; // TODO remove me
         return nullptr;
     }
