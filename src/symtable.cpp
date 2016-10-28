@@ -623,7 +623,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 }
                 else
                 {
-                    auto& label_name = node.child(0).text();
+                    auto label_name = node.child(0).text();
                     
                     auto opt_label_ptr = table.add_label(label_name.to_string(), current_scope, script.shared_from_this());
                     if(!opt_label_ptr)
@@ -659,7 +659,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                 if(next_scoped_label)
                 {
-                    auto& label_name = next_scoped_label->child(0).text();
+                    auto label_name = next_scoped_label->child(0).text();
                     
                     if(program.opt.pedantic && program.opt.scope_then_label)
                     {
@@ -689,11 +689,12 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
             case NodeType::Command:
             {
-                auto& command_name = node.child(0).text();
+                auto command_name = node.child(0).text();
 
                 uint16_t count_unique_command = 0;
 
                 // TODO use `const Commands&` to identify these?
+		// TODO case sensitivity
                 if(command_name == "LOAD_AND_LAUNCH_MISSION")
                     table.add_script(ScriptType::Mission, node, program);
                 else if(command_name == "LAUNCH_MISSION")
@@ -1167,9 +1168,10 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
             case NodeType::Command:
             {
-                auto& command_name = node.child(0).text();
+                auto command_name = node.child(0).text();
 
                 // TODO use `const Commands&` to identify these?
+		// TODO case sensitivity
                 if(command_name == "SAVE_STRING_TO_DEBUG_FILE")
                 {
                     if(commands.save_string_to_debug_file() && commands.save_string_to_debug_file()->supported)

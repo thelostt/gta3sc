@@ -120,6 +120,18 @@ inline std::string format_error(const char* type,
 }
 
 template<typename... Args>
+inline std::string format_error(const char* type, const Script& script, const char* msg, Args&&... args)
+{
+    return format_error(type, nullptr, script.path.generic_u8string().c_str(), 0, 0, msg, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
+inline std::string format_error(const char* type, tag_nocontext_t, const char* msg, Args&&... args)
+{
+    return format_error(type, nullptr, nullptr, 0, 0, msg, std::forward<Args>(args)...);
+}
+
+template<typename... Args>
 inline std::string format_error(const char* type, const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
 {
     size_t lineno, colno;
@@ -164,18 +176,6 @@ inline std::string format_error(const char* type, const SyntaxTree& base_context
     return format_error(type, context->token_stream().lock(),
                               context->filename().c_str(), lineno, colno,
                               msg, std::forward<Args>(args)...);
-}
-
-template<typename... Args>
-inline std::string format_error(const char* type, const Script& script, const char* msg, Args&&... args)
-{
-    return format_error(type, nullptr, script.path.generic_u8string().c_str(), 0, 0, msg, std::forward<Args>(args)...);
-}
-
-template<typename... Args>
-inline std::string format_error(const char* type, tag_nocontext_t, const char* msg, Args&&... args)
-{
-    return format_error(type, nullptr, nullptr, 0, 0, msg, std::forward<Args>(args)...);
 }
 
 

@@ -29,7 +29,7 @@ struct KeyCommand
     Token       token;
 };
 
-#define DEFINE_KEYCOMMAND(kw)       KeyCommand { #kw, sizeof(#kw) - 1, Token::##kw }
+#define DEFINE_KEYCOMMAND(kw)       KeyCommand { #kw, sizeof(#kw) - 1, Token :: kw }
 #define DEFINE_KEYSYMBOL(sym, tok)  KeyCommand { sym, sizeof(sym) - 1, tok }
 static const KeyCommand keycommands[] = {
     DEFINE_KEYSYMBOL("{", Token::ScopeBegin),
@@ -688,10 +688,11 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
             auto index = value.substr(begin_index + 1,  i - (begin_index + 1));
             try
             {
+		using index_type = decltype(Miss2Identifier::index);
                 if(is_number_index)
-                    return Miss2Identifier { ident.to_string(), std::stoi(index.to_string()) };
+                    return Miss2Identifier { ident.to_string(), index_type(std::stoi(index.to_string())) };
                 else
-                    return Miss2Identifier { ident.to_string(), index.to_string() };
+                    return Miss2Identifier { ident.to_string(), index_type(index.to_string()) };
             }
             catch(const std::out_of_range&)
             {
