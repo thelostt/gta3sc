@@ -471,9 +471,6 @@ static void lex(LexerContext& lexer, const char* begin, const char* end)
 
         lex_line(lexer, begin, std::distance(begin, line_start), std::distance(begin, it));
     }
-
-    // EOF with a NEWLINE token
-    lex_newline(lexer, end, end, std::distance(begin, end));
 }
 
 //

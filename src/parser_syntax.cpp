@@ -129,12 +129,6 @@ static ParserState giveup_to_expected(ParserState state, const char* what)
     return state;
 }
 
-
-static bool parser_istoken(token_iterator it, token_iterator end, Token type)
-{
-    return (it != end && it->type == type);
-}
-
 // returns it with std::prev(it)->type == type or end
 static token_iterator parser_aftertoken(token_iterator it, token_iterator end, Token type)
 {
@@ -158,13 +152,12 @@ static ParserResult parse_oneof(ParserContext& parser,
                                  RuleFunc rule, Args&&... rules)
 {
 
-    ParserResult opt_result = rule(parser, begin, end);
-    if(is<ParserSuccess>(opt_result.second))
-        return opt_result;
-    else if(!parser_isgiveup(opt_result.second))
-        return opt_result; // error state
-    else // GiveUp
+    ParserResult result = rule(parser, begin, end);
+    if(!parser_isgiveup(result.second))
+        return result;
+    else
         return parse_oneof(parser, begin, end, std::forward<Args>(rules)...);
+
 }
 
 
@@ -253,7 +246,7 @@ static ParserResult parse_scope_statement(ParserContext& parser, token_iterator 
         ParserState state = ParserSuccess(nullptr);
         ParserState statements;
 
-        if(it->type == Token::NewLine)
+        if(it != end && it->type == Token::NewLine)
             ++it;
         else
         {
@@ -272,16 +265,13 @@ static ParserResult parse_scope_statement(ParserContext& parser, token_iterator 
             Expects(it->type == Token::ScopeEnd);
             ++it;
 
-            if(it != end)
+            if(it != end && it->type != Token::NewLine)
             {
-                if(it->type == Token::NewLine)
-                    ++it;
-                else
-                {
-                    add_error(state, ParserError(ParserStatus::Error, begin, "XXX expected newline after '}}'"));
-                    it = parser_aftertoken(it, end, Token::NewLine);
-                }
+                add_error(state, ParserError(ParserStatus::Error, begin, "XXX expected newline after '}}'"));
+                it = parser_aftertoken(it, end, Token::NewLine);
             }
+            else if(it->type == Token::NewLine)
+                ++it;
         }
 
         add_error(state, statements); // if is<ParserFailure>(statements)
@@ -377,9 +367,16 @@ static ParserResult parse_actual_command_statement(ParserContext& parser, token_
 */
 static ParserResult parse_positive_command_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
-    return parse_oneof(parser, begin, end,
-                       //parse_expression_statement, TODO
-                       parse_actual_command_statement);
+    auto result = parse_oneof(parser, begin, end,
+                            //parse_expression_statement, TODO
+                              parse_actual_command_statement);
+    if(is<ParserSuccess>(result.second))
+        return result;
+    else
+    {
+        result.first = parser_aftertoken(begin, end, Token::NewLine);
+        return result;
+    }
 }
 
 /*
@@ -444,7 +441,10 @@ static ParserResult parse_keycommand_statement(ParserContext& parser, token_iter
     {
         auto it = std::next(begin);
         if(it != end && it->type != Token::NewLine)
-            return std::make_pair(end, make_error(ParserError(ParserStatus::Error, begin, "XXX expected newline after this thing")));
+        {
+            it = parser_aftertoken(it, end, Token::NewLine);
+            return std::make_pair(it, make_error(ParserError(ParserStatus::Error, begin, "XXX expected newline after this thing")));
+        }
         else if(it->type == Token::NewLine)
             ++it;
         return std::make_pair(it, ParserSuccess(new SyntaxTree(type, parser.instream, *begin)));
@@ -526,6 +526,261 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
     return std::make_pair(end, make_error(ParserStatus::GiveUp));
 }
 
+/*
+    conditionList
+	    :	(conditionListSingle|conditionListAnd|conditionListOr)
+	    ;
+	
+    conditionListSingle
+	    :	commandStatement
+	    ->  ^(commandStatement)
+	    ;
+	
+    conditionListAnd
+	    :	commandStatement ((WS*)! AND commandStatement)+
+	    ->	^(AND commandStatement+)
+	    ;
+	
+    conditionListOr
+	    :	commandStatement ((WS*)! OR commandStatement)+
+	    ->	^(OR commandStatement+)
+	    ;
+*/
+static ParserResult parse_condition_list(ParserContext& parser, token_iterator begin, token_iterator end)
+{
+    ParserState state = ParserSuccess(nullptr);
+    ParserState command;
+
+    auto it = begin;
+
+    std::vector<shared_ptr<SyntaxTree>> conditions;
+
+    enum class CondType
+    {
+        Single, And, Or,
+
+    } cond_type = CondType::Single;
+
+    for(size_t i = 0; it != end; ++i)
+    {
+        if(i > 0)
+        {
+            if(it->type == Token::AND)
+            {
+                if(cond_type == CondType::Single)
+                    cond_type = CondType::And;
+                else if(cond_type != CondType::And)
+                    add_error(state, ParserError(ParserStatus::Error, it, "XXX expected OR, got AND"));
+                ++it;
+            }
+            else if(it->type == Token::OR)
+            {
+                if(cond_type == CondType::Single)
+                    cond_type = CondType::Or;
+                else if(cond_type != CondType::Or)
+                    add_error(state, ParserError(ParserStatus::Error, it, "XXX expected AND, got OR"));
+                ++it;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        std::tie(it, command) = parse_command_statement(parser, it, end);
+        add_error(state, command);
+        if(is<ParserSuccess>(command))
+        {
+            conditions.emplace_back(get<ParserSuccess>(command).tree);
+        }
+    }
+
+    if(is<ParserSuccess>(state))
+    {
+        assert(conditions.size() > 0);
+
+        if(conditions.size() == 1)
+        {
+            assert(cond_type == CondType::Single);
+            return std::make_pair(it, ParserSuccess(conditions.front()));
+        }
+        else // > 0
+        {
+            assert(cond_type == CondType::And || cond_type == CondType::Or);
+            shared_ptr<SyntaxTree> tree(new SyntaxTree(cond_type == CondType::And? NodeType::AND : NodeType::OR));
+            for(auto& cond : conditions) tree->add_child(cond);
+            return std::make_pair(it, ParserSuccess(std::move(tree)));
+        }
+    }
+    else
+    {
+        return std::make_pair(it, std::move(state));
+    }
+}
+
+
+/*
+    whileStatement
+	    :	WS* WHILE conditionList
+			    statementList
+		    WS* ENDWHILE newLine
+	    ->  ^(WHILE conditionList statementList)
+	    ;
+*/
+static ParserResult parse_while_statement(ParserContext& parser, token_iterator begin, token_iterator end)
+{
+    if(begin->type == Token::WHILE)
+    {
+        ParserState state = ParserSuccess(nullptr);
+        ParserState conditions, statements;
+
+        auto it = std::next(begin);
+        if(it == end)
+        {
+            add_error(state, make_error(ParserError(ParserStatus::Error, begin, "XXX missing ENDWHILE for this")));
+            return std::make_pair(it, state);
+        }
+
+        std::tie(it, conditions) = parse_condition_list(parser, it, end);
+        add_error(state, giveup_to_expected(conditions, "command"));
+
+        std::tie(it, statements) = parse_until_if(parse_statement, parser, it, end, [](token_iterator t) {
+            return t->type == Token::ENDWHILE;
+        });
+        add_error(state, giveup_to_expected(statements, "statement"));
+
+        if(it == end)
+        {
+            add_error(state, make_error(ParserError(ParserStatus::Error, begin, "XXX missing ENDWHILE for this")));
+            return std::make_pair(it, state);
+        }
+
+        Expects(it->type == Token::ENDWHILE);
+        ++it;
+
+        if(it != end && it->type != Token::NewLine)
+            add_error(state, make_error(ParserError(ParserStatus::Error, std::prev(it), "XXX expected newline after ENDWHILE")));
+
+        it = parser_aftertoken(it, end, Token::NewLine);
+
+        if(is<ParserSuccess>(state))
+        {
+            shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::WHILE, parser.instream, *begin));
+            tree->add_child(get<ParserSuccess>(conditions).tree);
+            tree->add_child(get<ParserSuccess>(statements).tree);
+            return std::make_pair(it, ParserSuccess(std::move(tree)));
+        }
+        else
+        {
+            return std::make_pair(it, std::move(state));
+        }
+    }
+    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+}
+
+/*
+    ifStatement
+	    :	WS* IF conditionList
+			    statIf=statementList
+		    (WS* ELSE newLine
+			    statElse=statementList)?
+		    WS* ENDIF newLine
+	    ->	^(IF conditionList $statIf ^(ELSE $statElse)?)
+	    ;
+*/
+static ParserResult parse_if_statement(ParserContext& parser, token_iterator begin, token_iterator end)
+{
+    if(begin->type == Token::IF)
+    {
+        ParserState state = ParserSuccess(nullptr);
+        ParserState           conditions;
+        ParserState           body_true;
+        optional<ParserState> body_false;
+        token_iterator        it_else;
+
+        auto it = std::next(begin);
+        if(it == end)
+        {
+            add_error(state, make_error(ParserError(ParserStatus::Error, begin, "XXX missing ENDIF for this")));
+            return std::make_pair(it, state);
+        }
+
+        std::tie(it, conditions) = parse_condition_list(parser, it, end);
+        add_error(state, giveup_to_expected(conditions, "command"));
+
+        std::tie(it, body_true) = parse_until_if(parse_statement, parser, it, end, [](token_iterator t) {
+            return t->type == Token::ELSE || t->type == Token::ENDIF;
+        });
+        add_error(state, giveup_to_expected(body_true, "statement"));
+
+        if(it == end)
+        {
+            add_error(state, make_error(ParserError(ParserStatus::Error, begin, "XXX missing ENDIF for this")));
+            return std::make_pair(it, state);
+        }
+
+        Expects(it->type == Token::ELSE || it->type == Token::ENDIF);
+
+        if(it->type == Token::ELSE)
+        {
+            it_else = it;
+
+            ParserState body_false1;
+
+            ++it;
+            if(it != end && it->type == Token::NewLine)
+                ++it;
+            else
+            {
+                add_error(state, ParserError(ParserStatus::Error, std::prev(it), "XXX expected newline after ELSE"));
+                it = parser_aftertoken(it, end, Token::NewLine);
+            }
+
+            std::tie(it, body_false1) = parse_until_if(parse_statement, parser, it, end, [](token_iterator t) {
+                return t->type == Token::ENDIF;
+            });
+            add_error(state, giveup_to_expected(body_false1, "statement"));
+
+            if(it == end)
+            {
+                add_error(state, make_error(ParserError(ParserStatus::Error, begin, "XXX missing ENDIF for this")));
+                return std::make_pair(it, state);
+            }
+
+            body_false.emplace(std::move(body_false1));
+        }
+
+        Expects(it->type == Token::ENDIF);
+        ++it;
+
+        if(it != end && it->type != Token::NewLine)
+            add_error(state, make_error(ParserError(ParserStatus::Error, std::prev(it), "XXX expected newline after ENDIF")));
+
+        it = parser_aftertoken(it, end, Token::NewLine);
+
+        if(is<ParserSuccess>(state))
+        {
+            shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::IF, parser.instream, *begin));
+
+            tree->add_child(get<ParserSuccess>(conditions).tree);
+            tree->add_child(get<ParserSuccess>(body_true).tree);
+
+            if(body_false)
+            {
+                shared_ptr<SyntaxTree> else_tree(new SyntaxTree(NodeType::ELSE, parser.instream, *it_else));
+                else_tree->add_child(get<ParserSuccess>(*body_false).tree);
+                tree->add_child(std::move(else_tree));
+            }
+            
+            return std::make_pair(it, ParserSuccess(std::move(tree)));
+        }
+        else
+        {
+            return std::make_pair(it, std::move(state));
+        }
+    }
+    return std::make_pair(end, make_error(ParserStatus::GiveUp));
+}
 
 
 /*
@@ -545,24 +800,24 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
 */
 static ParserResult parse_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
-    ParserResult opt_result = parse_oneof(parser, begin, end,
-                                           parse_newline,
-                                           parse_scope_statement,
-                                           // parse_if_statement,
-                                           // parse_while_statement,
-                                           // parse_repeat_statement,
-                                           // parse_switch_statement,
-                                           parse_variable_declaration,
-                                           parse_label_statement,
-                                           parse_keycommand_statement,
-                                           parse_command_statement);
-    if(is<ParserSuccess>(opt_result.second))
-        return opt_result;
-    else
+    auto result = parse_oneof(parser, begin, end,
+                              parse_newline,
+                              parse_scope_statement,
+                              parse_if_statement,
+                              parse_while_statement,
+                              // parse_repeat_statement, TODO
+                              // parse_switch_statement, TODO
+                              parse_variable_declaration,
+                              parse_label_statement,
+                              parse_keycommand_statement,
+                              parse_command_statement);
+
+    if(parser_isgiveup(result.second))
     {
-        opt_result.first = parser_aftertoken(begin, end, Token::NewLine);
-        return opt_result;
+        auto it = parser_aftertoken(begin, end, Token::NewLine);
+        return std::make_pair(it, std::move(result.second));
     }
+    return result;
 }
 
 static ParserResult parser(ParserContext& parser, token_iterator begin, token_iterator end)
