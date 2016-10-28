@@ -152,6 +152,7 @@ public:
     // Adds a child to this node.
     void add_child(shared_ptr<SyntaxTree> child)
     {
+        Expects(child->parent_ == nullopt);
         child->parent_ = std::weak_ptr<SyntaxTree>(this->shared_from_this());
         this->childs.emplace_back(std::move(child));
     }
