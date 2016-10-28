@@ -615,8 +615,14 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 shared_ptr<SyntaxTree> parent = node.parent();   // should always be available for this rule
 
                 auto next = std::find(parent->begin(), parent->end(), node.shared_from_this());
-                if(next != parent->end() && ++next != parent->end()
-                    && (*next)->type() == NodeType::Scope)
+                Expects(next->get() == &node);
+                for(++next; next != parent->end(); ++next)
+                {
+                    if((*next)->type() != NodeType::Ignore)
+                        break;
+                }
+
+                if(next != parent->end() && (*next)->type() == NodeType::Scope)
                 {
                     // we'll add this label later since we need to put it into a scope (the rule following this one)
                     next_scoped_label = node.shared_from_this();

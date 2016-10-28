@@ -10,7 +10,7 @@
 //      we throw a exception (which is costful) and we also build up a ProgramError object (also costful).
 //      Please improve this out.
 
-Commands::Commands(transparent_multimap<std::string, Command> commands_,
+Commands::Commands(std::multimap<std::string, Command, iless> commands_,
                    std::map<std::string, EntityType> entities_,
                    transparent_map<std::string, shared_ptr<Enum>> enums_)
 
@@ -835,7 +835,7 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
     std::vector<XmlData> xml_vector;
     std::vector<std::pair<int, xml_node<>*>> xml_sections;
 
-    transparent_multimap<std::string, Command>     commands;
+    std::multimap<std::string, Command, iless>     commands;
     std::map<std::string, EntityType>              entities;
     transparent_map<std::string, shared_ptr<Enum>> enums;
 

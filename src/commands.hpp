@@ -91,7 +91,7 @@ struct Command
 struct Commands
 {
 protected:
-    transparent_multimap<std::string, Command> commands;
+    std::multimap<std::string, Command, iless> commands;
     std::multimap<uint16_t, const Command*> commands_by_id;
     transparent_map<std::string, shared_ptr<Enum>> enums;
     std::map<std::string, EntityType> entities;
@@ -140,7 +140,7 @@ protected:
 
 
 public:
-    Commands(transparent_multimap<std::string, Command> commands,
+    Commands(std::multimap<std::string, Command, iless> commands,
              std::map<std::string, EntityType> entities,
              transparent_map<std::string, shared_ptr<Enum>> enums);
 
