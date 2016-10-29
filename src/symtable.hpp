@@ -52,14 +52,22 @@ public:
     };
 
 public:
-    static shared_ptr<Script> create(ProgramContext& program, fs::path path_, ScriptType type)
+    static shared_ptr<Script> create(ProgramContext& program, fs::path path, ScriptType type)
     {
-        auto p = std::make_shared<Script>(program, std::move(path_), type, priv_ctor());
-        p->start_label = std::make_shared<Label>(nullptr, p->shared_from_this());
-        p->top_label = std::make_shared<Label>(nullptr, p->shared_from_this());
-        return p;
+        auto tstream = TokenStream::tokenize(program, path);
+        if(tstream)
+        {
+            auto tree = SyntaxTree::compile(program, *tstream);
+            if(tree)
+            {
+                auto p = std::make_shared<Script>(program, type, std::move(path), std::move(tstream), std::move(tree), priv_ctor());
+                p->start_label = std::make_shared<Label>(nullptr, p->shared_from_this());
+                p->top_label = std::make_shared<Label>(nullptr, p->shared_from_this());
+                return p;
+            }
+        }
+        return nullptr;
     }
-
 
     /// Annnotates this script's syntax tree with informations to simplify the compilation step.
     /// For example, annotates whether a identifier is a variable, enum, label, etc.
@@ -216,16 +224,12 @@ private:
     struct priv_ctor {};
 
 public:
-    /// Use create instead.
-    explicit Script(ProgramContext& program, fs::path path_, ScriptType type, priv_ctor)
-        : type(type)
+    /// Use Script::create instead.
+    explicit Script(ProgramContext& program, ScriptType type, fs::path path_,
+                   shared_ptr<TokenStream> tstream, shared_ptr<SyntaxTree> tree, priv_ctor)
+        : type(type), path(std::move(path_)), tstream(std::move(tstream)), tree(std::move(tree))
     {
-        this->path = std::move(path_);
-        this->tstream = TokenStream::tokenize(program, this->path); // TODO what if returns nullptr
-        this->tree = SyntaxTree::compile(program, *this->tstream); // TODO what if returns nullptr
     }
-
-    // TODO a flag to not use tstream (free up memory)?
 };
 
 /// Information about a previosly declared variable.

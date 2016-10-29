@@ -422,6 +422,13 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         //const char* input = "gta3_src/main.sc";
 
         auto main = Script::create(program, input, ScriptType::Main);
+
+        if(main == nullptr)
+        {
+            Expects(program.has_error());
+            throw HaltJobException();
+        }
+
         auto symbols = SymTable::from_script(*main, program);
         symbols.apply_offset_to_vars(2);
 

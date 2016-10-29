@@ -2,103 +2,153 @@
 #include "parser.hpp"
 #include "program.hpp"
 
-// TODO std::runtime_error to CompilerError or something
-
 using TokenData = TokenStream::TokenData;
 
 struct LexerContext
 {
     ProgramContext& program;
+    TokenStream::TextStream stream;
 
-    size_t comment_nest_level = 0;
-    std::vector<TokenData> tokens;
+    bool any_error = false;                 //< True if any error happened during tokenization.
+    size_t comment_nest_level = 0;          //< Nest level of /* comments */
+    std::vector<TokenData> tokens;          //< Output tokens.
+    std::string            line_buffer;     //< Buffer used to parse a line, since we'll be mutating the line.
 
-    std::string temp_line_buffer;
-
-    using token_iterator = decltype(tokens)::const_iterator;
-
-    LexerContext(ProgramContext& program) :
-        program(program)
+    explicit LexerContext(ProgramContext& program, std::string data, std::string stream_name) :
+        program(program), stream(std::move(data), std::move(stream_name))
     {}
+
+    void add_token(Token type, size_t begin_pos, size_t length)
+    {
+        this->tokens.emplace_back(TokenData{ type, begin_pos, begin_pos + length });
+    }
+
+    template<typename... Args>
+    void error(std::pair<size_t, size_t> pos, Args&&... args) // pos = <begin_pos, size>
+    {
+        this->any_error = true;
+        this->program.error(TokenStream::TokenInfo(this->stream, pos.first, pos.first + pos.second),
+                            std::forward<Args>(args)...);
+    }
+
+    template<typename... Args>
+    void error(size_t pos, Args&&... args)
+    {
+        return error(std::make_pair(pos, pos+1), std::forward<Args>(args)...);
+    }
 };
 
-struct KeyCommand
-{
-    const char* keyword;
-    size_t      length;
-    Token       token;
+#define DEFINE_TOKEN(kw)          { #kw, Token :: kw }
+#define DEFINE_SYMBOL(sym, tok)   { sym, tok }
+
+static const std::pair<string_view, Token> keycommands[] = {
+    DEFINE_SYMBOL("{", Token::ScopeBegin),
+    DEFINE_SYMBOL("}", Token::ScopeEnd),
+    //DEFINE_TOKEN(NOT),
+    //DEFINE_TOKEN(AND),
+    //DEFINE_TOKEN(OR),
+    //DEFINE_TOKEN(IF),
+    DEFINE_TOKEN(ELSE),
+    DEFINE_TOKEN(ENDIF),
+    //DEFINE_TOKEN(WHILE),
+    DEFINE_TOKEN(ENDWHILE),
+    DEFINE_TOKEN(REPEAT),
+    DEFINE_TOKEN(ENDREPEAT),
+    DEFINE_TOKEN(SWITCH),
+    DEFINE_TOKEN(ENDSWITCH),
+    DEFINE_TOKEN(CASE),
+    DEFINE_TOKEN(DEFAULT),
+    DEFINE_TOKEN(BREAK),
+    DEFINE_TOKEN(CONTINUE),
+    DEFINE_TOKEN(MISSION_START),
+    DEFINE_TOKEN(MISSION_END),
+    DEFINE_TOKEN(SCRIPT_START),
+    DEFINE_TOKEN(SCRIPT_END),
+    DEFINE_TOKEN(VAR_INT),
+    DEFINE_TOKEN(LVAR_INT),
+    DEFINE_TOKEN(VAR_FLOAT),
+    DEFINE_TOKEN(LVAR_FLOAT),
+    DEFINE_TOKEN(VAR_TEXT_LABEL),
+    DEFINE_TOKEN(LVAR_TEXT_LABEL),
+    DEFINE_TOKEN(VAR_TEXT_LABEL16),
+    DEFINE_TOKEN(LVAR_TEXT_LABEL16),
 };
 
-#define DEFINE_KEYCOMMAND(kw)       KeyCommand { #kw, sizeof(#kw) - 1, Token :: kw }
-#define DEFINE_KEYSYMBOL(sym, tok)  KeyCommand { sym, sizeof(sym) - 1, tok }
-static const KeyCommand keycommands[] = {
-    DEFINE_KEYSYMBOL("{", Token::ScopeBegin),
-    DEFINE_KEYSYMBOL("}", Token::ScopeEnd),
-    //DEFINE_KEYCOMMAND(NOT),
-    //DEFINE_KEYCOMMAND(AND),
-    //DEFINE_KEYCOMMAND(OR),
-    //DEFINE_KEYCOMMAND(IF),
-    DEFINE_KEYCOMMAND(ELSE),
-    DEFINE_KEYCOMMAND(ENDIF),
-    //DEFINE_KEYCOMMAND(WHILE),
-    DEFINE_KEYCOMMAND(ENDWHILE),
-    DEFINE_KEYCOMMAND(REPEAT),
-    DEFINE_KEYCOMMAND(ENDREPEAT),
-    DEFINE_KEYCOMMAND(SWITCH),
-    DEFINE_KEYCOMMAND(ENDSWITCH),
-    DEFINE_KEYCOMMAND(CASE),
-    DEFINE_KEYCOMMAND(DEFAULT),
-    DEFINE_KEYCOMMAND(BREAK),
-    DEFINE_KEYCOMMAND(CONTINUE),
-    DEFINE_KEYCOMMAND(MISSION_START),
-    DEFINE_KEYCOMMAND(MISSION_END),
-    DEFINE_KEYCOMMAND(SCRIPT_START),
-    DEFINE_KEYCOMMAND(SCRIPT_END),
-    DEFINE_KEYCOMMAND(VAR_INT),
-    DEFINE_KEYCOMMAND(LVAR_INT),
-    DEFINE_KEYCOMMAND(VAR_FLOAT),
-    DEFINE_KEYCOMMAND(LVAR_FLOAT),
-    DEFINE_KEYCOMMAND(VAR_TEXT_LABEL),
-    DEFINE_KEYCOMMAND(LVAR_TEXT_LABEL),
-    DEFINE_KEYCOMMAND(VAR_TEXT_LABEL16),
-    DEFINE_KEYCOMMAND(LVAR_TEXT_LABEL16),
+static const std::pair<string_view, size_t> script_registers[] = {
+    // COMMAND                                  FILENAME_ID
+    { "LAUNCH_MISSION",                                 1 },
+    { "LOAD_AND_LAUNCH_MISSION",                        1 },
+    { "GOSUB_FILE",                                     2 },
+    { "REGISTER_STREAMED_SCRIPT",                       1 },
+    { "REGISTER_SCRIPT_BRAIN_FOR_CODE_USE",             1 },
+    { "REGISTER_ATTRACTOR_SCRIPT_BRAIN_FOR_CODE_USE",   1 },
+    { "STREAM_SCRIPT",                                  1 },
+    { "HAS_STREAMED_SCRIPT_LOADED",                     1 },
+    { "MARK_STREAMED_SCRIPT_AS_NO_LONGER_NEEDED",       1 },
+    { "REMOVE_STREAMED_SCRIPT",                         1 },
+    { "REGISTER_STREAMED_SCRIPT",                       1 },
+    { "START_NEW_STREAMED_SCRIPT",                      1 },
+    { "GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT",     1 },
+    { "ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED",         1 },
+    { "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT",             1 },
+    { "REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE",      1 },
+    { "ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR",      1 },
 };
 
-static const KeyCommand expr_symbols[] = {
+static const std::pair<string_view, Token> expr_symbols[] = {
     // Order matters (by length)
     // 3-length
-    DEFINE_KEYSYMBOL("+=@", Token::EqTimedPlus),
-    DEFINE_KEYSYMBOL("-=@", Token::EqTimedMinus),
+    DEFINE_SYMBOL("+=@", Token::EqTimedPlus),
+    DEFINE_SYMBOL("-=@", Token::EqTimedMinus),
     // 2-length
-    DEFINE_KEYSYMBOL("+=", Token::EqPlus),
-    DEFINE_KEYSYMBOL("-=", Token::EqMinus),
-    DEFINE_KEYSYMBOL("*=", Token::EqTimes),
-    DEFINE_KEYSYMBOL("/=", Token::EqDivide),
-    DEFINE_KEYSYMBOL("++", Token::Increment),
-    DEFINE_KEYSYMBOL("--", Token::Decrement),
-    DEFINE_KEYSYMBOL("=#", Token::Cast),
-    DEFINE_KEYSYMBOL("+@", Token::TimedPlus),
-    DEFINE_KEYSYMBOL("-@", Token::TimedMinus),
-    DEFINE_KEYSYMBOL("<=", Token::LesserEqual),
-    DEFINE_KEYSYMBOL(">=", Token::GreaterEqual),
+    DEFINE_SYMBOL("+=", Token::EqPlus),
+    DEFINE_SYMBOL("-=", Token::EqMinus),
+    DEFINE_SYMBOL("*=", Token::EqTimes),
+    DEFINE_SYMBOL("/=", Token::EqDivide),
+    DEFINE_SYMBOL("++", Token::Increment),
+    DEFINE_SYMBOL("--", Token::Decrement),
+    DEFINE_SYMBOL("=#", Token::Cast),
+    DEFINE_SYMBOL("+@", Token::TimedPlus),
+    DEFINE_SYMBOL("-@", Token::TimedMinus),
+    DEFINE_SYMBOL("<=", Token::LesserEqual),
+    DEFINE_SYMBOL(">=", Token::GreaterEqual),
     // 1-length
-    DEFINE_KEYSYMBOL("=", Token::Equal),
-    DEFINE_KEYSYMBOL("+", Token::Plus),
-    DEFINE_KEYSYMBOL("-", Token::Minus),
-    DEFINE_KEYSYMBOL("*", Token::Times),
-    DEFINE_KEYSYMBOL("/", Token::Divide),
-    DEFINE_KEYSYMBOL("<", Token::Lesser),
-    DEFINE_KEYSYMBOL(">", Token::Greater),
+    DEFINE_SYMBOL("=", Token::Equal),
+    DEFINE_SYMBOL("+", Token::Plus),
+    DEFINE_SYMBOL("-", Token::Minus),
+    DEFINE_SYMBOL("*", Token::Times),
+    DEFINE_SYMBOL("/", Token::Divide),
+    DEFINE_SYMBOL("<", Token::Lesser),
+    DEFINE_SYMBOL(">", Token::Greater),
 };
-#undef DEFINE_KEYCOMMAND
-#undef DEFINE_KEYSYMBOL
 
-
+/// Checks if `c` is a whitespace.
 static bool lex_iswhite(int c)
 {
     return c == ' ' || c == '\t' || c == '(' || c == ')' || c == ',' || c == '\r';
 }
 
+/// Checks if `token` is equal `string` which has `length`.
+static bool lex_istokeq(const std::pair<const char*, size_t>& token, const char* string, size_t length)
+{
+    return (token.second == length && !strncasecmp(token.first, string, length));
+}
+
+/// Checks if `token` is equal to the string literal `string`.
+template<std::size_t N>
+static bool lex_istokeq(const std::pair<const char*, size_t>& token, const char(&string)[N])
+{
+    static_assert(N > 0, "");
+    return lex_istokeq(token, string, N - 1);
+}
+
+/// Checks if `token` is equal to the string in the view `string`.
+static bool lex_istokeq(const std::pair<const char*, size_t>& token, const string_view& string)
+{
+    return lex_istokeq(token, string.data(), string.size());
+}
+
+/// Checks if `it` is part of a expression token.
 static bool lex_isexprc(const char* it, const char* end)
 {
     if(*it == '-')
@@ -114,179 +164,129 @@ static bool lex_isexprc(const char* it, const char* end)
     return (*it == '+' || *it == '*' || *it == '/' || *it == '=' || *it == '<' || *it == '>');
 }
 
-static auto lex_gettok(const char* begin, const char* end) -> optional<std::pair<const char*, size_t>>
+/// Gets the next whitespace delimited token in `it`.
+static auto lex_gettok(const char* it, const char* end) -> optional<std::pair<const char*, size_t>>
 {
-    const char *tok_start, *tok_end;
-    auto it = begin;
+    auto tok_start = std::find_if_not(it, end, lex_iswhite);
+    auto tok_end   = std::find_if(tok_start, end, lex_iswhite);
 
-    while(it != end && lex_iswhite(*it)) ++it;
-    tok_start = it;
+    if(tok_start != tok_end)
+        return std::make_pair(tok_start, size_t(tok_end - tok_start));
 
-    while(it != end && !lex_iswhite(*it)) ++it;
-    tok_end = it;
-
-    if(tok_start == tok_end)
-        return nullopt;
-    return std::make_pair(tok_start, size_t(tok_end - tok_start));
+    return nullopt;
 }
 
-static auto lex_skiptok(const char* begin, const char* end) -> const char*
-{
-    auto it = begin;
-    while(it != end && lex_iswhite(*it)) ++it;
-    return it;
-}
-
-
+/// Reads the next token (number/identifier/string) from `begin` into the `lexer` state. 
 static auto lex_token(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos) -> const char*
 {
-    while(begin != end && lex_iswhite(*begin)) ++begin, ++begin_pos;
+    while(begin != end && lex_iswhite(*begin))
+        ++begin, ++begin_pos;
 
-    auto it = begin;
+    if(begin == end)
+        return end;
 
-    if(it == end)
+    auto is_integer = [](const std::pair<const char*, size_t>& token)
+    {
+        for(size_t i = 0; i < token.second; ++i)
+        {
+            if(token.first[i] < '0' || token.first[i] > '9')
+            {
+                if(token.first[i] == '-')
+                {
+                    if(i != 0)
+                    {
+                        // TODO emit warning
+                    }
+                    continue;
+                }
+                return false;
+            }
+        }
+        return true;
+    };
+
+    auto is_float = [](const std::pair<const char*, size_t>& token)
+    {
+        for(size_t i = 0; i < token.second; ++i)
+        {
+            if(token.first[i] < '0' || token.first[i] > '9')
+            {
+                if(token.first[i] == '.' || (token.first[i] == '-' && i == 0))
+                    continue;
+
+                if(token.first[i] == 'f' || token.first[i] == 'F')
+                {
+                    if(i+1 != token.second)
+                    {
+                        // TODO emit warning
+                    }
+                    continue;
+                }
+
+                return false;
+            }
+        }
+        return true;
+    };
+
+    if(*begin == '"')
+    {
+        auto it = std::find(std::next(begin), end, '"');
+        if(it == end)
+        {
+            lexer.error(begin_pos, "XXX end of line without closing quotes");
+            return end;
+        }
+        return std::next(it);
+    }
+    else if((*begin >= '0' && *begin <= '9') || *begin == '-' || *begin == '.')
+    {
+        auto token = lex_gettok(begin, end).value();
+
+        if(is_integer(token))
+            lexer.add_token(Token::Integer, begin_pos, token.second);
+        else if(is_float(token))
+            lexer.add_token(Token::Float, begin_pos, token.second);
+        else
+            lexer.error(std::make_pair(begin_pos, token.second), "XXX invalid numeric literal");
+
+        return token.first + token.second;
+    }
+    else if((*begin >= 'a' && *begin <= 'z') || (*begin >= 'A' && *begin <= 'Z') || *begin == '$')
+    {
+        auto token = lex_gettok(begin, end).value();
+        auto it    = token.first + token.second;
+        lexer.add_token(Token::Identifier, begin_pos, std::distance(begin, it));
         return it;
-
-    switch(*it)
+    }
+    else
     {
-        case '-': /*case '+': TODO '+' not supported by R* compiler, we should perhaps allow but with warning */
-        case '0': case '1': case '2': case '3': case '4':
-        case '5': case '6': case '7': case '8': case '9':
-        {
-            auto tok_pair = lex_gettok(begin, end).value();
-            auto tok_end = (tok_pair.first + tok_pair.second);
-
-            // e.g. 4x4_1.sc is a identifier, not a number
-            if(tok_pair.second >= 3 && !strncasecmp(tok_end - 3, ".sc", 3))
-            {
-                it = tok_pair.first + tok_pair.second;
-                lexer.tokens.emplace_back(TokenData{ Token::Identifier, begin_pos, begin_pos + std::distance(begin, it) });
-                return it;
-            }
-
-            bool is_float = false;
-            bool has_error = false;
-            for(++it; /**/; ++it)
-            {
-                if(it == tok_end)
-                {
-                    Token type = is_float? Token::Float : Token::Integer;
-                    lexer.tokens.emplace_back(TokenData{ type, begin_pos, begin_pos + std::distance(begin, it) });
-                    return tok_end;
-                }
-
-                // TODO R* compiler doesn't allow hex and octal values, we should?
-                // TODO R* compiler allows '-' anywhere, we should emit a warning.
-                // TODO if float, R* compiler doesn't allow '-' anywhere.
-                if((*it >= '0' && *it <= '9') || *it == '-')
-                    continue;
-
-                // TODO R* compiler allows the f|F|. more than once, but we should emit a warning.
-                // TODO custom exponent and such
-                if(*it == '.' || *it == 'f' || *it == 'F')
-                {
-                    is_float = true;
-                    continue;
-                }
-
-                // bad suffix
-                lexer.program.error(nocontext, "XXX bad suffix '{}' on int const", std::string(it, tok_end));
-                return tok_end;
-            }
-            Unreachable();
-        }
-
-        case '"':
-        {
-            do
-            {
-                if(++it == end)
-                {
-                    lexer.program.error(nocontext, "XXX end of line without closing quotes");
-                    return it;
-                }
-            }
-            while(*it != '"');
-
-            return ++it;
-        }
-
-        default:
-        {
-            auto tok_pair = lex_gettok(begin, end).value();
-
-            if((*it >= 'a' && *it <= 'z') || (*it >= 'A' && *it <= 'Z') || *it == '$')
-            {
-                it = tok_pair.first + tok_pair.second;
-                lexer.tokens.emplace_back(TokenData{ Token::Identifier, begin_pos, begin_pos + std::distance(begin, it) });
-                return it;
-            }
-            else
-            {
-                lexer.program.error(nocontext, "XXX bad ident");
-                return tok_pair.first + tok_pair.second;
-            }
-            break;
-        }
+        auto token = lex_gettok(begin, end).value();
+        lexer.error(std::make_pair(begin_pos, token.second), "XXX invalid identifier");
+        return token.first + token.second;
     }
 }
 
-static void lex_expr(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos)
-{
-    for(auto it = begin; it != end; )
-    {
-        if(lex_iswhite(*it))
-        {
-            ++it;
-            continue;
-        }
-
-        bool found_symbol  = false;
-        size_t length_left = (size_t)(std::distance(it, end));
-
-        for(auto& symbol : expr_symbols)
-        {
-            if(length_left >= symbol.length
-            && lex_isexprc(it, end) // for special minus checking
-            && !strncmp(it, symbol.keyword, symbol.length))
-            {
-                size_t pos = (begin_pos + std::distance(begin, it));
-                lexer.tokens.emplace_back(TokenData{ symbol.token, pos, pos + symbol.length });
-                it += symbol.length;
-                found_symbol = true;
-                break;
-            }
-        }
-
-        if(found_symbol)
-            continue;
-
-        auto tok_begin = it;
-        while(it != end && !lex_iswhite(*it) && !lex_isexprc(it, end)) ++it;
-        auto tok_end = it;
-
-        it = lex_token(lexer, tok_begin, tok_end, begin_pos + std::distance(begin, tok_begin));
-    }
-}
-
+/// Lexes a command context.
 static void lex_command(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos, bool had_keycommand)
 {
-    auto it = begin;
-    if(auto opt_cmdtok = lex_gettok(it, end))
+    if(auto cmdtok = lex_gettok(begin, end))
     {
-        it = opt_cmdtok->first + opt_cmdtok->second;
-
         bool is_keycommand = false;
+        size_t script_register_id = SIZE_MAX;
+
+        auto it = cmdtok->first + cmdtok->second;
 
         for(auto& keycmd : keycommands)
         {
-            if(keycmd.length == opt_cmdtok->second
-            && !strncasecmp(opt_cmdtok->first, keycmd.keyword, keycmd.length))
+            if(lex_istokeq(*cmdtok, keycmd.first))
             {
-                // TODO if had_keycommand, error
-                size_t tok_begin = begin_pos + std::distance(begin, opt_cmdtok->first);
-                size_t tok_end   = tok_begin + opt_cmdtok->second;
-                lexer.tokens.emplace_back(TokenData{ keycmd.token, tok_begin, tok_end });
+                size_t tok_begin = begin_pos + std::distance(begin, cmdtok->first);
+                
+                if(had_keycommand)
+                    lexer.error(std::make_pair(tok_begin, cmdtok->second), "unexpected token");
+
+                lexer.add_token(keycmd.second, tok_begin, cmdtok->second);
                 is_keycommand = true;
                 break;
             }
@@ -294,266 +294,247 @@ static void lex_command(LexerContext& lexer, const char* begin, const char* end,
 
         if(!is_keycommand)
         {
-            size_t tok_begin = begin_pos + std::distance(begin, opt_cmdtok->first);
-            size_t tok_end   = tok_begin + opt_cmdtok->second;
-            lexer.tokens.emplace_back(TokenData{ Token::Command, tok_begin, tok_end });
+            size_t tok_begin = begin_pos + std::distance(begin, cmdtok->first);
+            lexer.add_token(Token::Command, tok_begin, cmdtok->second);
+
+            for(auto& regcmd : script_registers)
+            {
+                if(lex_istokeq(*cmdtok, regcmd.first))
+                {
+                    script_register_id = regcmd.second;
+                    break;
+                }
+            }
         }
 
-        while(it != end)
+        for(size_t id = 1; it != end; ++id)
         {
-            it = lex_token(lexer, it, end, begin_pos + std::distance(begin, it));
+            if(id != script_register_id)
+            {
+                it = lex_token(lexer, it, end, begin_pos + std::distance(begin, it));
+            }
+            else
+            {
+                // this is a filename token, just get whatever is delimited by spaces
+                if(auto token = lex_gettok(it, end))
+                {
+                    lexer.add_token(Token::Identifier, begin_pos + std::distance(begin, token->first) , token->second);
+                    it = token->first + token->second;
+                }
+            }
         }
     }
 }
 
-static void lex_newline(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos)
+/// Lexes a expression context. 
+static void lex_expr(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos)
 {
-    size_t tok_begin = begin_pos + std::distance(begin, end);
-    size_t tok_end   = tok_begin;
-    lexer.tokens.emplace_back(TokenData{ Token::NewLine, tok_begin, tok_end });
+    for(auto it = begin; ;)
+    {
+        it = std::find_if_not(it, end, lex_iswhite);
+
+        if(it == end)
+            break;
+
+        bool found_symbol = false;
+        auto length_left = size_t(std::distance(it, end));
+        
+        for(auto& symbol : expr_symbols)
+        {
+            if(length_left >= symbol.first.size()
+            && lex_isexprc(it, end) // for special minus checking
+            && !strncmp(it, symbol.first.data(), symbol.first.size()))
+            {
+                size_t pos = (begin_pos + std::distance(begin, it));
+                lexer.add_token(symbol.second, pos, symbol.first.size());
+                it = std::next(it, symbol.first.size());
+                found_symbol = true;
+                break;
+            }
+        }
+
+        if(!found_symbol)
+        {
+            // Cannot use lex_gettok due to it not being only lex_iswhite delimited, but also lex_exprc delimited.
+            auto tok_begin = it;
+            while(it != end && !lex_iswhite(*it) && !lex_isexprc(it, end)) ++it;
+            auto tok_end = it;
+
+            it = lex_token(lexer, tok_begin, tok_end, begin_pos + std::distance(begin, tok_begin));
+        }
+    }
 }
 
-static void lex_line(LexerContext& lexer, const char* text_ptr, size_t begin_pos, size_t end_pos)
+/// Tranforms comments into whitespaces.
+static void lex_comments(LexerContext& lexer, char* begin, char* end, size_t begin_pos)
 {
-    char *buffer_ptr, temp_line_buffer[256];
-    size_t line_length = end_pos - begin_pos;
+    bool in_quotes = false;
+
+    for(auto it = begin; it != end; ++it)
+    {
+        if(*it == '"' && lexer.comment_nest_level == 0)
+        {
+            in_quotes = !in_quotes;
+        }
+        else if(std::next(it) != end)
+        {
+            if(in_quotes)
+            {
+                // Cannot have a comment inside a quoted string.
+            }
+            else if(*it == '/' && *std::next(it) == '/')
+            {
+                std::memset(it, ' ', end - it);
+                return;
+            }
+            else if(*it == '/' && *std::next(it) == '*')
+            {
+                ++lexer.comment_nest_level;
+                *it++ = ' '; *it   = ' ';
+            }
+            else if(*it == '*' && *std::next(it) == '/')
+            {
+                if(lexer.comment_nest_level == 0)
+                {
+                    lexer.error(begin_pos + std::distance(begin, it), "XXX no multiline comment to close");
+                    ++it;
+                }
+                else
+                {
+                    --lexer.comment_nest_level;
+                    *it++ = ' '; *it   = ' ';
+                }
+            }
+        }
+
+        if(lexer.comment_nest_level)
+            *it = ' ';
+    }
+}
+
+/// Lexes a line.
+static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_pos, size_t end_pos)
+{
+    lexer.line_buffer.assign(source_data + begin_pos, source_data + end_pos);
+
     bool had_keycommand = false;
 
-    if(line_length == 0)
-        return;  // TODO push NL to tokens
+    auto begin = (const char*)(&lexer.line_buffer[0]);
+    auto end   = begin + lexer.line_buffer.size();
+    auto it    = begin;
 
-    if(line_length > 255)
+    auto push_token = [&](const std::pair<const char*, size_t>& token, Token type) -> const char*
+    {
+        size_t tok_begin = begin_pos + std::distance(begin, token.first);
+        lexer.add_token(type, tok_begin, token.second);
+        return std::find_if_not(token.first + token.second, end, lex_iswhite);
+    };
+
+    auto push_newline = [&]()
+    {
+        lexer.add_token(Token::NewLine, end_pos, 0);
+    };
+
+    lex_comments(lexer, &lexer.line_buffer[0], &lexer.line_buffer[0] + lexer.line_buffer.size(), begin_pos);
+
+    it  = std::find_if_not(it, end, lex_iswhite);
+    end = std::find_if_not(std::make_reverse_iterator(end), std::make_reverse_iterator(it), lex_iswhite).base();
+
+    if(std::distance(it, end) == 0)
+        return;
+
+    if(lexer.line_buffer.size() > 255)
     {
         // TODO error if pedantic?
     }
 
-    if(line_length < std::size(temp_line_buffer))
+    if(auto opt_first_token = lex_gettok(it, end))
     {
-        std::memcpy(temp_line_buffer, text_ptr + begin_pos, line_length);
-        buffer_ptr = &temp_line_buffer[0];
-    }
-    else
-    {
-        lexer.temp_line_buffer.assign(text_ptr + begin_pos, text_ptr + end_pos);
-        buffer_ptr = &lexer.temp_line_buffer[0];
-    }
-
-    // trim comments
-    if(true)
-    {
-        bool in_quotes = false;
-
-        for(size_t i = 0; i < line_length; ++i)
+        if(opt_first_token->first[opt_first_token->second - 1] == ':')
         {
-            if(lexer.comment_nest_level == 0 && buffer_ptr[i] == '"')
-            {
-                in_quotes = !in_quotes;
-            }
-            else if(i+1 != line_length)
-            {
-                if(in_quotes)
-                {
-                    /* TODO not pedantic
-                    if(buffer_ptr[i] == '\\' && buffer_ptr[i+1] == '"')
-                        ++i;
-                    */
-                }
-                else if(buffer_ptr[i] == '/' && buffer_ptr[i+1] == '/')
-                {
-                    line_length = i++;
-                    break;
-                }
-                else if(buffer_ptr[i] == '/' && buffer_ptr[i+1] == '*')
-                {
-                    ++lexer.comment_nest_level;
-                    buffer_ptr[i++] = ' ';
-                    buffer_ptr[i]   = ' ';
-                }
-                else if(buffer_ptr[i] == '*' && buffer_ptr[i+1] == '/')
-                {
-                    // TODO check if comment_nest_level == 0 and error
-                    --lexer.comment_nest_level;
-                    buffer_ptr[i++] = ' ';
-                    buffer_ptr[i]   = ' ';
-                }
-            }
-
-            if(lexer.comment_nest_level)
-            {
-                buffer_ptr[i] = ' ';
-            }
+            it = push_token(*opt_first_token, Token::Label);
         }
     }
 
-    //////////
-
-    const char* const_buffer_ptr = buffer_ptr;
-    auto it = const_buffer_ptr;
-    auto end = const_buffer_ptr + line_length;
-
-    // skip front whitespaces
-    while(it != end && lex_iswhite(*it)) ++it;
-
-    // Try label token
-    if(it != end)
+    if(auto opt_first_token = lex_gettok(it, end))
     {
-        if(auto opt_first_token = lex_gettok(it, end))
+        if(lex_istokeq(*opt_first_token, "IF"))
         {
-            auto& first_token = *opt_first_token;
-            if(first_token.first[first_token.second - 1] == ':')
-            {
-                size_t label_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
-                size_t label_end   = label_begin + first_token.second;
-                lexer.tokens.emplace_back(TokenData { Token::Label, label_begin, label_end });
-
-                // Skip this token
-                it = lex_skiptok(first_token.first + first_token.second, end);
-            }
+            it = push_token(*opt_first_token, Token::IF);
+            had_keycommand = true;
+        }
+        else if(lex_istokeq(*opt_first_token, "WHILE"))
+        {
+            it = push_token(*opt_first_token, Token::WHILE);
+            had_keycommand = true;
         }
     }
 
-    // Try WHILE / WHILENOT / IF / IFNOT (must be before AND/OR/NOT)
-    if(it != end)
+    if(auto opt_first_token = lex_gettok(it, end))
     {
-        if(auto opt_first_token = lex_gettok(it, end))
+        if(lex_istokeq(*opt_first_token, "AND"))
         {
-            auto& first_token = *opt_first_token;
-
-            if(first_token.second == sizeof("IF") - 1
-                && !strncasecmp(first_token.first, "IF", first_token.second))
-            {
-                size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
-                size_t tok_end   = tok_begin + first_token.second;
-                lexer.tokens.emplace_back(TokenData{ Token::IF, tok_begin, tok_end });
-
-                // Skip this token
-                it = lex_skiptok(first_token.first + first_token.second, end);
-                had_keycommand = true;
-            }
-            else if(first_token.second == sizeof("WHILE") - 1
-                && !strncasecmp(first_token.first, "WHILE", first_token.second))
-            {
-                size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
-                size_t tok_end   = tok_begin + first_token.second;
-                lexer.tokens.emplace_back(TokenData{ Token::WHILE, tok_begin, tok_end });
-
-                // Skip this token
-                it = lex_skiptok(first_token.first + first_token.second, end);
-                had_keycommand = true;
-            }
+            it = push_token(*opt_first_token, Token::AND);
+            had_keycommand = true;
+        }
+        else if(lex_istokeq(*opt_first_token, "OR"))
+        {
+            it = push_token(*opt_first_token, Token::OR);
+            had_keycommand = true;
         }
     }
 
-    // Try AND / OR
-    if(it != end)
+    if(auto opt_first_token = lex_gettok(it, end))
     {
-        if(auto opt_first_token = lex_gettok(it, end))
+        if(lex_istokeq(*opt_first_token, "NOT"))
         {
-            auto& first_token = *opt_first_token;
-
-            if(first_token.second == sizeof("AND") - 1
-                && !strncasecmp(first_token.first, "AND", first_token.second))
-            {
-                size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
-                size_t tok_end   = tok_begin + first_token.second;
-                lexer.tokens.emplace_back(TokenData{ Token::AND, tok_begin, tok_end });
-
-                // Skip this token
-                it = lex_skiptok(first_token.first + first_token.second, end);
-                had_keycommand = true;
-            }
-            else if(first_token.second == sizeof("OR") - 1
-                && !strncasecmp(first_token.first, "OR", first_token.second))
-            {
-                size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
-                size_t tok_end   = tok_begin + first_token.second;
-                lexer.tokens.emplace_back(TokenData{ Token::OR, tok_begin, tok_end });
-
-                // Skip this token
-                it = lex_skiptok(first_token.first + first_token.second, end);
-                had_keycommand = true;
-            }
+            it = push_token(*opt_first_token, Token::NOT);
+            had_keycommand = true;
         }
     }
 
-    // Try NOT
-    if(it != end)
-    {
-        if(auto opt_first_token = lex_gettok(it, end))
-        {
-            auto& first_token = *opt_first_token;
-
-            if(first_token.second == sizeof("NOT") - 1
-                && !strncasecmp(first_token.first, "NOT", first_token.second))
-            {
-                size_t tok_begin = begin_pos + std::distance(const_buffer_ptr, first_token.first);
-                size_t tok_end   = tok_begin + first_token.second;
-                lexer.tokens.emplace_back(TokenData{ Token::NOT, tok_begin, tok_end });
-
-                // Skip this token
-                it = lex_skiptok(first_token.first + first_token.second, end);
-                had_keycommand = true;
-            }
-        }
-    }
-
-    // Try expression context
     if(it != end)
     {
         auto begin_expr = it;
 
         if(lex_isexprc(it, end))
         {
-            lex_expr(lexer, begin_expr, end, begin_pos + std::distance(const_buffer_ptr, begin_expr));
-            lex_newline(lexer, begin_expr, end, begin_pos + std::distance(const_buffer_ptr, begin_expr));
+            lex_expr(lexer, begin_expr, end, begin_pos + std::distance(begin, begin_expr));
+            push_newline();
             return;
         }
-
-        auto tok_begin = it;
-        while(it != end && !lex_iswhite(*it) && !lex_isexprc(it, end)) ++it;
-        auto tok_end = it;
-
-        assert(tok_begin != tok_end);
-
-        if(it != end)
+        else
         {
-            while(it != end && lex_iswhite(*it)) ++it;
+            // <identifier>
+            while(it != end && !lex_iswhite(*it) && !lex_isexprc(it, end))
+                ++it;
 
+            it = std::find_if_not(it, end, lex_iswhite);
+
+            // <expression_token>
             if(it != end && lex_isexprc(it, end))
             {
-                lex_expr(lexer, begin_expr, end, begin_pos + std::distance(const_buffer_ptr, begin_expr));
-                lex_newline(lexer, begin_expr, end, begin_pos + std::distance(const_buffer_ptr, begin_expr));
+                lex_expr(lexer, begin_expr, end, begin_pos + std::distance(begin, begin_expr));
+                push_newline();
                 return;
             }
         }
 
-        // Fall back to the original iterator value
         it = begin_expr;
     }
 
-    // Try command context
     if(it != end)
     {
-        lex_command(lexer, it, end, begin_pos + std::distance(const_buffer_ptr, it), had_keycommand);
-        lex_newline(lexer, it, end, begin_pos + std::distance(const_buffer_ptr, it));
+        lex_command(lexer, it, end, begin_pos + std::distance(begin, it), had_keycommand);
+        push_newline();
         return;
     }
 
     // it == end
-    lex_newline(lexer, it, end, begin_pos + std::distance(const_buffer_ptr, it));
-    return;
-}
-
-static void lex(LexerContext& lexer, const char* begin, const char* end)
-{
-    for(auto it = begin; it != end; it != end? ++it : it)
+    if(had_keycommand)
     {
-        const char *line_start = it;
-
-        while(it != end && *it != '\n')
-            ++it;
-
-        lex_line(lexer, begin, std::distance(begin, line_start), std::distance(begin, it));
+        push_newline();
+        return;
     }
 }
 
@@ -561,15 +542,25 @@ static void lex(LexerContext& lexer, const char* begin, const char* end)
 // TokenStream
 //
 
-std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, std::string data, const char* stream_name)
+std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, std::string data_, const char* stream_name)
 {
-    // TODO check for errors?!
-    LexerContext lexer(program);
-    lex(lexer, data.c_str(), data.c_str() + data.size());
+    LexerContext lexer(program, std::move(data_), stream_name);
 
-    // Use new instead of make_shared, we don't want weak_ptr to leave the TokenStream on memory.
-    return shared_ptr<TokenStream>(new TokenStream(program, stream_name, std::move(data), std::move(lexer.tokens)));
+    auto begin = lexer.stream.data.c_str();
+    auto end   = lexer.stream.data.c_str() + lexer.stream.data.size();
 
+    for(auto it = begin; it != end; )
+    {
+        const char *line_start = it;
+        const char *line_end = std::find(it, end, '\n');
+        lex_line(lexer, begin, std::distance(begin, line_start), std::distance(begin, line_end));
+        it = (line_end == end? line_end : std::next(line_end));
+    }
+
+    if(!lexer.any_error)
+        return shared_ptr<TokenStream>(new TokenStream(program, std::move(lexer.stream), std::move(lexer.tokens)));
+    else
+        return nullptr;
 }
 
 std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, const fs::path& path)
@@ -586,43 +577,47 @@ std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, cons
 }
 
 TokenStream::TokenStream(ProgramContext& program, const char* stream_name, std::string data, std::vector<TokenData> tokens)
-    : program(program), data(std::move(data)), stream_name(stream_name), tokens(std::move(tokens))
+    : program(program), text(std::move(data), stream_name), tokens(std::move(tokens))
 {
-    this->calc_lines();
+}
+
+TokenStream::TokenStream(ProgramContext& program, TextStream stream, std::vector<TokenData> tokens)
+    : program(program), text(std::move(stream)), tokens(std::move(tokens))
+{
 }
 
 TokenStream::TokenStream(TokenStream&& rhs)
-    : program(rhs.program), tokens(std::move(rhs.tokens)), line_offset(std::move(line_offset)),
-      stream_name(std::move(rhs.stream_name)), data(std::move(rhs.data))
+    : program(rhs.program), tokens(std::move(rhs.tokens)), text(std::move(rhs.text))
 {
     Ensures(&rhs.program == &this->program);
 }
 
-void TokenStream::calc_lines()
+TokenStream::TextStream::TextStream(std::string data_, std::string name_)
+    : data(std::move(data_)), stream_name(std::move(name_))
 {
-    if(this->data.empty() || !this->line_offset.empty())
-        return;
-
-    // Assumes an average of 100 characters per line at first.
-    this->line_offset.reserve(this->data.size() / 100);
-
-    // pushes first line offset
-    this->line_offset.emplace_back(0);
-
-    for(const char* it = this->data.c_str(); *it; ++it)
-    {
-        if(*it == '\n')
-        {
-            size_t pos = (it - this->data.c_str());
-            this->line_offset.emplace_back(pos+1);
-        }
-    }
-
-    this->line_offset.shrink_to_fit();
     this->max_offset = this->data.size();
+    if(!this->data.empty())
+    {
+        // Assumes an average of 100 characters per line at first.
+        this->line_offset.reserve(this->data.size() / 100);
+
+        // pushes first line offset
+        this->line_offset.emplace_back(0);
+
+        for(const char* it = this->data.c_str(); *it; ++it)
+        {
+            if(*it == '\n')
+            {
+                size_t pos = (it - this->data.c_str());
+                this->line_offset.emplace_back(pos+1);
+            }
+        }
+
+        this->line_offset.shrink_to_fit();
+    }
 }
 
-std::string TokenStream::get_line(size_t lineno) const
+std::string TokenStream::TextStream::get_line(size_t lineno) const
 {
     size_t offset = offset_for_line(lineno);
 
@@ -634,7 +629,7 @@ std::string TokenStream::get_line(size_t lineno) const
     return std::string(start, end);
 }
 
-size_t TokenStream::offset_for_line(size_t lineno) const
+size_t TokenStream::TextStream::offset_for_line(size_t lineno) const
 {
     size_t i = (lineno - 1);
     if(i < line_offset.size())
@@ -643,7 +638,7 @@ size_t TokenStream::offset_for_line(size_t lineno) const
         throw std::logic_error("Bad `lineno` in TokenStream::offset_for_line");
 }
 
-auto TokenStream::linecol_from_offset(size_t offset) const -> std::pair<size_t, size_t>
+auto TokenStream::TextStream::linecol_from_offset(size_t offset) const -> std::pair<size_t, size_t>
 {
     for(auto it = line_offset.begin(), end = line_offset.end(); it != end; ++it)
     {
@@ -666,7 +661,8 @@ std::string TokenStream::to_string() const
     std::string output;
     for(auto& token : this->tokens)
     {
-        output += fmt::format("({}) '{}'\n", (int)(token.type), std::string(this->data.c_str() + token.begin, this->data.c_str() + token.end));
+        auto string = std::string(this->text.data.c_str() + token.begin, this->text.data.c_str() + token.end);
+        output += fmt::format("({}) '{}'\n", (int)(token.type), string);
     }
     return output;
 }
@@ -688,7 +684,7 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
             auto index = value.substr(begin_index + 1,  i - (begin_index + 1));
             try
             {
-		using index_type = decltype(Miss2Identifier::index);
+                using index_type = decltype(Miss2Identifier::index);
                 if(is_number_index)
                     return Miss2Identifier { ident.to_string(), index_type(std::stoi(index.to_string())) };
                 else

@@ -2,44 +2,15 @@
 #include "parser.hpp"
 #include "program.hpp"
 
+// TODO fix arrays in the rest of the compiler
+
 using TokenData      = TokenStream::TokenData;
-using token_iterator = const TokenData*;//std::vector<TokenData>::const_iterator;
+using token_iterator = const TokenData*;
 
 enum class ParserStatus
 {
-    GiveUp,         // Could not understand a thing (e.g. SWITCH while trying to parse WHILE).
+    GiveUp,     //< Could not understand a thing (e.g. SWITCH while trying to parse WHILE).
     Error,
-};
-
-struct ParserSuccess
-{
-    shared_ptr<SyntaxTree> tree;
-
-    explicit ParserSuccess(shared_ptr<SyntaxTree> tree) :
-        tree(std::move(tree))
-    {}
-
-    explicit ParserSuccess(SyntaxTree* raw_tree_2smart) :
-        tree(raw_tree_2smart)
-    {}
-
-    explicit ParserSuccess(std::nullptr_t)
-    {}
-};
-
-struct ParserError
-{
-    ParserStatus    state;
-    std::string     error;
-    token_iterator  context;
-
-    explicit ParserError(ParserStatus state, token_iterator context) :
-        state(state), context(std::move(context))
-    {}
-
-    explicit ParserError(ParserStatus state, token_iterator context, std::string error) :
-        state(state), context(std::move(context)), error(std::move(error))
-    {}
 };
 
 struct ParserContext
@@ -52,13 +23,43 @@ struct ParserContext
         program(program), tstream(tstream)
     {
         this->instream = std::make_shared<SyntaxTree::InputStream>();
-        this->instream->filename = std::make_shared<std::string>(tstream.stream_name);
+        this->instream->filename = std::make_shared<std::string>(tstream.text.stream_name);
         this->instream->tstream = tstream.shared_from_this();
     }
 };
 
+struct ParserSuccess
+{
+    shared_ptr<SyntaxTree> tree;
 
-using ParserFailure = std::vector<ParserError>; // TODO small_vector<ParserError, 1>
+    explicit ParserSuccess(std::nullptr_t)
+    {}
+
+    explicit ParserSuccess(shared_ptr<SyntaxTree> tree) :
+        tree(std::move(tree))
+    {}
+
+    explicit ParserSuccess(SyntaxTree* to_smart_ptr) :
+        tree(to_smart_ptr)
+    {}
+};
+
+struct ParserError
+{
+    ParserStatus    state;
+    token_iterator  context;
+    std::string     error;
+
+    explicit ParserError(ParserStatus state, token_iterator context) :
+        state(state), context(std::move(context))
+    {}
+
+    explicit ParserError(ParserStatus state, token_iterator context, std::string error) :
+        state(state), context(std::move(context)), error(std::move(error))
+    {}
+};
+
+using ParserFailure = small_vector<ParserError, 1>;
 
 using ParserState = variant<ParserSuccess, ParserFailure>;
 
@@ -66,10 +67,7 @@ using ParserResult = std::pair<token_iterator, ParserState>;
 
 using ParserRule = ParserResult(*)(ParserContext&, token_iterator, token_iterator);
 
-//static ParserResult parser_statement_list(ParserContext& parser, token_iterator begin_, token_iterator end);
-static ParserResult parse_command_statement(ParserContext& parser, token_iterator begin, token_iterator end);
-static ParserResult parse_statement(ParserContext& parser, token_iterator begin, token_iterator end);
-
+/// Constructs a `ParserState` with a error state by using `args...` to construct its `ParserError`.
 template<typename... Args>
 static auto make_error(Args&&... args) -> ParserState
 {
@@ -77,43 +75,50 @@ static auto make_error(Args&&... args) -> ParserState
     return ParserState(ParserFailure{ std::move(e) });
 }
 
-static void add_error(ParserState& opt, ParserError e)
+/// If `state` is `ParserSuccess`, transforms it into a `ParserFailure` and appends `e`.
+/// If `state` is `ParserFailure`, appends `e` into the failure object.
+static void add_error(ParserState& state, ParserError e)
 {
-    if(is<ParserSuccess>(opt))
-        opt = make_error(std::move(e));
+    if(is<ParserSuccess>(state))
+        state = make_error(std::move(e));
     else
-        get<ParserFailure>(opt).emplace_back(std::move(e));
+        get<ParserFailure>(state).emplace_back(std::move(e));
 }
 
-static void add_error(ParserState& opt, const ParserFailure& elist)
+/// Copies all the errors from `elist` into `state`.
+static void add_error(ParserState& state, const ParserFailure& elist)
 {
     for(auto& e : elist)
-        add_error(opt, e);
+        add_error(state, e);
 }
 
-static void add_error(ParserState& opt, const ParserState& estate)
+/// If `estate` is `ParserFailure`, transforms `state` into `ParserFailure` and appends all
+/// the errors from `estate` into it.
+static void add_error(ParserState& state, const ParserState& estate)
 {
     if(!is<ParserSuccess>(estate))
-        add_error(opt, get<ParserFailure>(estate));
+        add_error(state, get<ParserFailure>(estate));
 }
 
-static bool parser_isgiveup(const ParserState& opt)
+/// Checks if any of the error states in `state` is `ParserStatus::GiveUp`.
+static bool parser_isgiveup(const ParserState& state)
 {
-    if(!is<ParserSuccess>(opt))
+    if(!is<ParserSuccess>(state))
     {
-        for(auto& e : get<ParserFailure>(opt))
+        for(auto& e : get<ParserFailure>(state))
         {
             if(e.state != ParserStatus::GiveUp)
                 return false;
         }
-        assert(get<ParserFailure>(opt).size() == 1); // this is not necessarely true, 
-                                         // if this asserts, just remove this line.
         return true;
     }
     return false;
 }
 
-// requires std::prev(it) to be valid
+/// If `it` is not `end` or `Token::NewLine`, appends a error state into `state` and returns false.
+/// Otherwise, returns true and `state` is unchanged.
+///
+/// \warning Requires std::prev(it) to be valid
 static bool expect_newline(ParserState& state, token_iterator it, token_iterator end)
 {
     if(it != end && it->type != Token::NewLine)
@@ -124,6 +129,10 @@ static bool expect_newline(ParserState& state, token_iterator it, token_iterator
     return true;
 }
 
+/// If `it` is not `type`, appends a error state into `state` and returns false.
+/// Otherwise, returns true and `state` is unchanged.
+///
+/// Note: `begin` is used to give a context to the error.
 static bool expect_endtoken(ParserState& state, token_iterator begin, token_iterator end, token_iterator it, Token type)
 {
     if(it == end || it->type != type)
@@ -141,6 +150,7 @@ static bool expect_endtoken(ParserState& state, token_iterator begin, token_iter
     return true;
 }
 
+/// Transforms all the `ParserStatus::GiveUp` states in `state` into a "expected `what`" error state.
 static ParserState giveup_to_expected(ParserState state, const char* what)
 {
     if(!is<ParserSuccess>(state))
@@ -158,7 +168,7 @@ static ParserState giveup_to_expected(ParserState state, const char* what)
     return state;
 }
 
-// returns it with std::prev(it)->type == type or end
+/// Returns `it` with `std::prev(it)->type == type` or `it == end`.
 static token_iterator parser_aftertoken(token_iterator it, token_iterator end, Token type)
 {
     for(; it != end; ++it)
@@ -169,12 +179,16 @@ static token_iterator parser_aftertoken(token_iterator it, token_iterator end, T
     return end;
 }
 
+///
 static ParserResult parse_oneof(ParserContext& parser,
                                  token_iterator begin, token_iterator end)
 {
     return std::make_pair(end, make_error(ParserStatus::GiveUp, begin, ""));
 }
 
+/// Matches the first rule in `rule, rules...` that does not produce a `GiveUp` state.
+///
+/// Essentially, performs a (rule | rules....).
 template<typename RuleFunc, typename... Args>
 static ParserResult parse_oneof(ParserContext& parser,
                                  token_iterator begin, token_iterator end,
@@ -189,9 +203,7 @@ static ParserResult parse_oneof(ParserContext& parser,
 
 }
 
-
-// Returns either success, if the rule returns ParserSuccess until condition happens,
-// or returns failure, with all the ParserFailure states untouched (including GiveUp), in the result state.
+/// Essentially performs a (rule)*.
 template<typename RuleFunc, typename UntilCondition>
 static ParserResult parse_until_if(RuleFunc rule,
                                    ParserContext& parser, token_iterator begin, token_iterator end,
@@ -226,29 +238,17 @@ static ParserResult parse_until_if(RuleFunc rule,
 
 
 
+//////////////////////////////////////////////////////////////////////////////////////////////
+////// Parser Rules
+//////////////////////////////////////////////////////////////////////////////////////////////
 
-
-
-//////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-
-
+static ParserResult parse_statement(ParserContext& parser, token_iterator begin, token_iterator end);
 
 /*
-    newLine
-	    :	WS* '\r'? ('\n'|EOF) -> SKIPS
+    identifier
+	    :	IDENTIFIER -> IDENTIFIER
 	    ;
 */
-static ParserResult parse_newline(ParserContext& parser, token_iterator begin, token_iterator end)
-{
-    if(begin != end && begin->type == Token::NewLine)
-    {
-        return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Ignore, parser.instream, *begin)));
-    }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
-}
-
 static ParserResult parse_identifier(ParserContext& parser, token_iterator begin, token_iterator end)
 {
     if(begin != end && begin->type == Token::Identifier)
@@ -260,9 +260,9 @@ static ParserResult parse_identifier(ParserContext& parser, token_iterator begin
 
 /*
     scopeStatement
-	    :	WS* '{' newLine
+	    :	'{' newLine
 			    statementList
-		    WS* '}' newLine
+		    '}' newLine
 	    ->	^(SCOPE statementList)
 	    ;
 */
@@ -305,12 +305,7 @@ static ParserResult parse_scope_statement(ParserContext& parser, token_iterator 
 
 /*
     argument
-	    :	WS*
-		    (INTEGER -> INTEGER
-		    |FLOAT -> FLOAT
-		    ////|IDENTIFIER '[' idx=(IDENTIFIER|INTEGER) WS* ']' -> ^(ARRAY IDENTIFIER $idx)
-		    |IDENTIFIER -> IDENTIFIER
-		    |STRING -> STRING)
+	    :	(INTEGER | FLOAT | IDENTIFIER | STRING)
 	    ;
 */
 static ParserResult parse_argument(ParserContext& parser, token_iterator begin, token_iterator end)
@@ -344,17 +339,11 @@ static ParserResult parse_argument(ParserContext& parser, token_iterator begin, 
 
 /*
     expressionStatement
-	    :	(id=identifier opa1=assignmentOperators1 a=argument newLine)
-		    ->  ^($opa1 $id $a)
-	    |	(id=identifier opa2=assignmentOperators2 a=argument newLine)
-		    ->  ^(OP_EQ $id ^($opa2  ^($id) $a))
-		    // for some reason $id (instead of ^($id)) doesn't work properly with arrays
-	    |	(id=identifier WS* '=' a=argument opb=binaryOperators b=argument newLine)
-		    ->  ^(OP_EQ $id ^($opb $a $b))
-	    |	(a=argument opr=relationalOperators b=argument newLine)
-		    ->  ^($opr $a $b)
-	    |   ((unaryOperators identifier | identifier unaryOperators) newLine)
-		    ->  ^(unaryOperators identifier)
+	    :	unaryStatement
+	    |	relationalStatement
+	    |	assignBinaryStatement
+	    |	assignment1Statement
+	    |   assignment2Statement
 	    ;
 */
 static ParserResult parse_expression_statement(ParserContext& parser, token_iterator begin, token_iterator end)
@@ -366,8 +355,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     // Helper Rules
 
     /*
-    	|	(a=match_lhs opb=match_operator b=match_rhs)
-		->  ^($opb $a $b)
+    	expression : (a=match_lhs opb=match_operator b=match_rhs) -> ^($opb $a $b) ;
     */
     auto parse_expression = [](ParserContext& parser, token_iterator begin, token_iterator end,
                                auto match_lhs, auto match_op, auto match_rhs) -> ParserResult
@@ -412,8 +400,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-    	|	(a=match_lhs opb=match_operator b=match_rhs) newLine
-		->  ^($opb $a $b)
+    	expressionThenNewline : expression newLine -> expression ;
     */
     auto parse_expression_then_newline = [&](ParserContext& parser, token_iterator begin, token_iterator end,
                                              auto match_lhs, auto match_op, auto match_rhs) -> ParserResult
@@ -436,8 +423,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-        |	(a=argument opb=binaryOperators b=argument)
-        ->  ^($opb $a $b)
+        binaryExpression : (a=argument opb=binaryOperators b=argument) ->  ^($opb $a $b) ;
     */
     auto parse_binary_expression = [&](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
@@ -461,8 +447,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     // Rules
 
     /*
-	    |   ((unaryOperators identifier | identifier unaryOperators) newLine)
-		    ->  ^(unaryOperators identifier)
+	    unaryStatement : ((unaryOperators identifier | identifier unaryOperators) newLine) ->  ^(unaryOperators identifier) ;
     */
     auto parse_unary_statement = [](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
@@ -511,8 +496,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-        |	(a=argument opr=relationalOperators b=argument newLine)
-        ->  ^($opr $a $b)
+        relationalStatement : (a=argument opr=relationalOperators b=argument newLine) -> ^($opr $a $b) ;
     */
     auto parse_relational_statement = [&](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
@@ -531,8 +515,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-	    :	(id=identifier opa1=assignmentOperators1 a=argument newLine)
-		    ->  ^($opa1 $id $a)
+	    assignment1Statement : (id=identifier opa1=assignmentOperators1 a=argument newLine) ->  ^($opa1 $id $a) ;
     */
     auto parse_assigment1_statement = [&](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
@@ -549,8 +532,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-        |	(id=identifier opa2=assignmentOperators2 a=argument newLine)
-        ->  ^(OP_EQ $id ^($opa2  ^($id) $a))
+        assignment2Statement : (id=identifier opa2=assignmentOperators2 a=argument newLine) -> ^(OP_EQ $id ^($opa2  ^($id) $a)) ;
     */
     auto parse_assigment2_statement = [&](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
@@ -597,8 +579,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-        |	(id=identifier WS* '=' a=argument opb=binaryOperators b=argument newLine)
-        ->  ^(OP_EQ $id ^($opb $a $b))
+        assignBinaryStatement : (id=identifier '=' a=argument opb=binaryOperators b=argument newLine) -> ^(OP_EQ $id ^($opb $a $b)) ;
     */
     auto parse_assign_binary_statement = [&](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
@@ -612,6 +593,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
 
+
     return parse_oneof(parser, begin, end,
                        parse_unary_statement,
                        parse_relational_statement,
@@ -620,7 +602,9 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
                        parse_assigment2_statement);
 }
 
-// (WS* IDENTIFIER argument* newLine) -> ^(COMMAND IDENTIFIER argument*)
+/*
+    actualCommandStatement : (COMMAND argument* newLine) -> ^(COMMAND COMMAND argument*) ;
+*/
 static ParserResult parse_actual_command_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
     if(begin != end && begin->type == Token::Command)
@@ -656,7 +640,7 @@ static ParserResult parse_actual_command_statement(ParserContext& parser, token_
 /*
     positiveCommandStatement
 	    :	expressionStatement
-	    |	(WS* IDENTIFIER argument* newLine) -> ^(COMMAND IDENTIFIER argument*)
+	    |	actualCommandStatement
 	    ;
 */
 static ParserResult parse_positive_command_statement(ParserContext& parser, token_iterator begin, token_iterator end)
@@ -675,7 +659,7 @@ static ParserResult parse_positive_command_statement(ParserContext& parser, toke
 
 /*
     commandStatement
-	    :	WS* NOT positiveCommandStatement -> ^(NOT positiveCommandStatement)
+	    :	NOT positiveCommandStatement -> ^(NOT positiveCommandStatement)
 	    |	positiveCommandStatement -> positiveCommandStatement
 	    ;
 */
@@ -709,16 +693,14 @@ static ParserResult parse_command_statement(ParserContext& parser, token_iterato
 }
 
 /*
-    keyStatement
-	    :	WS* MISSION_START newLine -> MISSION_START
-	    |	WS* MISSION_END newLine -> MISSION_END
-	    |	WS* SCRIPT_START newLine -> SCRIPT_START
-	    |	WS* SCRIPT_END newLine -> SCRIPT_END
+    keycommandStatement
+	    :	MISSION_START newLine -> MISSION_START
+	    |	MISSION_END newLine -> MISSION_END
+	    |	SCRIPT_START newLine -> SCRIPT_START
+	    |	SCRIPT_END newLine -> SCRIPT_END
+        |	BREAK newLine -> BREAK
+        |	CONTINUE newLine -> CONTINUE
 	    ;
-
-    loopControlStatement
-    :	WS* (BREAK -> BREAK | CONTINUE -> CONTINUE) newLine
-    ;
 */
 static ParserResult parse_keycommand_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -751,35 +733,32 @@ static ParserResult parse_keycommand_statement(ParserContext& parser, token_iter
 
 /*
     labelStatement
-	    :	WS* IDENTIFIER ':'
-	    ->	^(LABEL IDENTIFIER)
+	    :	LABEL newLine? -> LABEL
 	    ;
 */
 static ParserResult parse_label_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
-    // TODO -> ^(LABEL)?
     if(begin != end && begin->type == Token::Label)
     {
-        shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::Label, parser.instream, *begin));
-        TokenData temp__{ begin->type, begin->begin, begin->end - 1 }; // TODO 
-        tree->add_child(shared_ptr<SyntaxTree> { new SyntaxTree(NodeType::Identifier, parser.instream, temp__) });
-        return std::make_pair(std::next(begin), ParserSuccess(std::move(tree)));
+        auto it = std::next(begin);
+
+        if(it != end && it->type == Token::NewLine)
+            ++it;
+
+        TokenData label_token { begin->type, begin->begin, begin->end - 1 };
+        shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::Label, parser.instream, label_token));
+        return std::make_pair(it, ParserSuccess(std::move(tree)));
     }
     return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
 
 /*
     variableDeclaration
-	    :	WS*
+	    :	
 		    type=(VAR_INT|LVAR_INT|VAR_FLOAT|LVAR_FLOAT|VAR_TEXT_LABEL|LVAR_TEXT_LABEL|VAR_TEXT_LABEL16|LVAR_TEXT_LABEL16)
-		    variableDeclarationIdentity+
+		    identifier+
 		    newLine
-	    -> ^($type variableDeclarationIdentity+)
-	    ;
-	
-    variableDeclarationIdentity
-	    :	WS+ IDENTIFIER ('['  integerConstant WS* ']')?
-	    ->  ^(IDENTIFIER integerConstant?)
+	    -> ^($type identifier+)
 	    ;
 */
 static ParserResult parse_variable_declaration(ParserContext& parser, token_iterator begin, token_iterator end)
@@ -842,12 +821,12 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
 	    ;
 	
     conditionListAnd
-	    :	commandStatement ((WS*)! AND commandStatement)+
+	    :	commandStatement (AND commandStatement)+
 	    ->	^(AND commandStatement+)
 	    ;
 	
     conditionListOr
-	    :	commandStatement ((WS*)! OR commandStatement)+
+	    :	commandStatement (OR commandStatement)+
 	    ->	^(OR commandStatement+)
 	    ;
 */
@@ -924,9 +903,9 @@ static ParserResult parse_condition_list(ParserContext& parser, token_iterator b
 
 /*
     whileStatement
-	    :	WS* WHILE conditionList
+	    :	WHILE conditionList
 			    statementList
-		    WS* ENDWHILE newLine
+		    ENDWHILE newLine
 	    ->  ^(WHILE conditionList statementList)
 	    ;
 */
@@ -970,9 +949,9 @@ static ParserResult parse_while_statement(ParserContext& parser, token_iterator 
 
 /*
     repeatStatement
-	    :	WS* REPEAT argument identifier newLine
+	    :	REPEAT argument identifier newLine
 			    statementList
-		    WS* ENDREPEAT newLine
+		    ENDREPEAT newLine
 	    ->	^(REPEAT argument identifier statementList)
 	    ;
 */
@@ -1023,20 +1002,23 @@ static ParserResult parse_repeat_statement(ParserContext& parser, token_iterator
 
 /*
     switchStatement
-	    :	WS* SWITCH argument newLine
-			    switchStatementCase*
-			    switchStatementDefault?
-		    WS* ENDSWITCH newLine
-	    -> ^(SWITCH argument ^(BLOCK switchStatementCase+ switchStatementDefault?))
+	    :	SWITCH argument newLine
+			    switchCase*
+		    ENDSWITCH newLine
+	    -> ^(SWITCH argument switchCase*)
 	    ;
 
+    switchCase
+        :   (switchStatementCase|switchStatementDefault)
+        ;
+
     switchStatementCase
-	    :	WS* CASE argument newLine statementList
+	    :	CASE argument newLine statementList
 	    -> ^(CASE argument statementList)
 	    ;
 
     switchStatementDefault
-	    :	WS* DEFAULT newLine statementList
+	    :	DEFAULT newLine statementList
 	    -> ^(DEFAULT statementList)
 	    ;
 */
@@ -1124,11 +1106,11 @@ static ParserResult parse_switch_statement(ParserContext& parser, token_iterator
 
 /*
     ifStatement
-	    :	WS* IF conditionList
+	    :	IF conditionList
 			    statIf=statementList
-		    (WS* ELSE newLine
+		    (ELSE newLine
 			    statElse=statementList)?
-		    WS* ENDIF newLine
+		    ENDIF newLine
 	    ->	^(IF conditionList $statIf ^(ELSE $statElse)?)
 	    ;
 */
@@ -1198,23 +1180,20 @@ static ParserResult parse_if_statement(ParserContext& parser, token_iterator beg
 
 /*
     statement
-	    : newLine
-	    | scopeStatement
+	    : scopeStatement
 	    | ifStatement
 	    | whileStatement
 	    | repeatStatement
 	    | switchStatement
 	    | variableDeclaration
-	    | loopControlStatement
 	    | labelStatement
-	    | keyStatement
+	    | keycommandStatement
 	    | commandStatement
 	    ;
 */
 static ParserResult parse_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
     auto result = parse_oneof(parser, begin, end,
-                              parse_newline,
                               parse_scope_statement,
                               parse_if_statement,
                               parse_while_statement,
@@ -1232,16 +1211,6 @@ static ParserResult parse_statement(ParserContext& parser, token_iterator begin,
     }
     return result;
 }
-
-static ParserResult parser(ParserContext& parser, token_iterator begin, token_iterator end)
-{
-    auto result = parse_until_if(parse_statement, parser, begin, end, [](token_iterator) { return false; });
-    if(is<ParserSuccess>(result.second))
-        return result;
-    else
-        return std::make_pair(result.first, giveup_to_expected(std::move(result.second), "statement"));
-}
-
 
 //
 // SyntaxTree
@@ -1270,19 +1239,19 @@ shared_ptr<SyntaxTree> SyntaxTree::clone()
 
 std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const TokenStream& tstream)
 {
-    ParserContext parser_ctx(program, tstream);
-
-    auto begin = tstream.tokens.data();
-    auto end = tstream.tokens.data() + tstream.tokens.size();
+    ParserContext parser(program, tstream);
 
     shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::Block));
 
-    ParserState statement;
-    bool any_error = false;
+    auto tokens_begin = tstream.tokens.data();
+    auto tokens_end   = tstream.tokens.data() + tstream.tokens.size();
 
-    for(auto it = begin; it != end; )
+    ParserState statement;
+    bool any_error = false; // if any error, stop building AST
+
+    for(auto it = tokens_begin; it != tokens_end; )
     {
-        std::tie(it, statement) = parse_statement(parser_ctx, it, end);
+        std::tie(it, statement) = parse_statement(parser, it, tokens_end);
         if(is<ParserSuccess>(statement))
         {
             if(!any_error)
@@ -1297,16 +1266,18 @@ std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const T
         else
         {
             any_error = true;
+
             auto state = giveup_to_expected(get<ParserFailure>(statement), "statement");
+
             for(auto& fail : get<ParserFailure>(state))
             {
-                if(fail.context == end)
+                if(fail.context == tokens_end)
                 {
                     program.error(nocontext, fail.error.c_str());
                 }
                 else
                 {
-                    TokenStream::TokenInfo token_info{ tstream.shared_from_this(), *fail.context };
+                    TokenStream::TokenInfo token_info(tstream.text, *fail.context);
                     program.error(token_info, fail.error.c_str());
                 }
             }
@@ -1315,20 +1286,10 @@ std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const T
 
     if(!any_error)
     {
-        if(true)
-        {
-            //puts(tree->to_string().c_str());
-            //puts("---------------------------\n");
-            //throw 0; // TODO remove me
-            return tree;
-        }
-        throw 2; // TODO remove me
+        //puts(tree->to_string().c_str());
+        return tree;
     }
-    else
-    {
-        throw 1; // TODO remove me
-        return nullptr;
-    }
+    return nullptr;
 }
 
 std::string SyntaxTree::to_string(size_t level) const

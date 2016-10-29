@@ -25,15 +25,51 @@ public:
         size_t end;     //< Offset for token in TokenStream::data (end)
     };
 
+    struct TextStream
+    {
+        const std::string   stream_name;  //< Name of this stream (usually name of the source file).
+        const std::string   data;         //< UTF-8 source file.
+        std::vector<size_t> line_offset;
+        size_t              max_offset = 0;
+
+        explicit TextStream(std::string data, std::string name);
+
+        /// Gets the byte offset in this->text() that the specified line number (1-based) is in.
+        ///
+        /// \throws std::logic_error if lineno does not exist.
+        size_t offset_for_line(size_t lineno) const;
+
+        /// Gets the content of the specified line number (1-based).
+        ///
+        /// \throws std::logic_error if lineno does not exist.
+        std::string get_line(size_t lineno) const;
+
+        /// Gets the (lineno, colno) (1-based) of the specified offset in the stream data.
+        ///
+        /// \throws std::logic_error if offset is out of range.
+        std::pair<size_t, size_t> linecol_from_offset(size_t offset) const;
+    };
+
+    // Used for error messages
     struct TokenInfo
     {
-        shared_ptr<const TokenStream> tstream;
-        TokenData                     token;
+        const TextStream& stream;
+        size_t            begin;
+        size_t            end;
+
+        explicit TokenInfo(const TextStream& stream, size_t begin, size_t end)
+            : stream(stream), begin(begin), end(end)
+        {
+        }
+
+        explicit TokenInfo(const TextStream& stream, const TokenData& token)
+            : TokenInfo(stream, token.begin, token.end)
+        {
+        }
     };
 
 public:
-    const std::string             stream_name;  //< Name of this stream (usually name of the source file).
-    const std::string             data;         //< UTF-8 source file.
+    const TextStream              text;
     const std::vector<TokenData>  tokens;       //< Tokenized source file.
 
 public:
@@ -42,33 +78,14 @@ public:
     TokenStream(TokenStream&&);
     TokenStream(const TokenStream&) = delete;
 
-    /// Gets the byte offset in this->text() that the specified line number (1-based) is in.
-    ///
-    /// \throws std::logic_error if lineno does not exist.
-    size_t offset_for_line(size_t lineno) const;
-
-    /// Gets the content of the specified line number (1-based).
-    ///
-    /// \throws std::logic_error if lineno does not exist.
-    std::string get_line(size_t lineno) const;
-
-    /// Gets the (lineno, colno) (1-based) of the specified offset in the stream data.
-    ///
-    /// \throws std::logic_error if offset is out of range.
-    std::pair<size_t, size_t> linecol_from_offset(size_t offset) const;
-
     /// For debugging purposes.
     std::string to_string() const;
 
 private:
     ProgramContext&         program;
-    std::vector<size_t>     line_offset;
-    size_t                  max_offset;
 
-    explicit TokenStream(ProgramContext&, optional<std::string> data, const char* stream_name);
     explicit TokenStream(ProgramContext&, const char* stream_name, std::string data, std::vector<TokenData>);
-
-    void calc_lines();
+    explicit TokenStream(ProgramContext&, TextStream stream, std::vector<TokenData>);
 };
 
 class SyntaxTree : public std::enable_shared_from_this<SyntaxTree>
@@ -100,7 +117,7 @@ public:
     string_view text() const
     {
         Expects(this->instream != nullptr);
-        auto source_data = this->instream->tstream.lock()->data.c_str();
+        auto source_data = this->instream->tstream.lock()->text.data.c_str();
         return string_view(source_data + this->token.begin, this->token.end - this->token.begin);
     }
 
@@ -233,11 +250,11 @@ public:
         return this->instream? this->instream->tstream : weak_ptr<const TokenStream>();
     }
 
-    /// Offset to this token in the input stream data.
-    size_t offset() const
+    ///
+    const TokenStream::TokenData get_token() const
     {
         Expects(this->instream != nullptr);
-        return this->token.begin;
+        return this->token;
     }
 
     /// For debugging purposes.
