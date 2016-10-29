@@ -12,6 +12,19 @@ struct String128Annotation
     std::string string;
 };
 
+// not used
+struct VarAnnotation
+{
+    shared_ptr<Var>                             base;
+    optional<variant<int32_t, shared_ptr<Var>>> index;
+};
+
+struct ArrayAnnotation
+{
+    shared_ptr<Var>                  base;
+    variant<int32_t, shared_ptr<Var>> index;
+};
+
 struct ModelAnnotation
 {
     weak_ptr<const Script> where;       // weak to avoid circular reference

@@ -3,14 +3,137 @@
 
 struct ParserContext;
 
-// TODO REMOVE
-#include "grammar/autogen/gta3scriptsTokens.hpp"
-using NodeType = Token;
+enum class Token
+{
+    Command,
+    Label,
+    ScopeBegin,
+    ScopeEnd,
+    MISSION_START,
+    MISSION_END,
+    SCRIPT_START,
+    SCRIPT_END,
+    NewLine,
+
+    VAR_INT,
+    VAR_FLOAT,
+    VAR_TEXT_LABEL,
+    VAR_TEXT_LABEL16,
+    LVAR_INT,
+    LVAR_FLOAT,
+    LVAR_TEXT_LABEL,
+    LVAR_TEXT_LABEL16,
+
+    Integer,
+    Float,
+    Identifier,
+    String,
+
+    NOT,
+    AND,
+    OR,
+    
+    IF,
+    ELSE,
+    ENDIF,
+
+    WHILE,
+    ENDWHILE,
+
+    REPEAT,
+    ENDREPEAT,
+
+    SWITCH,
+    ENDSWITCH,
+    CASE,
+    DEFAULT,
+    BREAK,
+    CONTINUE,
+
+    Decrement,
+    Increment,
+    Equal,
+    Greater,
+    GreaterEqual,
+    Lesser,
+    LesserEqual,
+    Plus,
+    Minus,
+    Times,
+    Divide,
+    TimedPlus,
+    TimedMinus,
+    EqCast,
+    EqPlus,
+    EqMinus,
+    EqTimes,
+    EqDivide,
+    EqTimedPlus,
+    EqTimedMinus,
+};
+
+
+enum class NodeType
+{
+    Block,
+    Command,
+    Label,
+    Scope,
+    MISSION_START,
+    MISSION_END,
+    SCRIPT_START,
+    SCRIPT_END,
+
+    VAR_INT,
+    VAR_FLOAT,
+    VAR_TEXT_LABEL,
+    VAR_TEXT_LABEL16,
+    LVAR_INT,
+    LVAR_FLOAT,
+    LVAR_TEXT_LABEL,
+    LVAR_TEXT_LABEL16,
+
+    Integer,
+    Float,
+    Identifier,
+    String,
+
+    NOT,
+    AND,
+    OR,
+
+    IF,
+    ELSE,
+    WHILE,
+    REPEAT,
+    SWITCH,
+    CASE,
+    DEFAULT,
+    BREAK,
+    CONTINUE,
+
+    Decrement,
+    Increment,
+    Cast,
+    Equal,
+    Greater,
+    GreaterEqual,
+    Lesser,
+    LesserEqual,
+    Add,
+    Sub,
+    Times,
+    Divide,
+    TimedAdd,
+    TimedSub,
+};
 
 struct Miss2Identifier
 {
-    std::string                         identifier;
-    optional<variant<int, std::string>> index;
+    // beware of the lifetime of the views
+
+    string_view                             identifier;
+    optional<variant<size_t, string_view>>  index;
 
     static auto match(const string_view& value) -> expected<Miss2Identifier, std::string>;
 };

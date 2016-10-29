@@ -776,31 +776,6 @@ private:
                 return arg_node.annotation<float>();
             }
 
-            case NodeType::Array:
-            {
-                auto opt_var = arg_node.child(0).maybe_annotation<shared_ptr<Var>>();
-                if(opt_var)
-                {
-                    if(auto opt_int = arg_node.child(1).maybe_annotation<int32_t>())
-                    {
-                        return CompiledVar{ std::move(*opt_var), std::move(*opt_int) };
-                    }
-                    else if(auto opt_index = arg_node.child(1).maybe_annotation<shared_ptr<Var>>())
-                    {
-                        return CompiledVar{ std::move(*opt_var), std::move(*opt_index) };
-                    }
-                    else
-                    {
-                        Unreachable();
-                    }
-                }
-                else
-                {
-                    Unreachable();
-                }
-                break;
-            }
-
             case NodeType::Identifier:
             {
                 if(auto opt_int = arg_node.maybe_annotation<int32_t>())
@@ -814,6 +789,13 @@ private:
                 else if(auto opt_var = arg_node.maybe_annotation<shared_ptr<Var>>())
                 {
                     return CompiledVar{ std::move(*opt_var), nullopt };
+                }
+                else if(auto opt_var = arg_node.maybe_annotation<const ArrayAnnotation&>())
+                {
+                    if(is<shared_ptr<Var>>(opt_var->index))
+                        return CompiledVar { opt_var->base, get<shared_ptr<Var>>(opt_var->index) };
+                    else
+                        return CompiledVar { opt_var->base, get<int32_t>(opt_var->index) };
                 }
                 else if(auto opt_label = arg_node.maybe_annotation<shared_ptr<Label>>())
                 {

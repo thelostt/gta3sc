@@ -285,9 +285,9 @@ void Script::send_input_vars(const SyntaxTree& target_label_node,
                 return false;
             }
         }
-        else if(arg_node.type() == NodeType::Array)
+        else if(auto opt_arg_var = arg_node.maybe_annotation<const ArrayAnnotation&>())
         {
-            auto& arg_var = arg_node.child(0).annotation<const shared_ptr<Var>&>();
+            auto& arg_var = opt_arg_var->base;
 
             this->assign_entity_type(lvar, arg_var, arg_node, program);
 
@@ -891,17 +891,17 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     return commands.set();
             case NodeType::Cast:
                 return commands.cset();
-            case NodeType::Plus:
+            case NodeType::Add:
                 return commands.add_thing_to_thing();
-            case NodeType::Minus:
+            case NodeType::Sub:
                 return commands.sub_thing_from_thing();
             case NodeType::Times:
                 return commands.mult_thing_by_thing();
             case NodeType::Divide:
                 return commands.div_thing_by_thing();
-            case NodeType::TimedPlus:
+            case NodeType::TimedAdd:
                 return commands.add_thing_to_thing_timed();
-            case NodeType::TimedMinus:
+            case NodeType::TimedSub:
                 return commands.sub_thing_from_thing_timed();
             case NodeType::Greater:
             case NodeType::Lesser: // with arguments inverted
@@ -909,27 +909,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             case NodeType::GreaterEqual:
             case NodeType::LesserEqual: // with arguments inverted
                 return commands.is_thing_greater_or_equal_to_thing();
-            case NodeType::Module:
-                // TODO CLEO
-                break;
-            case NodeType::LeftShift:
-                // TODO CLEO
-                break;
-            case NodeType::RightShift:
-                // TODO CLEO
-                break;
-            case NodeType::BitAND:
-                // TODO CLEO
-                break;
-            case NodeType::BitOR:
-                // TODO CLEO
-                break;
-            case NodeType::BitXOR:
-                // TODO CLEO
-                break;
-            case NodeType::OR:
-                // TODO CLEO
-                break;
             default:
                 return nullopt;
         }
@@ -1392,16 +1371,16 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                         switch(node.child(1).type())
                         {
-                            case NodeType::Minus:
+                            case NodeType::Sub:
                                 message = "XXX cannot do VAR1 = THING - VAR1";
                                 break;
                             case NodeType::Divide:
                                 message = "XXX cannot do VAR1 = THING / VAR1";
                                 break;
-                            case NodeType::TimedPlus:
+                            case NodeType::TimedAdd:
                                 message = "XXX cannot do VAR1 = THING +@ VAR1";
                                 break;
-                            case NodeType::TimedMinus:
+                            case NodeType::TimedSub:
                                 message = "XXX cannot do VAR1 = THING -@ VAR1";
                                 break;
                         }
@@ -1458,10 +1437,10 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                 auto& var_ident = node.child(0);
                 
-                // TODO also check for arrays (NodeType::Array)
                 if(var_ident.type() != NodeType::Identifier) // TODO unecessary? Checked on the parser.
                     program.fatal_error(var_ident, "XXX {} argument is not a identifier", opkind); // TODO use program.error and think about fallback
 
+                // TODO array
                 auto opt_varinfo = symbols.find_var(var_ident.text(), current_scope);
                 if(!opt_varinfo)
                     program.fatal_error(var_ident, "XXX {} is not a variable", var_ident.text()); // TODO use program.error and think about fallback

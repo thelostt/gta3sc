@@ -74,6 +74,65 @@ void Commands::add_default_models(const std::map<std::string, uint32_t, iless>& 
     }
 }
 
+static optional<VarAnnotation> find_var(const string_view& value, const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
+{
+    auto opt_token = Miss2Identifier::match(value);
+    if(opt_token)
+    {
+        auto& token = *opt_token;
+
+        if(auto opt_var = symbols.find_var(token.identifier, scope_ptr))
+        {
+            if(token.index == nullopt)
+            {
+                return VarAnnotation { *opt_var, nullopt };
+            }
+            else
+            {
+                using index_type = decltype(ArrayAnnotation::index);
+                if(is<size_t>(*token.index))
+                {
+                    auto& index = get<size_t>(*token.index);
+                    return VarAnnotation { *opt_var, index_type(index) };
+                }
+                else
+                {
+                    auto& index = get<string_view>(*token.index);
+                    if(auto opt_varidx = symbols.find_var(index, scope_ptr))
+                    {
+                        return VarAnnotation { *opt_var, index_type(*opt_varidx) };
+                    }
+                    else if(auto opt_idx = commands.find_constant_all(index))
+                    {
+                        return VarAnnotation { *opt_var, index_type(*opt_idx) };
+                    }
+                }
+            }
+
+        }
+    }
+    return nullopt;
+}
+
+static void annotate_var(SyntaxTree& node, const VarAnnotation& annotation)
+{
+    Expects(annotation.base != nullptr);
+    if(annotation.index)
+    {
+        if(node.is_annotated())
+            Expects(node.maybe_annotation<const ArrayAnnotation&>());
+        else
+            node.set_annotation(ArrayAnnotation { annotation.base, *annotation.index });
+    }
+    else
+    {
+        if(node.is_annotated())
+            Expects(node.maybe_annotation<const shared_ptr<Var>&>());
+        else
+            node.set_annotation(annotation.base);
+    }
+}
+
 static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg& arg, const SymTable& symbols)
 {
     bool is_good = false;
@@ -107,7 +166,7 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
 
 static bool match_var(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
 {
-    optional<shared_ptr<Var>> opt_var;
+    optional<string_view> var_ident;
 
     if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
     {
@@ -115,29 +174,63 @@ static bool match_var(const SyntaxTree& node, const Commands& commands, const Co
         if(arg.allow_constant && allow_vars)
         {
             if(node.text().size() && node.text().front() == '$')
-                opt_var = symbols.find_var(node.text().substr(1), scope_ptr);
+                var_ident = node.text().substr(1);
         }
         else if(allow_vars)
         {
-            opt_var = symbols.find_var(node.text(), scope_ptr);
+            var_ident = node.text();
         }
     }
     else
     {
-        opt_var = symbols.find_var(node.text(), scope_ptr);
+        var_ident = node.text();
     }
 
-    if(opt_var != nullopt)
+    if(var_ident != nullopt)
     {
-        try
+        auto opt_token = Miss2Identifier::match(*var_ident);
+        if(opt_token)
         {
-            match_identifier_var(*opt_var, arg, symbols);
-            return true; // var exists and matches arg type
+            auto& token = *opt_token;
+            auto opt_var = symbols.find_var(token.identifier, scope_ptr);
+
+            if(token.index != nullopt)
+            {
+                if(!is<size_t>(*token.index))
+                {
+                    auto& index = get<string_view>(*token.index);
+
+                    if(auto opt_varidx = symbols.find_var(index, scope_ptr))
+                    {
+                        if((*opt_varidx)->type != VarType::Int)
+                            throw BadAlternator(node, "XXX var in index is not of int type");
+                        if((*opt_varidx)->count)
+                            throw BadAlternator(node, "XXX var in index is of array type");
+                    }
+                    else if(commands.find_constant_all(index) == nullopt) // TODO -pedantic error
+                    {
+                        throw BadAlternator(node, "XXX array index identifier is not a var");
+                    }
+                }
+            }
+
+            if(opt_var)
+            {
+                try
+                {
+                    match_identifier_var(*opt_var, arg, symbols);
+                    return true; // var exists and matches arg type
+                }
+                catch(const BadAlternator& error)
+                {
+                    // var exists but arg type doesn't match var type
+                    throw BadAlternator(node, error);
+                }
+            }
         }
-        catch(const BadAlternator& error)
+        else
         {
-            // var exists but arg type doesn't match var type
-            throw BadAlternator(node, error);
+            throw BadAlternator(node, opt_token.error().c_str());
         }
     }
 
@@ -253,38 +346,6 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                 case NodeType::Float:
                     bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::Float) && it_alter_arg->allow_constant);
                     break;
-                case NodeType::Array:
-                    try
-                    {
-                        static Command::Arg array_index_arg(ArgType::Integer);
-
-                        auto& var_node = (*it_target_arg)->child(0);
-                        if(!match_var(var_node, commands, *it_alter_arg, symbols, scope_ptr))
-                            throw BadAlternator(var_node, "XXX var array doesn't exist");
-
-                        auto& index_node = (*it_target_arg)->child(1);
-                        switch(index_node.type())
-                        {
-                            case NodeType::Integer:
-                                // Fine as is.
-                                break;
-                            case NodeType::Identifier:
-                                if(match_var(index_node, commands, array_index_arg, symbols, scope_ptr))
-                                    break;
-                                else if(commands.find_constant_all(index_node.text()) != nullopt)
-                                    break; // check for -pedantic will happen in annotate 
-                                else
-                                    throw BadAlternator(index_node, "XXX array index identifier is not a var");
-                                break;
-                            default:
-                                Unreachable();
-                        }
-                    }
-                    catch(const BadAlternator&)
-                    {
-                        bad_alternative = true;
-                    }
-                    break;
                 case NodeType::Identifier:
                     try
                     {
@@ -361,65 +422,6 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                 break;
             }
 
-            case NodeType::Array:
-            {
-                Expects(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Any);
-
-                auto& var_node = arg_node.child(0);
-                auto& idx_node = arg_node.child(1);
-
-                if(var_node.is_annotated())
-                {
-                    Expects(var_node.maybe_annotation<const shared_ptr<Var>&>());
-                    Expects(idx_node.maybe_annotation<const shared_ptr<Var>&>() || arg_node.child(1).maybe_annotation<int32_t>());
-                }
-                else
-                {
-                    auto opt_var_base = symbols.find_var(var_node.text(), scope_ptr);
-                    Expects(opt_var_base != nullopt);
-                    var_node.set_annotation(*opt_var_base);
-
-                    // TODO arg.out instead of !arg.allow_constant
-                    script.process_entity_type(var_node, arg.entity_type, !arg.allow_constant, program);
-
-                    switch(idx_node.type())
-                    {
-                        case NodeType::Integer:
-                            if(idx_node.is_annotated())
-                                Expects(idx_node.maybe_annotation<const int32_t&>());
-                            else
-                                idx_node.set_annotation(static_cast<int32_t>(std::stoi(idx_node.text().to_string(), nullptr, 0)));
-                            break;
-                        case NodeType::Identifier:
-                            if(auto opt_var_idx = symbols.find_var(idx_node.text(), scope_ptr))
-                            {
-                                if(idx_node.is_annotated())
-                                    Expects(idx_node.maybe_annotation<const shared_ptr<Var>&>());
-                                else
-                                    idx_node.set_annotation(*opt_var_idx);
-                            }
-                            else if(auto opt_idx = commands.find_constant_all(idx_node.text()))
-                            {
-                                if(idx_node.is_annotated())
-                                    Expects(idx_node.maybe_annotation<const int32_t&>());
-                                else
-                                {
-                                    if(program.opt.pedantic)
-                                        program.error(idx_node, "XXX constant in array index is not -pedantic");
-
-                                    idx_node.set_annotation(static_cast<int32_t>(*opt_idx));
-                                }
-                            }
-                            else
-                                Unreachable();
-                            break;
-                        default:
-                            Unreachable();
-                    }
-                }
-                break;
-            }
-
             case NodeType::Identifier:
             {
                 if(arg_node.maybe_annotation<const StreamedFileAnnotation&>())
@@ -439,37 +441,31 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                 }
                 else if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
                 {
-                    shared_ptr<Var> var_to_use;
+                    optional<VarAnnotation> var_to_use;
 
                     if(arg.allow_global_var || arg.allow_local_var)
                     {
-                        optional<std::string> varname;
+                        optional<string_view> var_ident;
 
                         if(arg.allow_constant)
                         {
                             if(arg_node.text().size() && arg_node.text().front() == '$')
-                                varname.emplace(arg_node.text().substr(1));
+                                var_ident.emplace(arg_node.text().substr(1));
                         }
                         else
                         {
-                            varname.emplace(arg_node.text());
+                            var_ident.emplace(arg_node.text());
                         }
 
-                        if(varname != nullopt)
+                        if(var_ident != nullopt)
                         {
-                            if(auto opt_var = symbols.find_var(*varname, scope_ptr))
-                            {
-                                var_to_use = *opt_var;
-                            }
+                            var_to_use = find_var(*var_ident, commands, symbols, scope_ptr);
                         }
                     }
 
                     if(var_to_use)
                     {
-                        if(arg_node.is_annotated())
-                            Expects(arg_node.maybe_annotation<const shared_ptr<Var>&>());
-                        else
-                            arg_node.set_annotation(var_to_use);
+                        annotate_var(arg_node, *var_to_use);
                     }
                     else if(arg.allow_constant)
                     {
@@ -507,13 +503,12 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                         bool avoid_var = is_model_enum && program.is_model_from_ide(arg_node.text());
                         // TODO VC miss2 doesn't allow models and vars with same name?
 
-                        if(auto opt_var = !avoid_var? symbols.find_var(arg_node.text(), scope_ptr) : nullopt)
+                        if(auto opt_var = !avoid_var? find_var(arg_node.text(), commands, symbols, scope_ptr) : nullopt)
                         {
-                             if(arg_node.is_annotated())
-                                Expects(arg_node.maybe_annotation<const shared_ptr<Var>&>());
-                            else
-                            {
-                                arg_node.set_annotation(*opt_var);
+                             bool was_annotated = arg_node.is_annotated();
+                             annotate_var(arg_node, *opt_var);
+                             if(!was_annotated) // i.e. do this only once
+                             {
                                 script.process_entity_type(arg_node, arg.entity_type, !arg.allow_constant, program);
                                 // TODO arg.out instead of !arg.allow_constant ^
                             }

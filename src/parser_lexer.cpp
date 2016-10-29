@@ -107,7 +107,7 @@ static const std::pair<string_view, Token> expr_symbols[] = {
     DEFINE_SYMBOL("/=", Token::EqDivide),
     DEFINE_SYMBOL("++", Token::Increment),
     DEFINE_SYMBOL("--", Token::Decrement),
-    DEFINE_SYMBOL("=#", Token::Cast),
+    DEFINE_SYMBOL("=#", Token::EqCast),
     DEFINE_SYMBOL("+@", Token::TimedPlus),
     DEFINE_SYMBOL("-@", Token::TimedMinus),
     DEFINE_SYMBOL("<=", Token::LesserEqual),
@@ -676,6 +676,9 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
     {
         if(value[i] == '[')
         {
+            if(begin_index != std::string::npos)
+                return make_unexpected<std::string>("XXX nesting of arrays index not allowed");
+
             begin_index = i;
         }
         else if(value[i] == ']')
@@ -684,11 +687,12 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
             auto index = value.substr(begin_index + 1,  i - (begin_index + 1));
             try
             {
+                // TODO check if index positive
                 using index_type = decltype(Miss2Identifier::index);
                 if(is_number_index)
-                    return Miss2Identifier { ident.to_string(), index_type(std::stoi(index.to_string())) };
+                    return Miss2Identifier { ident, index_type(std::stoi(index.to_string())) };
                 else
-                    return Miss2Identifier { ident.to_string(), index_type(index.to_string()) };
+                    return Miss2Identifier { ident, index_type(index) };
             }
             catch(const std::out_of_range&)
             {
@@ -702,5 +706,5 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
         }
     }
 
-    return Miss2Identifier { value.to_string(), nullopt };
+    return Miss2Identifier { value, nullopt };
 }

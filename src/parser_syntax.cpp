@@ -2,8 +2,6 @@
 #include "parser.hpp"
 #include "program.hpp"
 
-// TODO fix arrays in the rest of the compiler
-
 using TokenData      = TokenStream::TokenData;
 using token_iterator = const TokenData*;
 
@@ -431,12 +429,12 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
         {
             switch(token)
             {
-                case Token::Plus:           return NodeType::Plus;
-                case Token::Minus:          return NodeType::Minus;
+                case Token::Plus:           return NodeType::Add;
+                case Token::Minus:          return NodeType::Sub;
                 case Token::Times:          return NodeType::Times;
                 case Token::Divide:         return NodeType::Divide;
-                case Token::TimedPlus:      return NodeType::TimedPlus;
-                case Token::TimedMinus:     return NodeType::TimedMinus;
+                case Token::TimedPlus:      return NodeType::TimedAdd;
+                case Token::TimedMinus:     return NodeType::TimedSub;
                 default:                    return nullopt;
             }
         };
@@ -524,7 +522,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
             switch(token)
             {
                 case Token::Equal: return NodeType::Equal;
-                case Token::Cast:  return NodeType::Cast;
+                case Token::EqCast:return NodeType::Cast;
                 default:           return nullopt;
             }
         };
@@ -542,12 +540,12 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
             {
                 switch(token)
                 {
-                    case Token::EqPlus:         return NodeType::Plus;
-                    case Token::EqMinus:        return NodeType::Minus;
+                    case Token::EqPlus:         return NodeType::Add;
+                    case Token::EqMinus:        return NodeType::Sub;
                     case Token::EqTimes:        return NodeType::Times;
                     case Token::EqDivide:       return NodeType::Divide;
-                    case Token::EqTimedPlus:    return NodeType::TimedPlus;
-                    case Token::EqTimedMinus:   return NodeType::TimedMinus;
+                    case Token::EqTimedPlus:    return NodeType::TimedAdd;
+                    case Token::EqTimedMinus:   return NodeType::TimedSub;
                     default:                    return nullopt;
                 }
             };
@@ -712,8 +710,8 @@ static ParserResult parse_keycommand_statement(ParserContext& parser, token_iter
                         begin->type == Token::SCRIPT_END?    NodeType::SCRIPT_END :
                         begin->type == Token::BREAK?         NodeType::BREAK :
                         begin->type == Token::CONTINUE?      NodeType::CONTINUE :
-                                                             NodeType::Ignore;
-        if(type != NodeType::Ignore)
+                                                             NodeType::Block;
+        if(type != NodeType::Block)
         {
             ParserState state = ParserSuccess(nullptr);
 
@@ -773,9 +771,9 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
                         begin->type == Token::LVAR_TEXT_LABEL? NodeType::LVAR_TEXT_LABEL :
                         begin->type == Token::VAR_TEXT_LABEL16? NodeType::VAR_TEXT_LABEL16 :
                         begin->type == Token::LVAR_TEXT_LABEL16? NodeType::LVAR_TEXT_LABEL16 :
-                                                                   NodeType::Ignore;
+                                                                   NodeType::Block;
 
-        if(type != NodeType::Ignore)
+        if(type != NodeType::Block)
         {
             auto it = std::next(begin);
             ParserState idents;
@@ -1220,7 +1218,7 @@ SyntaxTree::SyntaxTree(SyntaxTree&& rhs)
     : type_(rhs.type_), token(std::move(rhs.token)), childs(std::move(rhs.childs)), parent_(std::move(rhs.parent_)),
       udata(std::move(rhs.udata)), instream(std::move(rhs.instream))
 {
-    rhs.type_ = NodeType::Ignore;
+    rhs.type_ = NodeType::Block;
     rhs.parent_ = nullopt;
 }
 
@@ -1256,11 +1254,7 @@ std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const T
         {
             if(!any_error)
             {
-                auto& node = get<ParserSuccess>(statement).tree;
-                if(node->type() != NodeType::Ignore)
-                {
-                    tree->add_child(get<ParserSuccess>(statement).tree);
-                }
+                tree->add_child(get<ParserSuccess>(statement).tree);
             }
         }
         else
