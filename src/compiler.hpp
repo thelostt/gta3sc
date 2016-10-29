@@ -303,8 +303,6 @@ private:
             case NodeType::LVAR_TEXT_LABEL16:
                 // Nothing to do, vars already known from symbol table.
                 break;
-            case NodeType::Ignore:
-                break;
             default:
                 Unreachable();
         }
@@ -421,6 +419,8 @@ private:
                     });
                     break;
                 case NodeType::DEFAULT:
+                    if(case_default.statements != nullopt)
+                        program.error(*case_node, "XXX DEFAULT happens again");
                     case_default = Case { 0, nullptr, *case_node, case_node->child(0), nullopt };
                     break;
                 default:

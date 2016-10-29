@@ -616,11 +616,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                 auto next = std::find(parent->begin(), parent->end(), node.shared_from_this());
                 Expects(next->get() == &node);
-                for(++next; next != parent->end(); ++next)
-                {
-                    if((*next)->type() != NodeType::Ignore)
-                        break;
-                }
+                next = std::next(next);
 
                 if(next != parent->end() && (*next)->type() == NodeType::Scope)
                 {

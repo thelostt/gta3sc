@@ -969,6 +969,160 @@ static ParserResult parse_while_statement(ParserContext& parser, token_iterator 
 }
 
 /*
+    repeatStatement
+	    :	WS* REPEAT argument identifier newLine
+			    statementList
+		    WS* ENDREPEAT newLine
+	    ->	^(REPEAT argument identifier statementList)
+	    ;
+*/
+static ParserResult parse_repeat_statement(ParserContext& parser, token_iterator begin, token_iterator end)
+{
+    if(begin != end && begin->type == Token::REPEAT)
+    {
+        ParserState state = ParserSuccess(nullptr);
+        ParserState counter, variable, statements;
+
+        auto it = std::next(begin);
+
+        std::tie(it, counter) = parse_argument(parser, it, end);
+        add_error(state, giveup_to_expected(counter, "argument"));
+
+        std::tie(it, variable) = parse_identifier(parser, it, end);
+        add_error(state, giveup_to_expected(variable, "identifier"));
+
+        expect_newline(state, it, end);
+        it = parser_aftertoken(it, end, Token::NewLine);
+
+        std::tie(it, statements) = parse_until_if(parse_statement, parser, it, end, [](token_iterator t) {
+            return t->type == Token::ENDREPEAT;
+        });
+        add_error(state, giveup_to_expected(statements, "statement"));
+
+        if(expect_endtoken(state, begin, end, it, Token::ENDREPEAT))
+        {
+            expect_newline(state, std::next(it), end);
+            it = parser_aftertoken(std::next(it), end, Token::NewLine);
+        }
+
+        if(is<ParserSuccess>(state))
+        {
+            shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::REPEAT, parser.instream, *begin));
+            tree->add_child(get<ParserSuccess>(counter).tree);
+            tree->add_child(get<ParserSuccess>(variable).tree);
+            tree->add_child(get<ParserSuccess>(statements).tree);
+            return std::make_pair(it, ParserSuccess(std::move(tree)));
+        }
+        else
+        {
+            return std::make_pair(it, std::move(state));
+        }
+    }
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
+}
+
+/*
+    switchStatement
+	    :	WS* SWITCH argument newLine
+			    switchStatementCase*
+			    switchStatementDefault?
+		    WS* ENDSWITCH newLine
+	    -> ^(SWITCH argument ^(BLOCK switchStatementCase+ switchStatementDefault?))
+	    ;
+
+    switchStatementCase
+	    :	WS* CASE argument newLine statementList
+	    -> ^(CASE argument statementList)
+	    ;
+
+    switchStatementDefault
+	    :	WS* DEFAULT newLine statementList
+	    -> ^(DEFAULT statementList)
+	    ;
+*/
+static ParserResult parse_switch_statement(ParserContext& parser, token_iterator begin, token_iterator end)
+{
+    if(begin == end || begin->type != Token::SWITCH)
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
+
+    auto parse_switch_case = [](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
+    {
+        if(begin != end && (begin->type == Token::CASE || begin->type == Token::DEFAULT))
+        {
+            ParserState state = ParserSuccess(nullptr);
+            ParserState argument, statements;
+
+            auto it = std::next(begin);
+
+            if(begin->type == Token::CASE)
+            {
+                std::tie(it, argument) = parse_argument(parser, it, end);
+                add_error(state, giveup_to_expected(argument, "argument"));
+            }
+
+            expect_newline(state, it, end);
+            it = parser_aftertoken(it, end, Token::NewLine);
+
+            std::tie(it, statements) = parse_until_if(parse_statement, parser, it, end, [](token_iterator t) {
+                return t->type == Token::CASE || t->type == Token::DEFAULT || t->type == Token::ENDSWITCH;
+            });
+            add_error(state, giveup_to_expected(statements, "statement"));
+
+            if(is<ParserSuccess>(state))
+            {
+                auto type = (begin->type == Token::CASE? NodeType::CASE : NodeType::DEFAULT);
+                shared_ptr<SyntaxTree> tree(new SyntaxTree(type, parser.instream, *begin));
+
+                if(begin->type == Token::CASE)
+                    tree->add_child(get<ParserSuccess>(argument).tree);
+                tree->add_child(get<ParserSuccess>(statements).tree);
+
+                return std::make_pair(it, ParserSuccess(std::move(tree)));
+            }
+            else
+            {
+                return std::make_pair(it, std::move(state));
+            }
+        }
+        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
+    };
+
+    ParserState state = ParserSuccess(nullptr);
+    ParserState argument, cases;
+
+    auto it = std::next(begin);
+
+    std::tie(it, argument) = parse_argument(parser, it, end);
+    add_error(state, giveup_to_expected(argument, "argument"));
+
+    expect_newline(state, it, end);
+    it = parser_aftertoken(it, end, Token::NewLine);
+
+    std::tie(it, cases) = parse_until_if(parse_switch_case, parser, it, end, [](token_iterator t) {
+        return t->type == Token::ENDSWITCH;
+    });
+    add_error(state, giveup_to_expected(cases, "CASE/DEFAULT"));
+
+    if(expect_endtoken(state, begin, end, it, Token::ENDSWITCH))
+    {
+        expect_newline(state, std::next(it), end);
+        it = parser_aftertoken(std::next(it), end, Token::NewLine);
+    }
+
+    if(is<ParserSuccess>(state))
+    {
+        shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::SWITCH, parser.instream, *begin));
+        tree->add_child(get<ParserSuccess>(argument).tree);
+        tree->add_child(get<ParserSuccess>(cases).tree);
+        return std::make_pair(it, ParserSuccess(std::move(tree)));
+    }
+    else
+    {
+        return std::make_pair(it, std::move(state));
+    }
+}
+
+/*
     ifStatement
 	    :	WS* IF conditionList
 			    statIf=statementList
@@ -1064,8 +1218,8 @@ static ParserResult parse_statement(ParserContext& parser, token_iterator begin,
                               parse_scope_statement,
                               parse_if_statement,
                               parse_while_statement,
-                              // parse_repeat_statement, TODO
-                              // parse_switch_statement, TODO
+                              parse_repeat_statement,
+                              parse_switch_statement,
                               parse_variable_declaration,
                               parse_label_statement,
                               parse_keycommand_statement,
@@ -1132,7 +1286,13 @@ std::shared_ptr<SyntaxTree> SyntaxTree::compile(ProgramContext& program, const T
         if(is<ParserSuccess>(statement))
         {
             if(!any_error)
-                tree->add_child(get<ParserSuccess>(statement).tree);
+            {
+                auto& node = get<ParserSuccess>(statement).tree;
+                if(node->type() != NodeType::Ignore)
+                {
+                    tree->add_child(get<ParserSuccess>(statement).tree);
+                }
+            }
         }
         else
         {
