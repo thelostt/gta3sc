@@ -31,8 +31,6 @@ include_directories(
   deps/expected/include
   deps/any/include
   deps/variant/include
-  deps/libantlr3c-3.4/include
-  deps/libantlr3c-3.4/
 )
 
 add_library(cppformat
