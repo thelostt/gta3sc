@@ -760,20 +760,32 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 {
                     auto& varnode = node.child(i);
 
-                    auto name = varnode.text();
+                    auto name  = string_view();
                     auto count = optional<uint32_t>(nullopt);
 
-                    if(varnode.child_count())
+                    if(auto opt_token = Miss2Identifier::match(varnode.text()))
                     {
-                        auto array_counter = std::stol(varnode.child(0).text().to_string(), nullptr, 0);
+                        auto& token = *opt_token;
+                        name = token.identifier;
 
-                        if(array_counter <= 0)
+                        if(token.index != nullopt)
                         {
-                            program.error(varnode, "XXX Negative or zero array counter {}.", name);
-                            array_counter = 1; // fallback to 1 instead of halting compilation
+                            if(is<string_view>(*token.index))
+                            {
+                                // TODO allow enum?
+                                program.error(varnode, "XXX non-constant index value in array declaration");
+                                count = 1; // fallback
+                            }
+                            else
+                            {
+                                count = get<size_t>(*token.index);
+                            }
                         }
-
-                        count = array_counter;
+                    }
+                    else
+                    {
+                        program.error(varnode, opt_token.error().c_str());
+                        continue;
                     }
 
                     if(!program.opt.farrays && count)

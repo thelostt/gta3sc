@@ -194,7 +194,7 @@ static bool match_var(const SyntaxTree& node, const Commands& commands, const Co
             auto& token = *opt_token;
             auto opt_var = symbols.find_var(token.identifier, scope_ptr);
 
-            if(token.index != nullopt)
+            if(opt_var && token.index != nullopt)
             {
                 if(!is<size_t>(*token.index))
                 {
