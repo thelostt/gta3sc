@@ -14,7 +14,9 @@ The code also tries to be modular, each compilation/decompilation step is well d
 	- [ProgramContext (program.hpp)](#)
 	- [Commands (commands.hpp)](#)
 - [Compiler](#)
-	- [1. Tokenizer and Parser (parser.hpp, grammar.g)](#)
+	- [1. Tokenizer and Parser (parser.hpp)](#)
+		- [1.1 Tokenizer](#)
+		- [1.2 Parser](#)
 	- [2. Semantic Analysis (symtable.hpp)](#)
 		- [2.1 Symbol Table Building](#)
 		- [2.2 Symbol Table Synchronization](#)
@@ -26,7 +28,6 @@ The code also tries to be modular, each compilation/decompilation step is well d
 - [Decompiler](#)
 	- [1. Disassembly (disassembler.hpp)](#)
 	- [2. Dummy Text Decompiler (decompiler.hpp)](#)
-
 ## General Details
 
 Here are described stuff not strictly related to either the compiler or the decompiler.
@@ -55,13 +56,23 @@ This holds the list of **immutable** commands and constants, with all its inform
 
 This section describes the compiler, its steps and where they are.
 
-### 1. Tokenizer and Parser (`parser.hpp`, `grammar.g`)
+### 1. Tokenizer and Parser (`parser.hpp`)
 
-+ **Where:** `Script::create`, `TokenStream` and `SyntaxTree::compile`.
++ **Where:** `Script::create`.
+
+#### 1.1 Tokenizer
+
++ **Where:** `TokenStream::tokenize`.
 + **Input:** Source code.
-+ **Output:** Abstract syntax tree.
++ **Output:** Tokens.
 
-At this moment, the tokenization and parsing are performed by ANTLR3, a parser generator. Due to the crypt error messages, a replacement should be hand-written soon.
+#### 1.2 Parser
+
++ **Where:** `SyntaxTree::compile`.
++ **Input:** Tokens.
++ **Output:** Abstract Syntax Tree.
+
+This step makes sense of the tokens by using the language syntax.
 
 ### 2. Semantic Analysis (`symtable.hpp`)
 
