@@ -95,10 +95,23 @@ public:
         return emplace_u32(reinterpret_cast<uint32_t&>(value));
     }
 
-    void emplace_chars(size_t count, const char* data)
+    void emplace_chars(size_t count, const char* data, bool to_upper = false)
     {
         assert(this->offset + count <= max_offset);
-        std::strncpy(reinterpret_cast<char*>(&this->bytecode[offset]), data, count);
+        if(!to_upper)
+        {
+            std::strncpy(reinterpret_cast<char*>(&this->bytecode[offset]), data, count);
+        }
+        else
+        {
+            for(size_t i = 0; i < count; ++i)
+            {
+                if(*data == 0)
+                    this->bytecode[offset+i] = 0;
+                else
+                    this->bytecode[offset+i] = toupper(*data++); // TODO UTF-8 able?
+            }
+        }
         this->offset += count;
     }
 
@@ -405,21 +418,21 @@ inline void generate_code(const CompiledString& str, CodeGenerator& codegen)
             Expects(str.storage.size() <= 8);  // enforced on annotation
             if(codegen.program.opt.has_text_label_prefix)
                 codegen.emplace_u8(9);
-            codegen.emplace_chars(8, str.storage.c_str());
+            codegen.emplace_chars(8, str.storage.c_str(), true);
             break;
         case CompiledString::Type::TextLabel16:
             Expects(str.storage.size() <= 16); // enforced on annotation
             codegen.emplace_u8(0xF);
-            codegen.emplace_chars(16, str.storage.c_str());
+            codegen.emplace_chars(16, str.storage.c_str(), true);
             break;
         case CompiledString::Type::StringVar:
             Expects(str.storage.size() <= 127);  // enforced on annotation
             codegen.emplace_u8(0xE);
             codegen.emplace_u8(static_cast<uint8_t>(str.storage.size()));
-            codegen.emplace_chars(str.storage.size(), str.storage.c_str());
+            codegen.emplace_chars(str.storage.size(), str.storage.c_str(), true);
             break;
         case CompiledString::Type::String128:
-            codegen.emplace_chars(128, str.storage.c_str());
+            codegen.emplace_chars(128, str.storage.c_str(), true);
             break;
         default:
             Unreachable();
@@ -597,7 +610,7 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
     codegen.emplace_u32(1 + header.models.size());
     codegen.emplace_chars(24, "");
     for(auto& model : header.models)
-        codegen.emplace_chars(24, model.c_str());
+        codegen.emplace_chars(24, model.c_str(), true);
 
     // SCM info segment
     {
@@ -632,8 +645,7 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
         for(auto& script_ptr : streameds)
         {
             auto name = script_ptr->path.stem().u8string();
-            std::transform(name.begin(), name.end(), name.begin(), ::toupper); // TODO UTF-8 able?
-            codegen.emplace_chars(20, name.c_str());
+            codegen.emplace_chars(20, name.c_str(), true);
             codegen.emplace_u32(virtual_offset);
             codegen.emplace_u32(*script_ptr->size);
             virtual_offset += *script_ptr->size;

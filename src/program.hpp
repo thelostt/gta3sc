@@ -69,7 +69,7 @@ struct Options
 
 template<typename... Args>
 inline std::string format_error(const char* type,
-                                const shared_ptr<const TokenStream>& tstream_ptr,
+                                optional<const TokenStream::TextStream&> stream,
                                 const char* filename, uint32_t lineno, uint32_t colno,
                                 const char* msg, Args&&... args)
 {
@@ -111,50 +111,65 @@ inline std::string format_error(const char* type,
 
     message += fmt::format(msg, std::forward<Args>(args)...);
 
-    if(tstream_ptr && lineno)
+    if(stream && lineno)
     {
-        message += fmt::format("\n {}\n {:>{}}", tstream_ptr->get_line(lineno), "^", colno);
+        message += fmt::format("\n {}\n {:>{}}", stream->get_line(lineno), "^", colno);
     }
 
     return message;
 }
 
 template<typename... Args>
-inline std::string format_error(const char* type, const SyntaxTree& base_context, const char* msg, Args&&... args)
+inline std::string format_error(const char* type, tag_nocontext_t, const char* msg, Args&&... args)
 {
-    const SyntaxTree* context = &base_context;
-
-    // Let's change the context a bit if necessary.
-    ///
-    // If the supplied context has no text data associated with it, it's not very useful. It's likely that
-    // its column is at the start of the line. So, find the first child (not too deep) that contains text data.
-    if(!context->has_text())
-    {
-        for(auto it = context->begin(); it != context->end(); ++it)
-        {
-            if((*it)->has_text())
-            {
-                context = &(**it);
-                break;
-            }
-        }
-    }
-
-    return format_error(type, context->token_stream().lock(),
-                              context->filename().c_str(), context->line(), context->column(),
-                              msg, std::forward<Args>(args)...);
+    return format_error(type, nullopt, nullptr, 0, 0, msg, std::forward<Args>(args)...);
 }
 
 template<typename... Args>
 inline std::string format_error(const char* type, const Script& script, const char* msg, Args&&... args)
 {
-    return format_error(type, nullptr, script.path.generic_u8string().c_str(), 0, 0, msg, std::forward<Args>(args)...);
+    return format_error(type, nullopt, script.path.generic_u8string().c_str(), 0, 0, msg, std::forward<Args>(args)...);
 }
 
 template<typename... Args>
-inline std::string format_error(const char* type, tag_nocontext_t, const char* msg, Args&&... args)
+inline std::string format_error(const char* type, const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
 {
-    return format_error(type, nullptr, nullptr, 0, 0, msg, std::forward<Args>(args)...);
+    if(context.begin == context.end)
+    {
+        return format_error(type, nocontext, msg, std::forward<Args>(args)...);
+    }
+    else
+    {
+        size_t lineno, colno;
+        std::tie(lineno, colno) = context.stream.linecol_from_offset(context.begin);
+        return format_error(type, context.stream,
+                                  context.stream.stream_name.c_str(), lineno, colno,
+                                  msg, std::forward<Args>(args)...);
+    }
+}
+
+template<typename... Args>
+inline std::string format_error(const char* type, const SyntaxTree& context_, const char* msg, Args&&... args)
+{
+    const SyntaxTree* context = &context_;
+
+    if(!context->has_text())
+    {
+        auto it = std::find_if(context->begin(), context->end(), [](const shared_ptr<SyntaxTree>& child) {
+            return child->has_text();
+        });
+        context = (it == context->end())? context : it->get();
+    }
+
+    if(context->token_stream().use_count() == 0)
+    {
+        return format_error("internal_error", nocontext, "context->token_stream() == nullptr during format_error");
+    }
+    else
+    {
+        auto tstream = context->token_stream().lock();
+        return format_error(type, TokenStream::TokenInfo(tstream->text, context->get_token()), msg, std::forward<Args>(args)...);
+    }
 }
 
 
@@ -163,6 +178,11 @@ inline std::string format_error(const char* type, tag_nocontext_t, const char* m
 class ProgramError
 {
 public:
+    template<typename... Args>
+    ProgramError(const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
+        : message_(format_error("error", context, msg, std::forward<Args>(args)...))
+    {}
+
     template<typename... Args>
     ProgramError(const SyntaxTree& context, const char* msg, Args&&... args)
         : message_(format_error("error", context, msg, std::forward<Args>(args)...))
@@ -213,7 +233,7 @@ public:
         this->level_models   = std::move(level_models);
     }
 
-    bool is_model_from_ide(const std::string& name) const;
+    bool is_model_from_ide(const string_view& name) const;
 
     bool has_error() const
     {
@@ -233,6 +253,12 @@ public:
 
     template<typename... Args>
     void error(const SyntaxTree& context, const char* msg, Args&&... args)
+    {
+        return error(ProgramError(context, msg, std::forward<Args>(args)...));
+    }
+
+    template<typename... Args>
+    void error(const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
     {
         return error(ProgramError(context, msg, std::forward<Args>(args)...));
     }

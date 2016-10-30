@@ -12,6 +12,19 @@ struct String128Annotation
     std::string string;
 };
 
+// not used
+struct VarAnnotation
+{
+    shared_ptr<Var>                             base;
+    optional<variant<int32_t, shared_ptr<Var>>> index;
+};
+
+struct ArrayAnnotation
+{
+    shared_ptr<Var>                  base;
+    variant<int32_t, shared_ptr<Var>> index;
+};
+
 struct ModelAnnotation
 {
     weak_ptr<const Script> where;       // weak to avoid circular reference
@@ -64,8 +77,8 @@ struct CommandSkipCutsceneEndAnnotation
 
 // TODO move those functions to somewhere else?
 
-inline std::string remove_quotes(const std::string& string)
+inline string_view remove_quotes(const string_view& string)
 {
     Expects(string.front() == '"' && string.back() == '"');
-    return std::string(string.begin() + 1, string.begin() + string.size() - 1);
+    return string_view(string.data() + 1, string.size() - 1);
 }

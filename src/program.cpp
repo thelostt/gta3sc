@@ -164,7 +164,7 @@ auto load_dat(const fs::path& filepath, bool is_default_dat) -> std::map<std::st
     return output;
 }
 
-bool ProgramContext::is_model_from_ide(const std::string& name) const
+bool ProgramContext::is_model_from_ide(const string_view& name) const
 {
     if(!this->default_models.empty() || !this->level_models.empty())
     {

@@ -9,8 +9,13 @@ inline int strcasecmp(const char* a, const char* b)
 {
     return _stricmp(a, b);
 }
+
+inline int strncasecmp(const char* a, const char* b, size_t count)
+{
+    return _strnicmp(a, b, count);
+}
 #elif defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
-    // Already has strcasecmp
+    // Already has strcasecmp and strncasecmp
 #else
 #   error
 #endif
@@ -20,24 +25,10 @@ struct iless
 {
     using is_transparent = int;
 
-    bool operator()(const std::string& left, const std::string& right) const
+    bool operator()(const string_view& left, const string_view& right) const
     {
-        return this->operator()(left.c_str(), right.c_str());
-    }
-
-    bool operator()(const char* left, const std::string& right) const
-    {
-        return this->operator()(left, right.c_str());
-    }
-
-    bool operator()(const std::string& left, const char* right) const
-    {
-        return this->operator()(left.c_str(), right);
-    }
-
-    bool operator()(const char* left, const char* right) const
-    {
-        return (strcasecmp(left, right) < 0);
+        auto ans = strncasecmp(left.data(), right.data(), (std::min)(left.size(), right.size()));
+        return ans == 0? (left.size() < right.size()) : (ans < 0);
     }
 };
 
@@ -46,23 +37,10 @@ struct iequal_to
 {
     using is_transparent = int;
 
-    bool operator()(const std::string& left, const std::string& right) const
+    bool operator()(const string_view& left, const string_view& right) const
     {
-        return this->operator()(left.c_str(), right.c_str());
-    }
-
-    bool operator()(const char* left, const std::string& right) const
-    {
-        return this->operator()(left, right.c_str());
-    }
-
-    bool operator()(const std::string& left, const char* right) const
-    {
-        return this->operator()(left.c_str(), right);
-    }
-
-    bool operator()(const char* left, const char* right) const
-    {
-        return (strcasecmp(left, right) == 0);
+        if(left.size() != right.size())
+            return false;
+        return strncasecmp(left.data(), right.data(), left.size()) == 0;
     }
 };

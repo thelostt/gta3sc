@@ -25,7 +25,7 @@ struct Enum
         values(std::move(values)), is_global(is_global)
     {}
 
-    optional<int32_t> find(const std::string& value) const
+    optional<int32_t> find(const string_view& value) const
     {
         auto it = values.find(value);
         if(it != values.end())
@@ -56,7 +56,7 @@ struct Command
         }
 
         /// Finds a constant associated with the enums of this argument.
-        ::optional<int32_t> find_constant(const std::string& value) const
+        ::optional<int32_t> find_constant(const string_view& value) const
         {
             for(auto& e : enums)
             {
@@ -91,9 +91,9 @@ struct Command
 struct Commands
 {
 protected:
-    std::multimap<std::string, Command> commands;
+    std::multimap<std::string, Command, iless> commands;
     std::multimap<uint16_t, const Command*> commands_by_id;
-    std::map<std::string, shared_ptr<Enum>> enums;
+    transparent_map<std::string, shared_ptr<Enum>> enums;
     std::map<std::string, EntityType> entities;
 
 public:
@@ -140,9 +140,9 @@ protected:
 
 
 public:
-    Commands(std::multimap<std::string, Command> commands,
+    Commands(std::multimap<std::string, Command, iless> commands,
              std::map<std::string, EntityType> entities,
-             std::map<std::string, shared_ptr<Enum>> enums);
+             transparent_map<std::string, shared_ptr<Enum>> enums);
 
     Commands(const Commands&) = delete;
 
@@ -191,14 +191,14 @@ public:
     /// Finds the literal value of a constant `value`.
     /// `context_free_only` is whether we only search for constants that can be used in any occasion or
     /// constants that can be used only in specific commands arguments.
-    optional<int32_t> find_constant(const std::string& value, bool context_free_only) const;
+    optional<int32_t> find_constant(const string_view& value, bool context_free_only) const;
 
     /// Finds the literal value of a constant 'value'.
     /// This version searches for *all* enums in order to allow CONST type arguments
-    optional<int32_t> find_constant_all(const std::string& value) const;
+    optional<int32_t> find_constant_all(const string_view& value) const;
 
     /// Finds the literal value of a constant `value` assuming we're dealing with argument `arg`.
-    optional<int32_t> find_constant_for_arg(const std::string& value, const Command::Arg& arg) const;
+    optional<int32_t> find_constant_for_arg(const string_view& value, const Command::Arg& arg) const;
 
 
     /// Find a command base on its name.
