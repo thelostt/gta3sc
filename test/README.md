@@ -4,10 +4,11 @@
  + [Python 2.7](https://www.python.org/) or [Python 3](https://www.python.org/).
  + The following utilities¹: `sh`, `tar`, `gzip`, `curl`, `md5sum`.
  + [llvm-lit](http://llvm.org/docs/CommandGuide/lit.html)².
+ + [OutputCheck](https://github.com/stp/OutputCheck)².
 
 ¹: The best way to acquire these utilities on Windows is by installing [MSYS2](https://msys2.github.io/) or [Cygwin](https://www.cygwin.com/). Although, if you have [Git For Windows](https://git-for-windows.github.io/) you probably have MSYS2 already. Just open Git Bash on your start menu and you are ready to go.
 
-²: Once you have Python installed, you can get llvm-lit by using `pip install lit`. For Windows, `easy_install lit` is recommended due to a yet to be fixed bug in `pip` for Windows.
+²: Once you have Python installed, you can get llvm-lit and OutputCheck by using `pip install lit` and `pip install OutputCheck`. For Windows, `easy_install` instead of `pip` is recommended due to a yet to be fixed bug in `pip` for Windows.
 
 ## Running Tests
 
@@ -49,6 +50,7 @@ Additionally, you can use the following substitutions in a `RUN` line:
 | %dis      | Runs its arguments and discards the result code from it. Unless the called program crashed, in which case it returns 1.                                                                                                                                                               |
 | %checksum | Tests if the `md5sum` of `$1` is `$2`.                                                                                                                                                                                                                                                      |
 | %verify   | Ensures that `stdin` contains all the errors and warnings specified in the file `$1`. This is a minimal reimplementation of Clang's `-verify` flag, [check here](http://clang.llvm.org/doxygen/classclang_1_1VerifyDiagnosticConsumer.html#details) for details. When piping into this, gta3sc probably needs to be called with `%dis %gta3sc`. |                                                                                                                                                                                                                                         |
+| %FileCheck | Ensures that `stdin` matches the content specified in the file `$1`. This is an alias to [OutputCheck](https://github.com/stp/OutputCheck), a reimplementation of LLVM's `FileCheck` . |                                                                                                                                                                                                                                         |
 
 
 Remember, put related tests into a single file rather than having a separate file per test. Check if there are files already covering your feature and consider adding your code there instead of creating a new file.
@@ -59,4 +61,4 @@ If you wish to learn more about the *LLVM Testing Infrastructure*, check out the
   + http://clang.llvm.org/doxygen/classclang_1_1VerifyDiagnosticConsumer.html#details
   + https://github.com/llvm-mirror/clang/tree/master/test
   + https://github.com/llvm-mirror/llvm/tree/master/test
-  + http://llvm.org/docs/CommandGuide/FileCheck.html _(we currently do not have anything similar to this)_.
+  + http://llvm.org/docs/CommandGuide/FileCheck.html

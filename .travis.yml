@@ -22,6 +22,7 @@ matrix:
         - export PATH=$HOME/clang+llvm/bin:$PATH
 install:
   - sudo pip install lit
+  - sudo pip install OutputCheck
 script:
   - if [ "$CXX" == "g++" ]; then export CXX="g++-6"; fi
   - if [ "$CXX" == "clang++" ];  then export CXX="clang++"; fi

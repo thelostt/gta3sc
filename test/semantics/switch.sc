@@ -14,7 +14,7 @@ SWITCH n
         BREAK
     CASE j      // expected-error {{case value must be a integer constant}}
         BREAK
-    CASE 1.0    // expected-error@5 {{BAD ALTERNATOR}}
+    CASE 1.0    // expected-error@7 {{BAD ALTERNATOR}}
         BREAK   // TODO FIXME ^ should be expected int constant
 ENDSWITCH
 
