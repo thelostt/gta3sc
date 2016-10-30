@@ -143,10 +143,10 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
         switch(var->type)
         {
             case VarType::Int:
-                is_good = (arg.type == ArgType::Integer || arg.type == ArgType::Constant || arg.type == ArgType::Any);
+                is_good = (arg.type == ArgType::Integer || arg.type == ArgType::Constant || arg.type == ArgType::Param);
                 break;
             case VarType::Float:
-                is_good = (arg.type == ArgType::Float || arg.type == ArgType::Any);
+                is_good = (arg.type == ArgType::Float || arg.type == ArgType::Param);
                 break;
             case VarType::TextLabel:
                 is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel);
@@ -272,7 +272,7 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
 
         case ArgType::Integer:
         case ArgType::Float:
-        case ArgType::Any:
+        case ArgType::Param:
         {
             // Hack for streamed scripts (!!!)
             // Before match is called, the node is manually annotated with the streamed script id.
@@ -498,7 +498,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
                     else
                         Unreachable();
                 }
-                else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Constant || arg.type == ArgType::Any)
+                else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Constant || arg.type == ArgType::Param)
                 {
                     if(auto opt_const = commands.find_constant_for_arg(arg_node.text(), arg))
                     {
@@ -677,8 +677,8 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::Integer;
     else if(!strcmp(string, "FLOAT"))
         return ArgType::Float;
-    else if(!strcmp(string, "ANY"))
-        return ArgType::Any;
+    else if(!strcmp(string, "PARAM"))
+        return ArgType::Param;
     else if(!strcmp(string, "LABEL"))
         return ArgType::Label;
     else if(!strcmp(string, "BUFFER32"))

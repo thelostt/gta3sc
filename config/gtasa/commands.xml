@@ -463,7 +463,7 @@
     <Command ID="0x4f" Name="START_NEW_SCRIPT">
       <Args>
         <Arg Type="LABEL"/>
-        <Arg Type="ANY" Optional="true"/>
+        <Arg Type="PARAM" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0x50" Name="GOSUB">
@@ -13550,7 +13550,7 @@
     <Command ID="0x913" Name="START_NEW_STREAMED_SCRIPT">
       <Args>
         <Arg Type="INT" Desc="Script ID"/>
-        <Arg Type="ANY" Optional="true"/>
+        <Arg Type="PARAM" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0x914" Name="REGISTER_STREAMED_SCRIPT_INTERNAL">

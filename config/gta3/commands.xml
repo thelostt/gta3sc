@@ -463,7 +463,7 @@
     <Command ID="0x4f" Name="START_NEW_SCRIPT">
       <Args>
         <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="ANY" Optional="true"/>
+        <Arg Type="PARAM" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0x50" Name="GOSUB">

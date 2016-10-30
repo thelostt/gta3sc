@@ -4,7 +4,7 @@
 /// Fundamental type of a command argument.
 enum class ArgType : uint8_t
 {
-    Any,
+    Param,  // previously known as Any
     Label,
     Buffer32,
     Integer,
@@ -491,12 +491,5 @@ private:
 /// Checks if the argument types are compatible with each other.
 inline bool argtype_matches(ArgType type1, ArgType type2)
 {
-    return type1 == type2 || type1 == ArgType::Any || type2 == ArgType::Any;
+    return type1 == type2 || type1 == ArgType::Param || type2 == ArgType::Param;
 }
-
-/*
-inline shared_ptr<Enum> make_enum(std::map<std::string, int32_t> init)
-{
-    return std::make_shared<Enum>(Enum { std::move(init), false });
-}
-*/
