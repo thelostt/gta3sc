@@ -23,8 +23,15 @@ struct DecompiledVar
 // constrats to CompiledVar
 struct DecompiledVarArray
 {
+    enum class ElementType : uint8_t
+    {
+        None, Int, Float, TextLabel, TextLabel16,
+    };
+
     DecompiledVar base;
     DecompiledVar index;
+    int8_t        array_size;
+    ElementType   elem_type;
 };
 
 // constrats to CompiledString
@@ -131,8 +138,8 @@ public:
     // undefined behaviour is invoked if data inside `bytecode` is changed while
     // this context object is still alive.
     Disassembler(ProgramContext& program, const Commands& commands,
-                        const uint8_t* bytecode, size_t size) :
-        bytecode(bytecode), bytecode_size(size),
+                        const void* bytecode, size_t size) :
+        bytecode((const uint8_t*)(bytecode)), bytecode_size(size),
         program(program), commands(commands)
     {
         // This constructor is **ALWAYS** ran, put all common initialization here.
@@ -157,8 +164,14 @@ public:
             return nullopt;
     }
 
+    void add_local_offset(size_t offset)
+    {
+        this->local_offsets.emplace_back(offset);
+    }
+
     void analyze_header(const DecompiledScmHeader& header)
     {
+        Expects(this->local_offsets.empty());
         this->local_offsets = header.mission_offsets;
 
         std::sort(local_offsets.begin(), local_offsets.end());

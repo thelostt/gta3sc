@@ -6,6 +6,7 @@
 #include "compiler.hpp"
 #include "disassembler.hpp"
 #include "decompiler.hpp"
+#include "decompiler_ir2.hpp"
 #include "codegen.hpp"
 #include "program.hpp"
 #include "system.hpp"
@@ -28,6 +29,7 @@ Options:
   -pedantic                Forbid the usage of extensions not in R* compiler.
   --guesser                Allows the use of language features not completly
                            known or understood by the modding community.
+  -emit-ir2                Emits a explicit IR based on Sanny Builder syntax.
   -fsyntax-only            Only checks the syntax, i.e. doesn't generate code.
   -fentity-tracking        Tracks entity types in variables.
   -fscript-name-check      Checks for duplicate SCRIPT_NAMEs.
@@ -275,6 +277,10 @@ int main(int argc, char** argv)
             else if(optflag(argv, "-fsyntax-only", nullptr))
             {
                 options.fsyntax_only = true;
+            }
+            else if(optflag(argv, "-emit-ir2", nullptr))
+            {
+                options.emit_ir2 = true;
             }
             else
             {
@@ -679,7 +685,66 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             }
         };
 
-        generate_output();
+        auto generate_ir2 = [&]
+        {
+            size_t subscripts_counter = 0;
+            for(auto& gen : gens)
+            {
+                std::string script_name;
+                const char *start_block = nullptr, *end_block = nullptr;
+                int block_id;
+
+                auto disassembler = Disassembler(program, program.commands, gen.buffer(), gen.buffer_size());
+
+                if(gen.script->type == ScriptType::Main)
+                {
+                    script_name = "MAIN";
+                }
+                else if(gen.script->type == ScriptType::MainExtension
+                    || gen.script->type == ScriptType::Subscript)
+                {
+                    script_name = "SCRIPT_" + std::to_string(++subscripts_counter);
+                }
+                else if(gen.script->type == ScriptType::Mission)
+                {
+                    block_id    = gen.script->mission_id.value();
+                    start_block = "MISSION_BLOCK_START %d\n\n";
+                    end_block   = "MISSION_BLOCK_END\n";
+                    script_name = "MISSION_" + std::to_string(block_id);
+                    disassembler.add_local_offset(0);
+                }
+                else if(gen.script->type == ScriptType::StreamedScript)
+                {
+                    block_id    = gen.script->streamed_id.value();
+                    start_block = "STREAMED_BLOCK_START %d\n\n";
+                    end_block   = "STREAMED_BLOCK_END\n";
+                    script_name = "STREAM_" + std::to_string(block_id);
+                    disassembler.add_local_offset(0);
+                }
+                else
+                {
+                    Unreachable();
+                }
+
+                disassembler.run_analyzer();
+                auto output = disassembler.get_data();
+
+                auto ir2dc = DecompilerIR2(program.commands, std::move(output),
+                                           script_name,
+                                           gen.script->type == ScriptType::Main);
+
+                if(start_block) fprintf(stdout, start_block, block_id);
+                ir2dc.decompile([](const std::string& line) {
+                    fprintf(stdout, "%s\n", line.c_str());
+                });
+                if(end_block) fprintf(stdout, end_block, block_id);
+            }
+        };
+
+        if(program.opt.emit_ir2)
+            generate_ir2();
+        else
+            generate_output();
 
         if(program.has_error())
             throw HaltJobException();

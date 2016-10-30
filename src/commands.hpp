@@ -85,6 +85,21 @@ struct Command
     {
         return args.empty()? false : args.back().optional;
     }
+
+    optional<const Arg&> arg(size_t pos) const
+    {
+        if(pos >= this->args.size())
+        {
+            if(this->has_optional())
+                return this->args.back();
+            return nullopt;
+        }
+        else
+        {
+            return this->args[pos];
+        }
+    }
+
 };
 
 /// Stores the list of commands and alternators.
