@@ -182,7 +182,7 @@ inline std::string decompile_data(const DecompiledString& str, DecompilerIR2&)
     switch(str.type)
     {
         case CompiledString::Type::TextLabel8:
-            output += "s'";
+            output += "'";
             quotes = '\'';
             break;
         case CompiledString::Type::TextLabel16:

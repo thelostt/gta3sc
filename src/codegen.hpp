@@ -483,7 +483,8 @@ inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
                     Unreachable();
             }
 
-            codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() + get<int32_t>(*v.index) * 4 : v.var->index + get<int32_t>(*v.index)));
+            auto actual_index = get<int32_t>(*v.index) * Var::space_taken(v.var->type);
+            codegen.emplace_u16(static_cast<uint16_t>(global? v.var->offset() + actual_index * 4 : v.var->index + actual_index));
         }
         else
         {
@@ -508,6 +509,7 @@ inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
             codegen.emplace_u16(static_cast<uint16_t>(indexVar->global? indexVar->offset() : indexVar->index));
             codegen.emplace_u8(static_cast<uint8_t>(v.var->count.value()));
             codegen.emplace_u8((static_cast<uint8_t>(v.var->type) & 0x7F) | (indexVar->global << 7));
+            // TODO casting VarType to uint8_t is not a future-proof approach
         }
     }
 }

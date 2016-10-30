@@ -8,21 +8,26 @@
 
 // TODO android compiler registers START_CUTSCENE stuff before the global variable space
 
-uint32_t Var::space_taken()
+uint32_t Var::space_taken(VarType type, size_t count)
 {
-    switch(this->type)
+    switch(type)
     {
         case VarType::Int:
-            return 1 * count.value_or(1);
+            return 1 * count;
         case VarType::Float:
-            return 1 * count.value_or(1);
+            return 1 * count;
         case VarType::TextLabel:
-            return 2 * count.value_or(1);
+            return 2 * count;
         case VarType::TextLabel16:
-            return 4 * count.value_or(1);
+            return 4 * count;
         default:
             Unreachable();
     }
+}
+
+uint32_t Var::space_taken()
+{
+    return Var::space_taken(this->type, this->count.value_or(1));
 }
 
 std::pair<bool, VarType> token_to_vartype(NodeType token_type)
@@ -729,6 +734,8 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
             case NodeType::VAR_TEXT_LABEL: case NodeType::LVAR_TEXT_LABEL:
             case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
             {
+                // TODO arrays have a [256] index limit?
+
                 bool global; VarType vartype;
 
                 std::tie(global, vartype) = token_to_vartype(node.type());

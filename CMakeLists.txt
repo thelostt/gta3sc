@@ -44,6 +44,7 @@ set(GTA3SC_SRC_MAIN
   src/commands.hpp
   src/compiler.hpp
   src/decompiler.hpp
+  src/decompiler_ir2.hpp
   src/disassembler.hpp
   src/error.hpp
   src/main.cpp

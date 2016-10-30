@@ -247,6 +247,9 @@ struct Var
     /// \returns the space, in words (i.e. bytes/4), that this variable takes in memory.
     uint32_t space_taken();
 
+    /// \returns the space, in words (i.e. bytes/4), that a variable of type `type` and `count` would take in memory.
+    static uint32_t space_taken(VarType type, size_t count = 1);
+
     /// \returns the byte offset (index*4) on which this variable is in memory.
     uint32_t offset() { return index * 4; }
 

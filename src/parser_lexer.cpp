@@ -695,10 +695,17 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
             auto index = value.substr(begin_index + 1,  i - (begin_index + 1));
             try
             {
-                // TODO check if index positive
                 using index_type = decltype(Miss2Identifier::index);
                 if(is_number_index)
-                    return Miss2Identifier { ident, index_type(std::stoi(index.to_string())) };
+                {
+                    int index_value = std::stoi(index.to_string());
+                    if(index_value > 0)
+                        return Miss2Identifier{ ident, index_type(index_value) };
+                    else if(index_value < 0)
+                        return make_unexpected<std::string>("XXX index cannot be negative");
+                    else // == 0
+                        return make_unexpected<std::string>("XXX index cannot be zero");
+                }
                 else
                     return Miss2Identifier { ident, index_type(index) };
             }

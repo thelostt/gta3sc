@@ -16,13 +16,13 @@ struct String128Annotation
 struct VarAnnotation
 {
     shared_ptr<Var>                             base;
-    optional<variant<int32_t, shared_ptr<Var>>> index;
+    optional<variant<int32_t, shared_ptr<Var>>> index; // int32_t index is 0-based
 };
 
 struct ArrayAnnotation
 {
     shared_ptr<Var>                  base;
-    variant<int32_t, shared_ptr<Var>> index;
+    variant<int32_t, shared_ptr<Var>> index;    // int32_t index is 0-based
 };
 
 struct ModelAnnotation

@@ -1,5 +1,5 @@
 // Tests the codegeneration of expressions.
-// RUN: %gta3sc %s --config=gta3 -mno-header -emit-ir2 | %FileCheck %s
+// RUN: %gta3sc %s --config=gta3 -emit-ir2 | %FileCheck %s
 
 VAR_INT   i j k
 VAR_FLOAT x y z

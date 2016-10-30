@@ -31,7 +31,7 @@ struct DecompiledVarArray
 
     DecompiledVar base;
     DecompiledVar index;
-    int8_t        array_size;
+    uint8_t       array_size;
     ElementType   elem_type;
 };
 
@@ -460,13 +460,6 @@ private:
                     }
                     return nullopt;
 
-                case 0x02: // Global Int/Float Var
-                case 0x03: // Local Int/Float Var
-                    if(!fetch_u16(offset))
-                        return nullopt;
-                    offset += sizeof(uint16_t);
-                    break;
-
                 case 0x06: // Float
                     if(this->program.opt.use_half_float)
                     {
@@ -482,35 +475,54 @@ private:
                     }
                     break;
 
-                //
-                // The following cases will not get to run on III/VC
-                //
-
-                case 0x09: // Immediate 8-byte string
+                case 0x09: // Immediate 8-byte string (SA)
                     if(!fetch_chars(offset, 8))
                         return nullopt;
                     offset += 8;
                     break;
 
-                case 0x0F: // Immediate 16-byte string
+                case 0x0F: // Immediate 16-byte string (SA)
                     if(!fetch_chars(offset, 16))
                         return nullopt;
                     offset += 16;
                     break;
 
-                case 0x0E: // Immediate variable-length string
+                case 0x0E: // Immediate variable-length string (SA)
                 {
                     if(auto opt_count = fetch_u8(offset))
                     {
-                        if(!fetch_chars(offset+1, *opt_count))
+                        if(!fetch_chars(offset + 1, *opt_count))
                             return nullopt;
-                        offset += *opt_count+1;
+                        offset += *opt_count + 1;
                         break;
                     }
                     return nullopt;
                 }
 
-                // TODO add rest of data types SA specific
+                case 0x02: // Global Int/Float Var
+                case 0x03: // Local Int/Float Var
+                case 0x0A: // Global TextLabel Var (SA)
+                case 0x0B: // Local TextLabel Var (SA)
+                case 0x10: // Global TextLabel16 Var (SA)
+                case 0x11: // Local TextLabel16 Var (SA)
+                    if(!fetch_u16(offset))
+                        return nullopt;
+                    offset += sizeof(uint16_t);
+                    break;
+
+                case 0x07: // Global Int/Float Array (SA)
+                case 0x08: // Local Int/Float Array (SA)
+                case 0x0C: // Global TextLabel Array (SA)
+                case 0x0D: // Local TextLabel Array (SA)
+                case 0x12: // Global TextLabel16 Array (SA)
+                case 0x13: // Local TextLabel16 Array (SA)
+                {
+                    if(!fetch_u32(offset+0)  // !fetch_u16(offset+0) || !fetch_i16(offset+2)
+                    || !fetch_u16(offset+4)) // !fetch_u8(offset+4) || !fetch_u8(offset+5))
+                        return nullopt;
+                    offset += 6;
+                    break;
+                }
 
                 default:
                     return nullopt;
@@ -568,6 +580,28 @@ private:
 
         auto start_offset = offset;
         offset = offset + 2;
+
+        auto parse_array = [this, &ccmd](size_t offset, bool is_global)
+        {
+            auto var_offset = *fetch_u16(offset+0);
+            auto index_var  = *fetch_i16(offset+2);
+            auto array_size = *fetch_u8(offset+4);
+            auto array_prop = *fetch_u8(offset+5);
+
+            auto elem_type  = (array_prop & 0x7F) == 0? DecompiledVarArray::ElementType::Int :
+                              (array_prop & 0x7F) == 1? DecompiledVarArray::ElementType::Float :
+                              (array_prop & 0x7F) == 2? DecompiledVarArray::ElementType::TextLabel :
+                              (array_prop & 0x7F) == 3? DecompiledVarArray::ElementType::TextLabel16 :
+                                                        DecompiledVarArray::ElementType::None;
+            ccmd.args.emplace_back(DecompiledVarArray{
+                DecompiledVar{ is_global,                var_offset * (is_global? 1u : 4u) },
+                DecompiledVar{ (array_prop & 0x80) != 0, uint32_t(index_var)               },
+                array_size,
+                elem_type,
+            });
+
+            return offset + 6;
+        };
 
         for(auto it = command.args.begin();
             !stop_it && it != command.args.end();
@@ -627,16 +661,6 @@ private:
                     break;
                 }
 
-                case 0x02: // Global Int/Float Var
-                    ccmd.args.emplace_back(DecompiledVar { true, *fetch_u16(offset) });
-                    offset += sizeof(uint16_t);
-                    break;
-
-                case 0x03: // Local Int/Float Var
-                    ccmd.args.emplace_back(DecompiledVar { false, *fetch_u16(offset) * 4u });
-                    offset += sizeof(uint16_t);
-                    break;
-
                 case 0x06: // Float
                     if(this->program.opt.use_half_float)
                     {
@@ -653,30 +677,50 @@ private:
                     }
                     break;
 
-
-                //
-                // The following cases will not get to run on III/VC
-                //
-
-                case 0x09: // Immediate 8-byte string
+                case 0x09: // Immediate 8-byte string (SA)
                     ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 8)) });
                     offset += 8;
                     break;
 
-                case 0x0F: // Immediate 16-byte string
-                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset, 16)) });
+                case 0x0F: // Immediate 16-byte string (SA)
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel16, std::move(*fetch_chars(offset, 16)) });
                     offset += 16;
                     break;
 
-                case 0x0E: // Immediate variable-length string
+                case 0x0E: // Immediate variable-length string (SA)
                 {
                     auto count = *fetch_u8(offset);
-                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*fetch_chars(offset+1, count)) });
+                    ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::StringVar, std::move(*fetch_chars(offset+1, count)) });
                     offset += count + 1;
                     break;
                 }
 
-                // TODO add rest of data types SA specific
+
+                case 0x02: // Global Int/Float Var
+                case 0x0A: // Global TextLabel Var (SA)
+                case 0x10: // Global TextLabel16 Var (SA)
+                    ccmd.args.emplace_back(DecompiledVar { true, *fetch_u16(offset) });
+                    offset += sizeof(uint16_t);
+                    break;
+
+                case 0x03: // Local Int/Float Var
+                case 0x0B: // Local TextLabel Var (SA)
+                case 0x11: // Local TextLabel16 Var (SA)
+                    ccmd.args.emplace_back(DecompiledVar { false, *fetch_u16(offset) * 4u });
+                    offset += sizeof(uint16_t);
+                    break;
+
+                case 0x07: // Global Int/Float Array (SA)
+                case 0x0C: // Global TextLabel Array (SA)
+                case 0x12: // Global TextLabel16 Array (SA)
+                    offset = parse_array(offset, true);
+                    break;
+
+                case 0x08: // Local Int/Float Array (SA)
+                case 0x0D: // Local TextLabel Array (SA)
+                case 0x13: // Local TextLabel16 Array (SA)
+                    offset = parse_array(offset, false);
+                    break;
 
                 default:
                     Unreachable();

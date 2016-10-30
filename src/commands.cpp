@@ -93,7 +93,8 @@ static optional<VarAnnotation> find_var(const string_view& value, const Commands
                 if(is<size_t>(*token.index))
                 {
                     auto& index = get<size_t>(*token.index);
-                    return VarAnnotation { *opt_var, index_type(index) };
+                    Expects(index > 0); // we'll convert from 1-based to 0-based index
+                    return VarAnnotation { *opt_var, index_type(index - 1) };
                 }
                 else
                 {
