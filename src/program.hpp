@@ -136,15 +136,15 @@ inline std::string format_error(const char* type, const TokenStream::TokenInfo& 
 {
     if(context.begin == context.end)
     {
-        return format_error(type, nocontext, msg, std::forward<Args>(args)...);
+        return format_error(type, nullopt, context.stream.stream_name.c_str(), 0, 0,
+                            msg, std::forward<Args>(args)...);
     }
     else
     {
         size_t lineno, colno;
         std::tie(lineno, colno) = context.stream.linecol_from_offset(context.begin);
-        return format_error(type, context.stream,
-                                  context.stream.stream_name.c_str(), lineno, colno,
-                                  msg, std::forward<Args>(args)...);
+        return format_error(type, context.stream, context.stream.stream_name.c_str(), lineno, colno,
+                            msg, std::forward<Args>(args)...);
     }
 }
 

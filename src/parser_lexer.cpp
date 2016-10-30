@@ -18,6 +18,12 @@ struct LexerContext
         program(program), stream(std::move(data), std::move(stream_name))
     {}
 
+    void verify_nesting()
+    {
+        if(this->comment_nest_level != 0)
+            this->error(std::make_pair(0, 0), "XXX end of file without closing */");
+    }
+
     void add_token(Token type, size_t begin_pos, size_t length)
     {
         this->tokens.emplace_back(TokenData{ type, begin_pos, begin_pos + length });
@@ -556,6 +562,8 @@ std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, std:
         lex_line(lexer, begin, std::distance(begin, line_start), std::distance(begin, line_end));
         it = (line_end == end? line_end : std::next(line_end));
     }
+
+    lexer.verify_nesting();
 
     if(!lexer.any_error)
         return shared_ptr<TokenStream>(new TokenStream(program, std::move(lexer.stream), std::move(lexer.tokens)));
