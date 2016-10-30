@@ -32,6 +32,7 @@
 """
 import sys
 import re
+import os
 
 EXPECTED_FATALERROR = 0
 EXPECTED_ERROR      = 1
@@ -43,7 +44,7 @@ RE_CCERROR = re.compile("^((?:\w:[\\/])?[^:]+):(\d+:)?(\d+:)?( (?:(?:error)|(?:w
 
 class DiagInfo:
     def __init__(self, location, lineno, diagtype, diagtext, rawtext=None):
-        self.location = location.replace('\\', '/')
+        self.location = os.path.normpath(location).split(os.sep)
         self.lineno   = lineno       # may be None for cc output
         self.diagtype = diagtype     # may be None for cc output
         self.diagtext = diagtext
@@ -51,9 +52,15 @@ class DiagInfo:
         self.rawtext  = rawtext
 
     def matches(self, ccdiag):
-        if self.location == ccdiag.location and\
-           (self.lineno   == ccdiag.lineno or self.lineno == 0) and\
-           self.diagtype == ccdiag.diagtype:
+
+        if len(self.location) > len(ccdiag.location):
+            return False
+        for component in zip(reversed(self.location), reversed(ccdiag.location)):
+            if component[0] != component[1]:
+                return False
+
+        if (self.lineno   == ccdiag.lineno or self.lineno == 0) and\
+            self.diagtype == ccdiag.diagtype:
                 if isinstance(self.diagtext, basestring):
                     return self.diagtext in ccdiag.diagtext
                 else: # regex
@@ -68,7 +75,7 @@ class DiagInfo:
 def parse_diags_in_source(lines, sourcename):
     output = []
     found_nodiag = False
-    for lineno in range(1, len(lines)):
+    for lineno in range(1, 1+len(lines)):
         line = lines[lineno-1]
         
         comment_pos = line.find("//")
@@ -135,7 +142,7 @@ def parse_diags_in_ccout(lines):
 
         if not match[3]:
             continue
-        
+
         output.append(DiagInfo(location, lineno, diagtype, diagtext, rawtext=line.strip()))
     
     return output

@@ -1525,7 +1525,9 @@ auto read_script(const std::string& filename, const std::map<std::string, fs::pa
     auto path_it = subdir.find(filename);
     if(path_it != subdir.end())
     {
-        return Script::create(program, path_it->second, type);
+        if(auto script_ptr = Script::create(program, path_it->second, type))
+            return script_ptr;
+        return nullopt;
     }
     else
     {

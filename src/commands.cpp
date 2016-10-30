@@ -167,6 +167,7 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
 static bool match_var(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
 {
     optional<string_view> var_ident;
+    bool force_var = false;
 
     if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
     {
@@ -174,7 +175,10 @@ static bool match_var(const SyntaxTree& node, const Commands& commands, const Co
         if(arg.allow_constant && allow_vars)
         {
             if(node.text().size() && node.text().front() == '$')
+            {
                 var_ident = node.text().substr(1);
+                force_var = true;
+            }
         }
         else if(allow_vars)
         {
@@ -232,6 +236,11 @@ static bool match_var(const SyntaxTree& node, const Commands& commands, const Co
         {
             throw BadAlternator(node, opt_token.error().c_str());
         }
+    }
+
+    if(force_var)
+    {
+        throw BadAlternator(node, "XXX var does not exist");
     }
 
     return false; // var doesn't exist
