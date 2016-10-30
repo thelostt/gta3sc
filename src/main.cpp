@@ -397,7 +397,7 @@ int main(int argc, char** argv)
     }
 
     fs::path conf_path = config_path();
-    fprintf(stdout, "gta3sc: using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
+    //fprintf(stderr, "gta3sc: using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
 
     switch(action)
     {
@@ -726,10 +726,12 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     Unreachable();
                 }
 
+                disassembler.set_offset_start(gen.script->offset.value());
                 disassembler.run_analyzer();
                 auto output = disassembler.get_data();
 
                 auto ir2dc = DecompilerIR2(program.commands, std::move(output),
+                                           gen.script->offset.value(), gen.script->size.value(),
                                            script_name,
                                            gen.script->type == ScriptType::Main);
 

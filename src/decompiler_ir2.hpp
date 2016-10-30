@@ -14,24 +14,50 @@ struct DecompilerIR2
 private:
     std::vector<DecompiledData> data;
 
-    const bool is_main_block = false;
-    const std::string block_name;
-
 protected:
-    friend std::string decompile_data(const DecompiledCommand& ccmd, DecompilerIR2& context);
-    friend std::string decompile_data(const int8_t& ccmd, DecompilerIR2& context);
-    friend std::string decompile_data(const int16_t& ccmd, DecompilerIR2& context);
-    friend std::string decompile_data(const int32_t& ccmd, DecompilerIR2& context);
+    friend std::string decompile_data(const DecompiledCommand&, DecompilerIR2&);
+    friend std::string decompile_data(const int8_t&, DecompilerIR2&);
+    friend std::string decompile_data(const int16_t&, DecompilerIR2&);
+    friend std::string decompile_data(const int32_t&, DecompilerIR2&);
+    friend std::string decompile_data(const DecompiledLabelDef&, DecompilerIR2&);
+
     const Commands& commands;
     bool is_label_arg = false;
 
+    const bool is_main_block = false;
+    const std::string block_name;
+
+    size_t base_offset;
+    size_t script_size;
+
+    std::map<size_t, size_t> label_ids; // <local_offset, id>
+
 public:
     explicit DecompilerIR2(const Commands& commands, std::vector<DecompiledData> decompiled,
-                           std::string block_name, bool is_main_block)
+                           size_t base_offset, size_t script_size, std::string block_name, bool is_main_block)
         : commands(commands), data(std::move(decompiled)),
-          block_name(std::move(block_name)),
+          block_name(std::move(block_name)), base_offset(base_offset), script_size(script_size),
         is_main_block(is_main_block)
     {
+        size_t label_id = 0;
+        size_t last_offset;
+
+        for(auto& d : this->data)
+        {
+            if(is<DecompiledLabelDef>(d.data))
+            {
+                auto& label_def = get<DecompiledLabelDef>(d.data);
+                
+                if(label_id != 0)
+                    Expects(label_def.offset > last_offset);
+
+                Expects(label_def.offset >= this->base_offset
+                    && label_def.offset < this->base_offset + this->script_size);
+
+                this->label_ids.emplace(label_def.offset - this->base_offset, ++label_id);
+                last_offset = label_def.offset;
+            }
+        }
     }
 
     template<typename OnDecompile>
@@ -55,14 +81,23 @@ public:
 
     optional<std::string> decompile_label_arg(int value)
     {
-        auto make_output = [&](char c, const std::string& block_name, size_t offset)
+        auto make_output = [&](char c, const std::string& block_name, size_t offset) -> optional<std::string>
         {
-            std::string output;
-            output.push_back(c);
-            output += block_name;
-            output.push_back('_');
-            output += std::to_string(-value);
-            return output;
+            if(offset >= this->base_offset
+                && offset < this->base_offset + this->script_size)
+            {
+                auto it = this->label_ids.find(offset - this->base_offset);
+                if(it != this->label_ids.end())
+                {
+                    std::string output;
+                    output.push_back(c);
+                    output += block_name;
+                    output.push_back('_');
+                    output += std::to_string(it->second);
+                    return output;
+                }
+            }
+            return nullopt;
         };
 
         if(value >= 0)
@@ -73,7 +108,7 @@ public:
                 return nullopt;
         }
         else
-            return make_output('%', block_name, value);
+            return make_output('%', block_name, this->base_offset + size_t(-value));
     }
 };
 
@@ -220,18 +255,20 @@ inline std::string decompile_data(const ArgVariant2& varg, DecompilerIR2& contex
 inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerIR2& context)
 {
     std::string output;
-    char opcode_buffer[6+1];
     size_t arg_id = 0;
     
-    optional<const Command&> opt_command = context.commands.find_command(ccmd.id & 0x8000);
+    optional<const Command&> opt_command = context.commands.find_command(ccmd.id & 0x7FFF);
 
     bool not_flag = (ccmd.id & 0x8000) != 0;
     auto cmd_name = *context.commands.find_command_name(ccmd.id & 0x7FFF, true);
     
     output.reserve(12 + cmd_name.size() + ccmd.args.size() * 6);
 
+    /*
+    char opcode_buffer[6+1];
     snprintf(opcode_buffer, sizeof(opcode_buffer), "%.4X: ", ccmd.id);
     output.append(std::begin(opcode_buffer), std::end(opcode_buffer) - 1);
+    */
 
     if(not_flag) output += "NOT ";
     output += cmd_name;
@@ -253,10 +290,9 @@ inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerIR2& 
     return output;
 }
 
-inline std::string decompile_data(const DecompiledLabelDef& label, DecompilerIR2&)
+inline std::string decompile_data(const DecompiledLabelDef& label, DecompilerIR2& context)
 {
-    // TODO
-    return fmt::format("\nLABEL_{}:", label.offset);
+    return fmt::format("{}_{}:", context.block_name, context.label_ids[label.offset - context.base_offset]);
 }
 
 inline std::string decompile_data(const DecompiledHex& hex, DecompilerIR2&)
@@ -264,14 +300,14 @@ inline std::string decompile_data(const DecompiledHex& hex, DecompilerIR2&)
     std::string output;
     output.reserve(sizeof("\nHEX\n") + (hex.data.size() * 3) + sizeof("\nENDHEX\n\n") + 32);
 
-    output += "\nHEX\n";
+    output += "HEX\n";
     for(auto& x : hex.data)
     {
         char buffer[3+1];
         snprintf(buffer, sizeof(buffer), "%.2X ", x);
         output.append(std::begin(buffer), std::end(buffer) - 1);
     }
-    output += "\nENDHEX\n";
+    output += "\nENDHEX";
     return output;
 }
 

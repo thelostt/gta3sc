@@ -2,6 +2,8 @@
 // RUN: %dis %gta3sc %s --config=gta3 -fsyntax-only -fswitch -pedantic --guesser 2>&1 | %verify %s
 VAR_INT n j
 
+// TODO test more than 75 cases switch (should error), not sure if here in test/semantics
+
 SWITCH n
     CASE 1      // expected-error {{CASE does not end with a BREAK}}
     CASE 1      ////// TODO expected-error {{CASE happens twice}}

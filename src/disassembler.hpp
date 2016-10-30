@@ -1,4 +1,5 @@
 // TODO doc comments
+// TRASH! NEEDS TO BE REWRITTEN
 
 #pragma once
 #include "stdinc.h"
@@ -50,7 +51,7 @@ struct DecompiledCommand
 // constrat to CompiledLabelDef
 struct DecompiledLabelDef
 {
-    size_t offset;
+    size_t offset; // absolute
 };
 
 // constrat to CompiledHex
@@ -118,7 +119,7 @@ private:
     const uint8_t*  bytecode;
     size_t          bytecode_size;
 
-    dynamic_bitset      offset_explored;
+    dynamic_bitset      index_explored;
 
     std::set<size_t> label_offsets;
 
@@ -134,6 +135,8 @@ private:
 
     std::vector<uint32_t> local_offsets;
 
+    size_t offset_start = 0;
+
 public:
     // undefined behaviour is invoked if data inside `bytecode` is changed while
     // this context object is still alive.
@@ -143,7 +146,7 @@ public:
         program(program), commands(commands)
     {
         // This constructor is **ALWAYS** ran, put all common initialization here.
-        this->offset_explored.resize(size);
+        this->index_explored.resize(size);
     }
 
     Disassembler(ProgramContext& program, const Commands& commands, std::vector<uint8_t> bytecode_) :
@@ -162,6 +165,11 @@ public:
             return Disassembler(program, commands, *opt_bytecode);
         else
             return nullopt;
+    }
+
+    void set_offset_start(size_t offset)
+    {
+        this->offset_start = offset;
     }
 
     void add_local_offset(size_t offset)
@@ -184,7 +192,7 @@ public:
 
     void run_analyzer()
     {
-        this->to_explore.emplace(0x0);
+        this->to_explore.emplace(this->offset_start);
         this->analyze();
     }
 
@@ -194,33 +202,35 @@ public:
 
         output.reserve(this->hint_num_ops + 16); // +16 for unknown/hex areas
 
-        for(size_t offset = 0; offset < bytecode_size; )
+        for(size_t index = 0; index < bytecode_size; )
         {
-            if(this->label_offsets.count(offset))
+            if(this->label_offsets.count(index + this->offset_start))
             {
-                output.emplace_back(DecompiledLabelDef{ offset });
+                output.emplace_back(DecompiledLabelDef{ index + this->offset_start });
             }
 
-            if(this->offset_explored[offset])
+            if(this->index_explored[index])
             {
-                output.emplace_back(opcode_to_data(offset));
+                auto offset_ref = index + this->offset_start;
+                output.emplace_back(opcode_to_data(offset_ref));
                 // offset was received by ref and mutated ^
+                index = offset_ref - this->offset_start;
             }
             else
             {
-                auto begin_offset = offset++;
-                for(; offset < bytecode_size; ++offset)
+                auto begin_index = index++;
+                for(; index < bytecode_size; ++index)
                 {
                     // repeat this loop until a label offset or a explored offset is found, then break.
                     //
                     // if a label offset is found, it'll be added at the beggining of the outer for loop,
                     // and then (maybe) this loop will continue.
 
-                    if(this->offset_explored[offset] || this->label_offsets.count(offset))
+                    if(this->index_explored[index] || this->label_offsets.count(index + this->offset_start))
                         break;
                 }
 
-                output.emplace_back(begin_offset, std::vector<uint8_t>(this->bytecode + begin_offset, this->bytecode + offset));
+                output.emplace_back(begin_index, std::vector<uint8_t>(this->bytecode + begin_index, this->bytecode + index));
             }
         }
 
@@ -302,7 +312,14 @@ private:
 
     void explore(size_t offset)
     {
-        if(offset >= bytecode_size)
+        if(offset < this->offset_start)
+        {
+            // jump outer of code
+            __debugbreak();
+            return;
+        }
+
+        if((offset - this->offset_start) >= bytecode_size)
         {
             // hm, there's a jump outer of code...
             // ...or we're not detecting flow instructions properly.
@@ -311,7 +328,7 @@ private:
             return;
         }
 
-        if(offset_explored[offset])
+        if(index_explored[(offset - this->offset_start)])
             return; // already explored
 
         if(auto opt_cmdid = fetch_u16(offset))
@@ -339,8 +356,8 @@ private:
 
         bool stop_it = false;
 
-        bool is_switch_start     = false;/* (&command == &this->commands.switch_start()) TODO*/;
-        bool is_switch_continued = false;/* (&command == &this->commands.switch_continued()) TODO*/;
+        bool is_switch_start     = this->commands.equal(command, this->commands.switch_start());
+        bool is_switch_continued = this->commands.equal(command, this->commands.switch_continued());
 
         size_t argument_id = 0;
 
@@ -512,9 +529,9 @@ private:
         // TODO would be nice if this was actually configurable.
         if(!this->commands.equal(command, this->commands.goto_())
         && !this->commands.equal(command, this->commands.return_())
-        && /*!this->commands.equal(command, this->commands.ret()) TODO*/!false
+        && !this->commands.equal(command, this->commands.ret())
         && !this->commands.equal(command, this->commands.terminate_this_script())
-        && /*!this->commands.equal(command, this->commands.terminate_this_custom_script()) TODO*/!false)
+        && !this->commands.equal(command, this->commands.terminate_this_custom_script()))
         // TODO more
         {
             if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)
@@ -529,8 +546,8 @@ private:
 
         // mark this area as explored
         for(size_t i = op_offset; i < offset; ++i)
-            this->offset_explored[i] = true;
-
+            this->index_explored[(i - this->offset_start)] = true;
+        
         ++this->hint_num_ops;
 
         return offset - op_offset;
@@ -681,31 +698,43 @@ private:
 
     optional<uint8_t> fetch_u8(size_t offset)
     {
-        if(offset + 1 <= bytecode_size)
+        if(offset >= this->offset_start)
         {
-             return this->bytecode[offset];
+            auto index = offset - this->offset_start;
+            if(index + 1 <= bytecode_size)
+            {
+                 return this->bytecode[index];
+            }
         }
         return nullopt;
     }
 
     optional<uint16_t> fetch_u16(size_t offset)
     {
-        if(offset + 2 <= bytecode_size)
+        if(offset >= this->offset_start)
         {
-            return uint16_t(this->bytecode[offset+0]) << 0
-                 | uint16_t(this->bytecode[offset+1]) << 8;
+            auto index = offset - this->offset_start;
+            if(index + 2 <= bytecode_size)
+            {
+                return uint16_t(this->bytecode[index+0]) << 0
+                     | uint16_t(this->bytecode[index+1]) << 8;
+            }
         }
         return nullopt;
     }
 
     optional<uint32_t> fetch_u32(size_t offset)
     {
-        if(offset + 4 <= bytecode_size)
+        if(offset >= this->offset_start)
         {
-            return uint32_t(this->bytecode[offset+0]) << 0
-                 | uint32_t(this->bytecode[offset+1]) << 8
-                 | uint32_t(this->bytecode[offset+2]) << 16
-                 | uint32_t(this->bytecode[offset+3]) << 24;
+            auto index = offset - this->offset_start;
+            if(index + 4 <= bytecode_size)
+            {
+                return uint32_t(this->bytecode[index+0]) << 0
+                     | uint32_t(this->bytecode[index+1]) << 8
+                     | uint32_t(this->bytecode[index+2]) << 16
+                     | uint32_t(this->bytecode[index+3]) << 24;
+            }
         }
         return nullopt;
     }
@@ -739,10 +768,14 @@ private:
 
     optional<char*> fetch_chars(size_t offset, size_t count, char* output)
     {
-        if(offset + count <= bytecode_size)
+        if(offset >= this->offset_start)
         {
-            std::strncpy(output, reinterpret_cast<const char*>(&this->bytecode[offset]), count);
-            return output;
+            auto index = offset - this->offset_start;
+            if(index + count <= bytecode_size)
+            {
+                std::strncpy(output, reinterpret_cast<const char*>(&this->bytecode[index]), count);
+                return output;
+            }
         }
         return nullopt;
     }
