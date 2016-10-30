@@ -1456,9 +1456,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                 auto& var_ident = node.child(0);
                 
-                if(var_ident.type() != NodeType::Identifier) // TODO unecessary? Checked on the parser.
-                    program.fatal_error(var_ident, "XXX {} argument is not a identifier", opkind); // TODO use program.error and think about fallback
-
                 // TODO array
                 auto opt_varinfo = symbols.find_var(var_ident.text(), current_scope);
                 if(!opt_varinfo)
@@ -1468,8 +1465,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                 // TODO cache this or dunno?
                 SyntaxTree number_one = (varinfo->type == VarType::Int? SyntaxTree::temporary(NodeType::Integer, int32_t(1)) :
-                                         varinfo->type == VarType::Float? SyntaxTree::temporary(NodeType::Float, float(1.0)) :
-                                         (program.error(var_ident, "XXX {} must be int or float", opkind), SyntaxTree::temporary(NodeType::Integer, int32_t(1)))); // int as fallback
+                                         (program.error(var_ident, "XXX {} must be int", opkind), SyntaxTree::temporary(NodeType::Integer, int32_t(1)))); // int as fallback
 
 
                 try

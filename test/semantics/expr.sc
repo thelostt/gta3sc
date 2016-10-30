@@ -18,4 +18,8 @@ x = x +@ 2.0
 x = 2.0 -@ x  // expected-error {{cannot do VAR1 = THING -@ VAR1}} 
 x = x -@ 2.0
 
+// Increment/Decrement only works with integers
+++i
+++x // expected-error {{must be int}}
+
 TERMINATE_THIS_SCRIPT
