@@ -1,5 +1,7 @@
 // RUN: %gta3sc %s --config=gtavc -emit-ir2 | %FileCheck %s
 
+// TODO test all the expression alternators (maybe in alternators.sc)
+
 VAR_INT   i j k
 VAR_FLOAT x y z
 
