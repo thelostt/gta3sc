@@ -24,4 +24,7 @@ PRINT_HELP _ab3   // expected-error {{invalid identifier}}
 PRINT_HELP ab3^?_ // valid
 PRINT_HELP WHILE  // valid. identifier, not a keyword.
 
+// String Tokens
+SAVE_STRING_TO_DEBUG_FILE "A string to rule them all"
+
 TERMINATE_THIS_SCRIPT

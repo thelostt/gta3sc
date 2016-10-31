@@ -79,6 +79,6 @@ struct CommandSkipCutsceneEndAnnotation
 
 inline string_view remove_quotes(const string_view& string)
 {
-    Expects(string.front() == '"' && string.back() == '"');
-    return string_view(string.data() + 1, string.size() - 1);
+    Expects(string.size() >= 2 && string.front() == '"' && string.back() == '"');
+    return string_view(string.data() + 1, string.size() - 2);
 }

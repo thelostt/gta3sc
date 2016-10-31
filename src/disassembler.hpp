@@ -609,8 +609,14 @@ private:
         {
             if(it->type == ArgType::Buffer32)
             {
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*fetch_chars(offset, 32)) });
+                Expects(std::next(it, 1) != command.args.end() && std::next(it, 1)->type == ArgType::Buffer32);
+                Expects(std::next(it, 2) != command.args.end() && std::next(it, 2)->type == ArgType::Buffer32);
+                Expects(std::next(it, 3) != command.args.end() && std::next(it, 3)->type == ArgType::Buffer32);
+                it += 3;
+
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*fetch_chars(offset, 128)) });
                 offset += 128;
+
                 continue;
             }
 

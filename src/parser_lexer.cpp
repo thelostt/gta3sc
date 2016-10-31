@@ -257,6 +257,7 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
             lexer.error(begin_pos, "XXX end of line without closing quotes");
             return end;
         }
+        lexer.add_token(Token::String, begin_pos, std::distance(begin, it) + 1);
         return std::next(it);
     }
     else if((*begin >= '0' && *begin <= '9') || *begin == '-' || *begin == '.')
