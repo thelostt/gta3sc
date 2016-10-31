@@ -441,11 +441,15 @@ static bool lex_cpp(LexerContext& lexer, char* begin, char* end, size_t begin_po
     auto next_char_it = std::find_if_not(begin, end, lex_isspace2);
     if(next_char_it != end && *next_char_it == '#')
     {
+        size_t line_pos = begin_pos + std::distance(begin, next_char_it);
+
+        if(lexer.program.opt.pedantic)
+            lexer.error(line_pos, "XXX preprocessor not allowed in -pedantic");
+
         if(auto opt_command = lex_gettok(next_char_it + 1, end))
         {
             string_view command(opt_command->first, opt_command->second);
             std::vector<string_view> tokens;
-            size_t line_pos = begin_pos + std::distance(begin, next_char_it);
 
             auto next_token = opt_command;
             while(next_token = lex_gettok(next_token->first + next_token->second, end))
