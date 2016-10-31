@@ -13,6 +13,7 @@
 struct DecompiledVar
 {
     bool               global;
+    VarType            type;   // VarType::Float not used, VarType::Int used to denotate both Int and Float
     uint32_t           offset; // if global, i*1, if local, i*4;
 
     bool operator==(const DecompiledVar& rhs) const
@@ -24,7 +25,7 @@ struct DecompiledVar
 // constrats to CompiledVar
 struct DecompiledVarArray
 {
-    enum class ElementType : uint8_t
+    enum class ElemType : uint8_t
     {
         None, Int, Float, TextLabel, TextLabel16,
     };
@@ -32,7 +33,7 @@ struct DecompiledVarArray
     DecompiledVar base;
     DecompiledVar index;
     uint8_t       array_size;
-    ElementType   elem_type;
+    ElemType      elem_type;
 };
 
 // constrats to CompiledString
@@ -581,21 +582,21 @@ private:
         auto start_offset = offset;
         offset = offset + 2;
 
-        auto parse_array = [this, &ccmd](size_t offset, bool is_global)
+        auto parse_array = [this, &ccmd](size_t offset, bool is_global, VarType type)
         {
             auto var_offset = *fetch_u16(offset+0);
             auto index_var  = *fetch_i16(offset+2);
             auto array_size = *fetch_u8(offset+4);
             auto array_prop = *fetch_u8(offset+5);
 
-            auto elem_type  = (array_prop & 0x7F) == 0? DecompiledVarArray::ElementType::Int :
-                              (array_prop & 0x7F) == 1? DecompiledVarArray::ElementType::Float :
-                              (array_prop & 0x7F) == 2? DecompiledVarArray::ElementType::TextLabel :
-                              (array_prop & 0x7F) == 3? DecompiledVarArray::ElementType::TextLabel16 :
-                                                        DecompiledVarArray::ElementType::None;
+            auto elem_type  = (array_prop & 0x7F) == 0? DecompiledVarArray::ElemType::Int :
+                              (array_prop & 0x7F) == 1? DecompiledVarArray::ElemType::Float :
+                              (array_prop & 0x7F) == 2? DecompiledVarArray::ElemType::TextLabel :
+                              (array_prop & 0x7F) == 3? DecompiledVarArray::ElemType::TextLabel16 :
+                                                        DecompiledVarArray::ElemType::None;
             ccmd.args.emplace_back(DecompiledVarArray{
-                DecompiledVar{ is_global,                var_offset * (is_global? 1u : 4u) },
-                DecompiledVar{ (array_prop & 0x80) != 0, uint32_t(index_var)               },
+                DecompiledVar{ is_global, type, var_offset * (is_global? 1u : 4u) },
+                DecompiledVar{ (array_prop & 0x80) != 0, VarType::Int, uint32_t(index_var) },
                 array_size,
                 elem_type,
             });
@@ -703,29 +704,50 @@ private:
 
 
                 case 0x02: // Global Int/Float Var
+                    ccmd.args.emplace_back(DecompiledVar{ true, VarType::Int, *fetch_u16(offset) });
+                    offset += sizeof(uint16_t);
+                    break;
                 case 0x0A: // Global TextLabel Var (SA)
+                    ccmd.args.emplace_back(DecompiledVar{ true, VarType::TextLabel, *fetch_u16(offset) });
+                    offset += sizeof(uint16_t);
+                    break;
                 case 0x10: // Global TextLabel16 Var (SA)
-                    ccmd.args.emplace_back(DecompiledVar { true, *fetch_u16(offset) });
+                    ccmd.args.emplace_back(DecompiledVar { true, VarType::TextLabel16, *fetch_u16(offset) });
                     offset += sizeof(uint16_t);
                     break;
 
                 case 0x03: // Local Int/Float Var
+                    ccmd.args.emplace_back(DecompiledVar{ false, VarType::Int, *fetch_u16(offset) * 4u });
+                    offset += sizeof(uint16_t);
+                    break;
                 case 0x0B: // Local TextLabel Var (SA)
+                    ccmd.args.emplace_back(DecompiledVar{ false, VarType::TextLabel, *fetch_u16(offset) * 4u });
+                    offset += sizeof(uint16_t);
+                    break;
                 case 0x11: // Local TextLabel16 Var (SA)
-                    ccmd.args.emplace_back(DecompiledVar { false, *fetch_u16(offset) * 4u });
+                    ccmd.args.emplace_back(DecompiledVar{ false, VarType::TextLabel16, *fetch_u16(offset) * 4u });
                     offset += sizeof(uint16_t);
                     break;
 
+
                 case 0x07: // Global Int/Float Array (SA)
+                    offset = parse_array(offset, true, VarType::Int);
+                    break;
                 case 0x0C: // Global TextLabel Array (SA)
+                    offset = parse_array(offset, true, VarType::TextLabel);
+                    break;
                 case 0x12: // Global TextLabel16 Array (SA)
-                    offset = parse_array(offset, true);
+                    offset = parse_array(offset, true, VarType::TextLabel16);
                     break;
 
                 case 0x08: // Local Int/Float Array (SA)
+                    offset = parse_array(offset, false, VarType::Int);
+                    break;
                 case 0x0D: // Local TextLabel Array (SA)
+                    offset = parse_array(offset, false, VarType::TextLabel);
+                    break;
                 case 0x13: // Local TextLabel16 Array (SA)
-                    offset = parse_array(offset, false);
+                    offset = parse_array(offset, false, VarType::TextLabel16);
                     break;
 
                 default:

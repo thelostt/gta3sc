@@ -216,8 +216,16 @@ inline std::string decompile_data(const DecompiledString& str, DecompilerIR2&)
 inline std::string decompile_data(const DecompiledVar& v, DecompilerIR2&)
 {
     std::string output;
+
+    auto type_cstr = v.type == VarType::Int? "" :
+                     v.type == VarType::Float? "" :
+                     v.type == VarType::TextLabel? "s" :
+                     v.type == VarType::TextLabel16? "v" :
+                     Unreachable();
+
     if(v.global)
     {
+        output += type_cstr;
         output.push_back('&');
         output.append(std::to_string(v.offset));
     }
@@ -225,7 +233,9 @@ inline std::string decompile_data(const DecompiledVar& v, DecompilerIR2&)
     {
         output.append(std::to_string(v.offset / 4));
         output.push_back('@');
+        output += type_cstr;
     }
+
     return output;
 }
 
@@ -237,11 +247,11 @@ inline std::string decompile_data(const DecompiledVarArray& v, DecompilerIR2& co
     output += decompile_data(v.index, context);
     output.push_back(',');
     output += std::to_string(static_cast<int>(v.array_size));
-    output += v.elem_type == DecompiledVarArray::ElementType::None? "" :
-              v.elem_type == DecompiledVarArray::ElementType::Int? "i" :
-              v.elem_type == DecompiledVarArray::ElementType::Float? "f" :
-              v.elem_type == DecompiledVarArray::ElementType::TextLabel? "s" :
-              v.elem_type == DecompiledVarArray::ElementType::TextLabel16? "v" :
+    output += v.elem_type == DecompiledVarArray::ElemType::None? "" :
+              v.elem_type == DecompiledVarArray::ElemType::Int? "i" :
+              v.elem_type == DecompiledVarArray::ElemType::Float? "f" :
+              v.elem_type == DecompiledVarArray::ElemType::TextLabel? "s" :
+              v.elem_type == DecompiledVarArray::ElemType::TextLabel16? "v" :
               Unreachable();
     output.push_back(')');
     return output;
