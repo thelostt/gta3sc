@@ -701,7 +701,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 uint16_t count_unique_command = 0;
 
                 // TODO use `const Commands&` to identify these?
-		// TODO case sensitivity
+		        // TODO case sensitivity
                 if(command_name == "LOAD_AND_LAUNCH_MISSION")
                     table.add_script(ScriptType::Mission, node, program);
                 else if(command_name == "LAUNCH_MISSION")
