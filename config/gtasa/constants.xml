@@ -13,6 +13,32 @@
       <Constant Name="NIGHT"/>
       <Constant Name="DAY"/>
     </Enum>
+    <Enum Name="PAD">
+      <Constant Name="PAD1"/>
+      <Constant Name="PAD2"/>
+    </Enum>
+    <Enum Name="BUTTON">
+      <Constant Name="LEFTSTICKX"/>
+      <Constant Name="LEFTSTICKY"/>
+      <Constant Name="RIGHTSTICKX"/>
+      <Constant Name="RIGHTSTICKY"/>
+      <Constant Name="LEFTSHOULDER1"/>
+      <Constant Name="LEFTSHOULDER2"/>
+      <Constant Name="RIGHTSHOULDER1"/>
+      <Constant Name="RIGHTSHOULDER2"/>
+      <Constant Name="DPADUP"/>
+      <Constant Name="DPADDOWN"/>
+      <Constant Name="DPADLEFT"/>
+      <Constant Name="DPADRIGHT"/>
+      <Constant Name="START"/>
+      <Constant Name="SELECT"/>
+      <Constant Name="SQUARE"/>
+      <Constant Name="TRIANGLE"/>
+      <Constant Name="CROSS"/>
+      <Constant Name="CIRCLE"/>
+      <Constant Name="LEFTSHOCK"/>
+      <Constant Name="RIGHTSHOCK"/>
+    </Enum>
     <!-- TODO GTASA CONSTANTS, FIND WITH A DECOMPILER -->
   </Constants>
 </GTA3Script>

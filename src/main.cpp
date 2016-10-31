@@ -769,7 +769,6 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     start_block = "MISSION_BLOCK_START %d\n";
                     end_block = "MISSION_BLOCK_END\n";
                     script_name = "MISSION_" + std::to_string(block_id);
-                    disassembler.add_local_offset(0);
                 }
                 else if(gen.script->type == ScriptType::StreamedScript)
                 {
@@ -777,7 +776,6 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     start_block = "STREAMED_BLOCK_START %d\n";
                     end_block = "STREAMED_BLOCK_END\n";
                     script_name = "STREAM_" + std::to_string(block_id);
-                    disassembler.add_local_offset(0);
                 }
                 else
                 {
@@ -785,6 +783,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 }
 
                 disassembler.set_offset_start(gen.script->offset.value());
+                disassembler.add_local_offset(gen.script->offset.value());
                 disassembler.run_analyzer();
                 auto output = disassembler.get_data();
 

@@ -1215,8 +1215,8 @@
     </Command>
     <Command ID="0xe1" Name="IS_BUTTON_PRESSED">
       <Args>
-        <Arg Type="INT" Desc="Player"/>
-        <Arg Type="INT" Desc="Button ID"/>
+        <Arg Type="INT" Desc="Player" Enum="PAD"/>
+        <Arg Type="INT" Desc="Button ID" Enum="BUTTON"/>
       </Args>
     </Command>
     <Command ID="0xe2" Name="GET_PAD_STATE">
