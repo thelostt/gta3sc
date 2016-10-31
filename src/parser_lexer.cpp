@@ -9,6 +9,8 @@ struct LexerContext
     ProgramContext& program;
     TokenStream::TextStream stream;
 
+    std::vector<char> cpp_stack;
+
     bool any_error = false;                 //< True if any error happened during tokenization.
     size_t comment_nest_level = 0;          //< Nest level of /* comments */
     std::vector<TokenData> tokens;          //< Output tokens.
@@ -16,12 +18,18 @@ struct LexerContext
 
     explicit LexerContext(ProgramContext& program, std::string data, std::string stream_name) :
         program(program), stream(std::move(data), std::move(stream_name))
-    {}
+    {
+        cpp_stack.reserve(32);
+        cpp_stack.emplace_back(true);
+    }
 
     void verify_nesting()
     {
         if(this->comment_nest_level != 0)
             this->error(std::make_pair(0, 0), "XXX end of file without closing */");
+
+        if(cpp_stack.size() > 1)
+            this->error(std::make_pair(0, 0), "XXX missing #endif");
     }
 
     void add_token(Token type, size_t begin_pos, size_t length)
@@ -34,13 +42,13 @@ struct LexerContext
     {
         this->any_error = true;
         this->program.error(TokenStream::TokenInfo(this->stream, pos.first, pos.first + pos.second),
-                            std::forward<Args>(args)...);
+            std::forward<Args>(args)...);
     }
 
     template<typename... Args>
     void error(size_t pos, Args&&... args)
     {
-        return error(std::make_pair(pos, pos+1), std::forward<Args>(args)...);
+        return error(std::make_pair(pos, pos + 1), std::forward<Args>(args)...);
     }
 };
 
@@ -134,6 +142,12 @@ static bool lex_iswhite(int c)
     return c == ' ' || c == '\t' || c == '(' || c == ')' || c == ',' || c == '\r';
 }
 
+/// Fast alternative to ::isspace.
+static bool lex_isspace2(int c)
+{
+    return c == ' ' || c == '\t';
+}
+
 /// Checks if `token` is equal `string` which has `length`.
 static bool lex_istokeq(const std::pair<const char*, size_t>& token, const char* string, size_t length)
 {
@@ -174,7 +188,7 @@ static bool lex_isexprc(const char* it, const char* end)
 static auto lex_gettok(const char* it, const char* end) -> optional<std::pair<const char*, size_t>>
 {
     auto tok_start = std::find_if_not(it, end, lex_iswhite);
-    auto tok_end   = std::find_if(tok_start, end, lex_iswhite);
+    auto tok_end = std::find_if(tok_start, end, lex_iswhite);
 
     if(tok_start != tok_end)
         return std::make_pair(tok_start, size_t(tok_end - tok_start));
@@ -261,7 +275,7 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
     else if((*begin >= 'a' && *begin <= 'z') || (*begin >= 'A' && *begin <= 'Z') || *begin == '$')
     {
         auto token = lex_gettok(begin, end).value();
-        auto it    = token.first + token.second;
+        auto it = token.first + token.second;
         lexer.add_token(Token::Identifier, begin_pos, std::distance(begin, it));
         return it;
     }
@@ -288,7 +302,7 @@ static void lex_command(LexerContext& lexer, const char* begin, const char* end,
             if(lex_istokeq(*cmdtok, keycmd.first))
             {
                 size_t tok_begin = begin_pos + std::distance(begin, cmdtok->first);
-                
+
                 if(had_keycommand)
                     lexer.error(std::make_pair(tok_begin, cmdtok->second), "unexpected token");
 
@@ -324,7 +338,7 @@ static void lex_command(LexerContext& lexer, const char* begin, const char* end,
                 // this is a filename token, just get whatever is delimited by spaces
                 if(auto token = lex_gettok(it, end))
                 {
-                    lexer.add_token(Token::Identifier, begin_pos + std::distance(begin, token->first) , token->second);
+                    lexer.add_token(Token::Identifier, begin_pos + std::distance(begin, token->first), token->second);
                     it = token->first + token->second;
                 }
             }
@@ -344,12 +358,12 @@ static void lex_expr(LexerContext& lexer, const char* begin, const char* end, si
 
         bool found_symbol = false;
         auto length_left = size_t(std::distance(it, end));
-        
+
         for(auto& symbol : expr_symbols)
         {
             if(length_left >= symbol.first.size()
-            && lex_isexprc(it, end) // for special minus checking
-            && !strncmp(it, symbol.first.data(), symbol.first.size()))
+                && lex_isexprc(it, end) // for special minus checking
+                && !strncmp(it, symbol.first.data(), symbol.first.size()))
             {
                 size_t pos = (begin_pos + std::distance(begin, it));
                 lexer.add_token(symbol.second, pos, symbol.first.size());
@@ -396,7 +410,7 @@ static void lex_comments(LexerContext& lexer, char* begin, char* end, size_t beg
             else if(*it == '/' && *std::next(it) == '*')
             {
                 ++lexer.comment_nest_level;
-                *it++ = ' '; *it   = ' ';
+                *it++ = ' '; *it = ' ';
             }
             else if(*it == '*' && *std::next(it) == '/')
             {
@@ -408,7 +422,7 @@ static void lex_comments(LexerContext& lexer, char* begin, char* end, size_t beg
                 else
                 {
                     --lexer.comment_nest_level;
-                    *it++ = ' '; *it   = ' ';
+                    *it++ = ' '; *it = ' ';
                 }
             }
         }
@@ -416,6 +430,59 @@ static void lex_comments(LexerContext& lexer, char* begin, char* end, size_t beg
         if(lexer.comment_nest_level)
             *it = ' ';
     }
+}
+
+/// Processes the mini-preprocessor. 
+///
+/// Returns true in case we can keep reading this line, false otherwise.
+static bool lex_cpp(LexerContext& lexer, char* begin, char* end, size_t begin_pos)
+{
+    // TODO tokens must be identifiers
+    auto next_char_it = std::find_if_not(begin, end, lex_isspace2);
+    if(next_char_it != end && *next_char_it == '#')
+    {
+        if(auto opt_command = lex_gettok(next_char_it + 1, end))
+        {
+            string_view command(opt_command->first, opt_command->second);
+            std::vector<string_view> tokens;
+            size_t line_pos = begin_pos + std::distance(begin, next_char_it);
+
+            auto next_token = opt_command;
+            while(next_token = lex_gettok(next_token->first + next_token->second, end))
+            {
+                tokens.emplace_back(next_token->first, next_token->second);
+            }
+
+            if(command == "ifdef" || command == "ifndef")
+            {
+                if(tokens.size() != 1)
+                    lexer.error(line_pos, "XXX wrong number of tokens in the directive");
+
+                if(tokens.size() >= 1)
+                {
+                    auto top = lexer.cpp_stack.back();
+                    auto isdef = lexer.program.opt.is_defined(tokens[0]);
+                    lexer.cpp_stack.emplace_back((command[2] == 'n'? !isdef : isdef) && top);
+                }
+            }
+            else if(command == "endif")
+            {
+                if(tokens.size())
+                    lexer.error(line_pos, "XXX too many tokens in directive");
+
+                if(lexer.cpp_stack.size() > 1)
+                    lexer.cpp_stack.pop_back();
+                else
+                    lexer.error(line_pos, "XXX #endif without #ifdef");
+            }
+            else
+            {
+                lexer.error(line_pos, "XXX unknown preprocessor directive");
+            }
+        }
+        return false;
+    }
+    return (!!lexer.cpp_stack.back());
 }
 
 /// Lexes a line.
@@ -426,8 +493,8 @@ static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_
     bool had_keycommand = false;
 
     auto begin = (const char*)(&lexer.line_buffer[0]);
-    auto end   = begin + lexer.line_buffer.size();
-    auto it    = begin;
+    auto end = begin + lexer.line_buffer.size();
+    auto it = begin;
 
     auto push_token = [&](const std::pair<const char*, size_t>& token, Token type) -> const char*
     {
@@ -443,7 +510,10 @@ static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_
 
     lex_comments(lexer, &lexer.line_buffer[0], &lexer.line_buffer[0] + lexer.line_buffer.size(), begin_pos);
 
-    it  = std::find_if_not(it, end, lex_iswhite);
+    if(!lex_cpp(lexer, &lexer.line_buffer[0], &lexer.line_buffer[0] + lexer.line_buffer.size(), begin_pos))
+        return;
+
+    it = std::find_if_not(it, end, lex_iswhite);
     end = std::find_if_not(std::make_reverse_iterator(end), std::make_reverse_iterator(it), lex_iswhite).base();
 
     if(std::distance(it, end) == 0)
@@ -544,6 +614,7 @@ static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_
     }
 }
 
+
 //
 // TokenStream
 //
@@ -553,12 +624,13 @@ std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, std:
     LexerContext lexer(program, std::move(data_), stream_name);
 
     auto begin = lexer.stream.data.c_str();
-    auto end   = lexer.stream.data.c_str() + lexer.stream.data.size();
+    auto end = lexer.stream.data.c_str() + lexer.stream.data.size();
 
     for(auto it = begin; it != end; )
     {
         const char *line_start = it;
-        const char *line_end = std::find(it, end, '\n');
+        const char *line_end   = std::find(it, end, '\n');
+
         lex_line(lexer, begin, std::distance(begin, line_start), std::distance(begin, line_end));
         it = (line_end == end? line_end : std::next(line_end));
     }
@@ -617,7 +689,7 @@ TokenStream::TextStream::TextStream(std::string data_, std::string name_)
             if(*it == '\n')
             {
                 size_t pos = (it - this->data.c_str());
-                this->line_offset.emplace_back(pos+1);
+                this->line_offset.emplace_back(pos + 1);
             }
         }
 
@@ -632,7 +704,8 @@ std::string TokenStream::TextStream::get_line(size_t lineno) const
     const char* start = this->data.c_str() + offset;
     const char* end;
 
-    for(end = start; *end && *end != '\n' && *end != '\r'; ++end) {}
+    for(end = start; *end && *end != '\n' && *end != '\r'; ++end) {
+    }
 
     return std::string(start, end);
 }
@@ -652,11 +725,11 @@ auto TokenStream::TextStream::linecol_from_offset(size_t offset) const -> std::p
     {
         auto next_it = std::next(it);
         size_t next_line_offset = (next_it != end)? *next_it : this->max_offset;
-        
+
         if(offset >= *it && offset < next_line_offset)
         {
             size_t lineno = size_t(std::distance(line_offset.begin(), it) + 1);
-            size_t colno  = (offset - *it) + 1;
+            size_t colno = (offset - *it) + 1;
             return std::make_pair(lineno, colno);
         }
     }
@@ -692,7 +765,7 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
         else if(value[i] == ']')
         {
             auto ident = value.substr(0, begin_index);
-            auto index = value.substr(begin_index + 1,  i - (begin_index + 1));
+            auto index = value.substr(begin_index + 1, i - (begin_index + 1));
             try
             {
                 using index_type = decltype(Miss2Identifier::index);
@@ -707,7 +780,7 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
                         return make_unexpected<std::string>("XXX index cannot be zero");
                 }
                 else
-                    return Miss2Identifier { ident, index_type(index) };
+                    return Miss2Identifier{ ident, index_type(index) };
             }
             catch(const std::out_of_range&)
             {
@@ -721,5 +794,5 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
         }
     }
 
-    return Miss2Identifier { value, nullopt };
+    return Miss2Identifier{ value, nullopt };
 }

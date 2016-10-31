@@ -29,6 +29,8 @@ Options:
   -pedantic                Forbid the usage of extensions not in R* compiler.
   --guesser                Allows the use of language features not completly
                            known or understood by the modding community.
+  -D <name>                Defines the preprocessor directive <name>.
+  -U <name>                Undefines the preprocessor directive <name>.
   -emit-ir2                Emits a explicit IR based on Sanny Builder syntax.
   -fsyntax-only            Only checks the syntax, i.e. doesn't generate code.
   -fentity-tracking        Tracks entity types in variables.
@@ -281,6 +283,14 @@ int main(int argc, char** argv)
             else if(optflag(argv, "-emit-ir2", nullptr))
             {
                 options.emit_ir2 = true;
+            }
+            else if(const char* name = optget(argv, "-D", nullptr, 1))
+            {
+                options.define(name);
+            }
+            else if(const char* name = optget(argv, "-U", nullptr, 1))
+            {
+                options.undefine(name);
             }
             else
             {

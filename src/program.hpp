@@ -66,6 +66,25 @@ struct Options
             default: Unreachable();
         }
     }
+
+    void define(std::string symbol, std::string value = "1")
+    {
+        defines.emplace(std::move(symbol), std::move(value));
+    }
+
+    void undefine(const string_view& symbol)
+    {
+        auto it = defines.find(symbol);
+        if(it != defines.end()) defines.erase(it);
+    }
+
+    bool is_defined(const string_view& symbol) const
+    {
+        return defines.find(symbol) != defines.end();
+    }
+
+private:
+    transparent_map<std::string, std::string> defines;
 };
 
 template<typename... Args>
