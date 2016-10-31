@@ -422,6 +422,8 @@ int main(int argc, char** argv)
 
 int compile(fs::path input, fs::path output, ProgramContext& program)
 {
+    // TODO cleanup this function
+
     if(output.empty())
     {
         // if fsyntax-only bla bla
@@ -698,36 +700,82 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         auto generate_ir2 = [&]
         {
             size_t subscripts_counter = 0;
+
+            auto lowest_main_gen = gens.begin();
+
+            auto highest_main_gen = std::max_element(gens.begin(), gens.end(), [](const CodeGenerator& a, const CodeGenerator& b)
+            {
+                size_t left = 0, right = 0;
+
+                if(a.script->type != ScriptType::Mission && a.script->type != ScriptType::StreamedScript)
+                    left = a.script->offset.value();
+
+                if(b.script->type != ScriptType::Mission && b.script->type != ScriptType::StreamedScript)
+                    right = b.script->offset.value();
+
+                return left < right;
+            });
+
+            Expects(lowest_main_gen != gens.end());
+            Expects(highest_main_gen != gens.end());
+
+            size_t main_block_size = highest_main_gen->script->offset.value() + highest_main_gen->script->size.value();
+
+            std::unique_ptr<uint8_t[]> main_block(new uint8_t[main_block_size]);
+            // TODO should we zero the memory?
+
             for(auto& gen : gens)
             {
+                if(gen.script->type == ScriptType::Mission || gen.script->type == ScriptType::StreamedScript)
+                    continue;
+
+                assert(gen.script->offset.value() + gen.buffer_size() <= main_block_size);
+
+                std::memcpy(&main_block[gen.script->offset.value()], gen.buffer(), gen.buffer_size()); 
+            }
+
+            if(true)
+            {
+                size_t lowest_offset = lowest_main_gen->script->offset.value();
+                auto disassembler = Disassembler(program, program.commands, &main_block[lowest_offset], main_block_size - lowest_offset);
+
+                disassembler.set_offset_start(lowest_offset);
+                disassembler.run_analyzer();
+                auto output = disassembler.get_data();
+
+                auto ir2dc = DecompilerIR2(program.commands, std::move(output),
+                                           lowest_offset, main_block_size - lowest_offset,
+                                           "MAIN", true);
+
+                ir2dc.decompile([](const std::string& line) {
+                    fprintf(stdout, "%s\n", line.c_str());
+                });
+            }
+
+            for(auto& gen : gens)
+            {
+                if(gen.script->type != ScriptType::Mission && gen.script->type != ScriptType::StreamedScript)
+                    continue;
+
                 std::string script_name;
                 const char *start_block = nullptr, *end_block = nullptr;
                 int block_id;
 
                 auto disassembler = Disassembler(program, program.commands, gen.buffer(), gen.buffer_size());
 
-                if(gen.script->type == ScriptType::Main)
+                if(gen.script->type == ScriptType::Mission)
                 {
-                    script_name = "MAIN";
-                }
-                else if(gen.script->type == ScriptType::MainExtension
-                    || gen.script->type == ScriptType::Subscript)
-                {
-                    script_name = "SCRIPT_" + std::to_string(++subscripts_counter);
-                }
-                else if(gen.script->type == ScriptType::Mission)
-                {
-                    block_id    = gen.script->mission_id.value();
-                    start_block = "MISSION_BLOCK_START %d\n\n";
-                    end_block   = "MISSION_BLOCK_END\n";
+                    block_id = gen.script->mission_id.value();
+                    start_block = "MISSION_BLOCK_START %d\n";
+                    end_block = "MISSION_BLOCK_END\n";
                     script_name = "MISSION_" + std::to_string(block_id);
                     disassembler.add_local_offset(0);
                 }
                 else if(gen.script->type == ScriptType::StreamedScript)
                 {
-                    block_id    = gen.script->streamed_id.value();
-                    start_block = "STREAMED_BLOCK_START %d\n\n";
-                    end_block   = "STREAMED_BLOCK_END\n";
+                    block_id = gen.script->streamed_id.value();
+                    start_block = "STREAMED_BLOCK_START %d\n";
+                    end_block = "STREAMED_BLOCK_END\n";
                     script_name = "STREAM_" + std::to_string(block_id);
                     disassembler.add_local_offset(0);
                 }
@@ -741,9 +789,9 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 auto output = disassembler.get_data();
 
                 auto ir2dc = DecompilerIR2(program.commands, std::move(output),
-                                           gen.script->offset.value(), gen.script->size.value(),
-                                           script_name,
-                                           gen.script->type == ScriptType::Main);
+                    gen.script->offset.value(), gen.script->size.value(),
+                    script_name,
+                    gen.script->type == ScriptType::Main);
 
                 if(start_block) fprintf(stdout, start_block, block_id);
                 ir2dc.decompile([](const std::string& line) {
