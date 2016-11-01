@@ -58,6 +58,7 @@ Options:
   -fmission-var-limit=<n>  The index limit of mission local variables. Defaults
                            to -flocal-var-limit if not set.
   -ftimer-index=<n>        The local variable index of TIMERA.
+  -fswitch-case-limit=<n>  The limit on the number of CASE in a SWITCH.
   -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START and SKIP_CUTSCENE_END.
 )";
 
@@ -155,6 +156,7 @@ int main(int argc, char** argv)
                     options.timer_index = 16;
                     options.local_var_limit = 16;
                     options.mission_var_limit = nullopt;
+                    options.switch_case_limit = nullopt;
                 }
                 else if(config_name == "gtavc")
                 {
@@ -172,6 +174,7 @@ int main(int argc, char** argv)
                     options.timer_index = 16;
                     options.local_var_limit = 16;
                     options.mission_var_limit = nullopt;
+                    options.switch_case_limit = nullopt;
                 }
                 else if(config_name == "gtasa")
                 {
@@ -189,6 +192,7 @@ int main(int argc, char** argv)
                     options.timer_index = 32;
                     options.local_var_limit = 32;
                     options.mission_var_limit = 1024;
+                    options.switch_case_limit = 75;
                 }
                 else
                 {
@@ -272,9 +276,13 @@ int main(int argc, char** argv)
             }
             else if(optint(argv, "-ftimer-index", &options.timer_index)) {}
             else if(optint(argv, "-flocal-var-limit", &options.local_var_limit)) {}
-            else if(optint(argv, "-fmission_var_limit", &temp_i32))
+            else if(optint(argv, "-fmission-var-limit", &temp_i32))
             {
                 options.mission_var_limit = temp_i32;
+            }
+            else if(optint(argv, "-fswitch-case-limit", &temp_i32))
+            {
+                options.switch_case_limit = temp_i32;
             }
             else if(optflag(argv, "-fsyntax-only", nullptr))
             {

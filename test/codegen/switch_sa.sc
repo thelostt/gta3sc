@@ -8,32 +8,32 @@ VAR_INT n
         // CHECK-NEXT-L: MAIN_1:
         CASE 100
             // CHECK-NEXT-L: WAIT 100i8
-            WAIT 100
             // CHECK-NEXT-L: GOTO @MAIN_6
+            WAIT 100
             BREAK
         // CHECK-NEXT-L: MAIN_2:
         CASE 200
             // CHECK-NEXT-L: WAIT 200i16
-            WAIT 200
             // CHECK-NEXT-L: GOTO @MAIN_6
+            WAIT 200
             BREAK
         // CHECK-NEXT-L: MAIN_3:
         CASE 300
             // CHECK-NEXT-L: WAIT 300i16
-            WAIT 300
             // CHECK-NEXT-L: GOTO @MAIN_6
+            WAIT 300
             BREAK
         // CHECK-NEXT-L: MAIN_4:
         CASE 50
             // CHECK-NEXT-L: WAIT 50i8
-            WAIT 50
             // CHECK-NEXT-L: GOTO @MAIN_6
+            WAIT 50
             BREAK
         // CHECK-NEXT-L: MAIN_5:
         DEFAULT
             // CHECK-NEXT-L: WAIT 0i8
-            WAIT 0
             // CHECK-NEXT-L: GOTO @MAIN_6
+            WAIT 0
             BREAK
     ENDSWITCH
 }
@@ -47,20 +47,20 @@ VAR_INT n
         // CHECK-NEXT-L: MAIN_7:
         CASE 100
             // CHECK-NEXT-L: WAIT 100i8
-            WAIT 100
             // CHECK-NEXT-L: GOTO @MAIN_10
+            WAIT 100
             BREAK
         // CHECK-NEXT-L: MAIN_8:
         CASE 200
             // CHECK-NEXT-L: WAIT 200i16
-            WAIT 200
             // CHECK-NEXT-L: GOTO @MAIN_10
+            WAIT 200
             BREAK
         // CHECK-NEXT-L: MAIN_9:
         CASE 50
             // CHECK-NEXT-L: WAIT 50i8
-            WAIT 50
             // CHECK-NEXT-L: GOTO @MAIN_10
+            WAIT 50
             BREAK
     ENDSWITCH
 }
@@ -74,60 +74,82 @@ VAR_INT n
         // CHECK-NEXT-L: MAIN_11:
         CASE 100
             // CHECK-NEXT-L: WAIT 100i8 
-            WAIT 100
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 100
             BREAK
         // CHECK-NEXT-L: MAIN_12:
         CASE 200
             // CHECK-NEXT-L: WAIT 200i16 
-            WAIT 200
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 200
             BREAK
         // CHECK-NEXT-L: MAIN_13:
         CASE 300
             // CHECK-NEXT-L: WAIT 300i16 
-            WAIT 300
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 300
             BREAK
         // CHECK-NEXT-L: MAIN_14:
         CASE 400
             // CHECK-NEXT-L: WAIT 400i16 
-            WAIT 400
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 400
             BREAK
         // CHECK-NEXT-L: MAIN_15:
         CASE 500
             // CHECK-NEXT-L: WAIT 500i16 
-            WAIT 500
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 500
             BREAK
         // CHECK-NEXT-L: MAIN_16:
         CASE 600
             // CHECK-NEXT-L: WAIT 600i16 
-            WAIT 600
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 600
             BREAK
         // CHECK-NEXT-L: MAIN_17:
         CASE 700
             // CHECK-NEXT-L: WAIT 700i16 
-            WAIT 700
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 700
             BREAK
         // CHECK-NEXT-L: MAIN_18:
         CASE 800
             // CHECK-NEXT-L: WAIT 800i16 
-            WAIT 800
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 800
             BREAK
         // CHECK-NEXT-L: MAIN_19:
         CASE 900
             // CHECK-NEXT-L: WAIT 900i16 
-            WAIT 900
             // CHECK-NEXT-L: GOTO @MAIN_20 
+            WAIT 900
             BREAK
     ENDSWITCH
 }
 
-// CHECK-NEXT-L: MAIN_20:
+// Using cases with the same body
+{
+    // CHECK-NEXT-L: MAIN_20:
+    // CHECK-NEXT-L: SWITCH_START &8 3i8 1i8 @MAIN_22 1i8 @MAIN_21 2i8 @MAIN_21 3i8 @MAIN_22 -1i8 @MAIN_23 -1i8 @MAIN_23 -1i8 @MAIN_23 -1i8 @MAIN_23
+    SWITCH n
+        // CHECK-NEXT-L: MAIN_21:
+        CASE 1
+        CASE 2
+            // CHECK-NEXT-L: WAIT 100i8
+            // CHECK-NEXT-L: GOTO @MAIN_23
+            WAIT 100
+            BREAK
+        // CHECK-NEXT-L: MAIN_22:
+        CASE 3
+        DEFAULT
+            // CHECK-NEXT-L: WAIT 200i16
+            // CHECK-NEXT-L: GOTO @MAIN_23
+            WAIT 200
+            BREAK
+    ENDSWITCH
+}
+
+// CHECK-NEXT-L: MAIN_23:
 // CHECK-NEXT-L: TERMINATE_THIS_SCRIPT
 TERMINATE_THIS_SCRIPT

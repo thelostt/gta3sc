@@ -227,6 +227,20 @@ private:
         this->compiled.emplace_back(CompiledCommand{ id, std::move(args) });
     }
 
+    // last is inclusive, so (first == last) is valid and compiles first
+    // \warning for bad design reasons, first/last must have a parent.
+    void compile_statements(shared_ptr<const SyntaxTree> first, shared_ptr<const SyntaxTree> last)
+    {
+        // TODO fix SyntaxTree design, this is kinda slow, we should have ->next() and such
+        auto& p = first->parent();
+        auto it = std::find(p->begin(), p->end(), first);
+        do
+        {
+            compile_statement(**it);
+        }
+        while(*it++ != last);
+    }
+
     void compile_statements(const SyntaxTree& base)
     {
         for(auto it = base.begin(); it != base.end(); ++it)
@@ -383,151 +397,257 @@ private:
         loop_stack.pop_back();
     }
 
+    struct Case
+    {
+        optional<int32_t>            value;
+        shared_ptr<Label>            target;
+        optional<const Command&>     is_var_eq_int;
+        shared_ptr<const SyntaxTree> first_statement;
+        shared_ptr<const SyntaxTree> last_statement;
+
+        explicit Case(optional<int32_t> value, optional<const Command&> veqi) :
+            value(std::move(value)), is_var_eq_int(std::move(veqi))
+        {}
+
+        bool is_default() const
+        {
+            return this->value == nullopt;
+        }
+
+        bool is_empty() const
+        {
+            return this->first_statement == nullptr;
+        }
+
+        bool same_body_as(const Case& rhs) const
+        {
+            Expects(this->first_statement != nullptr);
+            Expects(rhs.first_statement != nullptr);
+            return this->first_statement == rhs.first_statement;
+        }
+    };
+
     void compile_switch(const SyntaxTree& switch_node)
     {
-        struct Case
-        {
-            int32_t                     value;
-            shared_ptr<Label>           target;
-            optional<const SyntaxTree&> case_node;
-            optional<const SyntaxTree&> statements;     // nullopt on case_default if no DEFAULT
-            optional<const Command&>    is_var_eq_int;
-        };
-
-        Case              case_default { 0, nullptr, nullopt, nullopt, nullopt };
-        std::vector<Case> cases;
-        std::vector<Case*>sorted_cases;
-
-        auto opt_switch_start     = commands.switch_start();
-        auto opt_switch_continued = commands.switch_continued();
-
         auto continue_ptr = nullptr;
         auto break_ptr = make_internal_label();
 
-        const SyntaxTree& var = switch_node.child(0);
+        loop_stack.emplace_back(LoopInfo{ continue_ptr, break_ptr });
 
-        cases.reserve(switch_node.child(1).child_count());
-        for(auto& case_node : switch_node.child(1))
+        std::vector<Case> cases;
+        cases.reserve(1 + switch_node.annotation<const SwitchAnnotation&>().num_cases);
+
+        for(auto& node : switch_node.child(1))
         {
-            switch(case_node->type())
+            switch(node->type())
             {
                 case NodeType::CASE:
-                    cases.emplace_back(Case {
-                        case_node->child(0).annotation<int32_t>(),
-                        nullptr, *case_node, case_node->child(1),
-                        *case_node->annotation<const SwitchCaseAnnotation&>().is_var_eq_int
-                    });
+                {
+                    auto value  = node->child(0).annotation<int32_t>();
+                    auto& isveq = *node->annotation<const SwitchCaseAnnotation&>().is_var_eq_int;
+                    cases.emplace_back(value, isveq);
                     break;
+                }
+
                 case NodeType::DEFAULT:
-                    if(case_default.statements != nullopt)
-                        program.error(*case_node, "XXX DEFAULT happens again");
-                    case_default = Case { 0, nullptr, *case_node, case_node->child(0), nullopt };
+                {
+                    cases.emplace_back(nullopt, nullopt);
                     break;
-                default:
-                    Unreachable();
+                }
+
+                default: // statement
+                {
+                    if(!cases.empty())
+                    {
+                        auto& prev_case = cases.back();
+                        if(!prev_case.first_statement) prev_case.first_statement = node;
+                        prev_case.last_statement = node;
+                    }
+                    break;
+                }
             }
         }
 
-        loop_stack.emplace_back(LoopInfo { continue_ptr, break_ptr });
+        auto blank_cases_begin = cases.end();
+        auto blank_cases_end   = cases.end();
 
-        sorted_cases.resize(cases.size());
+        for(auto it = cases.begin(); it != cases.end(); ++it)
         {
-            std::transform(cases.begin(), cases.end(), sorted_cases.begin(), std::addressof<Case>);
-            std::sort(sorted_cases.begin(), sorted_cases.end(), [](const Case* a, const Case* b) {
-                return a->value < b->value;
-            });
-
-            auto it = std::adjacent_find(sorted_cases.begin(), sorted_cases.end(), [](const Case* a, const Case* b) {
-                return a->value == b->value;
-            });
-
-            if(it != sorted_cases.end())
+            if(it->is_empty())
             {
-                program.error((**it).case_node.value(), "XXX CASE happens twice");
+                if(blank_cases_begin == cases.end())
+                {
+                    blank_cases_begin = it;
+                    blank_cases_end   = std::next(it);
+                }
+                else
+                {
+                    blank_cases_end = std::next(it);
+                }
+            }
+            else
+            {
+                if(blank_cases_begin != cases.end())
+                {
+                    for(auto e = blank_cases_begin; e != blank_cases_end; ++e)
+                    {
+                        e->first_statement = it->first_statement;
+                        e->last_statement  = it->last_statement;
+                    }
+
+                    blank_cases_begin = cases.end();
+                    blank_cases_end = cases.end();
+                }
             }
         }
 
-        if(cases.size() > 75)
-            program.error(switch_node, "XXX SWITCH contains more than 75 cases");
+        auto opt_switch_start = commands.switch_start();
+        auto opt_switch_continued = commands.switch_continued();
 
         if(opt_switch_start && opt_switch_start->supported
         && opt_switch_continued && opt_switch_continued->supported)
         {
-            case_default.target = make_internal_label();
-            for(auto& xcase : cases) xcase.target = make_internal_label();
-
-            for(size_t i = 0; i < sorted_cases.size(); )
-            {
-                std::vector<ArgVariant> args;
-                args.reserve(18);
-
-                const Command& switch_op = (i == 0? *opt_switch_start : *opt_switch_continued);
-                size_t max_cases_here    = (i == 0? 7 : 9);
-
-                if(i == 0)
-                {
-                    args.emplace_back(get_arg(var));
-                    args.emplace_back(conv_int(sorted_cases.size()));
-                    args.emplace_back(conv_int(case_default.statements != nullopt));
-                    args.emplace_back(case_default.target);
-                }
-
-                for(size_t k = 0; k < max_cases_here; ++k, ++i)
-                {
-                    if(i < sorted_cases.size())
-                    {
-                        args.emplace_back(conv_int(sorted_cases[i]->value));
-                        args.emplace_back(sorted_cases[i]->target);
-                    }
-                    else
-                    {
-                        args.emplace_back(conv_int(-1));
-                        args.emplace_back(break_ptr);
-                    }
-                }
-
-                compile_command(switch_op, std::move(args));
-            }
-
-            for(auto& xcase : cases)
-            {
-                compile_label(xcase.target);
-                compile_statements(*xcase.statements);
-            }
-
-            compile_label(case_default.target);
-            if(case_default.statements)
-            {
-                compile_statements(*case_default.statements);
-            }
-
-            compile_label(break_ptr);
+            compile_switch_withop(switch_node, cases, break_ptr);
         }
         else
         {
-            shared_ptr<Label> next_ptr = make_internal_label();
+            compile_switch_ifchain(switch_node, cases, break_ptr);
+        }
+        
+        loop_stack.pop_back();
+    }
 
-            for(auto& xcase : cases)
-            {
-                xcase.target = next_ptr;
-                compile_label(next_ptr);
-                next_ptr = make_internal_label();
-                compile_command(*xcase.is_var_eq_int, { get_arg(var), conv_int(xcase.value) });
-                compile_command(*commands.goto_if_false(), { next_ptr });
-                compile_statements(*xcase.statements);
-            }
+    // \warning mutates `cases`.
+    // \warning expects no repeated Cases.
+    void compile_switch_withop(const SyntaxTree& swnode, std::vector<Case>& cases, shared_ptr<Label> break_ptr)
+    {
+        std::vector<Case*> sorted_cases;   // does not contain default, unlike `cases`
+        sorted_cases.resize(cases.size());
+        bool has_default = swnode.annotation<const SwitchAnnotation&>().has_default;
+        const Case* case_default = nullptr;
 
-            case_default.target = next_ptr;
-            compile_label(next_ptr);
-            if(case_default.statements)
-            {
-                compile_statements(*case_default.statements);
-            }
+        const Command& switch_start     = this->commands.switch_start().value();
+        const Command& switch_continued = this->commands.switch_continued().value();
 
-            compile_label(break_ptr);
+        std::transform(cases.begin(), cases.end(), sorted_cases.begin(), std::addressof<Case>);
+
+        std::sort(sorted_cases.begin(), sorted_cases.end(), [](const Case* a, const Case* b) {
+            if(a->is_default()) return false; // default should be the last
+            if(b->is_default()) return true;  // !a->is_default() == true
+            return *a->value < *b->value;
+        });
+
+        if(has_default)
+        {
+            case_default = sorted_cases.back();
+            sorted_cases.pop_back();
+            Ensures(case_default->is_default());
         }
 
-        loop_stack.pop_back();
+        for(auto& c : cases)
+            c.target = make_internal_label();
+
+        for(size_t i = 0; i < sorted_cases.size(); )
+        {
+            std::vector<ArgVariant> args;
+            args.reserve(18);
+
+            const Command& switch_op = (i == 0? switch_start : switch_continued);
+            size_t max_cases_here    = (i == 0? 7 : 9);
+
+            if(i == 0)
+            {
+                args.emplace_back(get_arg(swnode.child(0)));
+                args.emplace_back(conv_int(sorted_cases.size()));
+                args.emplace_back(conv_int(has_default));
+                args.emplace_back(has_default? case_default->target : break_ptr);
+            }
+
+            for(size_t k = 0; k < max_cases_here; ++k, ++i)
+            {
+                if(i < sorted_cases.size())
+                {
+                    args.emplace_back(conv_int(*sorted_cases[i]->value));
+                    args.emplace_back(sorted_cases[i]->target);
+                }
+                else
+                {
+                    args.emplace_back(conv_int(-1));
+                    args.emplace_back(break_ptr);
+                }
+            }
+
+            compile_command(switch_op, std::move(args));
+        }
+
+        for(auto it = cases.begin(); it != cases.end(); ++it)
+        {
+            compile_label(it->target);
+            if(std::next(it) == cases.end() || !std::next(it)->same_body_as(*it))
+            {
+                compile_statements(it->first_statement, it->last_statement);
+            }
+        }
+
+        compile_label(break_ptr);
+    }
+
+    void compile_switch_ifchain(const SyntaxTree& swnode, std::vector<Case>& cases, shared_ptr<Label> break_ptr)
+    {
+        Case* default_case = nullptr;
+
+        for(auto it = cases.begin(), next_it = cases.end(); it != cases.end(); it = next_it)
+        {
+            auto next_ptr = make_internal_label();
+            auto body_ptr = make_internal_label();
+
+            next_it = std::find_if(std::next(it), cases.end(), [&](const Case& c){
+                return !c.same_body_as(*it);
+            });
+
+            auto num_ifs = std::accumulate(it, next_it, size_t(0), [](size_t accum, const Case& c) {
+                return accum + (c.is_default()? 0 : 1);
+            });
+            if(num_ifs > 8)
+                program.error(swnode, "XXX more than 8 CASEs with same body currently not supported without SWITCH_START");
+            else if(num_ifs > 1)
+                compile_command(*commands.andor(), { conv_int(21 + num_ifs - 2) });
+            else if(num_ifs == 0 && it->is_default())
+            {
+                default_case = std::addressof(*it);
+                continue;
+            }
+
+            for(auto k = it; k != next_it; ++k)
+            {
+                if(!k->is_default())
+                    compile_command(*k->is_var_eq_int, { get_arg(swnode.child(0)), conv_int(*k->value) });
+                else
+                    default_case = std::addressof(*k);
+            }
+            if(num_ifs) compile_command(*commands.goto_if_false(), { next_ptr });
+
+            compile_label(body_ptr);
+            std::for_each(it, next_it, [&](Case& c) { c.target = body_ptr; });
+            compile_statements(it->first_statement, it->last_statement);
+            compile_label(next_ptr);
+        }
+
+        if(default_case)
+        {
+            if(default_case->target)
+            {
+                compile_command(*commands.goto_(), { default_case->target });
+            }
+            else 
+            {
+                default_case->target = make_internal_label();
+                compile_label(default_case->target);
+                compile_statements(default_case->first_statement, default_case->last_statement);
+            }
+        }
+
+        compile_label(break_ptr);
     }
 
     void compile_break(const SyntaxTree& break_node)

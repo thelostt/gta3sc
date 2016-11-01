@@ -244,8 +244,8 @@ static ParserResult parse_statement(ParserContext& parser, token_iterator begin,
 
 /*
     identifier
-	    :	IDENTIFIER -> IDENTIFIER
-	    ;
+        :	IDENTIFIER -> IDENTIFIER
+        ;
 */
 static ParserResult parse_identifier(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -258,11 +258,11 @@ static ParserResult parse_identifier(ParserContext& parser, token_iterator begin
 
 /*
     scopeStatement
-	    :	'{' newLine
-			    statementList
-		    '}' newLine
-	    ->	^(SCOPE statementList)
-	    ;
+        :	'{' newLine
+                statementList
+            '}' newLine
+        ->	^(SCOPE statementList)
+        ;
 */
 static ParserResult parse_scope_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -303,8 +303,8 @@ static ParserResult parse_scope_statement(ParserContext& parser, token_iterator 
 
 /*
     argument
-	    :	(INTEGER | FLOAT | IDENTIFIER | STRING)
-	    ;
+        :	(INTEGER | FLOAT | IDENTIFIER | STRING)
+        ;
 */
 static ParserResult parse_argument(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -337,12 +337,12 @@ static ParserResult parse_argument(ParserContext& parser, token_iterator begin, 
 
 /*
     expressionStatement
-	    :	unaryStatement
-	    |	relationalStatement
-	    |	assignBinaryStatement
-	    |	assignment1Statement
-	    |   assignment2Statement
-	    ;
+        :	unaryStatement
+        |	relationalStatement
+        |	assignBinaryStatement
+        |	assignment1Statement
+        |   assignment2Statement
+        ;
 */
 static ParserResult parse_expression_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -353,7 +353,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     // Helper Rules
 
     /*
-    	expression : (a=match_lhs opb=match_operator b=match_rhs) -> ^($opb $a $b) ;
+        expression : (a=match_lhs opb=match_operator b=match_rhs) -> ^($opb $a $b) ;
     */
     auto parse_expression = [](ParserContext& parser, token_iterator begin, token_iterator end,
                                auto match_lhs, auto match_op, auto match_rhs) -> ParserResult
@@ -398,7 +398,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-    	expressionThenNewline : expression newLine -> expression ;
+        expressionThenNewline : expression newLine -> expression ;
     */
     auto parse_expression_then_newline = [&](ParserContext& parser, token_iterator begin, token_iterator end,
                                              auto match_lhs, auto match_op, auto match_rhs) -> ParserResult
@@ -445,7 +445,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     // Rules
 
     /*
-	    unaryStatement : ((unaryOperators identifier | identifier unaryOperators) newLine) ->  ^(unaryOperators identifier) ;
+        unaryStatement : ((unaryOperators identifier | identifier unaryOperators) newLine) ->  ^(unaryOperators identifier) ;
     */
     auto parse_unary_statement = [](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
@@ -513,7 +513,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-	    assignment1Statement : (id=identifier opa1=assignmentOperators1 a=argument newLine) ->  ^($opa1 $id $a) ;
+        assignment1Statement : (id=identifier opa1=assignmentOperators1 a=argument newLine) ->  ^($opa1 $id $a) ;
     */
     auto parse_assigment1_statement = [&](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
@@ -637,9 +637,9 @@ static ParserResult parse_actual_command_statement(ParserContext& parser, token_
 
 /*
     positiveCommandStatement
-	    :	expressionStatement
-	    |	actualCommandStatement
-	    ;
+        :	expressionStatement
+        |	actualCommandStatement
+        ;
 */
 static ParserResult parse_positive_command_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -657,9 +657,9 @@ static ParserResult parse_positive_command_statement(ParserContext& parser, toke
 
 /*
     commandStatement
-	    :	NOT positiveCommandStatement -> ^(NOT positiveCommandStatement)
-	    |	positiveCommandStatement -> positiveCommandStatement
-	    ;
+        :	NOT positiveCommandStatement -> ^(NOT positiveCommandStatement)
+        |	positiveCommandStatement -> positiveCommandStatement
+        ;
 */
 static ParserResult parse_command_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -692,13 +692,13 @@ static ParserResult parse_command_statement(ParserContext& parser, token_iterato
 
 /*
     keycommandStatement
-	    :	MISSION_START newLine -> MISSION_START
-	    |	MISSION_END newLine -> MISSION_END
-	    |	SCRIPT_START newLine -> SCRIPT_START
-	    |	SCRIPT_END newLine -> SCRIPT_END
+        :	MISSION_START newLine -> MISSION_START
+        |	MISSION_END newLine -> MISSION_END
+        |	SCRIPT_START newLine -> SCRIPT_START
+        |	SCRIPT_END newLine -> SCRIPT_END
         |	BREAK newLine -> BREAK
         |	CONTINUE newLine -> CONTINUE
-	    ;
+        ;
 */
 static ParserResult parse_keycommand_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -731,8 +731,8 @@ static ParserResult parse_keycommand_statement(ParserContext& parser, token_iter
 
 /*
     labelStatement
-	    :	LABEL newLine? -> LABEL
-	    ;
+        :	LABEL newLine? -> LABEL
+        ;
 */
 static ParserResult parse_label_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -752,12 +752,12 @@ static ParserResult parse_label_statement(ParserContext& parser, token_iterator 
 
 /*
     variableDeclaration
-	    :	
-		    type=(VAR_INT|LVAR_INT|VAR_FLOAT|LVAR_FLOAT|VAR_TEXT_LABEL|LVAR_TEXT_LABEL|VAR_TEXT_LABEL16|LVAR_TEXT_LABEL16)
-		    identifier+
-		    newLine
-	    -> ^($type identifier+)
-	    ;
+        :	
+            type=(VAR_INT|LVAR_INT|VAR_FLOAT|LVAR_FLOAT|VAR_TEXT_LABEL|LVAR_TEXT_LABEL|VAR_TEXT_LABEL16|LVAR_TEXT_LABEL16)
+            identifier+
+            newLine
+        -> ^($type identifier+)
+        ;
 */
 static ParserResult parse_variable_declaration(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -810,23 +810,23 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
 
 /*
     conditionList
-	    :	(conditionListSingle|conditionListAnd|conditionListOr)
-	    ;
-	
+        :	(conditionListSingle|conditionListAnd|conditionListOr)
+        ;
+    
     conditionListSingle
-	    :	commandStatement
-	    ->  ^(commandStatement)
-	    ;
-	
+        :	commandStatement
+        ->  ^(commandStatement)
+        ;
+    
     conditionListAnd
-	    :	commandStatement (AND commandStatement)+
-	    ->	^(AND commandStatement+)
-	    ;
-	
+        :	commandStatement (AND commandStatement)+
+        ->	^(AND commandStatement+)
+        ;
+    
     conditionListOr
-	    :	commandStatement (OR commandStatement)+
-	    ->	^(OR commandStatement+)
-	    ;
+        :	commandStatement (OR commandStatement)+
+        ->	^(OR commandStatement+)
+        ;
 */
 static ParserResult parse_condition_list(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -901,11 +901,11 @@ static ParserResult parse_condition_list(ParserContext& parser, token_iterator b
 
 /*
     whileStatement
-	    :	WHILE conditionList
-			    statementList
-		    ENDWHILE newLine
-	    ->  ^(WHILE conditionList statementList)
-	    ;
+        :	WHILE conditionList
+                statementList
+            ENDWHILE newLine
+        ->  ^(WHILE conditionList statementList)
+        ;
 */
 static ParserResult parse_while_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -947,11 +947,11 @@ static ParserResult parse_while_statement(ParserContext& parser, token_iterator 
 
 /*
     repeatStatement
-	    :	REPEAT argument identifier newLine
-			    statementList
-		    ENDREPEAT newLine
-	    ->	^(REPEAT argument identifier statementList)
-	    ;
+        :	REPEAT argument identifier newLine
+                statementList
+            ENDREPEAT newLine
+        ->	^(REPEAT argument identifier statementList)
+        ;
 */
 static ParserResult parse_repeat_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -1000,37 +1000,37 @@ static ParserResult parse_repeat_statement(ParserContext& parser, token_iterator
 
 /*
     switchStatement
-	    :	SWITCH argument newLine
-			    switchCase*
-		    ENDSWITCH newLine
-	    -> ^(SWITCH argument switchCase*)
-	    ;
-
-    switchCase
-        :   (switchStatementCase|switchStatementDefault)
+        :	SWITCH argument newLine
+                switchBody*
+            ENDSWITCH newLine
+        -> ^(SWITCH argument switchBody*)
         ;
 
-    switchStatementCase
-	    :	CASE argument newLine statementList
-	    -> ^(CASE argument statementList)
-	    ;
+    switchBody
+        :   (switchCase|switchDefault|statement)
+        ;
 
-    switchStatementDefault
-	    :	DEFAULT newLine statementList
-	    -> ^(DEFAULT statementList)
-	    ;
+    switchCase
+        :	CASE argument newLine
+        -> ^(CASE argument)
+        ;
+
+    switchDefault
+        :	DEFAULT newLine
+        -> ^(DEFAULT)
+        ;
 */
 static ParserResult parse_switch_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
     if(begin == end || begin->type != Token::SWITCH)
         return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 
-    auto parse_switch_case = [](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
+    auto parse_switch_body = [](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {
         if(begin != end && (begin->type == Token::CASE || begin->type == Token::DEFAULT))
         {
             ParserState state = ParserSuccess(nullptr);
-            ParserState argument, statements;
+            ParserState argument;
 
             auto it = std::next(begin);
 
@@ -1043,11 +1043,6 @@ static ParserResult parse_switch_statement(ParserContext& parser, token_iterator
             expect_newline(state, it, end);
             it = parser_aftertoken(it, end, Token::NewLine);
 
-            std::tie(it, statements) = parse_until_if(parse_statement, parser, it, end, [](token_iterator t) {
-                return t->type == Token::CASE || t->type == Token::DEFAULT || t->type == Token::ENDSWITCH;
-            });
-            add_error(state, giveup_to_expected(statements, "statement"));
-
             if(is<ParserSuccess>(state))
             {
                 auto type = (begin->type == Token::CASE? NodeType::CASE : NodeType::DEFAULT);
@@ -1055,7 +1050,6 @@ static ParserResult parse_switch_statement(ParserContext& parser, token_iterator
 
                 if(begin->type == Token::CASE)
                     tree->add_child(get<ParserSuccess>(argument).tree);
-                tree->add_child(get<ParserSuccess>(statements).tree);
 
                 return std::make_pair(it, ParserSuccess(std::move(tree)));
             }
@@ -1064,7 +1058,10 @@ static ParserResult parse_switch_statement(ParserContext& parser, token_iterator
                 return std::make_pair(it, std::move(state));
             }
         }
-        return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
+        else
+        {
+            return parse_statement(parser, begin, end);
+        }
     };
 
     ParserState state = ParserSuccess(nullptr);
@@ -1078,10 +1075,10 @@ static ParserResult parse_switch_statement(ParserContext& parser, token_iterator
     expect_newline(state, it, end);
     it = parser_aftertoken(it, end, Token::NewLine);
 
-    std::tie(it, cases) = parse_until_if(parse_switch_case, parser, it, end, [](token_iterator t) {
+    std::tie(it, cases) = parse_until_if(parse_switch_body, parser, it, end, [](token_iterator t) {
         return t->type == Token::ENDSWITCH;
     });
-    add_error(state, giveup_to_expected(cases, "CASE/DEFAULT"));
+    add_error(state, giveup_to_expected(cases, "statement, CASE or DEFAULT"));
 
     if(expect_endtoken(state, begin, end, it, Token::ENDSWITCH))
     {
@@ -1104,13 +1101,13 @@ static ParserResult parse_switch_statement(ParserContext& parser, token_iterator
 
 /*
     ifStatement
-	    :	IF conditionList
-			    statIf=statementList
-		    (ELSE newLine
-			    statElse=statementList)?
-		    ENDIF newLine
-	    ->	^(IF conditionList $statIf ^(ELSE $statElse)?)
-	    ;
+        :	IF conditionList
+                statIf=statementList
+            (ELSE newLine
+                statElse=statementList)?
+            ENDIF newLine
+        ->	^(IF conditionList $statIf ^(ELSE $statElse)?)
+        ;
 */
 static ParserResult parse_if_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
@@ -1178,16 +1175,16 @@ static ParserResult parse_if_statement(ParserContext& parser, token_iterator beg
 
 /*
     statement
-	    : scopeStatement
-	    | ifStatement
-	    | whileStatement
-	    | repeatStatement
-	    | switchStatement
-	    | variableDeclaration
-	    | labelStatement
-	    | keycommandStatement
-	    | commandStatement
-	    ;
+        : scopeStatement
+        | ifStatement
+        | whileStatement
+        | repeatStatement
+        | switchStatement
+        | variableDeclaration
+        | labelStatement
+        | keycommandStatement
+        | commandStatement
+        ;
 */
 static ParserResult parse_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {

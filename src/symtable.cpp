@@ -1111,6 +1111,11 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     program.error(node, "XXX SWITCH not enabled [-fswitch]");
 
                 auto& var = node.child(0);
+                bool last_statement_was_break = true;
+                shared_ptr<const SyntaxTree> last_case;
+
+                std::vector<int32_t> case_values;
+                bool had_default = false;
 
                 auto ensure_break = [&](SyntaxTree& statement_list)
                 {
@@ -1127,21 +1132,37 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     program.error(*statement_list.parent(), "XXX CASE does not end with a BREAK");
                 };
 
-                for(auto& case_node : node.child(1))
+                for(auto& body_node : node.child(1))
                 {
-                    switch(case_node->type())
+                    switch(body_node->type())
                     {
                         case NodeType::CASE:
                         {
+                            if(last_case && !last_statement_was_break)
+                                program.error(*last_case, "XXX missing BREAK for this CASE/DEFAULT label");
+
                             try
                             {
+                                auto& case_node = body_node;
+                                last_case       = body_node;
+
                                 auto& case_value = case_node->child(0);
 
                                 const Command& is_var_eq_int = commands.match_args(symbols, current_scope, commands.is_thing_equal_to_thing(), var, case_value);
                                 commands.annotate_args(symbols, current_scope, *this, program, is_var_eq_int, var, case_value);
 
-                                if(!case_value.maybe_annotation<const int32_t&>())
-                                    program.error(case_value, "XXX case value must be a integer constant");
+                                if(auto v = case_value.maybe_annotation<const int32_t&>())
+                                {
+                                    if(std::find(case_values.begin(), case_values.end(), *v) != case_values.end())
+                                        program.error(*case_node, "XXX CASE with value '{}' happens twice", *v);
+                                    else
+                                        case_values.emplace_back(*v);
+                                }
+                                else
+                                {
+                                    program.error(*case_node, "XXX case value must be a integer constant");
+                                }
+
 
                                 case_node->set_annotation(SwitchCaseAnnotation { &is_var_eq_int });
                             }
@@ -1149,19 +1170,58 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             {
                                 program.error(e.error());
                             }
-
-                            case_node->child(1).depth_first(std::ref(walker));
-                            ensure_break(case_node->child(1));
                             break;
                         }
+
                         case NodeType::DEFAULT:
-                            case_node->child(0).depth_first(std::ref(walker));
-                            ensure_break(case_node->child(0));
+                        {
+                            if(had_default)
+                                program.error(*body_node, "XXX DEFAULT happens twice");
+
+                            if(last_case && !last_statement_was_break)
+                                program.error(*last_case, "XXX missing BREAK for this CASE/DEFAULT label");
+
+                            last_case = body_node;
+                            had_default = true;
                             break;
-                        default:
-                            Unreachable();
+                        }
+
+                        case NodeType::BREAK:
+                            if(last_case)
+                            {
+                                last_statement_was_break = true;
+                                body_node->set_annotation(SwitchCaseBreakAnnotation{});
+                            }
+                            else
+                            {
+                                program.error(*body_node, "XXX BREAK not within a CASE or DEFAULT label");
+                            }
+                            break;
+
+                        default: // statement
+                            if(last_case)
+                            {
+                                last_statement_was_break = false;
+                                body_node->depth_first(std::ref(walker));
+                            }
+                            else
+                            {
+                                program.error(*body_node, "XXX statement ouside of a CASE or DEFAULT label");
+                            }
+                            break;
                     }
                 }
+
+                if(last_case && !last_statement_was_break)
+                    program.error(*last_case, "XXX missing BREAK for this CASE/DEFAULT label");
+
+                if(auto switch_case_limit = program.opt.switch_case_limit)
+                {
+                    if(case_values.size() > static_cast<size_t>(*switch_case_limit))
+                        program.error(node, "XXX SWITCH contains more than {} cases [-fswitch-case-limit]", *switch_case_limit);
+                }
+
+                node.set_annotation(SwitchAnnotation { case_values.size(), had_default });
 
                 return false;
             }

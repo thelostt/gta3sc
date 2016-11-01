@@ -41,6 +41,12 @@ struct RepeatAnnotation
     shared_ptr<SyntaxTree> number_one;
 };
 
+struct SwitchAnnotation
+{
+    size_t num_cases;
+    bool   has_default;
+};
+
 struct SwitchCaseAnnotation
 {
     const Command* is_var_eq_int; // always a valid pointer

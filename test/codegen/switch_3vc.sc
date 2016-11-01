@@ -76,6 +76,35 @@ VAR_INT n
     ENDSWITCH
 }
 
-// CHECK-NEXT-L: MAIN_8:
+// Using cases with the same body
+{
+    // CHECK-NEXT-L: MAIN_8:
+    SWITCH n
+        // CHECK-NEXT-L: ANDOR 21i8
+        // CHECK-NEXT-L: IS_THING_EQUAL_TO_THING &8 1i8
+        // CHECK-NEXT-L: IS_THING_EQUAL_TO_THING &8 2i8
+        // CHECK-NEXT-L: GOTO_IF_FALSE @MAIN_9
+        CASE 1
+        CASE 2
+            // CHECK-NEXT-L: WAIT 100i8
+            // CHECK-NEXT-L: GOTO @MAIN_12
+            WAIT 100
+            BREAK
+        // CHECK-NEXT-L: MAIN_9:
+        // CHECK-NEXT-L: IS_THING_EQUAL_TO_THING &8 3i8
+        // CHECK-NEXT-L: GOTO_IF_FALSE @MAIN_11
+        CASE 3
+        DEFAULT
+            // CHECK-NEXT-L: MAIN_10:
+            // CHECK-NEXT-L: WAIT 200i16
+            // CHECK-NEXT-L: GOTO @MAIN_12
+            WAIT 200
+            BREAK
+        // CHECK-NEXT-L: MAIN_11:
+        // CHECK-NEXT-L: GOTO @MAIN_10
+    ENDSWITCH
+}
+
+// CHECK-NEXT-L: MAIN_12:
 // CHECK-NEXT-L: TERMINATE_THIS_SCRIPT
 TERMINATE_THIS_SCRIPT
