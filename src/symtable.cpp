@@ -616,6 +616,14 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
         }
     };
 
+    auto add_script = [&](ScriptType type, const SyntaxTree& command)
+    {
+        if(script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
+            table.add_script(type, command, program);
+        else
+            program.error(command, "scripts can only be required from main or extension scripts");
+    };
+
     // the scanner
     walker = [&](SyntaxTree& node)
     {
@@ -711,13 +719,13 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 // TODO use `const Commands&` to identify these?
 		        // TODO case sensitivity
                 if(command_name == "LOAD_AND_LAUNCH_MISSION")
-                    table.add_script(ScriptType::Mission, node, program);
+                    add_script(ScriptType::Mission, node);
                 else if(command_name == "LAUNCH_MISSION")
-                    table.add_script(ScriptType::Subscript, node, program);
+                    add_script(ScriptType::Subscript, node);
                 else if(command_name == "GOSUB_FILE")
-                    table.add_script(ScriptType::MainExtension, node, program);
+                    add_script(ScriptType::MainExtension, node);
                 else if(command_name == "REGISTER_STREAMED_SCRIPT")
-                    table.add_script(ScriptType::StreamedScript, node, program);
+                    add_script(ScriptType::StreamedScript, node);
                 else if(command_name == "CREATE_COLLECTABLE1")
                     ++table.count_collectable1;
                 else if(command_name == "REGISTER_MISSION_PASSED" || command_name == "REGISTER_ODDJOB_MISSION_PASSED")

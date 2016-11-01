@@ -459,6 +459,20 @@ auto read_script(const std::string& filename, const std::map<std::string, fs::pa
                  ScriptType type, ProgramContext& program) -> optional<shared_ptr<Script>>;
 
 
+inline
+auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
+                           const std::string& filename, ScriptType type,
+                           ProgramContext& program) -> optional<std::pair<shared_ptr<Script>, SymTable>>
+{
+    if(auto opt_script = read_script(filename, subdir, type, program))
+    {
+        shared_ptr<Script> script = std::move(*opt_script);
+        SymTable symtable = SymTable::from_script(*script, program);
+        return std::make_pair(std::move(script), std::move(symtable));
+    }
+    return nullopt;
+}
+
 template<typename InputIt> inline
 auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
                            InputIt begin, InputIt end, ScriptType type,
@@ -468,12 +482,8 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
 
     for(auto it = begin; it != end; ++it)
     {
-        if(auto opt_script = read_script(*it, subdir, type, program))
-        {
-            shared_ptr<Script> script = std::move(*opt_script);
-            SymTable symtable = SymTable::from_script(*script, program);
-            output.emplace_back(std::make_pair(std::move(script), std::move(symtable)));
-        }
+        if(auto opt_pair = read_and_scan_symbols(subdir, *it, type, program))
+            output.emplace_back(std::move(*opt_pair));
     }
 
     return output;

@@ -462,7 +462,40 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         auto subdir = main->scan_subdir();
 
-        auto ext_scripts = read_and_scan_symbols(subdir, symbols.extfiles.begin(), symbols.extfiles.end(), ScriptType::MainExtension, program);
+        std::vector<std::pair<shared_ptr<Script>, SymTable>> ext_scripts;
+        {
+            std::set<std::string, iless> extfiles_readen;
+            std::deque<std::string>     extfiles_stack;
+
+            std::copy(symbols.extfiles.begin(), symbols.extfiles.end(), std::back_inserter(extfiles_stack));
+
+            while(!extfiles_stack.empty())
+            {
+                auto top = std::move(extfiles_stack.front());
+                extfiles_stack.pop_front();
+
+                if(!extfiles_readen.count(top))
+                {
+                    if(auto script_pair = read_and_scan_symbols(subdir, top, ScriptType::MainExtension, program))
+                    {
+                        ext_scripts.emplace_back(std::move(*script_pair));
+                        auto& script_syms = ext_scripts.back().second;
+
+                        extfiles_readen.emplace(std::move(top));
+                        std::copy(script_syms.extfiles.begin(), script_syms.extfiles.end(), std::back_inserter(extfiles_stack));
+                    }
+                }
+            }
+        }
+
+        // merge symbols from extension scripts here, since we need symbols.subscripts/missions/streamed
+        // with the content from both main and main extensions
+        for(auto& x : ext_scripts)
+        {
+            symbols.merge(std::move(x.second), program);
+            scripts.emplace_back(x.first); // maybe move
+        }
+
         auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
         auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
         auto streamed_scripts = read_and_scan_symbols(subdir, symbols.streamed.begin(), symbols.streamed.end(), ScriptType::StreamedScript, program);
@@ -470,12 +503,6 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         // Following steps wants a fully working syntax tree, so check for parser/lexer errors.
         if(program.has_error())
             throw HaltJobException();
-
-        for(auto& x : ext_scripts)
-        {
-            symbols.merge(std::move(x.second), program);
-            scripts.emplace_back(x.first); // maybe move
-        }
 
         for(auto& x : sub_scripts)
         {
