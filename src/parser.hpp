@@ -132,10 +132,18 @@ struct Miss2Identifier
 {
     // beware of the lifetime of the views
 
+    enum Error
+    {
+        NestingOfArrays,
+        NegativeIndex,
+        ZeroIndex,
+        OutOfRange,
+    };
+
     string_view                             identifier;
     optional<variant<size_t, string_view>>  index;
 
-    static auto match(const string_view& value) -> expected<Miss2Identifier, std::string>;
+    static auto match(const string_view& value) -> expected<Miss2Identifier, Error>;
 };
 
 class TokenStream : public std::enable_shared_from_this<TokenStream>
@@ -421,3 +429,15 @@ public:
 
     shared_ptr<SyntaxTree> clone();
 };
+
+inline const char* to_string(Miss2Identifier::Error e)
+{
+    switch(e)
+    {
+        case Miss2Identifier::NestingOfArrays:  return "nesting of arrays not allowed";
+        case Miss2Identifier::NegativeIndex:    return "index cannot be negative";
+        case Miss2Identifier::ZeroIndex:        return "index cannot be zero";
+        case Miss2Identifier::OutOfRange:       return "index out of range";
+        default:                                Unreachable();
+    }
+}

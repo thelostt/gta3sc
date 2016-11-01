@@ -309,7 +309,15 @@ public:
     auto supported_or_fatal(Context& context, optional<const Command&> opt, const char* name) -> const Command&
     {
         if(opt == nullopt || !opt->supported)
-            this->fatal_error(context, "{} undefined or unsupported", name);
+            this->fatal_error(context, "command '{}' undefined or unsupported", name);
+        return *opt;
+    }
+
+    template<typename Context>
+    auto supported_or_fatal(Context& context, optional<const Commands::Alternator&> opt, const char* name) -> const Commands::Alternator&
+    {
+        if(opt == nullopt)
+            this->fatal_error(context, "alternator '{}' undefined or unsupported", name);
         return *opt;
     }
 

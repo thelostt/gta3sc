@@ -807,7 +807,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     }
                     else
                     {
-                        program.error(varnode, opt_token.error().c_str());
+                        program.error(varnode, to_string(opt_token.error()));
                         continue;
                     }
 
@@ -917,7 +917,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
         }
     };
 
-    auto find_command_for_expr = [&](const SyntaxTree& op) -> optional<Commands::alternator_pair>
+    auto find_alternator_for_expr = [&](const SyntaxTree& op) -> optional<const Commands::Alternator&>
     {
         switch(op.type())
         {
@@ -949,7 +949,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             default:
                 return nullopt;
         }
-        Unreachable();
     };
 
     auto walk_on_condition = [&](SyntaxTree& node, size_t cond_child_id) {
@@ -1072,14 +1071,13 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 auto& times = node.child(0);
                 auto& var = node.child(1);
 
-                // TODO cache this or dunno?
-                SyntaxTree number_zero = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, int32_t(0)) :
-                                          times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, float(0.0)) :
-                                          (program.error(times, "REPEAT counter must be INT or FLOAT"), SyntaxTree::temporary(NodeType::Integer, int32_t(0)))); // int as fallback
+                auto number_zero = (times.type() == NodeType::Integer? Commands::MatchArgument(0) :
+                                    times.type() == NodeType::Float? Commands::MatchArgument(0.0f) :
+                                    (program.error(times, "REPEAT counter must be INT or FLOAT"), Commands::MatchArgument(0))); // int as fallback
 
-                SyntaxTree number_one = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, int32_t(1)) :
-                                         times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, float(1.0)) :
-                                         (program.error(times, "REPEAT counter must be INT or FLOAT"), SyntaxTree::temporary(NodeType::Integer, int32_t(1)))); // int as fallback
+                auto number_one  = (times.type() == NodeType::Integer? Commands::MatchArgument(1) :
+                                    times.type() == NodeType::Float? Commands::MatchArgument(1.0f) :
+                                    (program.error(times, "REPEAT counter must be INT or FLOAT"), Commands::MatchArgument(0))); // int as fallback
 
                 if(program.opt.pedantic && times.type() != NodeType::Integer)
                 {
@@ -1091,26 +1089,32 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // the base matching throws BadAlternator.
                 node.child(2).depth_first(std::ref(walker));
 
-                try
-                {
-                    const Command& set_var_to_zero = commands.match_args(symbols, current_scope, commands.set(), var, number_zero);
-                    commands.annotate_args(symbols, current_scope, *this, program, set_var_to_zero, var, number_zero);
-                
-                    const Command& add_var_with_one = commands.match_args(symbols, current_scope, commands.add_thing_to_thing(), var, number_one);
-                    commands.annotate_args(symbols, current_scope, *this, program, add_var_with_one, var, number_one);
+                auto& alt_set                                = program.supported_or_fatal(node, commands.set(), "SET");
+                auto& alt_add_thing_to_thing                 = program.supported_or_fatal(node, commands.add_thing_to_thing(),
+                                                                                          "ADD_THING_TO_THING");
+                auto& alt_is_thing_greater_or_equal_to_thing = program.supported_or_fatal(node, commands.is_thing_greater_or_equal_to_thing(),
+                                                                                          "IS_THING_GREATER_OR_EQUAL_TO_THING");
 
-                    const Command& is_var_geq_times = commands.match_args(symbols, current_scope, commands.is_thing_greater_or_equal_to_thing(), var, times);
-                    commands.annotate_args(symbols, current_scope, *this, program, is_var_geq_times, var, times);
+                auto exp_set_var_to_zero = commands.match(alt_set, node, { &var, number_zero }, symbols, current_scope);
+                auto exp_add_var_with_one = commands.match(alt_add_thing_to_thing, node, { &var, number_one }, symbols, current_scope);
+                auto exp_is_var_geq_times = commands.match(alt_is_thing_greater_or_equal_to_thing, node, { &var, &times }, symbols, current_scope);
+
+                if(exp_set_var_to_zero && exp_add_var_with_one && exp_is_var_geq_times)
+                {
+                    commands.annotate({ &var, nullopt }, **exp_set_var_to_zero, symbols, current_scope, *this, program);
+                    commands.annotate({ &var, nullopt }, **exp_add_var_with_one, symbols, current_scope, *this, program);
+                    commands.annotate({ &var, &times }, **exp_is_var_geq_times, symbols, current_scope, *this, program);
 
                     node.set_annotation(RepeatAnnotation {
-                        set_var_to_zero, add_var_with_one, is_var_geq_times,
-                        std::make_shared<SyntaxTree>(std::move(number_zero)),
-                        std::make_shared<SyntaxTree>(std::move(number_one))
+                        **exp_set_var_to_zero, **exp_add_var_with_one, **exp_is_var_geq_times,
+                        std::move(number_zero), std::move(number_one)
                     });
                 }
-                catch(const BadAlternator& e)
+                else
                 {
-                    program.error(e.error());
+                    if(!exp_set_var_to_zero)  exp_set_var_to_zero.error().emit(program);
+                    if(!exp_add_var_with_one) exp_add_var_with_one.error().emit(program);
+                    if(!exp_is_var_geq_times) exp_is_var_geq_times.error().emit(program);
                 }
 
                 return false;
@@ -1137,15 +1141,18 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             if(last_case && !last_statement_was_break)
                                 program.error(*last_case, "CASE does not end with a BREAK");
 
-                            try
+                            auto& case_node = body_node;
+                            last_case       = body_node;
+
+                            auto& case_value = case_node->child(0);
+
+                            auto& alt_is_thing_equal_to_thing = program.supported_or_fatal(node, commands.is_thing_equal_to_thing(),
+                                                                                            "IS_THING_EQUAL_TO_THING");
+
+                            auto exp_is_var_eq_int  = commands.match(alt_is_thing_equal_to_thing, *case_node, { &var, &case_value }, symbols, current_scope);
+                            if(exp_is_var_eq_int)
                             {
-                                auto& case_node = body_node;
-                                last_case       = body_node;
-
-                                auto& case_value = case_node->child(0);
-
-                                const Command& is_var_eq_int = commands.match_args(symbols, current_scope, commands.is_thing_equal_to_thing(), var, case_value);
-                                commands.annotate_args(symbols, current_scope, *this, program, is_var_eq_int, var, case_value);
+                                commands.annotate({ &var, &case_value }, **exp_is_var_eq_int, symbols, current_scope, *this, program);
 
                                 if(auto v = case_value.maybe_annotation<const int32_t&>())
                                 {
@@ -1159,13 +1166,13 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                     program.error(*case_node, "CASE value must be a integer constant");
                                 }
 
-
-                                case_node->set_annotation(SwitchCaseAnnotation { &is_var_eq_int });
+                                case_node->set_annotation(SwitchCaseAnnotation { *exp_is_var_eq_int });
                             }
-                            catch(const BadAlternator& e)
+                            else
                             {
-                                program.error(e.error());
+                                exp_is_var_eq_int.error().emit(program);
                             }
+
                             break;
                         }
 
@@ -1335,9 +1342,11 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         }
                     }
 
-                    try
+                    auto exp_command = commands.match(node, symbols, current_scope);
+                    if(exp_command)
                     {
-                        const Command& command = commands.match(node, symbols, current_scope);
+                        const Command& command = **exp_command;
+
                         commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));
 
@@ -1374,9 +1383,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                 node.set_annotation(CommandSkipCutsceneEndAnnotation{});
                         }
                     }
-                    catch(const BadAlternator& e)
+                    else
                     {
-                        program.error(e.error());
+                        exp_command.error().emit(program);
                     }
                 }
 
@@ -1390,34 +1399,34 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             case NodeType::Lesser:
             case NodeType::LesserEqual:
             {
-                try
+                const Commands::Alternator& alter_cmds1 = program.supported_or_fatal(node, find_alternator_for_expr(node), "<unknown>");
+
+                if(auto alter_op = find_alternator_for_expr(node.child(1)))
                 {
-                    Commands::alternator_pair alter_cmds1 = find_command_for_expr(node).value();
+                    // either 'a = b OP c' or 'a OP= c'
 
-                    if(auto alter_op = find_command_for_expr(node.child(1)))
+                    // TODO to be pedantic, alter_set can be only SET (i.e. cannot be CSET)
+
+                    // TODO buh what if '=' is IS_THING_EQUAL_TO_THING here?
+
+                    // TODO ensure alter_cmds1 is only '=' here (it will happen, but we need to Expects somehow)
+
+                    const char* message = nullptr;
+
+                    SyntaxTree& op = node.child(1);
+                    SyntaxTree& a = node.child(0);
+                    SyntaxTree& b = op.child(0);
+                    SyntaxTree& c = op.child(1);
+
+                    auto exp_cmd_set = commands.match(alter_cmds1, node, { &a, &b }, symbols, current_scope);
+                    auto exp_cmd_op  = commands.match(*alter_op, node, { &a, &c }, symbols, current_scope);
+
+                    if(exp_cmd_set && exp_cmd_op)
                     {
-                        // either 'a = b OP c' or 'a OP= c'
+                        commands.annotate({ &a, &b }, **exp_cmd_set, symbols, current_scope, *this, program);
+                        commands.annotate({ &a, &c }, **exp_cmd_op, symbols, current_scope, *this, program);
 
-                        // TODO to be pedantic, alter_set can be only SET (i.e. cannot be CSET)
-
-                        // TODO buh what if '=' is IS_THING_EQUAL_TO_THING here?
-
-                        // TODO ensure alter_cmds1 is only '=' here (it will happen, but we need to Expects somehow)
-
-                        const char* message = nullptr;
-
-                        SyntaxTree& op = node.child(1);
-                        SyntaxTree& a = node.child(0);
-                        SyntaxTree& b = op.child(0);
-                        SyntaxTree& c = op.child(1);
-
-                        const Command& cmd_set = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
-                        commands.annotate_args(symbols, current_scope, *this, program, cmd_set, a, b);
-
-                        const Command& cmd_op = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, c);
-                        commands.annotate_args(symbols, current_scope, *this, program, cmd_op, a, c);
-
-                        switch(node.child(1).type())
+                        switch(op.type())
                         {
                             case NodeType::Sub:
                                 message = "cannot do VAR1 = THING - VAR1";
@@ -1441,38 +1450,54 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             if(message)
                                 program.error(node, message);
 
-                            const Command& cmd_set2 = commands.match_args(symbols, current_scope, alter_cmds1, a, c);
-                            commands.annotate_args(symbols, current_scope, *this, program, cmd_set, a, c);
+                            auto exp_cmd_set2 = commands.match(alter_cmds1, node, { &a, &c }, symbols, current_scope);
+                            auto exp_cmd_op2  = commands.match(*alter_op, node, { &a, &b }, symbols, current_scope);
 
-                            const Command& cmd_op2 = commands.match_args(symbols, current_scope, *find_command_for_expr(op), a, b);
-                            commands.annotate_args(symbols, current_scope, *this, program, cmd_op, a, b);
+                            if(exp_cmd_set2 && exp_cmd_op2)
+                            {
+                                commands.annotate({ &a, &c }, **exp_cmd_set2, symbols, current_scope, *this, program);
+                                commands.annotate({ &a, &b }, **exp_cmd_op2, symbols, current_scope, *this, program);
 
-                            node.set_annotation(std::cref(cmd_set2));
-                            op.set_annotation(std::cref(cmd_op2));
+                                node.set_annotation(std::cref(**exp_cmd_set2));
+                                op.set_annotation(std::cref(**exp_cmd_op2));
+                            }
+                            else
+                            {
+                                if(!exp_cmd_set2) exp_cmd_set2.error().emit(program);
+                                if(!exp_cmd_op2) exp_cmd_op2.error().emit(program);
+                            }
                         }
                         else
                         {
-                            node.set_annotation(std::cref(cmd_set));
-                            op.set_annotation(std::cref(cmd_op));
+                            node.set_annotation(std::cref(**exp_cmd_set));
+                            op.set_annotation(std::cref(**exp_cmd_op));
                         }
                     }
                     else
                     {
-                        // 'a = b' or 'a =# b' or 'a > b' (and such)
-
-                        bool invert = (node.type() == NodeType::Lesser || node.type() == NodeType::LesserEqual);
-
-                        SyntaxTree& a = node.child(!invert? 0 : 1);
-                        SyntaxTree& b = node.child(!invert? 1 : 0);
-
-                        const Command& command = commands.match_args(symbols, current_scope, alter_cmds1, a, b);
-                        commands.annotate_args(symbols, current_scope, *this, program, command, a, b);
-                        node.set_annotation(std::cref(command));
+                        if(!exp_cmd_set) exp_cmd_set.error().emit(program);
+                        if(!exp_cmd_op) exp_cmd_op.error().emit(program);
                     }
                 }
-                catch(const BadAlternator& e)
+                else
                 {
-                    program.error(e.error());
+                    // 'a = b' or 'a =# b' or 'a > b' (and such)
+
+                    bool invert = (node.type() == NodeType::Lesser || node.type() == NodeType::LesserEqual);
+
+                    SyntaxTree& a = node.child(!invert? 0 : 1);
+                    SyntaxTree& b = node.child(!invert? 1 : 0);
+
+                    auto exp_command = commands.match(alter_cmds1, node, { &a, &b }, symbols, current_scope);
+                    if(exp_command)
+                    {
+                        commands.annotate({ &a, &b }, **exp_command, symbols, current_scope, *this, program);
+                        node.set_annotation(std::cref(**exp_command));
+                    }
+                    else
+                    {
+                        exp_command.error().emit(program);
+                    }
                 }
                 return false;
             }
@@ -1481,7 +1506,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             case NodeType::Decrement:
             {
                 const char* opkind     = node.type() == NodeType::Increment? "increment" : "decrement";
-                auto alternator_thing  = node.type() == NodeType::Increment? commands.add_thing_to_thing() : commands.sub_thing_from_thing();
+                auto alternator_thing0  = node.type() == NodeType::Increment? commands.add_thing_to_thing() : commands.sub_thing_from_thing();
+
+                auto& alternator_thing = program.supported_or_fatal(node, alternator_thing0, "<unknown>");
 
                 auto& var_ident = node.child(0);
                 
@@ -1494,23 +1521,18 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                 if(varinfo->type == VarType::Int)
                 {
-                    // TODO cache this or dunno?
-                    SyntaxTree number_one = SyntaxTree::temporary(NodeType::Integer, int32_t(1));
-
-                    try
+                    auto exp_op_var_with_one = commands.match(alternator_thing, node, { &var_ident, 1 }, symbols, current_scope);
+                    if(exp_op_var_with_one)
                     {
-                        const Command& op_var_with_one = commands.match_args(symbols, current_scope, alternator_thing, var_ident, number_one);
-                
-                        commands.annotate_args(symbols, current_scope, *this, program, op_var_with_one, var_ident, number_one);
+                        commands.annotate({ &var_ident, nullopt }, **exp_op_var_with_one, symbols, current_scope, *this, program);
 
                         node.set_annotation(IncDecAnnotation {
-                            op_var_with_one,
-                            std::make_shared<SyntaxTree>(std::move(number_one)),
+                            **exp_op_var_with_one, 1,
                         });
                     }
-                    catch(const BadAlternator& e)
+                    else
                     {
-                        program.error(e.error());
+                        exp_op_var_with_one.error().emit(program);
                     }
                 }
                 else

@@ -4,9 +4,9 @@
     VAR_INT  a b c
     LVAR_INT x y z
 
-    // CHECK-NEXT-L: SET 0@ 2@
+    // CHECK-NEXT-L: SET_LVAR_INT_TO_LVAR_INT 0@ 2@
     x = z
-    // CHECK-NEXT-L: SET &8 &16
+    // CHECK-NEXT-L: SET_VAR_INT_TO_VAR_INT &8 &16
     a = c
 }
 
@@ -14,9 +14,9 @@
     VAR_INT  d e f
     LVAR_INT i j k
 
-    // CHECK-NEXT-L: SET 0@ 2@
+    // CHECK-NEXT-L: SET_LVAR_INT_TO_LVAR_INT 0@ 2@
     i = k
-    // CHECK-NEXT-L: SET &20 &28
+    // CHECK-NEXT-L: SET_VAR_INT_TO_VAR_INT &20 &28
     d = f
 }
 

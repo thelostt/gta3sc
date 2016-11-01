@@ -100,6 +100,13 @@ struct Command
         }
     }
 
+    size_t minimum_args() const
+    {
+        if(this->has_optional())
+            return this->args.size() - 1;
+        return this->args.size();
+    }
+
 };
 
 /// Stores the list of commands and alternators.
@@ -113,7 +120,53 @@ protected:
     std::map<std::string, EntityType> entities;
 
 public:
-    using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
+    //using alternator_pair = std::pair<decltype(commands)::const_iterator, decltype(commands)::const_iterator>;
+    //using alternator_pair = std::pair<const Command* const*, const Command* const*>; // TODO rename type
+    using Alternator = std::vector<const Command*>;
+
+    struct MatchFailure
+    {
+        enum Reason
+        {
+            CommandNotFound,
+            NoAlternativeMatch,
+            TooManyArgs,
+            TooFewArgs,
+            ExpectedInt,
+            ExpectedFloat,
+            ExpectedLabel,
+            ExpectedConstant,
+            StringLiteralDisallowed,
+
+            NoSuchVar,
+            NoSuchVarForced,
+
+            BadArgument, // idk what's the problem
+
+            IdentifierIndexNesting,
+            IdentifierIndexNegative,
+            IdentifierIndexZero,
+            IdentifierIndexOutOfRange,
+            
+            VariableIndexNotInt,
+            VariableIndexNotVar,
+            VariableIndexIsArray,
+
+            VariableKindNotAllowed, // e.g. using local when global is required
+            VariableTypeMismatch,
+        };
+
+        shared_ptr<const SyntaxTree>    context;
+        Reason                          reason;
+
+        void emit(ProgramContext&);
+    };
+
+    using MatchArgument = variant<const SyntaxTree*, int32_t, float>;
+    using MatchArgumentList = small_vector<MatchArgument, 16>; // TODO update design later when SyntaxTree is purely pointers
+
+    using AnnotateArgument = variant<SyntaxTree*, nullopt_t>;
+    using AnnotateArgumentList = small_vector<AnnotateArgument, 16>;
 
 protected:
     shared_ptr<Enum> enum_models;
@@ -141,18 +194,18 @@ protected:
     optional<const Command&> cmd_SKIP_CUTSCENE_START;
     optional<const Command&> cmd_SKIP_CUTSCENE_END;
     optional<const Command&> cmd_SKIP_CUTSCENE_START_INTERNAL;
-    alternator_pair          alt_SET;
-    alternator_pair          alt_CSET;
-    alternator_pair          alt_TERMINATE_THIS_CUSTOM_SCRIPT;
-    alternator_pair          alt_ADD_THING_TO_THING;
-    alternator_pair          alt_SUB_THING_FROM_THING;
-    alternator_pair          alt_MULT_THING_BY_THING;
-    alternator_pair          alt_DIV_THING_BY_THING;
-    alternator_pair          alt_ADD_THING_TO_THING_TIMED;
-    alternator_pair          alt_SUB_THING_FROM_THING_TIMED;
-    alternator_pair          alt_IS_THING_EQUAL_TO_THING;
-    alternator_pair          alt_IS_THING_GREATER_THAN_THING;
-    alternator_pair          alt_IS_THING_GREATER_OR_EQUAL_TO_THING;
+    optional<const Alternator&> alt_SET;
+    optional<const Alternator&> alt_CSET;
+    optional<const Alternator&> alt_TERMINATE_THIS_CUSTOM_SCRIPT;
+    optional<const Alternator&> alt_ADD_THING_TO_THING;
+    optional<const Alternator&> alt_SUB_THING_FROM_THING;
+    optional<const Alternator&> alt_MULT_THING_BY_THING;
+    optional<const Alternator&> alt_DIV_THING_BY_THING;
+    optional<const Alternator&> alt_ADD_THING_TO_THING_TIMED;
+    optional<const Alternator&> alt_SUB_THING_FROM_THING_TIMED;
+    optional<const Alternator&> alt_IS_THING_EQUAL_TO_THING;
+    optional<const Alternator&> alt_IS_THING_GREATER_THAN_THING;
+    optional<const Alternator&> alt_IS_THING_GREATER_OR_EQUAL_TO_THING;
 
 
 public:
@@ -173,6 +226,18 @@ public:
     /// \warning This method is not thread-safe.
     void add_default_models(const std::map<std::string, uint32_t, iless>&);
 
+    expected<const Command*, MatchFailure> match(const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
+    expected<const Command*, MatchFailure> match(const Command&, const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
+    expected<const Command*, MatchFailure> match(const Alternator&, const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
+    expected<const Command*, MatchFailure> match(const Command&, optional<const SyntaxTree&> cmdnode, const MatchArgumentList& args,
+                                                 const SymTable&, const shared_ptr<Scope>&) const;
+    expected<const Command*, MatchFailure> match(const Alternator&, optional<const SyntaxTree&> cmdnode, const MatchArgumentList& args,
+                                                 const SymTable&, const shared_ptr<Scope>&) const;
+
+    void annotate(SyntaxTree&, const Command&, const SymTable&, const shared_ptr<Scope>&, Script&, ProgramContext&) const;
+    void annotate(const AnnotateArgumentList&, const Command&, const SymTable&, const shared_ptr<Scope>&, Script&, ProgramContext&) const;
+
+#if 0
     /// Matches the best command based on the alternators with the command name and arguments given a COMMAND node in the AST.
     ///
     /// \throws `BadAlternator` if no match found.
@@ -204,6 +269,7 @@ public:
         SyntaxTree* args[] = { std::addressof<TSyntaxTree>(nodes)... };
         return annotate_internal(symbols, scope, s, p, command, std::begin(args), std::end(args));
     }
+#endif
 
     /// Finds the literal value of a constant `value`.
     /// `context_free_only` is whether we only search for constants that can be used in any occasion or
@@ -219,7 +285,7 @@ public:
 
 
     /// Find a command base on its name.
-    optional<const Command&> find_command(const char* name) const
+    optional<const Command&> find_command(string_view name) const
     {
         auto it = this->commands.find(name);
         if(it != this->commands.end())
@@ -228,9 +294,12 @@ public:
     }
 
     /// Finds a range of commands with the same alternator name.
-    alternator_pair find_alternator(const char* name) const
+    optional<const Alternator&> find_alternator(string_view name) const
     {
-        return commands.equal_range(name);
+        auto it = this->alternators.find(name);
+        if(it != this->alternators.end())
+            return it->second;
+        return nullopt;
     }
 
     /// Find a command based on its id.
@@ -273,12 +342,15 @@ public:
         return false;
     }
 
-    bool equal(const Command& rhs, alternator_pair lhs) const
+    bool equal(const Command& rhs, optional<const Alternator&> lhs) const
     {
-        for(auto it = lhs.first; it != lhs.second; ++it)
+        if(lhs)
         {
-            if(this->equal(rhs, it->second))
-                return true;
+            for(auto it = lhs->begin(); it != lhs->end(); ++it)
+            {
+                if(this->equal(rhs, **it))
+                    return true;
+            }
         }
         return false;
     }
@@ -302,7 +374,7 @@ public:
         return nullopt;
     }
 
-    bool is_alternator(const Command& command, alternator_pair alt) const
+    bool is_alternator(const Command& command, optional<const Alternator&> alt) const
     {
         return this->equal(command, alt);
     }
@@ -369,7 +441,7 @@ public:
         return this->cmd_SCRIPT_NAME;
     }
 
-    alternator_pair terminate_this_custom_script() const
+    optional<const Alternator&> terminate_this_custom_script() const // TODO not an alternator
     {
         return this->alt_TERMINATE_THIS_CUSTOM_SCRIPT;
     }
@@ -419,57 +491,57 @@ public:
         return this->cmd_SKIP_CUTSCENE_START_INTERNAL;
     }
 
-    alternator_pair set() const
+    optional<const Alternator&> set() const
     {
         return this->alt_SET;
     }
 
-    alternator_pair cset() const
+    optional<const Alternator&> cset() const
     {
         return this->alt_CSET;
     }
 
-    alternator_pair add_thing_to_thing() const
+    optional<const Alternator&> add_thing_to_thing() const
     {
         return this->alt_ADD_THING_TO_THING;
     }
 
-    alternator_pair sub_thing_from_thing() const
+    optional<const Alternator&> sub_thing_from_thing() const
     {
         return this->alt_SUB_THING_FROM_THING;
     }
 
-    alternator_pair mult_thing_by_thing() const
+    optional<const Alternator&> mult_thing_by_thing() const
     {
         return this->alt_MULT_THING_BY_THING;
     }
 
-    alternator_pair div_thing_by_thing() const
+    optional<const Alternator&> div_thing_by_thing() const
     {
         return this->alt_DIV_THING_BY_THING;
     }
 
-    alternator_pair add_thing_to_thing_timed() const
+    optional<const Alternator&> add_thing_to_thing_timed() const
     {
         return this->alt_ADD_THING_TO_THING_TIMED;
     }
 
-    alternator_pair sub_thing_from_thing_timed() const
+    optional<const Alternator&> sub_thing_from_thing_timed() const
     {
         return this->alt_SUB_THING_FROM_THING_TIMED;
     }
 
-    alternator_pair is_thing_equal_to_thing() const
+    optional<const Alternator&> is_thing_equal_to_thing() const
     {
         return this->alt_IS_THING_EQUAL_TO_THING;
     }
 
-    alternator_pair is_thing_greater_than_thing() const
+    optional<const Alternator&> is_thing_greater_than_thing() const
     {
         return this->alt_IS_THING_GREATER_THAN_THING;
     }
 
-    alternator_pair is_thing_greater_or_equal_to_thing() const
+    optional<const Alternator&> is_thing_greater_or_equal_to_thing() const
     {
         return this->alt_IS_THING_GREATER_OR_EQUAL_TO_THING;
     }
@@ -482,16 +554,4 @@ public:
 protected:
 
 private:
-
-    const Command& match_internal(const SymTable&, const shared_ptr<Scope>&,
-        alternator_pair commands, const SyntaxTree** begin, const SyntaxTree** end) const;
-
-    void annotate_internal(const SymTable&, const shared_ptr<Scope>&, Script&, ProgramContext&,
-        const Command&, SyntaxTree** begin, SyntaxTree** end) const;
 };
-
-/// Checks if the argument types are compatible with each other.
-inline bool argtype_matches(ArgType type1, ArgType type2)
-{
-    return type1 == type2 || type1 == ArgType::Param || type2 == ArgType::Param;
-}
