@@ -232,7 +232,7 @@ private:
     void compile_statements(shared_ptr<const SyntaxTree> first, shared_ptr<const SyntaxTree> last)
     {
         // TODO fix SyntaxTree design, this is kinda slow, we should have ->next() and such
-        auto& p = first->parent();
+        auto p = first->parent();
         auto it = std::find(p->begin(), p->end(), first);
         do
         {

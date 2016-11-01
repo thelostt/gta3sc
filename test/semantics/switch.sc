@@ -5,14 +5,14 @@ VAR_INT n j
 // TODO test more than 75 cases switch (should error), not sure if here in test/semantics
 
 SWITCH n
-    CASE 1      // expected-error {{CASE does not end with a BREAK}}
-    CASE 1      ////// TODO expected-error {{CASE happens twice}}
-        BREAK   // TODO FIXME ^ (both above)
-    CASE 2      // expected-error {{CASE does not end with a BREAK}}
+    CASE 1
+    CASE 1      // expected-error {{happens twice}}
+        BREAK
+    CASE 2      // expected-error {{missing BREAK}}
         WAIT 0  
     CASE 3
         BREAK
-    CASE j      // expected-error {{case value must be a integer constant}}
+    CASE j      // expected-error {{must be a integer constant}}
         BREAK
     CASE 1.0    // expected-error@7 {{BAD ALTERNATOR}}
         BREAK   // TODO FIXME ^ should be expected int constant
