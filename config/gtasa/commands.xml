@@ -17,433 +17,433 @@
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
     </Command>
-    <Command ID="0x4" Name="SET">
+    <Command ID="0x4" Name="SET_VAR_INT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x5" Name="SET">
+    <Command ID="0x5" Name="SET_VAR_FLOAT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x6" Name="SET">
+    <Command ID="0x6" Name="SET_LVAR_INT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7" Name="SET">
+    <Command ID="0x7" Name="SET_LVAR_FLOAT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8" Name="ADD_THING_TO_THING">
+    <Command ID="0x8" Name="ADD_VAL_TO_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x9" Name="ADD_THING_TO_THING">
+    <Command ID="0x9" Name="ADD_VAL_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0xa" Name="ADD_THING_TO_THING">
+    <Command ID="0xa" Name="ADD_VAL_TO_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0xb" Name="ADD_THING_TO_THING">
+    <Command ID="0xb" Name="ADD_VAL_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0xc" Name="SUB_THING_FROM_THING">
+    <Command ID="0xc" Name="SUB_VAL_FROM_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0xd" Name="SUB_THING_FROM_THING">
+    <Command ID="0xd" Name="SUB_VAL_FROM_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0xe" Name="SUB_THING_FROM_THING">
+    <Command ID="0xe" Name="SUB_VAL_FROM_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0xf" Name="SUB_THING_FROM_THING">
+    <Command ID="0xf" Name="SUB_VAL_FROM_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x10" Name="MULT_THING_BY_THING">
+    <Command ID="0x10" Name="MULT_INT_VAR_BY_VAL">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x11" Name="MULT_THING_BY_THING">
+    <Command ID="0x11" Name="MULT_FLOAT_VAR_BY_VAL">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x12" Name="MULT_THING_BY_THING">
+    <Command ID="0x12" Name="MULT_INT_LVAR_BY_VAL">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x13" Name="MULT_THING_BY_THING">
+    <Command ID="0x13" Name="MULT_FLOAT_LVAR_BY_VAL">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x14" Name="DIV_THING_BY_THING">
+    <Command ID="0x14" Name="DIV_INT_VAR_BY_VAL">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x15" Name="DIV_THING_BY_THING">
+    <Command ID="0x15" Name="DIV_FLOAT_VAR_BY_VAL">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x16" Name="DIV_THING_BY_THING">
+    <Command ID="0x16" Name="DIV_INT_LVAR_BY_VAL">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x17" Name="DIV_THING_BY_THING">
+    <Command ID="0x17" Name="DIV_FLOAT_LVAR_BY_VAL">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x18" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x18" Name="IS_INT_VAR_GREATER_THAN_NUMBER">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x19" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x19" Name="IS_INT_LVAR_GREATER_THAN_NUMBER">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x1a" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x1a" Name="IS_NUMBER_GREATER_THAN_INT_VAR">
       <Args>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x1b" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x1b" Name="IS_NUMBER_GREATER_THAN_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x1c" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x1c" Name="IS_INT_VAR_GREATER_THAN_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x1d" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x1d" Name="IS_INT_LVAR_GREATER_THAN_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x1e" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x1e" Name="IS_INT_VAR_GREATER_THAN_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x1f" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x1f" Name="IS_INT_LVAR_GREATER_THAN_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x20" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x20" Name="IS_FLOAT_VAR_GREATER_THAN_NUMBER">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x21" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x21" Name="IS_FLOAT_LVAR_GREATER_THAN_NUMBER">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x22" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x22" Name="IS_NUMBER_GREATER_THAN_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x23" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x23" Name="IS_NUMBER_GREATER_THAN_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x24" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x24" Name="IS_FLOAT_VAR_GREATER_THAN_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x25" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x25" Name="IS_FLOAT_LVAR_GREATER_THAN_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x26" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x26" Name="IS_FLOAT_VAR_GREATER_THAN_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x27" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x27" Name="IS_FLOAT_LVAR_GREATER_THAN_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x28" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x28" Name="IS_INT_VAR_GREATER_OR_EQUAL_TO_NUMBER">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x29" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x29" Name="IS_INT_LVAR_GREATER_OR_EQUAL_TO_NUMBER">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x2a" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x2a" Name="IS_NUMBER_GREATER_OR_EQUAL_TO_INT_VAR">
       <Args>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x2b" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x2b" Name="IS_NUMBER_GREATER_OR_EQUAL_TO_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x2c" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x2c" Name="IS_INT_VAR_GREATER_OR_EQUAL_TO_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x2d" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x2d" Name="IS_INT_LVAR_GREATER_OR_EQUAL_TO_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x2e" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x2e" Name="IS_INT_VAR_GREATER_OR_EQUAL_TO_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x2f" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x2f" Name="IS_INT_LVAR_GREATER_OR_EQUAL_TO_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x30" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x30" Name="IS_FLOAT_VAR_GREATER_OR_EQUAL_TO_NUMBER">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x31" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x31" Name="IS_FLOAT_LVAR_GREATER_OR_EQUAL_TO_NUMBER">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x32" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x32" Name="IS_NUMBER_GREATER_OR_EQUAL_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x33" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x33" Name="IS_NUMBER_GREATER_OR_EQUAL_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x34" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x34" Name="IS_FLOAT_VAR_GREATER_OR_EQUAL_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x35" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x35" Name="IS_FLOAT_LVAR_GREATER_OR_EQUAL_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x36" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x36" Name="IS_FLOAT_VAR_GREATER_OR_EQUAL_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x37" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x37" Name="IS_FLOAT_LVAR_GREATER_OR_EQUAL_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x38" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x38" Name="IS_INT_VAR_EQUAL_TO_NUMBER">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x39" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x39" Name="IS_INT_LVAR_EQUAL_TO_NUMBER">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x3a" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x3a" Name="IS_INT_VAR_EQUAL_TO_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x3b" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x3b" Name="IS_INT_LVAR_EQUAL_TO_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x3c" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x3c" Name="IS_INT_VAR_EQUAL_TO_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x3d" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x3d" Name="IS_INT_VAR_NOT_EQUAL_TO_NUMBER" Supported="false">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x3e" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x3e" Name="IS_INT_LVAR_NOT_EQUAL_TO_NUMBER" Supported="false">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x3f" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x3f" Name="IS_INT_VAR_NOT_EQUAL_TO_INT_VAR" Supported="false">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x40" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x40" Name="IS_INT_LVAR_NOT_EQUAL_TO_INT_LVAR" Supported="false">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x41" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x41" Name="IS_INT_VAR_NOT_EQUAL_TO_INT_LVAR" Supported="false">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x42" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x42" Name="IS_FLOAT_VAR_EQUAL_TO_NUMBER">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x43" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x43" Name="IS_FLOAT_LVAR_EQUAL_TO_NUMBER">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x44" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x44" Name="IS_FLOAT_VAR_EQUAL_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x45" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x45" Name="IS_FLOAT_LVAR_EQUAL_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x46" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x46" Name="IS_FLOAT_VAR_EQUAL_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x47" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x47" Name="IS_FLOAT_VAR_NOT_EQUAL_TO_NUMBER" Supported="false">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x48" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x48" Name="IS_FLOAT_LVAR_NOT_EQUAL_TO_NUMBER" Supported="false">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x49" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x49" Name="IS_FLOAT_VAR_NOT_EQUAL_TO_FLOAT_VAR" Supported="false">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x4a" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x4a" Name="IS_FLOAT_LVAR_NOT_EQUAL_TO_FLOAT_LVAR" Supported="false">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x4b" Name="IS_THING_NOT_EQUAL_TO_THING" Supported="false">
+    <Command ID="0x4b" Name="IS_FLOAT_VAR_NOT_EQUAL_TO_FLOAT_LVAR" Supported="false">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
@@ -529,382 +529,382 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x58" Name="ADD_THING_TO_THING">
+    <Command ID="0x58" Name="ADD_INT_VAR_TO_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x59" Name="ADD_THING_TO_THING">
+    <Command ID="0x59" Name="ADD_FLOAT_VAR_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x5a" Name="ADD_THING_TO_THING">
+    <Command ID="0x5a" Name="ADD_INT_LVAR_TO_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x5b" Name="ADD_THING_TO_THING">
+    <Command ID="0x5b" Name="ADD_FLOAT_LVAR_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x5c" Name="ADD_THING_TO_THING">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x5d" Name="ADD_THING_TO_THING">
-      <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x5e" Name="ADD_THING_TO_THING">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x5f" Name="ADD_THING_TO_THING">
-      <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x60" Name="SUB_THING_FROM_THING">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x61" Name="SUB_THING_FROM_THING">
-      <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x62" Name="SUB_THING_FROM_THING">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x63" Name="SUB_THING_FROM_THING">
-      <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x64" Name="SUB_THING_FROM_THING">
+    <Command ID="0x5c" Name="ADD_INT_VAR_TO_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x65" Name="SUB_THING_FROM_THING">
+    <Command ID="0x5d" Name="ADD_FLOAT_VAR_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x66" Name="SUB_THING_FROM_THING">
+    <Command ID="0x5e" Name="ADD_INT_LVAR_TO_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x67" Name="SUB_THING_FROM_THING">
+    <Command ID="0x5f" Name="ADD_FLOAT_LVAR_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x68" Name="MULT_THING_BY_THING">
+    <Command ID="0x60" Name="SUB_INT_VAR_FROM_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x69" Name="MULT_THING_BY_THING">
+    <Command ID="0x61" Name="SUB_FLOAT_VAR_FROM_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x6a" Name="MULT_THING_BY_THING">
+    <Command ID="0x62" Name="SUB_INT_LVAR_FROM_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x6b" Name="MULT_THING_BY_THING">
+    <Command ID="0x63" Name="SUB_FLOAT_LVAR_FROM_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x6c" Name="MULT_THING_BY_THING">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x6d" Name="MULT_THING_BY_THING">
-      <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x6e" Name="MULT_THING_BY_THING">
+    <Command ID="0x64" Name="SUB_INT_VAR_FROM_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x6f" Name="MULT_THING_BY_THING">
+    <Command ID="0x65" Name="SUB_FLOAT_VAR_FROM_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x70" Name="DIV_THING_BY_THING">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x71" Name="DIV_THING_BY_THING">
-      <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x72" Name="DIV_THING_BY_THING">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x73" Name="DIV_THING_BY_THING">
-      <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x74" Name="DIV_THING_BY_THING">
+    <Command ID="0x66" Name="SUB_INT_LVAR_FROM_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x75" Name="DIV_THING_BY_THING">
+    <Command ID="0x67" Name="SUB_FLOAT_LVAR_FROM_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x76" Name="DIV_THING_BY_THING">
+    <Command ID="0x68" Name="MULT_INT_VAR_BY_INT_VAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x69" Name="MULT_FLOAT_VAR_BY_FLOAT_VAR">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x6a" Name="MULT_INT_LVAR_BY_INT_LVAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x6b" Name="MULT_FLOAT_LVAR_BY_FLOAT_LVAR">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x6c" Name="MULT_INT_VAR_BY_INT_LVAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x6d" Name="MULT_FLOAT_VAR_BY_FLOAT_LVAR">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x6e" Name="MULT_INT_LVAR_BY_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x77" Name="DIV_THING_BY_THING">
+    <Command ID="0x6f" Name="MULT_FLOAT_LVAR_BY_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x78" Name="ADD_THING_TO_THING_TIMED">
+    <Command ID="0x70" Name="DIV_INT_VAR_BY_INT_VAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x71" Name="DIV_FLOAT_VAR_BY_FLOAT_VAR">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x72" Name="DIV_INT_LVAR_BY_INT_LVAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x73" Name="DIV_FLOAT_LVAR_BY_FLOAT_LVAR">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x74" Name="DIV_INT_VAR_BY_INT_LVAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x75" Name="DIV_FLOAT_VAR_BY_FLOAT_LVAR">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x76" Name="DIV_INT_LVAR_BY_INT_VAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x77" Name="DIV_FLOAT_LVAR_BY_FLOAT_VAR">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x78" Name="ADD_TIMED_VAL_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x79" Name="ADD_THING_TO_THING_TIMED">
+    <Command ID="0x79" Name="ADD_TIMED_VAL_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7a" Name="ADD_THING_TO_THING_TIMED">
+    <Command ID="0x7a" Name="ADD_TIMED_FLOAT_VAR_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7b" Name="ADD_THING_TO_THING_TIMED">
+    <Command ID="0x7b" Name="ADD_TIMED_FLOAT_LVAR_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7c" Name="ADD_THING_TO_THING_TIMED">
+    <Command ID="0x7c" Name="ADD_TIMED_FLOAT_VAR_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7d" Name="ADD_THING_TO_THING_TIMED">
+    <Command ID="0x7d" Name="ADD_TIMED_FLOAT_LVAR_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7e" Name="SUB_THING_FROM_THING_TIMED">
+    <Command ID="0x7e" Name="SUB_TIMED_VAL_FROM_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7f" Name="SUB_THING_FROM_THING_TIMED">
+    <Command ID="0x7f" Name="SUB_TIMED_VAL_FROM_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x80" Name="SUB_THING_FROM_THING_TIMED">
+    <Command ID="0x80" Name="SUB_TIMED_FLOAT_VAR_FROM_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x81" Name="SUB_THING_FROM_THING_TIMED">
+    <Command ID="0x81" Name="SUB_TIMED_FLOAT_LVAR_FROM_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x82" Name="SUB_THING_FROM_THING_TIMED">
+    <Command ID="0x82" Name="SUB_TIMED_FLOAT_VAR_FROM_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x83" Name="SUB_THING_FROM_THING_TIMED">
+    <Command ID="0x83" Name="SUB_TIMED_FLOAT_LVAR_FROM_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x84" Name="SET">
+    <Command ID="0x84" Name="SET_VAR_INT_TO_VAR_INT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x85" Name="SET">
+    <Command ID="0x85" Name="SET_LVAR_INT_TO_LVAR_INT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x86" Name="SET">
+    <Command ID="0x86" Name="SET_VAR_FLOAT_TO_VAR_FLOAT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x87" Name="SET">
+    <Command ID="0x87" Name="SET_LVAR_FLOAT_TO_LVAR_FLOAT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x88" Name="SET">
+    <Command ID="0x88" Name="SET_VAR_FLOAT_TO_LVAR_FLOAT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x89" Name="SET">
+    <Command ID="0x89" Name="SET_LVAR_FLOAT_TO_VAR_FLOAT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8a" Name="SET">
+    <Command ID="0x8a" Name="SET_VAR_INT_TO_LVAR_INT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8b" Name="SET">
+    <Command ID="0x8b" Name="SET_LVAR_INT_TO_VAR_INT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8c" Name="CSET">
+    <Command ID="0x8c" Name="CSET_VAR_INT_TO_VAR_FLOAT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8d" Name="CSET">
+    <Command ID="0x8d" Name="CSET_VAR_FLOAT_TO_VAR_INT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8e" Name="CSET">
+    <Command ID="0x8e" Name="CSET_LVAR_INT_TO_VAR_FLOAT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8f" Name="CSET">
+    <Command ID="0x8f" Name="CSET_LVAR_FLOAT_TO_VAR_INT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x90" Name="CSET">
+    <Command ID="0x90" Name="CSET_VAR_INT_TO_LVAR_FLOAT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x91" Name="CSET">
+    <Command ID="0x91" Name="CSET_VAR_FLOAT_TO_LVAR_INT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x92" Name="CSET">
+    <Command ID="0x92" Name="CSET_LVAR_INT_TO_LVAR_FLOAT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x93" Name="CSET">
+    <Command ID="0x93" Name="CSET_LVAR_FLOAT_TO_LVAR_INT">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x94" Name="ABS">
+    <Command ID="0x94" Name="ABS_VAR_INT">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x95" Name="ABS">
+    <Command ID="0x95" Name="ABS_LVAR_INT">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x96" Name="ABS">
+    <Command ID="0x96" Name="ABS_VAR_FLOAT">
       <Args>
         <Arg Type="FLOAT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x97" Name="ABS">
+    <Command ID="0x97" Name="ABS_LVAR_FLOAT">
       <Args>
         <Arg Type="FLOAT" Ref="true" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
@@ -7480,13 +7480,13 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
       </Args>
     </Command>
-    <Command ID="0x4a3" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x4a3" Name="IS_INT_VAR_EQUAL_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4a4" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x4a4" Name="IS_INT_LVAR_EQUAL_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="CONST"/>
@@ -7545,61 +7545,61 @@
         <Arg Type="INT" Desc="Character/ped"/>
       </Args>
     </Command>
-    <Command ID="0x4ae" Name="SET">
+    <Command ID="0x4ae" Name="SET_VAR_INT_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4af" Name="SET">
+    <Command ID="0x4af" Name="SET_LVAR_INT_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4b0" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x4b0" Name="IS_INT_VAR_GREATER_THAN_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4b1" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x4b1" Name="IS_INT_LVAR_GREATER_THAN_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4b2" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x4b2" Name="IS_CONSTANT_GREATER_THAN_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4b3" Name="IS_THING_GREATER_THAN_THING">
+    <Command ID="0x4b3" Name="IS_CONSTANT_GREATER_THAN_INT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4b4" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x4b4" Name="IS_INT_VAR_GREATER_OR_EQUAL_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4b5" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x4b5" Name="IS_INT_LVAR_GREATER_OR_EQUAL_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="CONST"/>
       </Args>
     </Command>
-    <Command ID="0x4b6" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x4b6" Name="IS_CONSTANT_GREATER_OR_EQUAL_TO_INT_VAR">
       <Args>
         <Arg Type="CONST"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x4b7" Name="IS_THING_GREATER_OR_EQUAL_TO_THING">
+    <Command ID="0x4b7" Name="IS_CONSTANT_GREATER_OR_EQUAL_TO_INT_LVAR">
       <Args>
         <Arg Type="CONST"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
@@ -9000,25 +9000,25 @@
         <Arg Type="FLOAT" Out="true"/>
       </Args>
     </Command>
-    <Command ID="0x5a9" Name="SET">
+    <Command ID="0x5a9" Name="SET_VAR_TEXT_LABEL">
       <Args>
         <Arg Type="TEXT_LABEL" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x5aa" Name="SET">
+    <Command ID="0x5aa" Name="SET_LVAR_TEXT_LABEL">
       <Args>
         <Arg Type="TEXT_LABEL" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x5ad" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x5ad" Name="IS_VAR_TEXT_LABEL_EQUAL_TO_TEXT_LABEL">
       <Args>
         <Arg Type="TEXT_LABEL" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x5ae" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x5ae" Name="IS_LVAR_TEXT_LABEL_EQUAL_TO_TEXT_LABEL">
       <Args>
         <Arg Type="TEXT_LABEL" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="TEXT_LABEL"/>
@@ -10658,13 +10658,13 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x6d1" Name="SET">
+    <Command ID="0x6d1" Name="SET_VAR_TEXT_LABEL16">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x6d2" Name="SET">
+    <Command ID="0x6d2" Name="SET_LVAR_TEXT_LABEL16">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="ANY_TEXT_LABEL"/>
@@ -11929,13 +11929,13 @@
         <Arg Type="FLOAT" Desc="Z Rotation"/>
       </Args>
     </Command>
-    <Command ID="0x7d6" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x7d6" Name="IS_INT_LVAR_EQUAL_TO_INT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7d7" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x7d7" Name="IS_FLOAT_LVAR_EQUAL_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
@@ -12487,22 +12487,22 @@
         <Arg Type="TEXT_LABEL" Desc="Area name" Out="true"/>
       </Args>
     </Command>
-    <Command ID="0x844" Name="IS_EMPTY">
+    <Command ID="0x844" Name="IS_VAR_TEXT_LABEL_EMPTY">
       <Args>
         <Arg Type="TEXT_LABEL" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x845" Name="IS_EMPTY">
+    <Command ID="0x845" Name="IS_LVAR_TEXT_LABEL_EMPTY">
       <Args>
         <Arg Type="TEXT_LABEL" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x846" Name="IS_EMPTY">
+    <Command ID="0x846" Name="IS_VAR_TEXT_LABEL16_EMPTY">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x847" Name="IS_EMPTY">
+    <Command ID="0x847" Name="IS_LVAR_TEXT_LABEL16_EMPTY">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
@@ -13021,109 +13021,109 @@
         <Arg Type="TEXT_LABEL" Desc="Area name"/>
       </Args>
     </Command>
-    <Command ID="0x8b4" Name="IS_BIT_SET">
+    <Command ID="0x8b4" Name="IS_GLOBAL_VAR_BIT_SET_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8b5" Name="IS_BIT_SET">
+    <Command ID="0x8b5" Name="IS_GLOBAL_VAR_BIT_SET_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8b6" Name="IS_BIT_SET">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x8b7" Name="IS_BIT_SET">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x8b8" Name="IS_BIT_SET">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x8b9" Name="IS_BIT_SET">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x8ba" Name="SET_BIT">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x8bb" Name="SET_BIT">
-      <Args>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-      </Args>
-    </Command>
-    <Command ID="0x8bc" Name="SET_BIT">
+    <Command ID="0x8b6" Name="IS_GLOBAL_VAR_BIT_SET_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8bd" Name="SET_BIT">
+    <Command ID="0x8b7" Name="IS_LOCAL_VAR_BIT_SET_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8be" Name="SET_BIT">
+    <Command ID="0x8b8" Name="IS_LOCAL_VAR_BIT_SET_VAR">
       <Args>
-        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8bf" Name="SET_BIT">
+    <Command ID="0x8b9" Name="IS_LOCAL_VAR_BIT_SET_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8c0" Name="CLEAR_BIT">
+    <Command ID="0x8ba" Name="SET_GLOBAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8c1" Name="CLEAR_BIT">
+    <Command ID="0x8bb" Name="SET_GLOBAL_VAR_BIT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8c2" Name="CLEAR_BIT">
+    <Command ID="0x8bc" Name="SET_GLOBAL_VAR_BIT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8c3" Name="CLEAR_BIT">
+    <Command ID="0x8bd" Name="SET_LOCAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8c4" Name="CLEAR_BIT">
+    <Command ID="0x8be" Name="SET_LOCAL_VAR_BIT_VAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x8bf" Name="SET_LOCAL_VAR_BIT_LVAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x8c0" Name="CLEAR_GLOBAL_VAR_BIT_CONST">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x8c1" Name="CLEAR_GLOBAL_VAR_BIT_VAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x8c2" Name="CLEAR_GLOBAL_VAR_BIT_LVAR">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x8c3" Name="CLEAR_LOCAL_VAR_BIT_CONST">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x8c4" Name="CLEAR_LOCAL_VAR_BIT_VAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x8c5" Name="CLEAR_BIT">
+    <Command ID="0x8c5" Name="CLEAR_LOCAL_VAR_BIT_LVAR">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
@@ -13432,13 +13432,13 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x8f9" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x8f9" Name="IS_VAR_TEXT_LABEL16_EQUAL_TO_TEXT_LABEL">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x8fa" Name="IS_THING_EQUAL_TO_THING">
+    <Command ID="0x8fa" Name="IS_LVAR_TEXT_LABEL16_EQUAL_TO_TEXT_LABEL">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="ANY_TEXT_LABEL"/>

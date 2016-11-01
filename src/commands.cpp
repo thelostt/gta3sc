@@ -11,10 +11,12 @@
 //      Please improve this out.
 
 Commands::Commands(std::multimap<std::string, Command, iless> commands_,
+                   std::map<std::string, std::vector<const Command*>, iless> alternators_,
                    std::map<std::string, EntityType> entities_,
                    transparent_map<std::string, shared_ptr<Enum>> enums_)
 
-    : commands(std::move(commands_)), enums(std::move(enums_)), entities(std::move(entities_))
+    : commands(std::move(commands_)), alternators(std::move(alternators_)),
+      enums(std::move(enums_)), entities(std::move(entities_))
 {
     auto it_carpedmodel = this->enums.find("CARPEDMODEL");
     auto it_model       = this->enums.find("MODEL");
@@ -823,13 +825,43 @@ static std::pair<std::string, Command>
     };
 }
 
+static std::pair<std::string, std::vector<const Command*>>
+  parse_alternator_node(
+      const rapidxml::xml_node<>* alt_node,
+      const std::multimap<std::string, Command, iless>& commands)
+{
+    using namespace rapidxml;
+
+    std::vector<const Command*> alternatives;
+
+    xml_attribute<>* name_attrib = alt_node->first_attribute("Name");
+
+    if(!name_attrib)
+        throw ConfigError("missing 'Name' attribute on '<Alternator>' node");
+
+    for(auto node = alt_node->first_node(); node; node = node->next_sibling())
+    {
+        xml_attribute<>* attrib = node->first_attribute("Name");
+
+        if(!attrib)
+            throw ConfigError("missing 'Name' attribute on '<Alternator> -> <Command>' node");
+
+        auto it = commands.find(attrib->value());
+        if(it != commands.end())
+            alternatives.emplace_back(std::addressof(it->second));
+    }
+
+    return { name_attrib->value(), std::move(alternatives) };
+}
+
 Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
 {
     using namespace rapidxml;
 
     // Order by priority (which should be read first).
-    constexpr int XML_SECTION_CONSTANTS = 1;
-    constexpr int XML_SECTION_COMMANDS  = 2;
+    constexpr int XML_SECTION_CONSTANTS   = 1;
+    constexpr int XML_SECTION_COMMANDS    = 2;
+    constexpr int XML_SECTION_ALTERNATORS = 3;
 
     struct XmlData
     {
@@ -840,9 +872,10 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
     std::vector<XmlData> xml_vector;
     std::vector<std::pair<int, xml_node<>*>> xml_sections;
 
-    std::multimap<std::string, Command, iless>     commands;
-    std::map<std::string, EntityType>              entities;
-    transparent_map<std::string, shared_ptr<Enum>> enums;
+    std::multimap<std::string, Command, iless>                  commands;
+    std::map<std::string, std::vector<const Command*>, iless>   alternators;
+    std::map<std::string, EntityType>                           entities;
+    transparent_map<std::string, shared_ptr<Enum>>              enums;
 
     // fundamental enums
     enums.emplace("MODEL", std::make_shared<Enum>(Enum { {}, false, }));
@@ -888,6 +921,10 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
                 {
                     xml_sections.emplace_back(XML_SECTION_CONSTANTS, node);
                 }
+                else if(!strcmp(node->name(), "Alternators"))
+                {
+                    xml_sections.emplace_back(XML_SECTION_ALTERNATORS, node);
+                }
             }
         }
     }
@@ -920,7 +957,18 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
                 }
             }
         }
+        else if(section_pair.first == XML_SECTION_ALTERNATORS)
+        {
+            for(auto alt_node = node->first_node(); alt_node; alt_node = alt_node->next_sibling())
+            {
+                if(!strcmp(alt_node->name(), "Alternator"))
+                {
+                    auto alt_pair = parse_alternator_node(alt_node, commands);
+                    alternators.emplace(std::move(alt_pair));
+                }
+            }
+        }
     }
 
-    return Commands(std::move(commands), std::move(entities), std::move(enums));
+    return Commands(std::move(commands), std::move(alternators), std::move(entities), std::move(enums));
 }
