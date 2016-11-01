@@ -268,54 +268,34 @@ public:
 
         /* TODO limit error_count
         if(error_count > 100)
-            fatal_error(nocontext, "XXX too many errors");
+            this->fatal_error(nocontext, "too many errors");
         */
     }
 
-    template<typename... Args>
-    void error(const SyntaxTree& context, const char* msg, Args&&... args)
+    template<typename Context, typename... Args>
+    void error(const Context& context, const char* msg, Args&&... args)
     {
         return error(ProgramError(context, msg, std::forward<Args>(args)...));
     }
 
-    template<typename... Args>
-    void error(const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
+    template<typename Context, typename... Args>
+    void note(const Context& context, const char* msg, Args&&... args)
     {
-        return error(ProgramError(context, msg, std::forward<Args>(args)...));
+        this->puts(format_error("note", context, msg, std::forward<Args>(args)...));
     }
 
-    template<typename... Args>
-    void error(const Script& context, const char* msg, Args&&... args)
-    {
-        return error(ProgramError(context, msg, std::forward<Args>(args)...));
-    }
-
-    template<typename... Args>
-    void error(tag_nocontext_t, const char* msg, Args&&... args)
-    {
-        return error(ProgramError(tag_nocontext_t(), msg, std::forward<Args>(args)...));
-    }
-
-    template<typename... Args>
-    void warning(const SyntaxTree& context, const char* msg, Args&&... args)
+    template<typename Context, typename... Args>
+    void warning(const Context& context, const char* msg, Args&&... args)
     {
         ++warn_count;
         this->puts(format_error("warning", context, msg, std::forward<Args>(args)...));
     }
 
-    template<typename... Args>
-    void fatal_error [[noreturn]] (const SyntaxTree& context, const char* msg, Args&&... args)
+    template<typename Context, typename... Args>
+    void fatal_error [[noreturn]] (const Context& context, const char* msg, Args&&... args)
     {
         ++fatal_count;
         this->puts(format_error("fatal error", context, msg, std::forward<Args>(args)...));
-        throw HaltJobException();
-    }
-
-    template<typename... Args>
-    void fatal_error [[noreturn]](tag_nocontext_t, const char* msg, Args&&... args)
-    {
-        ++fatal_count;
-        this->puts(format_error("fatal error", nocontext, msg, std::forward<Args>(args)...));
         throw HaltJobException();
     }
 
@@ -323,6 +303,14 @@ public:
     {
         // n may be 0
         error_count += n;
+    }
+
+    template<typename Context>
+    auto supported_or_fatal(Context& context, optional<const Command&> opt, const char* name) -> const Command&
+    {
+        if(opt == nullopt || !opt->supported)
+            this->fatal_error(context, "{} undefined or unsupported", name);
+        return *opt;
     }
 
 private:

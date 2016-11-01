@@ -26,10 +26,10 @@ struct LexerContext
     void verify_nesting()
     {
         if(this->comment_nest_level != 0)
-            this->error(std::make_pair(0, 0), "XXX end of file without closing */");
+            this->error(std::make_pair(0, 0), "unterminated /* comment");
 
         if(cpp_stack.size() > 1)
-            this->error(std::make_pair(0, 0), "XXX missing #endif");
+            this->error(std::make_pair(0, 0), "missing #endif");
     }
 
     void add_token(Token type, size_t begin_pos, size_t length)
@@ -254,7 +254,7 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
         auto it = std::find(std::next(begin), end, '"');
         if(it == end)
         {
-            lexer.error(begin_pos, "XXX end of line without closing quotes");
+            lexer.error(begin_pos, "missing terminating '\"' character");
             return end;
         }
         lexer.add_token(Token::String, begin_pos, std::distance(begin, it) + 1);
@@ -269,7 +269,7 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
         else if(is_float(token))
             lexer.add_token(Token::Float, begin_pos, token.second);
         else
-            lexer.error(std::make_pair(begin_pos, token.second), "XXX invalid numeric literal");
+            lexer.error(std::make_pair(begin_pos, token.second), "invalid numeric literal");
 
         return token.first + token.second;
     }
@@ -283,7 +283,7 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
     else
     {
         auto token = lex_gettok(begin, end).value();
-        lexer.error(std::make_pair(begin_pos, token.second), "XXX invalid identifier");
+        lexer.error(std::make_pair(begin_pos, token.second), "invalid identifier");
         return token.first + token.second;
     }
 }
@@ -417,7 +417,7 @@ static void lex_comments(LexerContext& lexer, char* begin, char* end, size_t beg
             {
                 if(lexer.comment_nest_level == 0)
                 {
-                    lexer.error(begin_pos + std::distance(begin, it), "XXX no multiline comment to close");
+                    lexer.error(begin_pos + std::distance(begin, it), "no comment to close");
                     ++it;
                 }
                 else
@@ -445,7 +445,7 @@ static bool lex_cpp(LexerContext& lexer, char* begin, char* end, size_t begin_po
         size_t line_pos = begin_pos + std::distance(begin, next_char_it);
 
         if(lexer.program.opt.pedantic)
-            lexer.error(line_pos, "XXX preprocessor not allowed in -pedantic");
+            lexer.error(line_pos, "preprocessor not allowed [-pedantic]");
 
         if(auto opt_command = lex_gettok(next_char_it + 1, end))
         {
@@ -461,7 +461,7 @@ static bool lex_cpp(LexerContext& lexer, char* begin, char* end, size_t begin_po
             if(command == "ifdef" || command == "ifndef")
             {
                 if(tokens.size() != 1)
-                    lexer.error(line_pos, "XXX wrong number of tokens in the directive");
+                    lexer.error(line_pos, "wrong number of tokens in preprocessor directive");
 
                 if(tokens.size() >= 1)
                 {
@@ -473,16 +473,16 @@ static bool lex_cpp(LexerContext& lexer, char* begin, char* end, size_t begin_po
             else if(command == "endif")
             {
                 if(tokens.size())
-                    lexer.error(line_pos, "XXX too many tokens in directive");
+                    lexer.error(line_pos, "too many tokens in preprocessor directive");
 
                 if(lexer.cpp_stack.size() > 1)
                     lexer.cpp_stack.pop_back();
                 else
-                    lexer.error(line_pos, "XXX #endif without #ifdef");
+                    lexer.error(line_pos, "#endif without #ifdef");
             }
             else
             {
-                lexer.error(line_pos, "XXX unknown preprocessor directive");
+                lexer.error(line_pos, "unknown preprocessor directive");
             }
         }
         return false;
@@ -656,7 +656,7 @@ std::shared_ptr<TokenStream> TokenStream::tokenize(ProgramContext& program, cons
     }
     else
     {
-        program.error(nocontext, "XXX fail read file {}", path.generic_u8string());
+        program.error(nocontext, "failed to read file '{}'", path.generic_u8string());
         return nullptr;
     }
 }
@@ -721,7 +721,7 @@ size_t TokenStream::TextStream::offset_for_line(size_t lineno) const
     if(i < line_offset.size())
         return line_offset[i];
     else
-        throw std::logic_error("Bad `lineno` in TokenStream::offset_for_line");
+        throw std::logic_error("bad `lineno` in TokenStream::offset_for_line");
 }
 
 auto TokenStream::TextStream::linecol_from_offset(size_t offset) const -> std::pair<size_t, size_t>
@@ -763,7 +763,7 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
         if(value[i] == '[')
         {
             if(begin_index != std::string::npos)
-                return make_unexpected<std::string>("XXX nesting of arrays index not allowed");
+                return make_unexpected<std::string>("nesting of arrays not allowed");
 
             begin_index = i;
         }
@@ -780,16 +780,16 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
                     if(index_value > 0)
                         return Miss2Identifier{ ident, index_type(index_value) };
                     else if(index_value < 0)
-                        return make_unexpected<std::string>("XXX index cannot be negative");
+                        return make_unexpected<std::string>("index cannot be negative");
                     else // == 0
-                        return make_unexpected<std::string>("XXX index cannot be zero");
+                        return make_unexpected<std::string>("index cannot be zero");
                 }
                 else
                     return Miss2Identifier{ ident, index_type(index) };
             }
             catch(const std::out_of_range&)
             {
-                return make_unexpected<std::string>("XXX index out of range");
+                return make_unexpected<std::string>("index out of range");
             }
         }
         else if(begin_index != std::string::npos)

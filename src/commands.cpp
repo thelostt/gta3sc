@@ -159,10 +159,10 @@ static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg&
         }
 
         if(is_good == false)
-            throw BadAlternator(nocontext, "XXX type mismatch");
+            throw BadAlternator(nocontext, "type mismatch");
     }
     else
-        throw BadAlternator(nocontext, "XXX kind of var not allowed");
+        throw BadAlternator(nocontext, "kind of variable not allowed");
 }
 
 static bool match_var(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
@@ -208,13 +208,13 @@ static bool match_var(const SyntaxTree& node, const Commands& commands, const Co
                     if(auto opt_varidx = symbols.find_var(index, scope_ptr))
                     {
                         if((*opt_varidx)->type != VarType::Int)
-                            throw BadAlternator(node, "XXX var in index is not of int type");
+                            throw BadAlternator(node, "variable in index is not of INT type");
                         if((*opt_varidx)->count)
-                            throw BadAlternator(node, "XXX var in index is of array type");
+                            throw BadAlternator(node, "variable in index is of array type");
                     }
                     else if(commands.find_constant_all(index) == nullopt) // TODO -pedantic error
                     {
-                        throw BadAlternator(node, "XXX array index identifier is not a var");
+                        throw BadAlternator(node, "array index identifier is not a variable");
                     }
                 }
             }
@@ -241,7 +241,7 @@ static bool match_var(const SyntaxTree& node, const Commands& commands, const Co
 
     if(force_var)
     {
-        throw BadAlternator(node, "XXX var does not exist");
+        throw BadAlternator(node, "variable does not exist");
     }
 
     return false; // var doesn't exist
@@ -253,7 +253,7 @@ static void match_identifier(const SyntaxTree& node, const Commands& commands, c
     {
         case ArgType::Label:
             if(!symbols.find_label(node.text()))
-                throw BadAlternator(node, "XXX not label identifier");
+                throw BadAlternator(node, "argument is not a LABEL");
             break;
 
         case ArgType::TextLabel:
@@ -368,7 +368,7 @@ const Command& match_internal(const Commands& commands, const SymTable& symbols,
                     break;
                 case NodeType::String:
                     // SAVE_STRING_TO_DEBUG_FILE(ArgType::Buffer32) implemented manually.
-                    //program.error(*it_target_arg, "XXX string literal only allowed for SAVE_STRING_TO_DEBUG_FILE");
+                    //program.error(*it_target_arg, "string literal only allowed for SAVE_STRING_TO_DEBUG_FILE");
                     bad_alternative = true;
                     break;
                 default:
@@ -489,7 +489,7 @@ void annotate_internal(const Commands& commands, const SymTable& symbols, const 
 
                             if(arg_node.text().size() > text_limit)
                             {
-                                program.error(arg_node, "XXX string identifier too long, max size is {}", text_limit);
+                                program.error(arg_node, "identifier is too long, maximum size is {}", text_limit);
                             }
 
                             arg_node.set_annotation(TextLabelAnnotation { arg.type != ArgType::TextLabel, arg_node.text().to_string() });
@@ -652,7 +652,7 @@ static int xml_stoi(const char* string)
     }
     catch(const std::exception& e)
     {
-        throw ConfigError("Couldn't convert string to int: {}", e.what());
+        throw ConfigError("couldn't convert string to int: {}", e.what());
     }
 }
 
@@ -663,7 +663,7 @@ static bool xml_to_bool(const char* string)
     else if(!strcmp(string, "false"))
         return false;
     else
-        throw ConfigError("Boolean is not 'true' or 'false', it is '{}'", string);
+        throw ConfigError("boolean is not 'true' or 'false', it is '{}'", string);
 }
 
 static bool xml_to_bool(const rapidxml::xml_attribute<>* attrib, bool default_value)
@@ -692,7 +692,7 @@ static ArgType xml_to_argtype(const char* string)
     else if(!strcmp(string, "ANY_TEXT_LABEL"))
         return ArgType::AnyTextLabel;
     else
-        throw ConfigError("Unexpected Type attribute: {}", string);
+        throw ConfigError("unexpected 'Type' attribute: {}", string);
 }
 
 static void parse_enum_node(transparent_map<std::string, shared_ptr<Enum>>& enums, const rapidxml::xml_node<>* enum_node)
@@ -703,7 +703,7 @@ static void parse_enum_node(transparent_map<std::string, shared_ptr<Enum>>& enum
     xml_attribute<>* enum_global_attrib = enum_node->first_attribute("Global");
 
     if(!enum_name_attrib)
-        throw ConfigError("Missing Name attrib on <Enum> node");
+        throw ConfigError("missing 'Name' attribute on '<Enum>' node");
 
     bool is_global = xml_to_bool(enum_global_attrib, false);
     auto eit = enums.find(enum_name_attrib->value());
@@ -728,7 +728,7 @@ static void parse_enum_node(transparent_map<std::string, shared_ptr<Enum>>& enum
         xml_attribute<>* value_value_attrib = value_node->first_attribute("Value");
 
         if(!value_name_attrib)
-            throw ConfigError("Missing Name attrib on <Constant> node");
+            throw ConfigError("missing 'Name' attribute on '<Constant>' node");
 
         if(value_value_attrib)
             current_value = xml_stoi(value_value_attrib->value());
@@ -753,7 +753,7 @@ static std::pair<std::string, Command>
     xml_node<>*      args_node   = cmd_node->first_node("Args");
 
     if(!id_attrib || !name_attrib)
-        throw ConfigError("Missing ID or Name attrib on <Command> node");
+        throw ConfigError("missing 'ID' or 'Name' attribute on '<Command>' node");
 
     std::vector<Command::Arg> args;
 
@@ -780,7 +780,7 @@ static std::pair<std::string, Command>
             auto enum_attrib         = arg_node->first_attribute("Enum");
 
             if(!type_attrib)
-                throw ConfigError("Missing Type attrib on <Arg> node");
+                throw ConfigError("missing 'Type' attribute on '<Arg>' node");
 
             // TODO OUT
             // TODO REF
@@ -864,11 +864,11 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
         }
         catch(const rapidxml::parse_error& e)
         {
-            throw ConfigError("Failed to parse XML {}: {}", full_xml_path.generic_u8string(), e.what());
+            throw ConfigError("failed to parse xml {}: {}", full_xml_path.generic_u8string(), e.what());
         }
         catch(const bad_optional_access& e)
         {
-            throw ConfigError("Failed to read XML {}: {}", full_xml_path.generic_u8string(), e.what());
+            throw ConfigError("failed to read xml {}: {}", full_xml_path.generic_u8string(), e.what());
         }
     };
 

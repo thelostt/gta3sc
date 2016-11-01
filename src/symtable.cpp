@@ -123,14 +123,14 @@ void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type
                 if(varinfo.entity_assigned)
                 {
                     program.error(var_node,
-                        "XXX variable has been already used to create entity typed  '{}'",
+                        "variable has been already used to create a entity typed  '{}'",
                         program.commands.find_entity_name(varinfo.entity_type).value()
                     );
                 }
                 else
                 {
                     program.error(var_node,
-                        "XXX variable has been previosly used as a entity typed  '{}'",
+                        "variable has been previosly used as a entity typed  '{}'",
                         program.commands.find_entity_name(varinfo.entity_type).value()
                     );
                 }
@@ -150,7 +150,7 @@ void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type
             else if(varinfo.entity_type != arg_type)
             {
                 program.error(var_node,
-                    "XXX variable expected to have entity typed '{}', but variable has entity typed '{}' ",
+                    "variable expected to have entity typed '{}' but had '{}' ",
                     program.commands.find_entity_name(arg_type).value(),
                     program.commands.find_entity_name(varinfo.entity_type).value()
                 );
@@ -199,7 +199,7 @@ void Script::assign_entity_type(const shared_ptr<Var>& dst_var, const shared_ptr
     if(lhs_type != 0 && lhs_type != rhs_type)
     {
         program.error(error_helper,
-            "XXX destination variable has entity type '{}', but trying to assign variable with entity type '{}'",
+            "destination variable has entity type '{}' but trying to assign '{}'",
             program.commands.find_entity_name(lhs_type).value(),
             program.commands.find_entity_name(rhs_type).value()
         );
@@ -238,7 +238,7 @@ void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
                 if(assigned_vars.find(var) == assigned_vars.end())
                 {
                     program.error(**s1,
-                        "XXX variable '{}' expected to have entity typed '{}', but had '{}' during its usage", // had 'NONE'
+                        "variable '{}' expected to have entity typed '{}', but had '{}' during its usage", // had 'NONE'
                         symtable.find_var_name(var).value(), 
                         program.commands.find_entity_name(vinfo1.entity_type).value(),
                         program.commands.find_entity_name(0).value()
@@ -253,11 +253,12 @@ void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
                 if(ait->second != vinfo1.entity_type)
                 {
                     program.error(**s1,
-                        "XXX Variable '{}' has different entity types in two or more scripts. First seen as '{}', now as '{}'.",
-                        symtable.find_var_name(var).value(),
-                        program.commands.find_entity_name(ait->second).value(),
-                        program.commands.find_entity_name(vinfo1.entity_type).value()
+                        "variable '{}' has different entity types in two or more scripts",
+                        symtable.find_var_name(var).value()
                     );
+                    program.note(**s1, "first seen as '{}', now as '{}'", // TODO improve context
+                        program.commands.find_entity_name(ait->second).value(),
+                        program.commands.find_entity_name(vinfo1.entity_type).value());
                 }
             }
             else
@@ -286,7 +287,7 @@ void Script::send_input_vars(const SyntaxTree& target_label_node,
 
             if((*opt_arg_var)->type != lvar->type)
             {
-                program.error(arg_node, "XXX type mismatch in target label");
+                program.error(arg_node, "type mismatch in target label");
                 return false;
             }
         }
@@ -298,13 +299,13 @@ void Script::send_input_vars(const SyntaxTree& target_label_node,
 
             if(arg_var->type != lvar->type)
             {
-                program.error(arg_node, "XXX type mismatch in target label");
+                program.error(arg_node, "type mismatch in target label");
                 return false;
             }
         }
         else
         {
-            program.error(arg_node, "XXX type mismatch in target label");
+            program.error(arg_node, "type mismatch in target label");
             return false;
         }
         return true;
@@ -321,7 +322,7 @@ void Script::send_input_vars(const SyntaxTree& target_label_node,
 
                 if(!lvar)
                 {
-                    program.error(**arg, "XXX not enough vars in target label");
+                    program.error(**arg, "not enough variables in target label");
                     break;
                 }
 
@@ -339,7 +340,7 @@ void Script::send_input_vars(const SyntaxTree& target_label_node,
                         break;
                     case VarType::TextLabel:
                     case VarType::TextLabel16:
-                        program.error(**arg, "XXX local vars in target label type mismatch (LVAR_TEXT_LABEL not allowed)");
+                        program.error(**arg, "type mismatch in target label because LVAR_TEXT_LABEL is not allowed");
                         break;
                     default:
                         Unreachable();
@@ -348,7 +349,8 @@ void Script::send_input_vars(const SyntaxTree& target_label_node,
         }
         else
         {
-            program.error(target_label_node, "XXX Expected scope in target label. Add a '{{' before the target label.");
+            program.error(target_label_node, "expected scope in target label");
+            program.note(target_label_node, "add a '{{' before the target label");
             // TODO ^ instruction should be different between III/VC (before or after)
         }
     }
@@ -385,11 +387,11 @@ void SymTable::build_script_table(const std::vector<shared_ptr<Script>>& scripts
 void SymTable::check_command_count(ProgramContext& program) const
 {
     if(this->count_set_progress_total > 1)
-        program.error(nocontext, "XXX SET_PROGRESS_TOTAL occurs multiple times between script units, it should appear only once.");
+        program.error(nocontext, "SET_PROGRESS_TOTAL happens multiple times between script units");
     if(this->count_set_collectable1_total > 1)
-        program.error(nocontext, "XXX SET_COLLECTABLE1_TOTAL occurs multiple times between script units, it should appear only once.");
+        program.error(nocontext, "SET_COLLECTABLE1_TOTAL happens multiple times between script units");
     if(this->count_set_total_number_of_missions > 1)
-        program.error(nocontext, "XXX SET_TOTAL_NUMBER_OF_MISSIONS occurs multiple times between script units, it should appear only once.");
+        program.error(nocontext, "SET_TOTAL_NUMBER_OF_MISSIONS happens multiple times between script units");
 }
 
 void Script::verify_script_names(const std::vector<shared_ptr<Script>>& scripts, ProgramContext& program)
@@ -405,8 +407,8 @@ void Script::verify_script_names(const std::vector<shared_ptr<Script>>& scripts,
             auto inpair = names.emplace(name, *sc1);
             if(!inpair.second)
             {
-                program.error(**sc1, "XXX script name '{}' previosly used in {}",
-                              inpair.first->first, inpair.first->second->path.generic_u8string());
+                program.error(**sc1, "duplicate script name '{}'", inpair.first->first);
+                program.note(*inpair.first->second, "previously used here");
             }
         }
     }
@@ -416,16 +418,18 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
 {
     if(command.child_count() <= 1)
     {
-        program.error(command, "XXX few args");
+        // TODO what's the error message for normal commands?
+        program.error(command, "bad number of arguments");
         return false;
     }
     else
     {
         // TODO R* compiler checks if parameter ends with .sc
+        // TODO check command.child_count() is ok with name_child_id 
 
-        auto script_name = (command.child(0).text() == "GOSUB_FILE"?
-                                command.child(2).text() :
-                                command.child(1).text());
+        size_t name_child_id = (command.child(0).text() == "GOSUB_FILE"? 2 : 1);
+
+        auto script_name = command.child(name_child_id).text();
 
         auto searcher = [&](const std::string& other) {
             return iequal_to()(other, script_name);
@@ -438,22 +442,22 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
 
         if(found_extfile && type != ScriptType::MainExtension)
         {
-            program.error(command, "XXX incompatible, previous declaration blabla");
+            program.error(command, "incompatible declaration, script was previously seen as a extension script");
             return false;
         }
         else if(found_subscript && type != ScriptType::Subscript)
         {
-            program.error(command, "XXX incompatible, previous declaration blabla");
+            program.error(command, "incompatible declaration, script was previously seen as a subscript");
             return false;
         }
         else if(found_mission && type != ScriptType::Mission)
         {
-            program.error(command, "XXX incompatible, previous declaration blabla");
+            program.error(command, "incompatible declaration, script was previously seen as a mission script");
             return false;
         }
         else if(found_streamed && type != ScriptType::StreamedScript)
         {
-            program.error(command, "XXX incompatible, previous declaration blabla");
+            program.error(command, "incompatible declaration, script was previously seen as a streamed script");
             return false;
         }
         else 
@@ -466,7 +470,7 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
                     type == ScriptType::Mission? std::ref(this->mission) :
                     type == ScriptType::StreamedScript? std::ref(this->streamed) : Unreachable());
 
-                refvector.get().emplace_back(std::move(script_name));
+                refvector.get().emplace_back(script_name);
             }
             return true;
         }
@@ -520,9 +524,10 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
     {
         for(auto& kv : int_labels)
         {
-            auto script1_name = t1.labels.find(kv.first)->second->script->path.generic_u8string();
-            auto script2_name = t2.labels.find(kv.first)->second->script->path.generic_u8string();
-            program.error(nocontext, "XXX duplicate label '{}' between script units '{}' and '{}'.", kv.first, script1_name, script2_name);
+            auto script1 = t1.labels.find(kv.first)->second->script;
+            auto script2 = t2.labels.find(kv.first)->second->script;
+            program.error(*script2, "duplicate label '{}'", kv.first);
+            program.note(*script1, "previously seen here");
         }
     }
 
@@ -530,8 +535,8 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
     {
         for(auto& kv : int_gvars)
         {
-            // XXX maybe store in Var the Script where it was declared?
-            program.error(nocontext, "XXX duplicate global var '{}' between script units.", kv.first);
+            // TODO maybe store in Var the Script where it was declared?
+            program.error(nocontext, "duplicate global variable '{}' between script units", kv.first);
         }
     }
 
@@ -598,14 +603,15 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
             }
             catch(const std::logic_error&)
             {
-                // just emit a warning since R* compiler accepts this construct.
-                program.warning(node, "XXX progress value is not a constant");
+                // Just emit a warning since R* compiler accepts this construct.
+                program.warning(node, "progress value is not a constant");
                 return 0;
             }
         }
         else
         {
-            program.error(node, "XXX bad num args");
+            // TODO what's the error message for normal commands?
+            program.error(node, "bad number of arguments");
             return 0;
         }
     };
@@ -635,8 +641,9 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     auto opt_label_ptr = table.add_label(label_name.to_string(), current_scope, script.shared_from_this());
                     if(!opt_label_ptr)
                     {
-                        program.error(node, "XXX Label {} already exists", label_name);
                         opt_label_ptr = table.find_label(label_name).value();
+                        program.error(node, "redefinition of label '{}'", label_name);
+                        program.note(*(*opt_label_ptr)->script, "previous definition is here"); 
                     }
 
                     Expects(opt_label_ptr != nullopt);
@@ -653,7 +660,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                 if(current_scope)
                 {
-                    program.error(node, "XXX Already inside a scope.");
+                    program.error(node, "already inside a scope");
                     // continue using current scope instead of entering a new one
                 }
                 else
@@ -670,14 +677,15 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     
                     if(program.opt.pedantic && program.opt.scope_then_label)
                     {
-                        program.error(node, "XXX since VC the label should be inside the scope [-pedantic]");
+                        program.error(node, "since Vice City the label should be inside the scope [-pedantic]");
                     }
 
                     auto opt_label_ptr = table.add_label(label_name.to_string(), current_scope, script.shared_from_this());
                     if(!opt_label_ptr)
                     {
-                        program.error(node, "XXX Label {} already exists", label_name);
                         opt_label_ptr = table.find_label(label_name).value();
+                        program.error(node, "redefinition of label '{}'", label_name);
+                        program.note(*(*opt_label_ptr)->script, "previous definition is here");
                     }
 
                     Expects(opt_label_ptr != nullopt);
@@ -724,7 +732,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     count_unique_command = ++table.count_set_progress_total;
 
                 if(count_unique_command > 1)
-                    program.error(node, "XXX {} more than once", command_name);
+                    program.error(node, "{} happens more than once", command_name);
 
                 return false;
             }
@@ -742,14 +750,14 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                 if(!global && current_scope == nullptr)
                 {
-                    program.error(node, "XXX Local var definition outside scope.");
+                    program.error(node, "local variable definition outside of scope");
                     return false;
                 }
 
                 if(!program.opt.text_label_vars
                     && (vartype == VarType::TextLabel || vartype == VarType::TextLabel16))
                 {
-                    program.error(node, "XXX var text label not allowed");
+                    program.error(node, "text label variables are not supported");
                 }
 
                 auto& target = global? table.global_vars : current_scope->vars;
@@ -780,7 +788,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                             if(is<string_view>(*token.index))
                             {
                                 // TODO allow enum?
-                                program.error(varnode, "XXX non-constant index value in array declaration");
+                                program.error(varnode, "index must be constant");
                                 count = 1; // fallback
                             }
                             else
@@ -797,7 +805,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                     if(!program.opt.farrays && count)
                     {
-                        program.error(varnode, "XXX arrays not supported [-farrays]");
+                        program.error(varnode, "arrays are not supported [-farrays]");
                     }
 
                     auto it = target.emplace(name, std::make_shared<Var>(global, vartype, index, count));
@@ -805,7 +813,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                     if(it.second == false)
                     {
-                        program.error(varnode, "XXX Variable {} already exists.", name);
+                        program.error(varnode, "redefinition of variable '{}'", name);
                         varnode.set_annotation(std::move(var_ptr));
                     }
                     else
@@ -815,7 +823,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     }
 
                     if(index > max_index)
-                        program.error(varnode, "XXX max {} vars limit ('{}')", (global? "global" : "local"), max_index);
+                        program.error(varnode, "reached maximum {} variable limit ('{}')", (global? "global" : "local"), max_index);
                 }
 
                 return false;
@@ -855,12 +863,14 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             }
             else
             {
-                program.error(node, "XXX first argument must be 0");
+                program.error(node, "first argument must be 0");
+                program.note(node, "the compiler will tweak the value automatically");
             }
         }
         else
         {
-            program.error(node, "XXX bad arg count");
+            // TODO what's the error message for normal commands?
+            program.error(node, "bad number of arguments");
         }
     };
 
@@ -893,7 +903,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             {
                 if(!this->script_names.emplace(opt_script_name->string).second)
                 {
-                    program.error(node, "XXX script name has already been used");
+                    program.error(node, "duplicate script name '{}'", opt_script_name->string);
                 }
             }
         }
@@ -982,11 +992,11 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 {
                     had_start = true;
                     if(num_statements != 1)
-                        program.error(node, "XXX {} must be the first line of subscript or mission script.", dir_start);
+                        program.error(node, "{} must be the first statement in script", dir_start);
                 }
                 else
                 {
-                    program.error(node, "XXX more than one {} in script.", dir_start);
+                    program.error(node, "more than one {} directive in script", dir_start);
                 }
                 return false;
             }
@@ -1007,22 +1017,15 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 {
                     had_end = true;
 
-                    if(commands.terminate_this_script() && commands.terminate_this_script()->supported)
-                    {
-                        const Command& command = *commands.terminate_this_script();
-                        node.set_annotation(std::cref(command));
-                    }
-                    else
-                    {
-                        program.fatal_error(nocontext, "XXX TERMINATE_THIS_SCRIPT undefined or unsupported");
-                    }
+                    const Command& command = program.supported_or_fatal(node, commands.terminate_this_script(), "TERMINATE_THIS_SCRIPT");
+                    node.set_annotation(std::cref(command));
 
                     if(!had_start)
-                        program.error(node, "XXX {} without a {}.", dir_end, dir_start);
+                        program.error(node, "{} without a {}", dir_end, dir_start);
                 }
                 else
                 {
-                    program.error(node, "XXX more than one {} in script.", dir_end);
+                    program.error(node, "more than one {} in script", dir_end);
                 }
                 return false;
             }
@@ -1064,15 +1067,15 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // TODO cache this or dunno?
                 SyntaxTree number_zero = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, int32_t(0)) :
                                           times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, float(0.0)) :
-                                          (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, int32_t(0)))); // int as fallback
+                                          (program.error(times, "REPEAT counter must be INT or FLOAT"), SyntaxTree::temporary(NodeType::Integer, int32_t(0)))); // int as fallback
 
                 SyntaxTree number_one = (times.type() == NodeType::Integer? SyntaxTree::temporary(NodeType::Integer, int32_t(1)) :
                                          times.type() == NodeType::Float? SyntaxTree::temporary(NodeType::Float, float(1.0)) :
-                                         (program.error(times, "XXX times must be int or float"), SyntaxTree::temporary(NodeType::Integer, int32_t(1)))); // int as fallback
+                                         (program.error(times, "REPEAT counter must be INT or FLOAT"), SyntaxTree::temporary(NodeType::Integer, int32_t(1)))); // int as fallback
 
                 if(program.opt.pedantic && times.type() != NodeType::Integer)
                 {
-                    program.error(times, "XXX REPEAT allows only INT counters [-pedantic]");
+                    program.error(times, "REPEAT only allows INT counters [-pedantic]");
                 }
 
                 // Walk on the REPEAT body before matching the base commands.
@@ -1108,7 +1111,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             case NodeType::SWITCH:
             {
                 if(!program.opt.fswitch)
-                    program.error(node, "XXX SWITCH not enabled [-fswitch]");
+                    program.error(node, "SWITCH not supported [-fswitch]");
 
                 auto& var = node.child(0);
                 bool last_statement_was_break = true;
@@ -1117,21 +1120,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 std::vector<int32_t> case_values;
                 bool had_default = false;
 
-                auto ensure_break = [&](SyntaxTree& statement_list)
-                {
-                    if(statement_list.child_count() > 0)
-                    {
-                        auto& last_statement = statement_list.child(statement_list.child_count() - 1);
-                        if(last_statement.type() == NodeType::BREAK)
-                        {
-                            last_statement.set_annotation(SwitchCaseBreakAnnotation {});
-                            return;
-                        }
-                    }
-
-                    program.error(*statement_list.parent(), "XXX CASE does not end with a BREAK");
-                };
-
                 for(auto& body_node : node.child(1))
                 {
                     switch(body_node->type())
@@ -1139,7 +1127,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         case NodeType::CASE:
                         {
                             if(last_case && !last_statement_was_break)
-                                program.error(*last_case, "XXX missing BREAK for this CASE/DEFAULT label");
+                                program.error(*last_case, "CASE does not end with a BREAK");
 
                             try
                             {
@@ -1154,13 +1142,13 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                 if(auto v = case_value.maybe_annotation<const int32_t&>())
                                 {
                                     if(std::find(case_values.begin(), case_values.end(), *v) != case_values.end())
-                                        program.error(*case_node, "XXX CASE with value '{}' happens twice", *v);
+                                        program.error(*case_node, "duplicate CASE value '{}'", *v);
                                     else
                                         case_values.emplace_back(*v);
                                 }
                                 else
                                 {
-                                    program.error(*case_node, "XXX case value must be a integer constant");
+                                    program.error(*case_node, "CASE value must be a integer constant");
                                 }
 
 
@@ -1176,10 +1164,10 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         case NodeType::DEFAULT:
                         {
                             if(had_default)
-                                program.error(*body_node, "XXX DEFAULT happens twice");
+                                program.error(*body_node, "multiple DEFAULT labels in one SWITCH");
 
                             if(last_case && !last_statement_was_break)
-                                program.error(*last_case, "XXX missing BREAK for this CASE/DEFAULT label");
+                                program.error(*last_case, "CASE does not end with a BREAK");
 
                             last_case = body_node;
                             had_default = true;
@@ -1194,7 +1182,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             }
                             else
                             {
-                                program.error(*body_node, "XXX BREAK not within a CASE or DEFAULT label");
+                                program.error(*body_node, "BREAK not within a CASE or DEFAULT label");
                             }
                             break;
 
@@ -1206,19 +1194,19 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             }
                             else
                             {
-                                program.error(*body_node, "XXX statement ouside of a CASE or DEFAULT label");
+                                program.error(*body_node, "statement not within a CASE or DEFAULT label");
                             }
                             break;
                     }
                 }
 
                 if(last_case && !last_statement_was_break)
-                    program.error(*last_case, "XXX missing BREAK for this CASE/DEFAULT label");
+                    program.error(*last_case, "CASE does not end with a BREAK");
 
                 if(auto switch_case_limit = program.opt.switch_case_limit)
                 {
                     if(case_values.size() > static_cast<size_t>(*switch_case_limit))
-                        program.error(node, "XXX SWITCH contains more than {} cases [-fswitch-case-limit]", *switch_case_limit);
+                        program.error(node, "SWITCH contains more than {} cases [-fswitch-case-limit]", *switch_case_limit);
                 }
 
                 node.set_annotation(SwitchAnnotation { case_values.size(), had_default });
@@ -1234,96 +1222,69 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 		        // TODO case sensitivity
                 if(command_name == "SAVE_STRING_TO_DEBUG_FILE")
                 {
-                    if(commands.save_string_to_debug_file() && commands.save_string_to_debug_file()->supported)
+                    const Command& command = program.supported_or_fatal(node, commands.save_string_to_debug_file(),
+                                                                        "SAVE_STRING_TO_DEBUG_FILE");
+                    if(node.child_count() < 2)
                     {
-                        const Command& command = *commands.save_string_to_debug_file();
-                        if(node.child_count() < 2)
-                        {
-                            program.error(node, "XXX too few arguments for SAVE_STRING_TO_DEBUG_FILE");
-                        }
-                        else if(node.child_count() > 2)
-                        {
-                            program.error(node, "XXX anything but a single string argument is underspecified for SAVE_STRING_TO_DEBUG_FILE");
-                        }
-                        else if(node.child(1).type() != NodeType::String)
-                        {
-                            program.error(node.child(1), "XXX param must be a string literal");
-                        }
-                        else
-                        {
-                            auto debug_string = remove_quotes(node.child(1).text());
-
-                            if(debug_string.size() > 127)
-                            {
-                                program.error(node.child(1), "XXX string too long, only 127 chars allowed");
-                            }
-
-                            node.child(1).set_annotation(String128Annotation { debug_string.to_string() });
-                            node.set_annotation(std::cref(command));
-                        }
+                        // TODO what's the error message for normal commands?
+                        program.error(node, "too few arguments");
+                    }
+                    else if(node.child_count() > 2)
+                    {
+                        // TODO what's the error message for normal commands?
+                        program.error(node, "anything but a single STRING argument is underspecified for SAVE_STRING_TO_DEBUG_FILE");
+                    }
+                    else if(node.child(1).type() != NodeType::String)
+                    {
+                        // TODO what's the error message for normal commands?
+                        program.error(node.child(1), "argument must be a STRING literal");
                     }
                     else
                     {
-                        program.fatal_error(node, "XXX SAVE_STRING_TO_DEBUG_FILE undefined or unsupported");
+                        auto debug_string = remove_quotes(node.child(1).text());
+
+                        if(debug_string.size() > 127)
+                        {
+                            program.error(node.child(1), "STRING is too long, only 127 characters allowed");
+                        }
+
+                        node.child(1).set_annotation(String128Annotation { debug_string.to_string() });
+                        node.set_annotation(std::cref(command));
                     }
                 }
                 else if(command_name == "LOAD_AND_LAUNCH_MISSION")
                 {
-                    if(commands.load_and_launch_mission_internal() && commands.load_and_launch_mission_internal()->supported)
-                    {
-                        const Command& command = *commands.load_and_launch_mission_internal();
-                        shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
-                        node.child(1).set_annotation(int32_t(script->mission_id.value()));
-                        node.set_annotation(std::cref(command));
-                    }
-                    else
-                    {
-                        program.fatal_error(node, "XXX LOAD_AND_LAUNCH_MISSION_INTERNAL undefined or unsupported");
-                    }
+                    const Command& command = program.supported_or_fatal(node, commands.load_and_launch_mission_internal(),
+                                                                        "LOAD_AND_LAUNCH_MISSION_INTERNAL");
+                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                    node.child(1).set_annotation(int32_t(script->mission_id.value()));
+                    node.set_annotation(std::cref(command));
                 }
                 else if(command_name == "LAUNCH_MISSION")
                 {
-                    if(commands.launch_mission() && commands.launch_mission()->supported)
-                    {
-                        const Command& command = *commands.launch_mission();
-                        shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
-                        node.child(1).set_annotation(script->start_label);
-                        node.set_annotation(std::cref(command));
-                    }
-                    else
-                    {
-                        program.fatal_error(node, "XXX LAUNCH_MISSION undefined or unsupported");
-                    }
+                    const Command& command = program.supported_or_fatal(node, commands.launch_mission(),
+                                                                        "LAUNCH_MISSION");
+                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                    node.child(1).set_annotation(script->start_label);
+                    node.set_annotation(std::cref(command));
                 }
                 else if(command_name == "GOSUB_FILE")
                 {
-                    if(commands.gosub_file() && commands.gosub_file()->supported)
-                    {
-                        const Command& command = *commands.gosub_file();
-                        shared_ptr<Label>  label  = symbols.find_label(node.child(1).text()).value();
-                        shared_ptr<Script> script = symbols.find_script(node.child(2).text()).value();
-                        node.child(1).set_annotation(label);
-                        node.child(2).set_annotation(script->top_label);
-                        node.set_annotation(std::cref(command));
-                    }
-                    else
-                    {
-                        program.fatal_error(node, "XXX GOSUB_FILE undefined or unsupported");
-                    }
+                    const Command& command = program.supported_or_fatal(node, commands.gosub_file(),
+                                                                        "GOSUB_FILE");
+                    shared_ptr<Label>  label  = symbols.find_label(node.child(1).text()).value();
+                    shared_ptr<Script> script = symbols.find_script(node.child(2).text()).value();
+                    node.child(1).set_annotation(label);
+                    node.child(2).set_annotation(script->top_label);
+                    node.set_annotation(std::cref(command));
                 }
                 else if(command_name == "REGISTER_STREAMED_SCRIPT")
                 {
-                    if(commands.register_streamed_script_internal() && commands.register_streamed_script_internal()->supported)
-                    {
-                        const Command& command = *commands.register_streamed_script_internal();
-                        shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
-                        node.child(1).set_annotation(int32_t(script->streamed_id.value()));
-                        node.set_annotation(std::cref(command));
-                    }
-                    else
-                    {
-                        program.fatal_error(node, "XXX REGISTER_STREAMED_SCRIPT_INTERNAL undefined or unsupported");
-                    }
+                    const Command& command = program.supported_or_fatal(node, commands.register_streamed_script_internal(),
+                                                                        "REGISTER_STREAMED_SCRIPT_INTERNAL");
+                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                    node.child(1).set_annotation(int32_t(script->streamed_id.value()));
+                    node.set_annotation(std::cref(command));
                 }
                 else
                 {
@@ -1354,13 +1315,13 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                 }
                                 else
                                 {
-                                    program.error(node.child(1), "XXX script is not a streamed script declared with REGISTER_STREAMED_SCRIPT");
+                                    program.error(node.child(1), "script is not a streamed script declared with REGISTER_STREAMED_SCRIPT");
                                     node.child(1).set_annotation(StreamedFileAnnotation{-1});
                                 }
                             }
                             else
                             {
-                                program.error(node.child(1), "XXX script never declared with REGISTER_STREAMED_SCRIPT");
+                                program.error(node.child(1), "script was never declared with REGISTER_STREAMED_SCRIPT");
                                 node.child(1).set_annotation(StreamedFileAnnotation{-1});
                             }
                         }
@@ -1387,20 +1348,20 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         else if(commands.equal(command, commands.skip_cutscene_start()))
                         {
                             if(!program.opt.skip_cutscene)
-                                program.error(node, "XXX SKIP_CUTSCENE_START not allowed [-fskip-cutscene]");
+                                program.error(node, "SKIP_CUTSCENE_START not supported [-fskip-cutscene]");
 
                             if(current_cutskip++ > 0)
-                                program.error(node, "XXX SKIP_CUTSCENE_START inside another SKIP_CUTSCENE_START");
+                                program.error(node, "SKIP_CUTSCENE_START inside another SKIP_CUTSCENE_START");
                             else
                                 node.set_annotation(CommandSkipCutsceneStartAnnotation{});
                         }
                         else if(commands.equal(command, commands.skip_cutscene_end()))
                         {
                             if(!program.opt.skip_cutscene)
-                                program.error(node, "XXX SKIP_CUTSCENE_END not allowed [-fskip-cutscene]");
+                                program.error(node, "SKIP_CUTSCENE_END not supported [-fskip-cutscene]");
 
                             if(current_cutskip == 0)
-                                program.error(node, "XXX SKIP_CUTSCENE_END without SKIP_CUTSCENE_START");
+                                program.error(node, "SKIP_CUTSCENE_END without SKIP_CUTSCENE_START");
                             else if(--current_cutskip == 0)
                                 node.set_annotation(CommandSkipCutsceneEndAnnotation{});
                         }
@@ -1451,16 +1412,16 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         switch(node.child(1).type())
                         {
                             case NodeType::Sub:
-                                message = "XXX cannot do VAR1 = THING - VAR1";
+                                message = "cannot do VAR1 = THING - VAR1";
                                 break;
                             case NodeType::Divide:
-                                message = "XXX cannot do VAR1 = THING / VAR1";
+                                message = "cannot do VAR1 = THING / VAR1";
                                 break;
                             case NodeType::TimedAdd:
-                                message = "XXX cannot do VAR1 = THING +@ VAR1";
+                                message = "cannot do VAR1 = THING +@ VAR1";
                                 break;
                             case NodeType::TimedSub:
-                                message = "XXX cannot do VAR1 = THING -@ VAR1";
+                                message = "cannot do VAR1 = THING -@ VAR1";
                                 break;
                         }
 
@@ -1519,29 +1480,34 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // TODO array
                 auto opt_varinfo = symbols.find_var(var_ident.text(), current_scope);
                 if(!opt_varinfo)
-                    program.fatal_error(var_ident, "XXX {} is not a variable", var_ident.text()); // TODO use program.error and think about fallback
+                    program.fatal_error(var_ident, "'{}' is not a variable", var_ident.text()); // TODO use program.error and think about fallback
 
                 auto varinfo = std::move(*opt_varinfo);
 
-                // TODO cache this or dunno?
-                SyntaxTree number_one = (varinfo->type == VarType::Int? SyntaxTree::temporary(NodeType::Integer, int32_t(1)) :
-                                         (program.error(var_ident, "XXX {} must be int", opkind), SyntaxTree::temporary(NodeType::Integer, int32_t(1)))); // int as fallback
-
-
-                try
+                if(varinfo->type == VarType::Int)
                 {
-                    const Command& op_var_with_one = commands.match_args(symbols, current_scope, alternator_thing, var_ident, number_one);
+                    // TODO cache this or dunno?
+                    SyntaxTree number_one = SyntaxTree::temporary(NodeType::Integer, int32_t(1));
+
+                    try
+                    {
+                        const Command& op_var_with_one = commands.match_args(symbols, current_scope, alternator_thing, var_ident, number_one);
                 
-                    commands.annotate_args(symbols, current_scope, *this, program, op_var_with_one, var_ident, number_one);
+                        commands.annotate_args(symbols, current_scope, *this, program, op_var_with_one, var_ident, number_one);
 
-                    node.set_annotation(IncDecAnnotation {
-                        op_var_with_one,
-                        std::make_shared<SyntaxTree>(std::move(number_one)),
-                    });
+                        node.set_annotation(IncDecAnnotation {
+                            op_var_with_one,
+                            std::make_shared<SyntaxTree>(std::move(number_one)),
+                        });
+                    }
+                    catch(const BadAlternator& e)
+                    {
+                        program.error(e.error());
+                    }
                 }
-                catch(const BadAlternator& e)
+                else
                 {
-                    program.error(e.error());
+                    program.error(var_ident, "{} operand must be of type INT", opkind);
                 }
 
                 return false;
@@ -1560,25 +1526,27 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
     if(this->type == ScriptType::Mission || this->type == ScriptType::Subscript)
     {
         if(!had_mission_start)
-            program.error(*this, "Mission script or subscript does not contain MISSION_START");
+            program.error(*this, "{} script does not contain MISSION_START", to_string(this->type));
         else if(!had_mission_end)
-            program.error(*this, "Mission script or subscript does not contain MISSION_END");
+            program.error(*this, "{} script does not contain MISSION_END", to_string(this->type));
     }
     else if(this->type == ScriptType::StreamedScript)
     {
         if(!had_script_start)
-            program.error(*this, "Streamed script does not contain SCRIPT_START");
+            program.error(*this, "streamed script does not contain SCRIPT_START");
         else if(!had_script_end)
-            program.error(*this, "Streamed script does not contain SCRIPT_END");
+            program.error(*this, "streamed script does not contain SCRIPT_END");
     }
     else if(had_mission_start || had_script_start)
     {
-        program.error(*this, "Cannot use MISSION_START or SCRIPT_START in this script type");
+        program.error(*this, "cannot use {} in {} scripts",
+                      had_mission_start? "MISION_START" : "SCRIPT_START",
+                      to_string(this->type));
     }
 
     if(current_cutskip != 0)
     {
-        program.error(*this, "XXX missing SKIP_CUTSCENE_END");
+        program.error(*this, "missing SKIP_CUTSCENE_END");
     }
 }
 
@@ -1594,7 +1562,7 @@ auto read_script(const std::string& filename, const std::map<std::string, fs::pa
     }
     else
     {
-        program.error(nocontext, "File '{}' does not exist in '{}' subdirectory.", filename, "main");
+        program.error(nocontext, "file '{}' does not exist in the scripts subdirectory", filename);
         return nullopt;
     }
 }

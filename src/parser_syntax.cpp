@@ -121,7 +121,7 @@ static bool expect_newline(ParserState& state, token_iterator it, token_iterator
 {
     if(it != end && it->type != Token::NewLine)
     {
-        add_error(state, make_error(ParserStatus::Error, std::prev(it), "XXX expected newline after this token"));
+        add_error(state, make_error(ParserStatus::Error, std::prev(it), "expected newline after this token"));
         return false;
     }
     return true;
@@ -142,7 +142,7 @@ static bool expect_endtoken(ParserState& state, token_iterator begin, token_iter
                            type == Token::ENDSWITCH? "ENDSWITCH" :
                            throw std::logic_error("Missing expect_endtoken implementation");
 
-        add_error(state, make_error(ParserStatus::Error, begin, fmt::format("XXX missing {} for this", what)));
+        add_error(state, make_error(ParserStatus::Error, begin, fmt::format("missing {} for this", what)));
         return false;
     }
     return true;
@@ -790,7 +790,7 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
 
             if(is<ParserSuccess>(idents) && get<ParserSuccess>(idents).tree->child_count() == 0)
             {
-                return std::make_pair(it, make_error(ParserStatus::Error, begin, "XXX expected identifier after this token"));
+                return std::make_pair(it, make_error(ParserStatus::Error, begin, "expected identifier after this token"));
             }
 
             if(is<ParserSuccess>(idents))
@@ -870,7 +870,7 @@ static ParserResult parse_condition_list(ParserContext& parser, token_iterator b
                     {
                         const char *expected = "AND", *got = "OR";
                         if(*opt_type == NodeType::AND) std::swap(expected, got);
-                        add_error(state, ParserError(ParserStatus::Error, it, fmt::format("XXX expected {}, got {}", expected, got)));
+                        add_error(state, ParserError(ParserStatus::Error, it, fmt::format("expected {}, got {}", expected, got)));
                     }
                 }
                 ++it;

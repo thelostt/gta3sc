@@ -184,12 +184,9 @@ struct CompilerContext
         Expects(!script->start_label->local_offset);
 
         // Commands always required by the compiler.
-        if(!commands.andor() || !commands.andor()->supported)
-            program.fatal_error(nocontext, "XXX ANDOR undefined or unsupported");
-        if(!commands.goto_() || !commands.goto_()->supported)
-            program.fatal_error(nocontext, "XXX GOTO undefined or unsupported");
-        if(!commands.goto_if_false() || !commands.goto_if_false()->supported)
-            program.fatal_error(nocontext, "XXX GOTO_IF_FALSE undefined or unsupported");
+        program.supported_or_fatal(nocontext, commands.andor(), "ANDOR");
+        program.supported_or_fatal(nocontext, commands.goto_(), "GOTO");
+        program.supported_or_fatal(nocontext, commands.goto_if_false(), "GOTO_IF_FALSE");
         
         compile_label(script->top_label);
         compile_label(script->start_label); // TODO at MISSION_START actually
@@ -256,7 +253,7 @@ private:
                 compile_statements(node);
                 break;
             case NodeType::NOT:
-                program.error(node, "XXX NOT outside of a condition block");
+                program.error(node, "NOT disallowed outside of a conditional statement");
                 compile_statement(node.child(0), !not_flag);
                 break;
             case NodeType::Command:
@@ -273,7 +270,7 @@ private:
             case NodeType::GreaterEqual:
             case NodeType::Lesser:
             case NodeType::LesserEqual:
-                program.error(node, "XXX conditional expression outside of a condition block");
+                program.error(node, "expression disallowed outside of a conditional statement");
                 break;
             case NodeType::Equal:
             case NodeType::Cast:
@@ -609,7 +606,7 @@ private:
                 return accum + (c.is_default()? 0 : 1);
             });
             if(num_ifs > 8)
-                program.error(swnode, "XXX more than 8 CASEs with same body currently not supported without SWITCH_START");
+                program.error(swnode, "more than 8 cases with the same body not supported using if-chain");
             else if(num_ifs > 1)
                 compile_command(*commands.andor(), { conv_int(21 + num_ifs - 2) });
             else if(num_ifs == 0 && it->is_default())
@@ -656,7 +653,7 @@ private:
         {
             if(!break_node.maybe_annotation<const SwitchCaseBreakAnnotation&>())
             {
-                program.error(break_node, "XXX BREAK only allowed at the end of a SWITCH CASE [-fbreak-continue]");
+                program.error(break_node, "BREAK only allowed at the end of a SWITCH CASE [-fbreak-continue]");
             }
             else
             {
@@ -676,7 +673,7 @@ private:
                     // Checking continue_label is a hacky way to verify if `it` is a SWITCH.
                     if(it->continue_label != nullptr || it != loop_stack.rbegin())
                     {
-                        program.error(break_node, "XXX BREAK only works in SWITCH [-fbreak-continue]");
+                        program.error(break_node, "BREAK only allowed in SWITCH [-fbreak-continue]");
                     }
                 }
 
@@ -685,14 +682,14 @@ private:
             }
         }
 
-        program.error(break_node, "XXX BREAK outside of a loop");
+        program.error(break_node, "BREAK not in a loop or SWITCH statement");
     }
 
     void compile_continue(const SyntaxTree& continue_node)
     {
         if(!program.opt.allow_break_continue)
         {
-            program.error(continue_node, "XXX CONTINUE not supported [-fbreak-continue]");
+            program.error(continue_node, "CONTINUE is not supported [-fbreak-continue]");
             return;
         }
 
@@ -705,7 +702,7 @@ private:
             }
         }
 
-        program.error(continue_node, "XXX CONTINUE outside of a loop");
+        program.error(continue_node, "CONTINUE not in a loop or SWITCH statement");
     }
 
     void compile_expr(const SyntaxTree& eq_node, bool not_flag = false)
@@ -768,29 +765,19 @@ private:
         if(command_node.maybe_annotation<CommandSkipCutsceneStartAnnotation>())
         {
             Expects(this->label_skip_cutscene_end == nullptr);
-            if(auto opt_command = this->commands.skip_cutscene_start_internal())
-            {
-                this->label_skip_cutscene_end = make_internal_label();
-                compile_command(*opt_command, { this->label_skip_cutscene_end }, not_flag);
-            }
-            else
-            {
-                program.error(nocontext, "XXX SKIP_CUTSCENE_START_INTERNAL undefined or unsupported");
-            }
+            const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_start_internal(),
+                                                                "SKIP_CUTSCENE_START_INTERNAL");
+            this->label_skip_cutscene_end = make_internal_label();
+            compile_command(command, { this->label_skip_cutscene_end }, not_flag);
         }
         else if(command_node.maybe_annotation<CommandSkipCutsceneEndAnnotation>())
         {
             Expects(this->label_skip_cutscene_end != nullptr);
-            if(auto opt_command = this->commands.skip_cutscene_end())
-            {
-                compile_label(this->label_skip_cutscene_end);
-                compile_command(*opt_command, {}, not_flag);
-                this->label_skip_cutscene_end = nullptr;
-            }
-            else
-            {
-                program.error(nocontext, "XXX SKIP_CUTSCENE_END undefined or unsupported");
-            }
+            const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_end(),
+                                                                "SKIP_CUTSCENE_END");
+            compile_label(this->label_skip_cutscene_end);
+            compile_command(command, {}, not_flag);
+            this->label_skip_cutscene_end = nullptr;
         }
         else
         {
@@ -831,7 +818,7 @@ private:
         auto compile_multi_andor = [this](const auto& conds_node, size_t op)
         {
             if(conds_node.child_count() > 8)
-                program.error(conds_node, "XXX more than 8 conditions");
+                program.error(conds_node, "use of more than 8 conditions is not supported");
 
             compile_command(*this->commands.andor(), { conv_int(op + conds_node.child_count() - 2) });
             for(auto& cond : conds_node) compile_condition(*cond);
@@ -924,7 +911,8 @@ private:
                     {
                         auto sckind_ = label->script->type == ScriptType::Mission? "mission " :
                                         label->script->type == ScriptType::StreamedScript? "streamed " : "";
-                        program.error(arg_node, "Reference to {}label '{}' outside of its {}script.", sckind_, arg_node.text(), sckind_);
+                        program.error(arg_node, "reference to local label outside of its {}script", sckind_);
+                        program.note(*label->script, "label belongs to this script");
                     }
                     return label;
                 }

@@ -478,3 +478,16 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
 
     return output;
 }
+
+inline const char* to_string(ScriptType type)
+{
+    switch(type)
+    {
+        case ScriptType::Main:           return "main";
+        case ScriptType::MainExtension:  return "extension";
+        case ScriptType::Subscript:      return "subscript";
+        case ScriptType::Mission:        return "mission";
+        case ScriptType::StreamedScript: return "streamed";
+        default:                         Unreachable();
+    }
+}

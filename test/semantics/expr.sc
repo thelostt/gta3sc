@@ -20,6 +20,6 @@ x = x -@ 2.0
 
 // Increment/Decrement only works with integers
 ++i
-++x // expected-error {{must be int}}
+++x // expected-error {{increment operand must be of type INT}}
 
 TERMINATE_THIS_SCRIPT

@@ -387,7 +387,10 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
     auto emplace_local_offset = [&](int32_t offset)
     {
         if(offset == 0)
-            codegen.program.error(nocontext, "XXX reference to zero offset");
+        {
+            codegen.program.error(nocontext, "compiled script references a label at the zero offset");
+            codegen.program.note(nocontext, "try using SCRIPT_NAME or NOP at the very top of your script");
+        }
         codegen.emplace_i32(-offset);
     };
 

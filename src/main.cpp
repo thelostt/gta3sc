@@ -580,7 +580,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             f = u8fopen(output, "wb");
             if(f == nullptr)
             {
-                program.fatal_error(nocontext, "XXX  failed to open output for writing");
+                program.fatal_error(nocontext, "failed to open output for writing");
                 //return;
             }
 
@@ -589,7 +589,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 script_img = u8fopen(fs::path(output).replace_filename("script.img"), "wb");
                 if(!script_img)
                 {
-                    program.fatal_error(nocontext, "XXX failed to open script.img for writing");
+                    program.fatal_error(nocontext, "failed to open script.img for writing");
                     //return;
                 }
             }
@@ -838,7 +838,7 @@ int decompile(fs::path input, fs::path output, ProgramContext& program)
     {
         outstream = u8fopen(output, "wb");
         if(!outstream)
-            program.fatal_error(nocontext, "Could not open file {} for writing", output.generic_u8string());
+            program.fatal_error(nocontext, "could not open file '{}' for writing", output.generic_u8string());
     }
 
     auto guard = make_scope_guard([&] {
@@ -847,7 +847,7 @@ int decompile(fs::path input, fs::path output, ProgramContext& program)
 
     auto opt_decomp = Disassembler::from_file(program, commands, input);
     if(!opt_decomp)
-        program.fatal_error(nocontext, "File {} does not exist", input.generic_u8string());
+        program.fatal_error(nocontext, "file '{}' does not exist", input.generic_u8string());
 
     Disassembler decomp(std::move(*opt_decomp));
     auto scm_header = decomp.read_header(DecompiledScmHeader::Version::Liberty).value();
