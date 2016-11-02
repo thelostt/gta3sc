@@ -118,6 +118,8 @@
   	  <Command Name="IS_FLOAT_VAR_NOT_EQUAL_TO_FLOAT_VAR"/> 	
   	  <Command Name="IS_FLOAT_LVAR_NOT_EQUAL_TO_FLOAT_LVAR"/> 	
   	  <Command Name="IS_FLOAT_VAR_NOT_EQUAL_TO_FLOAT_LVAR"/>
+  	  <Command Name="IS_INT_LVAR_NOT_EQUAL_TO_INT_VAR"/> 	
+  	  <Command Name="IS_FLOAT_LVAR_NOT_EQUAL_TO_FLOAT_VAR"/>
     </Alternator>
     <Alternator Name="IS_THING_GREATER_THAN_THING">
  	  <Command Name="IS_INT_VAR_GREATER_THAN_NUMBER"/>
