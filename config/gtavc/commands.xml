@@ -3670,11 +3670,7 @@
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
       </Args>
     </Command>
-    <Command ID="0x231" Name="SWITCH_HELICOPTER" Supported="false">
-      <Args>
-        <Arg Type="INT" Desc="Boolean true/false"/>
-      </Args>
-    </Command>
+    <Command ID="0x231" Name="SWITCH_HELICOPTER" Supported="false"/>
     <Command ID="0x232" Name="SET_GANG_ATTITUDE" Supported="false">
       <Args>
         <Arg Type="INT" Enum="GANG"/>

@@ -78,7 +78,8 @@ class Argument:
         self.allow_gvar = str2bool(a.get("AllowGlobalVar", "true"))
         self.allow_lvar = str2bool(a.get("AllowLocalVar", "true"))
         self.entity = a.get("Entity", None)
-        self.enums = a.get("Enum", [])
+        self.enums = a.get("Enum", None)
+        self.enums = [self.enums] if self.enums else []
         
     def to_node(self):
         node = etree.Element("Arg", Type=self.type)
