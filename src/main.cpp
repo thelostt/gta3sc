@@ -396,8 +396,9 @@ int main(int argc, char** argv)
     try
     {
         std::vector<fs::path> config_files;
-        config_files.reserve(3);
+        config_files.reserve(4);
 
+        config_files.emplace_back(config_name + "/alternators.xml");
         config_files.emplace_back(config_name + "/commands.xml");
         config_files.emplace_back(config_name + "/constants.xml");
         if(datadir.empty()) config_files.emplace_back(config_name + "/default.xml");

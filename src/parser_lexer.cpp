@@ -753,7 +753,7 @@ std::string TokenStream::to_string() const
     return output;
 }
 
-auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifier, std::string>
+auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifier, Error>
 {
     size_t begin_index = std::string::npos;
     bool is_number_index = true;
@@ -763,7 +763,7 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
         if(value[i] == '[')
         {
             if(begin_index != std::string::npos)
-                return make_unexpected<std::string>("nesting of arrays not allowed");
+                return make_unexpected(Miss2Identifier::NestingOfArrays);
 
             begin_index = i;
         }
@@ -780,16 +780,16 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
                     if(index_value > 0)
                         return Miss2Identifier{ ident, index_type(index_value) };
                     else if(index_value < 0)
-                        return make_unexpected<std::string>("index cannot be negative");
+                        return make_unexpected(Miss2Identifier::NegativeIndex);
                     else // == 0
-                        return make_unexpected<std::string>("index cannot be zero");
+                        return make_unexpected(Miss2Identifier::ZeroIndex);
                 }
                 else
                     return Miss2Identifier{ ident, index_type(index) };
             }
             catch(const std::out_of_range&)
             {
-                return make_unexpected<std::string>("index out of range");
+                return make_unexpected(Miss2Identifier::OutOfRange);
             }
         }
         else if(begin_index != std::string::npos)

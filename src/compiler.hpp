@@ -382,11 +382,11 @@ private:
 
         loop_stack.emplace_back(LoopInfo { continue_ptr, break_ptr });
 
-        compile_command(annotation.set_var_to_zero, { get_arg(var), get_arg(*annotation.number_zero) });
+        compile_command(annotation.set_var_to_zero, { get_arg(var), get_arg(annotation.number_zero) });
         compile_label(loop_ptr);
         compile_statements(repeat_node.child(2));
         compile_label(continue_ptr);
-        compile_command(annotation.add_var_with_one, { get_arg(var), get_arg(*annotation.number_one) });
+        compile_command(annotation.add_var_with_one, { get_arg(var), get_arg(annotation.number_one) });
         compile_command(annotation.is_var_geq_times, { get_arg(var), get_arg(times) });
         compile_command(*this->commands.goto_if_false(), { loop_ptr });
         compile_label(break_ptr);
@@ -757,7 +757,7 @@ private:
     {
         auto& annotation = op_node.annotation<const IncDecAnnotation&>();
         auto& var = op_node.child(0);
-        compile_command(annotation.op_var_with_one, { get_arg(var), get_arg(*annotation.number_one) });
+        compile_command(annotation.op_var_with_one, { get_arg(var), get_arg(annotation.number_one) });
     }
 
     void compile_command(const SyntaxTree& command_node, bool not_flag = false)
@@ -867,6 +867,16 @@ private:
         }
 
         return args;
+    }
+
+    ArgVariant get_arg(const Commands::MatchArgument& a)
+    {
+        if(is<int32_t>(a))
+            return conv_int(get<int32_t>(a));
+        else if(is<float>(a))
+            return get<float>(a);
+        else
+            return get_arg(*get<const SyntaxTree*>(a));
     }
 
     ArgVariant get_arg(const SyntaxTree& arg_node)

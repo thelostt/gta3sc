@@ -6,15 +6,13 @@
 #include <rapidxml.hpp>
 #include <rapidxml_utils.hpp>
 
-// TODO every BadAlternator (which happens a lot because of argument matching)
-//      we throw a exception (which is costful) and we also build up a ProgramError object (also costful).
-//      Please improve this out.
-
 Commands::Commands(std::multimap<std::string, Command, iless> commands_,
+                   std::map<std::string, std::vector<const Command*>, iless> alternators_,
                    std::map<std::string, EntityType> entities_,
                    transparent_map<std::string, shared_ptr<Enum>> enums_)
 
-    : commands(std::move(commands_)), enums(std::move(enums_)), entities(std::move(entities_))
+    : commands(std::move(commands_)), alternators(std::move(alternators_)),
+      enums(std::move(enums_)), entities(std::move(entities_))
 {
     auto it_carpedmodel = this->enums.find("CARPEDMODEL");
     auto it_model       = this->enums.find("MODEL");
@@ -74,518 +72,6 @@ void Commands::add_default_models(const std::map<std::string, uint32_t, iless>& 
     }
 }
 
-static optional<VarAnnotation> find_var(const string_view& value, const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
-{
-    auto opt_token = Miss2Identifier::match(value);
-    if(opt_token)
-    {
-        auto& token = *opt_token;
-
-        if(auto opt_var = symbols.find_var(token.identifier, scope_ptr))
-        {
-            if(token.index == nullopt)
-            {
-                return VarAnnotation { *opt_var, nullopt };
-            }
-            else
-            {
-                using index_type = decltype(ArrayAnnotation::index);
-                if(is<size_t>(*token.index))
-                {
-                    auto& index = get<size_t>(*token.index);
-                    Expects(index > 0); // we'll convert from 1-based to 0-based index
-                    return VarAnnotation { *opt_var, index_type(index - 1) };
-                }
-                else
-                {
-                    auto& index = get<string_view>(*token.index);
-                    if(auto opt_varidx = symbols.find_var(index, scope_ptr))
-                    {
-                        return VarAnnotation { *opt_var, index_type(*opt_varidx) };
-                    }
-                    else if(auto opt_idx = commands.find_constant_all(index))
-                    {
-                        return VarAnnotation { *opt_var, index_type(*opt_idx) };
-                    }
-                }
-            }
-
-        }
-    }
-    return nullopt;
-}
-
-static void annotate_var(SyntaxTree& node, const VarAnnotation& annotation)
-{
-    Expects(annotation.base != nullptr);
-    if(annotation.index)
-    {
-        if(node.is_annotated())
-            Expects(node.maybe_annotation<const ArrayAnnotation&>());
-        else
-            node.set_annotation(ArrayAnnotation { annotation.base, *annotation.index });
-    }
-    else
-    {
-        if(node.is_annotated())
-            Expects(node.maybe_annotation<const shared_ptr<Var>&>());
-        else
-            node.set_annotation(annotation.base);
-    }
-}
-
-static void match_identifier_var(const shared_ptr<Var>& var, const Command::Arg& arg, const SymTable& symbols)
-{
-    bool is_good = false;
-
-    if((var->global && arg.allow_global_var) || (!var->global && arg.allow_local_var))
-    {
-        switch(var->type)
-        {
-            case VarType::Int:
-                is_good = (arg.type == ArgType::Integer || arg.type == ArgType::Constant || arg.type == ArgType::Param);
-                break;
-            case VarType::Float:
-                is_good = (arg.type == ArgType::Float || arg.type == ArgType::Param);
-                break;
-            case VarType::TextLabel:
-                is_good = (arg.type == ArgType::TextLabel || arg.type == ArgType::AnyTextLabel);
-                break;
-            case VarType::TextLabel16:
-                is_good = (arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel);
-                break;
-            default:
-                Unreachable();
-        }
-
-        if(is_good == false)
-            throw BadAlternator(nocontext, "type mismatch");
-    }
-    else
-        throw BadAlternator(nocontext, "kind of variable not allowed");
-}
-
-static bool match_var(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
-{
-    optional<string_view> var_ident;
-    bool force_var = false;
-
-    if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
-    {
-        bool allow_vars = (arg.allow_global_var || arg.allow_local_var);
-        if(arg.allow_constant && allow_vars)
-        {
-            if(node.text().size() && node.text().front() == '$')
-            {
-                var_ident = node.text().substr(1);
-                force_var = true;
-            }
-        }
-        else if(allow_vars)
-        {
-            var_ident = node.text();
-        }
-    }
-    else
-    {
-        var_ident = node.text();
-    }
-
-    if(var_ident != nullopt)
-    {
-        auto opt_token = Miss2Identifier::match(*var_ident);
-        if(opt_token)
-        {
-            auto& token = *opt_token;
-            auto opt_var = symbols.find_var(token.identifier, scope_ptr);
-
-            if(opt_var && token.index != nullopt)
-            {
-                if(!is<size_t>(*token.index))
-                {
-                    auto& index = get<string_view>(*token.index);
-
-                    if(auto opt_varidx = symbols.find_var(index, scope_ptr))
-                    {
-                        if((*opt_varidx)->type != VarType::Int)
-                            throw BadAlternator(node, "variable in index is not of INT type");
-                        if((*opt_varidx)->count)
-                            throw BadAlternator(node, "variable in index is of array type");
-                    }
-                    else if(commands.find_constant_all(index) == nullopt) // TODO -pedantic error
-                    {
-                        throw BadAlternator(node, "array index identifier is not a variable");
-                    }
-                }
-            }
-
-            if(opt_var)
-            {
-                try
-                {
-                    match_identifier_var(*opt_var, arg, symbols);
-                    return true; // var exists and matches arg type
-                }
-                catch(const BadAlternator& error)
-                {
-                    // var exists but arg type doesn't match var type
-                    throw BadAlternator(node, error);
-                }
-            }
-        }
-        else
-        {
-            throw BadAlternator(node, opt_token.error().c_str());
-        }
-    }
-
-    if(force_var)
-    {
-        throw BadAlternator(node, "variable does not exist");
-    }
-
-    return false; // var doesn't exist
-}
-
-static void match_identifier(const SyntaxTree& node, const Commands& commands, const Command::Arg& arg, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr)
-{
-    switch(arg.type)
-    {
-        case ArgType::Label:
-            if(!symbols.find_label(node.text()))
-                throw BadAlternator(node, "argument is not a LABEL");
-            break;
-
-        case ArgType::TextLabel:
-        case ArgType::TextLabel16:
-        case ArgType::AnyTextLabel:
-        {
-            if(match_var(node, commands, arg, symbols, scope_ptr))
-                break;
-
-            // If not a var ($), any identifier may be a text label literal.
-            if(arg.allow_constant)
-                break;
-
-            throw BadAlternator(node, "XXX");
-        }
-
-        case ArgType::Integer:
-        case ArgType::Float:
-        case ArgType::Param:
-        {
-            // Hack for streamed scripts (!!!)
-            // Before match is called, the node is manually annotated with the streamed script id.
-            if(node.maybe_annotation<const StreamedFileAnnotation&>())
-                break;
-
-            if(arg.allow_constant && arg.type != ArgType::Float)
-            {
-                if(commands.find_constant_for_arg(node.text(), arg))
-                    break;
-            }
-
-            if(match_var(node, commands, arg, symbols, scope_ptr))
-                break;
-
-            if(arg.uses_enum(commands.get_models_enum()))
-            {
-                // allow unknown models
-                break;
-            }
-
-            throw BadAlternator(node, "XXX");
-        }
-        case ArgType::Constant:
-        {
-            if(commands.find_constant_all(node.text()))
-                break;
-
-            throw BadAlternator(node, "XXX");
-        }
-
-        default:
-            Unreachable();
-    }
-}
-
-template<typename Iter> static
-const Command& match_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
-    Commands::alternator_pair alternator_range, Iter begin, Iter end) // Iter should meet SyntaxTree** requiriments
-{
-    int TMP_bad_alter_id = -1;
-    auto num_target_args = (size_t)std::distance(begin, end);
-
-    for(auto it = alternator_range.first; it != alternator_range.second; ++it)
-    {
-        const Command& alternative = it->second;
-
-        bool is_optional = false;
-        size_t args_readen = 0;
-
-        auto it_alter_arg = alternative.args.begin();
-        auto it_target_arg = begin; // SyntaxTree
-
-        for(; ;
-        (it_alter_arg->optional? it_alter_arg : ++it_alter_arg),
-            ++it_target_arg,
-            ++args_readen)
-        {
-            assert(args_readen <= num_target_args);
-
-            if(args_readen < num_target_args)
-            {
-                if(it_alter_arg == alternative.args.end())
-                    break; // too many args on target
-            }
-            else // end of arguments
-            {
-                if(it_alter_arg == alternative.args.end() || it_alter_arg->optional)
-                    return alternative;
-                else
-                    break; // too few args on target
-            }
-
-            bool bad_alternative = false;
-
-            switch((*it_target_arg)->type())
-            {
-                case NodeType::Integer:
-                    bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::Integer) && it_alter_arg->allow_constant);
-                    break;
-                case NodeType::Float:
-                    bad_alternative = !(argtype_matches(it_alter_arg->type, ArgType::Float) && it_alter_arg->allow_constant);
-                    break;
-                case NodeType::Identifier:
-                    try
-                    {
-                        match_identifier(**it_target_arg, commands, *it_alter_arg, symbols, scope_ptr);
-                    }
-                    catch(const BadAlternator&)
-                    {
-                        bad_alternative = true;
-                    }
-                    break;
-                case NodeType::String:
-                    // SAVE_STRING_TO_DEBUG_FILE(ArgType::Buffer32) implemented manually.
-                    //program.error(*it_target_arg, "string literal only allowed for SAVE_STRING_TO_DEBUG_FILE");
-                    bad_alternative = true;
-                    break;
-                default:
-                    Unreachable();
-            }
-
-            if(bad_alternative)
-            {
-                TMP_bad_alter_id = (int)args_readen;
-                break; // try another alternative
-            }
-        }
-    }
-
-    TMP_bad_alter_id = TMP_bad_alter_id < 0? 0 : TMP_bad_alter_id;
-    if(begin != end) // TODO improve context
-        throw BadAlternator(**(begin + TMP_bad_alter_id), "XXX BAD ALTERNATOR, GIVE ME A ERROR MESSAGE");
-    else
-        throw BadAlternator(nocontext, "XXX BAD ALTERNATOR, GIVE ME A ERROR MESSAGE");
-}
-
-template<typename Iter> static
-void annotate_internal(const Commands& commands, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script, ProgramContext& program,
-    const Command& command, Iter begin, Iter end)
-{
-    size_t i = 0;
-
-    // Expects all command_args (begin,end) matches command.args
-
-    for(auto it = begin; it != end; ++it)
-    {
-        auto& arg = command.args[i];
-        if(!arg.optional) ++i;
-
-        SyntaxTree& arg_node = **it;
-
-        switch((*it)->type())
-        {
-            case NodeType::Integer:
-            {
-                if(arg_node.is_annotated())
-                    Expects(arg_node.maybe_annotation<const int32_t&>());
-                else
-                    arg_node.set_annotation(static_cast<int32_t>(std::stoi(arg_node.text().to_string(), nullptr, 0)));
-                break;
-            }
-
-            case NodeType::Float:
-            {
-                if(arg_node.is_annotated())
-                    Expects(arg_node.maybe_annotation<const float&>());
-                else
-                    arg_node.set_annotation(std::stof(arg_node.text().to_string()));
-                break;
-            }
-
-            case NodeType::String:
-            {
-                // SAVE_STRING_TO_DEBUG_FILE(ArgType::Buffer32) implemented manually.
-                Unreachable();
-                break;
-            }
-
-            case NodeType::Identifier:
-            {
-                if(arg_node.maybe_annotation<const StreamedFileAnnotation&>())
-                {
-                    // hack for streamed script filenames instead of int value
-                    // do nothing
-                }
-                else if(arg.type == ArgType::Label)
-                {
-                    if(arg_node.is_annotated())
-                        Expects(arg_node.maybe_annotation<const shared_ptr<Label>&>());
-                    else
-                    {
-                        shared_ptr<Label> label_ptr = symbols.find_label(arg_node.text()).value();
-                        arg_node.set_annotation(label_ptr);
-                    }
-                }
-                else if(arg.type == ArgType::TextLabel || arg.type == ArgType::TextLabel16 || arg.type == ArgType::AnyTextLabel)
-                {
-                    optional<VarAnnotation> var_to_use;
-
-                    if(arg.allow_global_var || arg.allow_local_var)
-                    {
-                        optional<string_view> var_ident;
-
-                        if(arg.allow_constant)
-                        {
-                            if(arg_node.text().size() && arg_node.text().front() == '$')
-                                var_ident.emplace(arg_node.text().substr(1));
-                        }
-                        else
-                        {
-                            var_ident.emplace(arg_node.text());
-                        }
-
-                        if(var_ident != nullopt)
-                        {
-                            var_to_use = find_var(*var_ident, commands, symbols, scope_ptr);
-                        }
-                    }
-
-                    if(var_to_use)
-                    {
-                        annotate_var(arg_node, *var_to_use);
-                    }
-                    else if(arg.allow_constant)
-                    {
-                        if(arg_node.is_annotated())
-                            Expects(arg_node.maybe_annotation<const TextLabelAnnotation&>());
-                        else
-                        {
-                            size_t text_limit = arg.type == ArgType::TextLabel?    7 :
-                                                arg.type == ArgType::TextLabel16?  15 :
-                                                arg.type == ArgType::AnyTextLabel? 127 : Unreachable();
-
-                            if(arg_node.text().size() > text_limit)
-                            {
-                                program.error(arg_node, "identifier is too long, maximum size is {}", text_limit);
-                            }
-
-                            arg_node.set_annotation(TextLabelAnnotation { arg.type != ArgType::TextLabel, arg_node.text().to_string() });
-                        }
-                    }
-                    else
-                        Unreachable();
-                }
-                else if(arg.type == ArgType::Integer || arg.type == ArgType::Float || arg.type == ArgType::Constant || arg.type == ArgType::Param)
-                {
-                    if(auto opt_const = commands.find_constant_for_arg(arg_node.text(), arg))
-                    {
-                        if(arg_node.is_annotated())
-                            Expects(arg_node.maybe_annotation<const int32_t&>());
-                        else
-                            arg_node.set_annotation(*opt_const);
-                    }
-                    else
-                    {
-                        bool is_model_enum = arg.uses_enum(commands.get_models_enum());
-                        bool avoid_var = is_model_enum && program.is_model_from_ide(arg_node.text());
-                        // TODO VC miss2 doesn't allow models and vars with same name?
-
-                        if(auto opt_var = !avoid_var? find_var(arg_node.text(), commands, symbols, scope_ptr) : nullopt)
-                        {
-                             bool was_annotated = arg_node.is_annotated();
-                             annotate_var(arg_node, *opt_var);
-                             if(!was_annotated) // i.e. do this only once
-                             {
-                                script.process_entity_type(arg_node, arg.entity_type, !arg.allow_constant, program);
-                                // TODO arg.out instead of !arg.allow_constant ^
-                            }
-                        }
-                        else if(is_model_enum)
-                        {
-                            if(arg_node.is_annotated())
-                                Expects(arg_node.maybe_annotation<const ModelAnnotation&>());
-                            else
-                            {
-                                auto index = script.add_or_find_model(arg_node.text());
-                                assert(index >= 0); // at first we don't use a negative based indice, that is changed later before the compilation step.
-                                arg_node.set_annotation(ModelAnnotation{ script.shared_from_this(), uint32_t(index) });
-                            }
-                        }
-                        else
-                            Unreachable();
-                    }
-                }
-                else
-                {
-                    Unreachable();
-                }
-                break;
-            }
-
-            default:
-                Unreachable();
-        }
-    }
-
-    // TODO would be quicker (and more pedantic!) if we checked equality with the following SET operations:
-    //   SET_VAR_INT_TO_VAR_INT, SET_LVAR_INT_TO_LVAR_INT, SET_VAR_INT_TO_LVAR_INT, SET_LVAR_INT_TO_VAR_INT
-    if(program.opt.entity_tracking
-    && commands.is_alternator(command, commands.set())
-    && std::distance(begin, end) == 2)
-    {
-        script.assign_entity_type(**begin, **std::next(begin), program);
-    }
-}
-
-////////
-
-const Command& Commands::match(const SyntaxTree& command_node, const SymTable& symbols, const shared_ptr<Scope>& scope_ptr) const
-{
-    auto alternator_range = commands.equal_range(command_node.child(0).text());
-    return ::match_internal(*this, symbols, scope_ptr, alternator_range, command_node.begin() + 1, command_node.end());
-}
-
-const Command& Commands::match_internal(const SymTable& symbols, const shared_ptr<Scope>& scope_ptr,
-    alternator_pair alternator_range, const SyntaxTree** begin, const SyntaxTree** end) const
-{
-    return ::match_internal(*this, symbols, scope_ptr, alternator_range, begin, end);
-}
-
-void Commands::annotate(SyntaxTree& command_node, const Command& command,
-    const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script, ProgramContext& program) const
-{
-    return ::annotate_internal(*this, symbols, scope_ptr, script, program, command, command_node.begin() + 1, command_node.end());
-}
-
-void Commands::annotate_internal(const SymTable& symbols, const shared_ptr<Scope>& scope_ptr, Script& script, ProgramContext& program,
-    const Command& command, SyntaxTree** begin, SyntaxTree** end) const
-{
-    return ::annotate_internal(*this, symbols, scope_ptr, script, program, command, begin, end);
-}
-
 optional<int32_t> Commands::find_constant(const string_view& value, bool context_free_only) const
 {
     // TODO mayyybe speed up this? we didn't profile or anything.
@@ -640,6 +126,553 @@ optional<int32_t> Commands::find_constant_for_arg(const string_view& value, cons
     }
 
     return nullopt;
+}
+
+//////////////
+
+using MatchFailure = Commands::MatchFailure;
+
+struct TagVar
+{
+    string_view ident;
+};
+
+static auto maybe_var_identifier(const string_view& ident, const Command::Arg& arginfo) -> optional<std::pair<string_view, bool>>
+{
+    if(arginfo.type != ArgType::TextLabel && arginfo.type != ArgType::TextLabel16 && arginfo.type != ArgType::AnyTextLabel)
+    {
+        return std::make_pair(ident, false);
+    }
+    else // TextLabel
+    {
+        if(arginfo.allow_global_var || arginfo.allow_local_var)
+        {
+            if(!arginfo.allow_constant)
+                return std::make_pair(ident, false);
+            else if(ident.size() && ident.front() == '$')
+                return std::make_pair(ident.substr(1), true);
+        }
+        return nullopt;
+    }
+}
+
+template<typename T>
+static auto args_from_tree(const SyntaxTree& cmdnode) -> T
+{
+    T output;
+    output.reserve(cmdnode.child_count() - 1);
+
+    for(auto it = std::next(cmdnode.begin()); it != cmdnode.end(); ++it)
+        output.emplace_back(it->get());
+
+    return output;
+}
+
+static auto hint_from(optional<const SyntaxTree&> cmdnode) -> shared_ptr<const SyntaxTree>
+{
+    return cmdnode? cmdnode->shared_from_this() : nullptr;
+}
+
+static auto hint_from(optional<const SyntaxTree&> cmdnode, const Commands::MatchArgumentList::value_type& arg) -> shared_ptr<const SyntaxTree>
+{
+    if(is<const SyntaxTree*>(arg))
+        return get<const SyntaxTree*>(arg)->shared_from_this();
+    return hint_from(cmdnode);
+}
+
+static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
+                      int32_t arg, const Command::Arg& arginfo,
+                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+{
+    if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Param)
+        return &arginfo;
+    return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedInt });
+}
+
+static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
+                      float arg, const Command::Arg& arginfo,
+                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+{
+    if(arginfo.type == ArgType::Float || arginfo.type == ArgType::Param)
+        return &arginfo;
+    return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedFloat });
+}
+
+static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
+                      const TagVar& arg, const Command::Arg& arginfo,
+                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+{
+    auto var_matches = [](const shared_ptr<Var>& var, const Command::Arg& arginfo) -> bool
+    {
+        switch(var->type)
+        {
+            case VarType::Int:
+                return (arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param);
+            case VarType::Float:
+                return (arginfo.type == ArgType::Float || arginfo.type == ArgType::Param);
+            case VarType::TextLabel:
+                return (arginfo.type == ArgType::TextLabel || arginfo.type == ArgType::AnyTextLabel);
+            case VarType::TextLabel16:
+                return (arginfo.type == ArgType::TextLabel16 || arginfo.type == ArgType::AnyTextLabel);
+            default:
+                Unreachable();
+        }
+    };
+
+    if(auto var_ident = maybe_var_identifier(arg.ident, arginfo))
+    {
+        auto opt_token = Miss2Identifier::match(var_ident->first);
+        if(!opt_token)
+        {
+            switch(opt_token.error())
+            {
+                case Miss2Identifier::NestingOfArrays:  return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexNesting });
+                case Miss2Identifier::NegativeIndex:    return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexNegative });
+                case Miss2Identifier::ZeroIndex:        return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexZero });
+                case Miss2Identifier::OutOfRange:       return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexOutOfRange });
+                default:                                Unreachable();
+            }
+        }
+
+        auto& token = *opt_token;
+        if(auto opt_var = symtable.find_var(token.identifier, scope_ptr))
+        {
+            if(token.index != nullopt && !is<size_t>(*token.index))
+            {
+                auto& index = get<string_view>(*token.index);
+                if(auto opt_varidx = symtable.find_var(index, scope_ptr))
+                {
+                    if((*opt_varidx)->type != VarType::Int)
+                        return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexNotInt });
+                    if((*opt_varidx)->count)
+                        return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexIsArray });
+                }
+                else if(commands.find_constant_all(index) == nullopt) // TODO -pedantic error
+                {
+                    return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexNotVar });
+                }
+            }
+
+            auto& var = *opt_var;
+            if(!(arginfo.allow_global_var && var->global) && !(arginfo.allow_local_var && !var->global))
+            {
+                return make_unexpected(MatchFailure{ hint, MatchFailure::VariableKindNotAllowed });
+            }
+
+            if(!var_matches(var, arginfo))
+                return make_unexpected(MatchFailure{ hint, MatchFailure::VariableTypeMismatch });
+
+            return &arginfo;
+        }
+        else if(var_ident->second) // var not found, but required to find one?
+        {
+            return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedVar });
+        }
+    }
+
+    return make_unexpected(MatchFailure{ hint, MatchFailure::NoSuchVar });
+}
+
+static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
+                      string_view ident, const Command::Arg& arginfo,
+                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+{
+    switch(arginfo.type)
+    {
+        case ArgType::Label:
+            if(symtable.find_label(ident))
+                return &arginfo;
+            else
+                return make_unexpected(MatchFailure { hint, MatchFailure::ExpectedLabel });
+
+        case ArgType::Constant:
+            if(commands.find_constant_all(ident))
+                return &arginfo;
+            else
+                return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedConstant });
+
+        case ArgType::TextLabel:
+        case ArgType::TextLabel16:
+        case ArgType::AnyTextLabel:
+        {
+            auto exp_var = match_arg(commands, hint, TagVar { ident }, arginfo, symtable, scope_ptr);
+            if(exp_var || exp_var.error().reason != MatchFailure::NoSuchVar)
+                return exp_var;
+            else if(arginfo.allow_constant)
+                return &arginfo;
+            else
+                return make_unexpected(MatchFailure{ hint, MatchFailure::BadArgument });
+        }
+
+        case ArgType::Integer:
+        case ArgType::Float:
+        case ArgType::Param:
+        {
+            // HACK HACK HACK
+            if(hint && hint->maybe_annotation<const StreamedFileAnnotation&>())
+                return &arginfo;
+
+            if(arginfo.allow_constant && arginfo.type != ArgType::Float)
+            {
+                if(commands.find_constant_for_arg(ident, arginfo))
+                    return &arginfo;
+            }
+
+            auto exp_var = match_arg(commands, hint, TagVar { ident }, arginfo, symtable, scope_ptr);
+            if(exp_var || exp_var.error().reason != MatchFailure::NoSuchVar)
+                return exp_var;
+            else if(arginfo.uses_enum(commands.get_models_enum())) // allow unknown models
+                return &arginfo;
+            else
+                return make_unexpected(MatchFailure{ hint, MatchFailure::BadArgument });
+        }
+
+        default:
+            Unreachable();
+    }
+}
+
+static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
+                      const SyntaxTree& arg, const Command::Arg& arginfo,
+                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+{
+    switch(arg.type())
+    {
+        case NodeType::Integer:
+            return match_arg(commands, hint, 0, arginfo, symtable, scope_ptr);
+        case NodeType::Float:
+            return match_arg(commands, hint, 0.0f, arginfo, symtable, scope_ptr);
+        case NodeType::Identifier:
+            return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr);
+        case NodeType::String:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::StringLiteralNotAllowed });
+        default:
+            Unreachable();
+    }
+}
+
+auto Commands::match(const SyntaxTree& cmdnode, const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+{
+    auto command_name = cmdnode.child(0).text();
+
+    if(auto opt_alternator = this->find_alternator(command_name))
+    {
+        return this->match(*opt_alternator, cmdnode, symtable, scope_ptr);
+    }
+    else if(auto opt_command = this->find_command(command_name))
+    {
+        return this->match(*opt_command, cmdnode, symtable, scope_ptr);
+    }
+    else
+    {
+        return make_unexpected(MatchFailure { cmdnode.shared_from_this(), MatchFailure::NoCommandMatch });
+    }
+}
+
+auto Commands::match(const Alternator& alternator, const SyntaxTree& cmdnode,
+                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+{
+    return this->match(alternator, cmdnode, args_from_tree<MatchArgumentList>(cmdnode), symtable, scope_ptr);
+}
+
+auto Commands::match(const Command& command, const SyntaxTree& cmdnode,
+                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+{
+    return this->match(command, cmdnode, args_from_tree<MatchArgumentList>(cmdnode), symtable, scope_ptr);
+}
+
+auto Commands::match(const Alternator& alternator, optional<const SyntaxTree&> cmdnode, const MatchArgumentList& args,
+                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+{
+    for(auto& cmd : alternator)
+    {
+        if(auto opt_command = this->match(*cmd, cmdnode, args, symtable, scope_ptr))
+            return opt_command;
+    }
+    return make_unexpected(MatchFailure { hint_from(cmdnode), MatchFailure::NoAlternativeMatch });
+}
+
+auto Commands::match(const Command& command, optional<const SyntaxTree&> cmdnode, const MatchArgumentList& args,
+                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+{
+    size_t i = 0;
+    expected<const Command::Arg*, MatchFailure> exp_arg;
+    for(auto it = args.begin(); it != args.end(); ++it, ++i)
+    {
+        if(auto arginfo = command.arg(i))
+        {
+            if(is<int32_t>(*it))
+                exp_arg = match_arg(*this, hint_from(cmdnode, *it), 0, *arginfo, symtable, scope_ptr);
+            else if(is<float>(*it))
+                exp_arg = match_arg(*this, hint_from(cmdnode, *it), 0.0f, *arginfo, symtable, scope_ptr);
+            else // is<const SyntaxTree*>
+                exp_arg = match_arg(*this, hint_from(cmdnode, *it), *get<const SyntaxTree*>(*it), *arginfo, symtable, scope_ptr);
+
+            if(!exp_arg)
+            {
+                return make_unexpected(std::move(exp_arg.error()));
+            }
+        }
+        else
+        {
+            return make_unexpected(MatchFailure{ hint_from(cmdnode, *it), MatchFailure::TooManyArgs });
+        }
+    }
+
+    if(i < command.minimum_args())
+        return make_unexpected(MatchFailure{ hint_from(cmdnode), MatchFailure::TooFewArgs });
+
+    return &command;
+}
+
+void Commands::annotate(SyntaxTree& cmdnode, const Command& command,
+                        const SymTable& symtable, const shared_ptr<Scope>& scope_ptr,
+                        Script& script, ProgramContext& program) const
+{
+    return this->annotate(args_from_tree<AnnotateArgumentList>(cmdnode), command, symtable, scope_ptr, script, program);
+}
+
+void Commands::annotate(const AnnotateArgumentList& args, const Command& command,
+                        const SymTable& symtable, const shared_ptr<Scope>& scope_ptr,
+                        Script& script, ProgramContext& program) const
+{
+    // Expects all args to match command.args!
+
+    auto find_var = [&](const string_view& value) -> optional<VarAnnotation>
+    {
+        auto opt_token = Miss2Identifier::match(value);
+        if(!opt_token)
+            return nullopt;
+
+        auto& token = *opt_token;
+        if(auto opt_var = symtable.find_var(token.identifier, scope_ptr))
+        {
+            using index_type = decltype(ArrayAnnotation::index);
+            if(token.index == nullopt)
+            {
+                return VarAnnotation{ *opt_var, nullopt };
+            }
+            else if(is<size_t>(*token.index))
+            {
+                auto& index = get<size_t>(*token.index);
+                Expects(index > 0);
+                return VarAnnotation{ *opt_var, index_type(index - 1) };
+            }
+            else
+            {
+                auto& index = get<string_view>(*token.index);
+                if(auto opt_varidx = symtable.find_var(index, scope_ptr))
+                {
+                    return VarAnnotation{ *opt_var, index_type(*opt_varidx) };
+                }
+                else if(auto opt_idx = this->find_constant_all(index))
+                {
+                    return VarAnnotation{ *opt_var, index_type(*opt_idx) };
+                }
+            }
+        }
+
+        return nullopt;
+    };
+
+    // TODO maybe start using VarAnnotation directly instead of converting to shared_ptr<Var>
+    // Think of implications of this, such as the `any` type stack size.
+    auto annotate_var = [](SyntaxTree& node, const VarAnnotation& annotation)
+    {
+        Expects(annotation.base != nullptr);
+        if(annotation.index)
+        {
+            if(node.is_annotated())
+                Expects(node.maybe_annotation<const ArrayAnnotation&>());
+            else
+                node.set_annotation(ArrayAnnotation{ annotation.base, *annotation.index });
+        }
+        else
+        {
+            if(node.is_annotated())
+                Expects(node.maybe_annotation<const shared_ptr<Var>&>());
+            else
+                node.set_annotation(annotation.base);
+        }
+    };
+
+    size_t i = 0;
+    for(auto it = args.begin(); it != args.end(); ++it, ++i)
+    {
+        if(is<nullopt_t>(*it))
+            continue;
+
+        auto& node = *get<SyntaxTree*>(*it);
+        auto& arginfo = *command.arg(i);
+
+        switch(node.type())
+        {
+            case NodeType::Integer:
+            {
+                if(node.is_annotated())
+                    Expects(node.maybe_annotation<const int32_t&>());
+                else
+                    node.set_annotation(static_cast<int32_t>(std::stoi(node.text().to_string(), nullptr, 0)));
+                break;
+            }
+
+            case NodeType::Float:
+            {
+                if(node.is_annotated())
+                    Expects(node.maybe_annotation<const float&>());
+                else
+                    node.set_annotation(std::stof(node.text().to_string()));
+                break;
+            }
+
+            case NodeType::String:
+            {
+                // TODO, currently Unreachable() due to special handling of it.
+                break;
+            }
+
+            case NodeType::Identifier:
+            {
+                if(node.maybe_annotation<const StreamedFileAnnotation&>())
+                {
+                    // hack for streamed script filenames instead of int value, do nothing
+                }
+                else if(arginfo.type == ArgType::Label)
+                {
+                    if(node.is_annotated())
+                        Expects(node.maybe_annotation<const shared_ptr<Label>&>());
+                    else
+                        node.set_annotation(symtable.find_label(node.text()).value());
+                }
+                else if(arginfo.type == ArgType::TextLabel
+                     || arginfo.type == ArgType::TextLabel16
+                     || arginfo.type == ArgType::AnyTextLabel)
+                {
+                    if(auto opt_match = maybe_var_identifier(node.text(), arginfo))
+                    {
+                        if(auto opt_var = find_var(opt_match->first))
+                        {
+                            annotate_var(node, *opt_var);
+                            break;
+                        }
+                    }
+
+                    if(arginfo.allow_constant)
+                    {
+                        if(node.is_annotated())
+                            Expects(node.maybe_annotation<const TextLabelAnnotation&>());
+                        else
+                        {
+                            size_t limit = arginfo.type == ArgType::TextLabel?    7 :
+                                           arginfo.type == ArgType::TextLabel16?  15 :
+                                           arginfo.type == ArgType::AnyTextLabel? 127 : Unreachable();
+
+                            if(node.text().size() > limit)
+                                program.error(node, "identifier is too long, maximum size is {}", limit);
+                            else
+                                node.set_annotation(TextLabelAnnotation { arginfo.type != ArgType::TextLabel, node.text().to_string() });
+                        }
+                        break;
+                    }
+
+                    Unreachable();
+                }
+                else if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Float
+                     || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param)
+                {
+                    if(auto opt_const = this->find_constant_for_arg(node.text(), arginfo))
+                    {
+                        if(node.is_annotated())
+                            Expects(node.maybe_annotation<const int32_t&>());
+                        else
+                            node.set_annotation(*opt_const);
+                        break;
+                    }
+
+                    bool is_model_enum = arginfo.uses_enum(this->get_models_enum());
+                    // TODO VC miss2 doesn't allow models and vars with same name?
+
+                    if(!is_model_enum || !program.is_model_from_ide(node.text()))
+                    {
+                        if(auto opt_var = find_var(node.text()))
+                        {
+                            bool was_annotated = node.is_annotated();
+                            annotate_var(node, *opt_var);
+                            if(!was_annotated) // i.e. do this only once
+                            {
+                                script.process_entity_type(node, arginfo.entity_type, !arginfo.allow_constant, program);
+                                // TODO arginfo.out instead of !arginfo.allow_constant ^
+                            }
+                            break;
+                        }
+                    }
+
+                    if(is_model_enum)
+                    {
+                        if(node.is_annotated())
+                            Expects(node.maybe_annotation<const ModelAnnotation&>());
+                        else
+                        {
+                            auto index = script.add_or_find_model(node.text());
+                            assert(index >= 0);
+                            node.set_annotation(ModelAnnotation{ script.shared_from_this(), uint32_t(index) });
+                        }
+                        break;
+                    }
+                    
+                    Unreachable();
+                }
+                else
+                {
+                    Unreachable();
+                }
+                break;
+            }
+
+            default:
+                Unreachable();
+        }
+    }
+
+    Ensures(i >= command.minimum_args());
+}
+
+void Commands::MatchFailure::emit(ProgramContext& program)
+{
+    auto message = this->to_string();
+    if(this->context)
+        program.error(*this->context, message.c_str());
+    else
+        program.error(nocontext, message.c_str());
+}
+
+std::string Commands::MatchFailure::to_string()
+{
+    switch(this->reason)
+    {
+        case NoCommandMatch:            return "unknown command";
+        case NoAlternativeMatch:        return "could not match alternative";
+        case TooManyArgs:               return "too many arguments";
+        case TooFewArgs:                return "too few arguments";
+        case BadArgument:               return "bad argument";
+        case ExpectedInt:               return "expected integer";
+        case ExpectedFloat:             return "expected float";
+        case ExpectedLabel:             return "expected label";
+        case ExpectedConstant:          return "expected constant";
+        case ExpectedVar:               return "expected variable";
+        case NoSuchVar:                 return "variable does not exist";
+        case IdentifierIndexNesting:    return ::to_string(Miss2Identifier::NestingOfArrays);
+        case IdentifierIndexNegative:   return ::to_string(Miss2Identifier::NegativeIndex);
+        case IdentifierIndexZero:       return ::to_string(Miss2Identifier::ZeroIndex);
+        case IdentifierIndexOutOfRange: return ::to_string(Miss2Identifier::OutOfRange);
+        case VariableIndexNotInt:       return "variable in index is not of INT type";
+        case VariableIndexNotVar:       return "identifier between brackets is not a variable";
+        case VariableIndexIsArray:      return "variable in index is of array type";
+        case VariableKindNotAllowed:    return "variable kind (global/local) not allowed for this argument";
+        case VariableTypeMismatch:      return "variable type does not match argument type";
+        case StringLiteralNotAllowed:   return "STRING literal not allowed here";
+        default:                        Unreachable();
+    }
 }
 
 /////////////
@@ -823,13 +856,43 @@ static std::pair<std::string, Command>
     };
 }
 
+static std::pair<std::string, std::vector<const Command*>>
+  parse_alternator_node(
+      const rapidxml::xml_node<>* alt_node,
+      const std::multimap<std::string, Command, iless>& commands)
+{
+    using namespace rapidxml;
+
+    std::vector<const Command*> alternatives;
+
+    xml_attribute<>* name_attrib = alt_node->first_attribute("Name");
+
+    if(!name_attrib)
+        throw ConfigError("missing 'Name' attribute on '<Alternator>' node");
+
+    for(auto node = alt_node->first_node(); node; node = node->next_sibling())
+    {
+        xml_attribute<>* attrib = node->first_attribute("Name");
+
+        if(!attrib)
+            throw ConfigError("missing 'Name' attribute on '<Alternator> -> <Command>' node");
+
+        auto it = commands.find(attrib->value());
+        if(it != commands.end())
+            alternatives.emplace_back(std::addressof(it->second));
+    }
+
+    return { name_attrib->value(), std::move(alternatives) };
+}
+
 Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
 {
     using namespace rapidxml;
 
     // Order by priority (which should be read first).
-    constexpr int XML_SECTION_CONSTANTS = 1;
-    constexpr int XML_SECTION_COMMANDS  = 2;
+    constexpr int XML_SECTION_CONSTANTS   = 1;
+    constexpr int XML_SECTION_COMMANDS    = 2;
+    constexpr int XML_SECTION_ALTERNATORS = 3;
 
     struct XmlData
     {
@@ -840,9 +903,10 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
     std::vector<XmlData> xml_vector;
     std::vector<std::pair<int, xml_node<>*>> xml_sections;
 
-    std::multimap<std::string, Command, iless>     commands;
-    std::map<std::string, EntityType>              entities;
-    transparent_map<std::string, shared_ptr<Enum>> enums;
+    std::multimap<std::string, Command, iless>                  commands;
+    std::map<std::string, std::vector<const Command*>, iless>   alternators;
+    std::map<std::string, EntityType>                           entities;
+    transparent_map<std::string, shared_ptr<Enum>>              enums;
 
     // fundamental enums
     enums.emplace("MODEL", std::make_shared<Enum>(Enum { {}, false, }));
@@ -888,6 +952,10 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
                 {
                     xml_sections.emplace_back(XML_SECTION_CONSTANTS, node);
                 }
+                else if(!strcmp(node->name(), "Alternators"))
+                {
+                    xml_sections.emplace_back(XML_SECTION_ALTERNATORS, node);
+                }
             }
         }
     }
@@ -920,7 +988,18 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
                 }
             }
         }
+        else if(section_pair.first == XML_SECTION_ALTERNATORS)
+        {
+            for(auto alt_node = node->first_node(); alt_node; alt_node = alt_node->next_sibling())
+            {
+                if(!strcmp(alt_node->name(), "Alternator"))
+                {
+                    auto alt_pair = parse_alternator_node(alt_node, commands);
+                    alternators.emplace(std::move(alt_pair));
+                }
+            }
+        }
     }
 
-    return Commands(std::move(commands), std::move(entities), std::move(enums));
+    return Commands(std::move(commands), std::move(alternators), std::move(entities), std::move(enums));
 }

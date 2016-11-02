@@ -1,9 +1,9 @@
 // RUN: %gta3sc %s --config=gtasa --guesser -emit-ir2 | %FileCheck %s
 
 {
-    // CHECK-L: SET 32@ 1i8
+    // CHECK-L: SET_LVAR_INT 32@ 1i8
     timera = 1
-    // CHECK-L: SET 33@ 2i8
+    // CHECK-L: SET_LVAR_INT 33@ 2i8
     timerb = 2
 }
 
