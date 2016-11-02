@@ -1,10 +1,7 @@
 from lxml import objectify
 from lxml import etree
 
-def is_arithmetic(op):
-    return (op >= 0x4 and op <= 0x4B) or (op >= 0x58 and op <= 0x97) or\
-           (op >= 0x4a3 and op <= 0x4a4) or (op >= 0x4ae and op <= 0x4b7) or\
-           (op >= 1457 and op <= 1467)
+__all__ = ['Command', 'Argument', 'commands_from_xml', 'commands_to_xml']
 
 class Command:
     def __init__(self):
@@ -19,6 +16,10 @@ class Command:
                self.supported == other.supported and\
                self.args == other.args
 
+    def same_behaviour(self, other):
+        if self.id == other.id and len(self.args) == len(other.args):
+            return all(a.same_behaviour(b) for a,b in zip(self.args, other.args))
+        return False
 
     def has_optional(self):
         return len(self.args) > 0 and self.args[-1].optional == True
@@ -56,10 +57,16 @@ class Argument:
         self.allow_gvar = False
         self.allow_lvar = False
         self.entity = None
-        self.enums = None
+        self.enums = []
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
+
+    def same_behaviour(self, other):
+        return self.type == other.type and\
+               self.out == other.out and\
+               self.ref == other.ref and\
+               self.optional == other.optional
 
     def init_from_node(self, a):
         self.type = a.get("Type")
@@ -71,8 +78,7 @@ class Argument:
         self.allow_gvar = str2bool(a.get("AllowGlobalVar", "true"))
         self.allow_lvar = str2bool(a.get("AllowLocalVar", "true"))
         self.entity = a.get("Entity", None)
-        self.enums = a.get("Enum", None)
-        self.enums = [self.enums] if self.enums else []
+        self.enums = a.get("Enum", [])
         
     def to_node(self):
         node = etree.Element("Arg", Type=self.type)
@@ -120,8 +126,6 @@ def commands_to_xml(filename, commands, pretty_print=True):
             pretty_print=pretty_print,
             encoding="utf-8",
             xml_declaration=True))
-
-
 
 #
 # Internal

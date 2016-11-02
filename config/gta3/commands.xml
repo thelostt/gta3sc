@@ -1096,28 +1096,28 @@
     </Command>
     <Command ID="0xba" Name="PRINT_BIG">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Desc="Time (ms)" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0xbb" Name="PRINT">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Desc="Time (ms)" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0xbc" Name="PRINT_NOW">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Desc="Time (ms)" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0xbd" Name="PRINT_SOON">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
@@ -1758,7 +1758,7 @@
     <Command ID="0x121" Name="IS_PLAYER_IN_ZONE">
       <Args>
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
-        <Arg Type="TEXT_LABEL" Desc="Area name" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="Area name"/>
       </Args>
     </Command>
     <Command ID="0x122" Name="IS_PLAYER_PRESSING_HORN">
@@ -2036,7 +2036,7 @@
     </Command>
     <Command ID="0x14d" Name="ADD_PAGER_MESSAGE">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
@@ -2065,7 +2065,7 @@
     </Command>
     <Command ID="0x152" Name="SETUP_ZONE_CAR_INFO">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -2093,19 +2093,19 @@
     <Command ID="0x154" Name="IS_CHAR_IN_ZONE">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
-        <Arg Type="TEXT_LABEL" Desc="Area name" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="Area name"/>
       </Args>
     </Command>
     <Command ID="0x155" Name="SET_CAR_DENSITY">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x156" Name="SET_PED_DENSITY">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
       </Args>
@@ -2141,7 +2141,7 @@
     </Command>
     <Command ID="0x15c" Name="SETUP_ZONE_PED_INFO">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="Area name" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="Area name"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -2374,7 +2374,7 @@
     </Command>
     <Command ID="0x17d" Name="LOAD_CAMERA_SPLINE" Supported="false">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x17e" Name="MOVE_CAMERA_ALONG_SPLINE" Supported="false">
@@ -3118,7 +3118,7 @@
     </Command>
     <Command ID="0x1e3" Name="PRINT_WITH_NUMBER_BIG">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
@@ -3126,7 +3126,7 @@
     </Command>
     <Command ID="0x1e4" Name="PRINT_WITH_NUMBER">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
@@ -3134,7 +3134,7 @@
     </Command>
     <Command ID="0x1e5" Name="PRINT_WITH_NUMBER_NOW">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
@@ -3142,7 +3142,7 @@
     </Command>
     <Command ID="0x1e6" Name="PRINT_WITH_NUMBER_SOON" Supported="false">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -3246,7 +3246,7 @@
     </Command>
     <Command ID="0x1f8" Name="ADD_PAGER_MESSAGE_WITH_NUMBER">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -3255,7 +3255,7 @@
     </Command>
     <Command ID="0x1f9" Name="START_KILL_FRENZY">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Desc="Weapon ID" Enum="WEAPONTYPE"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
@@ -3487,14 +3487,14 @@
     </Command>
     <Command ID="0x217" Name="PRINT_BIG_Q">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x218" Name="PRINT_WITH_NUMBER_BIG_Q">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
@@ -3749,7 +3749,7 @@
     <Command ID="0x23c" Name="LOAD_SPECIAL_CHARACTER">
       <Args>
         <Arg Type="INT"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x23d" Name="HAS_SPECIAL_CHARACTER_LOADED">
@@ -3836,13 +3836,13 @@
     <Command ID="0x24b" Name="SET_REPEATED_PHONE_MESSAGE">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x24c" Name="SET_PHONE_MESSAGE">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x24d" Name="HAS_PHONE_DISPLAYED_MESSAGE">
@@ -4866,7 +4866,7 @@
     </Command>
     <Command ID="0x2dd" Name="GET_RANDOM_CHAR_IN_ZONE">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="Area name" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="Area name"/>
         <Arg Type="INT" Desc="Character/ped" Out="true" AllowConst="false" Entity="CHAR"/>
       </Args>
     </Command>
@@ -4908,7 +4908,7 @@
     </Command>
     <Command ID="0x2e4" Name="LOAD_CUTSCENE">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x2e5" Name="CREATE_CUTSCENE_OBJECT">
@@ -4920,7 +4920,7 @@
     <Command ID="0x2e6" Name="SET_CUTSCENE_ANIM">
       <Args>
         <Arg Type="INT" Desc="Player" Entity="OBJECT"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x2e7" Name="START_CUTSCENE"/>
@@ -4987,7 +4987,7 @@
     <Command ID="0x2f3" Name="LOAD_SPECIAL_MODEL">
       <Args>
         <Arg Type="INT" Desc="Model ID" Enum="CARPEDMODEL"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x2f4" Name="CREATE_CUTSCENE_HEAD">
@@ -5000,7 +5000,7 @@
     <Command ID="0x2f5" Name="SET_CUTSCENE_HEAD_ANIM">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x2f6" Name="SIN">
@@ -5049,7 +5049,7 @@
     </Command>
     <Command ID="0x2fc" Name="PRINT_WITH_2_NUMBERS">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5058,7 +5058,7 @@
     </Command>
     <Command ID="0x2fd" Name="PRINT_WITH_2_NUMBERS_NOW">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Time (ms)"/>
@@ -5067,7 +5067,7 @@
     </Command>
     <Command ID="0x2fe" Name="PRINT_WITH_2_NUMBERS_SOON">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5076,7 +5076,7 @@
     </Command>
     <Command ID="0x2ff" Name="PRINT_WITH_3_NUMBERS">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5086,7 +5086,7 @@
     </Command>
     <Command ID="0x300" Name="PRINT_WITH_3_NUMBERS_NOW">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5096,7 +5096,7 @@
     </Command>
     <Command ID="0x301" Name="PRINT_WITH_3_NUMBERS_SOON" Supported="false">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5106,7 +5106,7 @@
     </Command>
     <Command ID="0x302" Name="PRINT_WITH_4_NUMBERS">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5117,7 +5117,7 @@
     </Command>
     <Command ID="0x303" Name="PRINT_WITH_4_NUMBERS_NOW">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5128,7 +5128,7 @@
     </Command>
     <Command ID="0x304" Name="PRINT_WITH_4_NUMBERS_SOON" Supported="false">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5139,7 +5139,7 @@
     </Command>
     <Command ID="0x305" Name="PRINT_WITH_5_NUMBERS">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5151,7 +5151,7 @@
     </Command>
     <Command ID="0x306" Name="PRINT_WITH_5_NUMBERS_NOW">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5163,7 +5163,7 @@
     </Command>
     <Command ID="0x307" Name="PRINT_WITH_5_NUMBERS_SOON" Supported="false">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5175,7 +5175,7 @@
     </Command>
     <Command ID="0x308" Name="PRINT_WITH_6_NUMBERS">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5188,7 +5188,7 @@
     </Command>
     <Command ID="0x309" Name="PRINT_WITH_6_NUMBERS_NOW">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5201,7 +5201,7 @@
     </Command>
     <Command ID="0x30a" Name="PRINT_WITH_6_NUMBERS_SOON" Supported="false">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5269,7 +5269,7 @@
     <Command ID="0x317" Name="REGISTER_MISSION_GIVEN"/>
     <Command ID="0x318" Name="REGISTER_MISSION_PASSED">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
       </Args>
     </Command>
     <Command ID="0x319" Name="SET_CHAR_RUNNING">
@@ -5333,7 +5333,7 @@
     </Command>
     <Command ID="0x324" Name="SET_ZONE_GROUP">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Enum="PEDGRP"/>
       </Args>
@@ -5362,7 +5362,7 @@
     </Command>
     <Command ID="0x328" Name="GET_RANDOM_CAR_OF_TYPE_IN_ZONE">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT" Enum="CARPEDMODEL"/>
         <Arg Type="INT" Out="true" AllowConst="false" Entity="CAR"/>
       </Args>
@@ -5490,7 +5490,7 @@
       <Args>
         <Arg Type="FLOAT" Desc="2D pixel X"/>
         <Arg Type="FLOAT" Desc="2D pixel Y"/>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
       </Args>
     </Command>
     <Command ID="0x33f" Name="SET_TEXT_SCALE">
@@ -5593,7 +5593,7 @@
     <Command ID="0x352" Name="UNDRESS_CHAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x353" Name="DRESS_CHAR">
@@ -5621,7 +5621,7 @@
     <Command ID="0x357" Name="IS_EXPLOSION_IN_ZONE">
       <Args>
         <Arg Type="INT" Desc="Explosion ID" Enum="EXPLOSION"/>
-        <Arg Type="TEXT_LABEL" Desc="Area name" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="Area name"/>
       </Args>
     </Command>
     <Command ID="0x358" Name="START_DRUG_DROP_OFF"/>
@@ -5713,7 +5713,7 @@
     </Command>
     <Command ID="0x367" Name="START_KILL_FRENZY_HEADSHOT">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Enum="WEAPONTYPE"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5762,7 +5762,7 @@
     </Command>
     <Command ID="0x36d" Name="PRINT_WITH_2_NUMBERS_BIG">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Time (ms)"/>
@@ -5771,7 +5771,7 @@
     </Command>
     <Command ID="0x36e" Name="PRINT_WITH_3_NUMBERS_BIG">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5781,7 +5781,7 @@
     </Command>
     <Command ID="0x36f" Name="PRINT_WITH_4_NUMBERS_BIG">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5792,7 +5792,7 @@
     </Command>
     <Command ID="0x370" Name="PRINT_WITH_5_NUMBERS_BIG">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5804,7 +5804,7 @@
     </Command>
     <Command ID="0x371" Name="PRINT_WITH_6_NUMBERS_BIG">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -5830,8 +5830,8 @@
     </Command>
     <Command ID="0x375" Name="PRINT_STRING_IN_STRING">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
       </Args>
@@ -5852,49 +5852,49 @@
     <Command ID="0x378" Name="SET_2_REPEATED_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x379" Name="SET_2_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x37a" Name="SET_3_REPEATED_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x37b" Name="SET_3_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x37c" Name="SET_4_REPEATED_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x37d" Name="SET_4_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x37e" Name="IS_SNIPER_BULLET_IN_AREA">
@@ -5934,16 +5934,16 @@
     </Command>
     <Command ID="0x384" Name="PRINT_STRING_IN_STRING_NOW">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x385" Name="PRINT_STRING_IN_STRING_SOON" Supported="false">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT" Desc="Time (ms)"/>
         <Arg Type="INT"/>
       </Args>
@@ -5951,43 +5951,43 @@
     <Command ID="0x386" Name="SET_5_REPEATED_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x387" Name="SET_5_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x388" Name="SET_6_REPEATED_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x389" Name="SET_6_PHONE_MESSAGES">
       <Args>
         <Arg Type="INT" Entity="PHONE"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x38a" Name="IS_POINT_OBSCURED_BY_A_MISSION_ENTITY">
@@ -6037,12 +6037,12 @@
     <Command ID="0x38f" Name="LOAD_SPRITE">
       <Args>
         <Arg Type="INT"/>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x390" Name="LOAD_TEXTURE_DICTIONARY">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x391" Name="REMOVE_TEXTURE_DICTIONARY"/>
@@ -6190,7 +6190,7 @@
     </Command>
     <Command ID="0x3a4" Name="SCRIPT_NAME">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="Set script name" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x3a5" Name="CHANGE_GARAGE_TYPE_WITH_CAR_MODEL">
@@ -6352,14 +6352,14 @@
       <Args>
         <Arg Type="INT" Desc="Global timer storage" Ref="true" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" Enum="TIMER"/>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
       </Args>
     </Command>
     <Command ID="0x3c4" Name="DISPLAY_ONSCREEN_COUNTER_WITH_STRING">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT" Desc="Boolean true/false" Enum="COUNTER_DISPLAY"/>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
       </Args>
     </Command>
     <Command ID="0x3c5" Name="CREATE_RANDOM_CAR_FOR_CAR_PARK">
@@ -6417,7 +6417,7 @@
     </Command>
     <Command ID="0x3cf" Name="LOAD_MISSION_AUDIO">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="Sound ID" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="Sound ID"/>
       </Args>
     </Command>
     <Command ID="0x3d0" Name="HAS_MISSION_AUDIO_LOADED"/>
@@ -6442,12 +6442,12 @@
     </Command>
     <Command ID="0x3d5" Name="CLEAR_THIS_PRINT">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
       </Args>
     </Command>
     <Command ID="0x3d6" Name="CLEAR_THIS_BIG_PRINT">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
       </Args>
     </Command>
     <Command ID="0x3d7" Name="SET_MISSION_AUDIO_POSITION">
@@ -6522,7 +6522,7 @@
     </Command>
     <Command ID="0x3e5" Name="PRINT_HELP">
       <Args>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
       </Args>
     </Command>
     <Command ID="0x3e6" Name="CLEAR_HELP"/>
@@ -7030,7 +7030,7 @@
     </Command>
     <Command ID="0x44d" Name="LOAD_SPLASH_SCREEN">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x44e" Name="SET_CAR_IGNORE_LEVEL_TRANSITIONS">
@@ -7093,14 +7093,14 @@
     </Command>
     <Command ID="0x459" Name="TERMINATE_ALL_SCRIPTS_WITH_THIS_NAME">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x45a" Name="DISPLAY_TEXT_WITH_NUMBER">
       <Args>
         <Arg Type="FLOAT" Desc="2D pixel X"/>
         <Arg Type="FLOAT" Desc="2D pixel Y"/>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
@@ -7108,7 +7108,7 @@
       <Args>
         <Arg Type="FLOAT" Desc="2D pixel X"/>
         <Arg Type="FLOAT" Desc="2D pixel Y"/>
-        <Arg Type="TEXT_LABEL" Desc="GXT entry" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
       </Args>
@@ -7226,7 +7226,7 @@
     </Command>
     <Command ID="0x46a" Name="GET_RANDOM_COP_IN_ZONE">
       <Args>
-        <Arg Type="TEXT_LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
