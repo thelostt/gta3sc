@@ -2,6 +2,7 @@
 
 from gta3sc import *
 from collections import defaultdict, namedtuple
+from itertools import chain
 
 # WARNING TEXT_LABEL AllowGlobal AllowLocal = false
 # TODO ADD ENUM TO LOAD_MISSION_AUDIO
@@ -12,6 +13,7 @@ from collections import defaultdict, namedtuple
 # enums from desc; NOTE do not add enums in Out parameters
 # entity by desc
 # plane heli train derived from car
+# SCRIPT_EVENT
 
 
 def print_once(iterator):
@@ -144,19 +146,52 @@ def discover_properties_from_description(commands):
                 if not arg.entity:
                     arg.entity = data.name
 
-def find_missing_properties_from_command_name(commands):
+def find_missing_properties_from_command_name(commands_notfiltered):
 
     entity_types = set()
     enum_types = set()
-    for arg in map(lambda c: c.args, commands.itervalues()):
-        if arg.enums:  enum_types.add(arg.enums[0])
-        if arg.entity: entity_types.add(arg.entity)
+    for cmd in commands_notfiltered.itervalues():
+        for arg in cmd.args:
+            if arg.enums:  enum_types.add(arg.enums[0])
+            if arg.entity: entity_types.add(arg.entity)
+
+    commands = {c.id: c for c in commands_notfiltered.itervalues() if c.supported}
+
+    entity_missing = defaultdict(list)
+    enum_missing = defaultdict(list)
 
     for cmd in commands.itervalues():
         for name in entity_types:
-            if cmd.name.find(name) != -1:
+            if name in cmd.name:
                 if not any(a.entity == name for a in cmd.args):
-                    print(cmd.name)
+                    entity_missing[name].append(cmd)
+
+    for cmd in commands.itervalues():
+        for name in enum_types:
+            if name in cmd.name:
+                if not any(a.enums and a.enums[0] == name for a in cmd.args):
+                    enum_missing[name].append(cmd)
+
+    print("============================================")
+    print("Entities Missing")
+    print("============================================")
+    for name, cmdlist in entity_missing.iteritems():
+        print("    %s" % (name))
+        for cmd in cmdlist:
+            print("        %s" % (cmd.name))
+        print("")
+
+    print("============================================")
+    print("Enums Missing")
+    print("============================================")
+    for name, cmdlist in enum_missing.iteritems():
+        print("    %s" % (name))
+        for cmd in cmdlist:
+            print("        %s" % (cmd.name))
+        print("")
+
+
+
 
 
 def main():
@@ -164,12 +199,119 @@ def main():
     gtavc_commands = {c.id: c for c in commands_from_xml("gtavc/commands.xml")}
     gta3_commands  = {c.id: c for c in commands_from_xml("gta3/commands.xml")}
 
-    
-    #print_once(sorted(argument_descriptions(gtasa_commands)))
-    #print("====================================================")
-    #print("====================================================")
-    #discover_properties_from_description(gtasa_commands)
+    #find_missing_properties_from_command_name(gtasa_commands)
 
+    nops = [
+        #0x0000,
+        0x010C,
+        0x0162,
+        0x02A4,
+        0x02A5,
+        0x02F3,
+        0x0329,
+        0x032C,
+        0x037E,
+        0x0383,
+        0x03D4,
+        0x03DA,
+        0x03E1,
+        0x03E8,
+        0x03EA,
+        0x0409,
+        0x040B,
+        #0x0416,
+        0x042F,
+        0x043E,
+        0x043F,
+        0x0440,
+        0x044D,
+        0x0450,
+        0x045D,
+        0x0469,
+        0x0481,
+        0x0482,
+        0x0493,
+        0x049C,
+        0x049E,
+        0x049F,
+        0x04A1,
+        0x04BC,
+        0x04BE,
+        0x04BF,
+        0x04C7,
+        0x04F5,
+        0x0507,
+        0x0515,
+        0x0521,
+        0x0522,
+        0x0523,
+        0x0524,
+        0x0525,
+        0x0540,
+        0x0545,
+        0x0548,
+        0x054B,
+        0x054D,
+        0x0551,
+        0x0552,
+        0x0557,
+        0x055B,
+        0x0569,
+        0x057B,
+        0x057D,
+        0x057F,
+        0x0585,
+        0x058D,
+        0x058E,
+        0x0591,
+        0x0592,
+        0x059B,
+        0x05B1,
+        0x05B2,
+        0x05B3,
+        0x05B5,
+        0x05B7,
+        0x05B8,
+        0x05C6,
+        0x05CC,
+        0x05CE,
+        0x05D0,
+        0x05D5,
+        0x05DF,
+        0x05E0,
+        0x05E1,
+        0x05E3,
+        0x05E4,
+        0x05E5,
+        0x05E6,
+        0x05E7,
+        0x05E8,
+        0x05EA,
+        0x05EF,
+        0x05F0,
+        0x0608,
+        0x0609,
+        0x060C,
+        0x0610,
+        0x0617,
+        0x061C,
+        0x061F,
+        0x0620,
+        0x062B,
+        0x062C,
+        0x062D,
+        0x064A,
+        0x064D,
+        0x0651,
+        0x0659,
+        0x065A,
+    ]
+    for cmd in gtasa_commands.itervalues():
+        if cmd.id in nops:
+            if len(cmd.args) > 0 or cmd.supported:
+                print(cmd.name)
+                cmd.args = []
+                cmd.supported = False
 
     commands_to_xml("gtasa/commands.xml", [c for c in gtasa_commands.itervalues()])
 
