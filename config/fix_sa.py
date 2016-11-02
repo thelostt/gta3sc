@@ -11,13 +11,9 @@ from gta3sc import *
 # enums from desc; NOTE do not add enums in Out parameters
 # entity by desc
 
-def main():
-    gtasa_commands = {c.id: c for c in commands_from_xml("gtasa/commands.xml")}
-    gtavc_commands = {c.id: c for c in commands_from_xml("gtavc/commands.xml")}
-    gta3_commands  = {c.id: c for c in commands_from_xml("gta3/commands.xml")}
-
+def copy_properties(gta3_commands, gtavc_commands, gtasa_commands):
     for cmdid, sacmd in gtasa_commands.iteritems():
-        print("Processing %s:%s..." % (hex(cmdid), sacmd.name))
+        print("Copying properties for %s:%s..." % (hex(cmdid), sacmd.name))
         vccmd = gtavc_commands.get(cmdid)
         g3cmd = gtavc_commands.get(cmdid)
         if vccmd is not None and sacmd.same_behaviour(vccmd):
@@ -32,13 +28,11 @@ def main():
                 assert s.allow_const or s.allow_const == v.allow_const
                 assert s.allow_gvar or s.allow_gvar == v.allow_gvar
                 assert s.allow_lvar or s.allow_lvar == v.allow_lvar
-
                 s.allow_const = v.allow_const
                 s.allow_gvar  = v.allow_gvar
                 s.allow_lvar  = v.allow_lvar
                 s.entity      = v.entity
                 s.enums       = v.enums
-
 
         elif g3cmd is not None and sacmd.same_behaviour(g3cmd):
             assert False
@@ -50,9 +44,30 @@ def main():
                 pass
             else:
                 #print(sacmd.name)
+                #could add a sacmd.name in ('',...) check
                 pass
 
-    commands_to_xml("gtasa/commands_2.xml", [c for c in gtasa_commands.itervalues()])
+def commands_with_model_args(commands):
+    for cmd in commands.itervalues():
+        for arg in cmd.args:
+            if any(arg.has_enum("MODEL") for arg in cmd.args):
+                yield cmd.name
+
+def print_once(iterator):
+    printed = set()
+    for x in iterator:
+        if x not in printed:
+            printed.add(x)
+            print(x)
+
+def main():
+    gtasa_commands = {c.id: c for c in commands_from_xml("gtasa/commands.xml")}
+    gtavc_commands = {c.id: c for c in commands_from_xml("gtavc/commands.xml")}
+    gta3_commands  = {c.id: c for c in commands_from_xml("gta3/commands.xml")}
+
+    print_once(name for name in commands_with_model_args(gtasa_commands))
+
+    commands_to_xml("gtasa/commands.xml", [c for c in gtasa_commands.itervalues()])
 
 
 

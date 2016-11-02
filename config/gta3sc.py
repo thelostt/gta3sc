@@ -68,6 +68,9 @@ class Argument:
                self.ref == other.ref and\
                self.optional == other.optional
 
+    def has_enum(self, name):
+        return any(x == name for x in self.enums)
+
     def init_from_node(self, a):
         self.type = a.get("Type")
         self.desc = a.get("Desc", "")
