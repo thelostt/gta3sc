@@ -266,7 +266,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         }
         else if(var_ident->second) // var not found, but required to find one?
         {
-            return make_unexpected(MatchFailure{ hint, MatchFailure::NoSuchVarForced });
+            return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedVar });
         }
     }
 
@@ -345,7 +345,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         case NodeType::Identifier:
             return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr);
         case NodeType::String:
-            return make_unexpected(MatchFailure{ hint, MatchFailure::StringLiteralDisallowed });
+            return make_unexpected(MatchFailure{ hint, MatchFailure::StringLiteralNotAllowed });
         default:
             Unreachable();
     }
@@ -365,7 +365,7 @@ auto Commands::match(const SyntaxTree& cmdnode, const SymTable& symtable, const 
     }
     else
     {
-        return make_unexpected(MatchFailure { cmdnode.shared_from_this(), MatchFailure::CommandNotFound });
+        return make_unexpected(MatchFailure { cmdnode.shared_from_this(), MatchFailure::NoCommandMatch });
     }
 }
 
@@ -639,7 +639,40 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
 void Commands::MatchFailure::emit(ProgramContext& program)
 {
-    program.error(nocontext, "TODO");
+    auto message = this->to_string();
+    if(this->context)
+        program.error(*this->context, message.c_str());
+    else
+        program.error(nocontext, message.c_str());
+}
+
+std::string Commands::MatchFailure::to_string()
+{
+    switch(this->reason)
+    {
+        case NoCommandMatch:            return "unknown command";
+        case NoAlternativeMatch:        return "could not match alternative";
+        case TooManyArgs:               return "too many arguments";
+        case TooFewArgs:                return "too few arguments";
+        case BadArgument:               return "bad argument";
+        case ExpectedInt:               return "expected integer";
+        case ExpectedFloat:             return "expected float";
+        case ExpectedLabel:             return "expected label";
+        case ExpectedConstant:          return "expected constant";
+        case ExpectedVar:               return "expected variable";
+        case NoSuchVar:                 return "variable does not exist";
+        case IdentifierIndexNesting:    return ::to_string(Miss2Identifier::NestingOfArrays);
+        case IdentifierIndexNegative:   return ::to_string(Miss2Identifier::NegativeIndex);
+        case IdentifierIndexZero:       return ::to_string(Miss2Identifier::ZeroIndex);
+        case IdentifierIndexOutOfRange: return ::to_string(Miss2Identifier::OutOfRange);
+        case VariableIndexNotInt:       return "variable in index is not of INT type";
+        case VariableIndexNotVar:       return "identifier between brackets is not a variable";
+        case VariableIndexIsArray:      return "variable in index is of array type";
+        case VariableKindNotAllowed:    return "variable kind (global/local) not allowed for this argument";
+        case VariableTypeMismatch:      return "variable type does not match argument type";
+        case StringLiteralNotAllowed:   return "STRING literal not allowed here";
+        default:                        Unreachable();
+    }
 }
 
 /////////////

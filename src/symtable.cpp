@@ -1170,7 +1170,10 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             }
                             else
                             {
-                                exp_is_var_eq_int.error().emit(program);
+                                if(exp_is_var_eq_int.error().reason == Commands::MatchFailure::NoAlternativeMatch)
+                                    program.error(*case_node, "type mismatch between SWITCH variable and CASE value");
+                                else
+                                    exp_is_var_eq_int.error().emit(program);
                             }
 
                             break;

@@ -16,10 +16,6 @@
       <Command Name="SET_LVAR_INT_TO_VAR_INT"/>
       <Command Name="SET_VAR_INT_TO_CONSTANT"/>
       <Command Name="SET_LVAR_INT_TO_CONSTANT"/>
-      <Command Name="SET_VAR_TEXT_LABEL"/>
-      <Command Name="SET_LVAR_TEXT_LABEL"/>
-      <Command Name="SET_VAR_TEXT_LABEL16"/>
-      <Command Name="SET_LVAR_TEXT_LABEL16"/>
     </Alternator>
     <Alternator Name="CSET">
  	  <Command Name="CSET_VAR_INT_TO_VAR_FLOAT"/>
@@ -100,12 +96,6 @@
   	  <Command Name="IS_FLOAT_VAR_EQUAL_TO_FLOAT_LVAR"/>
   	  <Command Name="IS_INT_VAR_EQUAL_TO_CONSTANT"/>
   	  <Command Name="IS_INT_LVAR_EQUAL_TO_CONSTANT"/>
-      <Command Name="IS_VAR_TEXT_LABEL_EQUAL_TO_TEXT_LABEL"/>
-      <Command Name="IS_LVAR_TEXT_LABEL_EQUAL_TO_TEXT_LABEL"/>
-      <Command Name="IS_INT_LVAR_EQUAL_TO_INT_VAR"/>
-      <Command Name="IS_FLOAT_LVAR_EQUAL_TO_FLOAT_VAR"/>
-      <Command Name="IS_VAR_TEXT_LABEL16_EQUAL_TO_TEXT_LABEL"/>
-      <Command Name="IS_LVAR_TEXT_LABEL16_EQUAL_TO_TEXT_LABEL"/>
     </Alternator>
     <Alternator Name="IS_THING_NOT_EQUAL_TO_THING">
  	  <Command Name="IS_INT_VAR_NOT_EQUAL_TO_NUMBER"/> 	
@@ -184,36 +174,6 @@
   	  <Command Name="ABS_LVAR_INT"/>
   	  <Command Name="ABS_VAR_FLOAT"/>
   	  <Command Name="ABS_LVAR_FLOAT"/>
-    </Alternator>
-    <Alternator Name="IS_BIT_SET">
- 	  <Command Name="IS_GLOBAL_VAR_BIT_SET_CONST"/>
-  	  <Command Name="IS_GLOBAL_VAR_BIT_SET_VAR"/>
-  	  <Command Name="IS_GLOBAL_VAR_BIT_SET_LVAR"/>
-  	  <Command Name="IS_LOCAL_VAR_BIT_SET_CONST"/>
- 	  <Command Name="IS_LOCAL_VAR_BIT_SET_VAR"/>
-  	  <Command Name="IS_LOCAL_VAR_BIT_SET_LVAR"/>
-    </Alternator>
-    <Alternator Name="SET_BIT">
- 	  <Command Name="SET_GLOBAL_VAR_BIT_CONST"/>
-  	  <Command Name="SET_GLOBAL_VAR_BIT_VAR"/>
-  	  <Command Name="SET_GLOBAL_VAR_BIT_LVAR"/>
-  	  <Command Name="SET_LOCAL_VAR_BIT_CONST"/>
- 	  <Command Name="SET_LOCAL_VAR_BIT_VAR"/>
-  	  <Command Name="SET_LOCAL_VAR_BIT_LVAR"/>
-    </Alternator>
-    <Alternator Name="CLEAR_BIT">
- 	  <Command Name="CLEAR_GLOBAL_VAR_BIT_CONST"/>
-  	  <Command Name="CLEAR_GLOBAL_VAR_BIT_VAR"/>
-  	  <Command Name="CLEAR_GLOBAL_VAR_BIT_LVAR"/>
-  	  <Command Name="CLEAR_LOCAL_VAR_BIT_CONST"/>
- 	  <Command Name="CLEAR_LOCAL_VAR_BIT_VAR"/>
-  	  <Command Name="CLEAR_LOCAL_VAR_BIT_LVAR"/>
-    </Alternator>
-    <Alternator Name="IS_EMPTY">
- 	  <Command Name="IS_VAR_TEXT_LABEL_EMPTY"/>
-  	  <Command Name="IS_LVAR_TEXT_LABEL_EMPTY"/>
-  	  <Command Name="IS_VAR_TEXT_LABEL16_EMPTY"/>
-  	  <Command Name="IS_LVAR_TEXT_LABEL16_EMPTY"/>
     </Alternator>
   </Alternators>
 </GTA3Script>

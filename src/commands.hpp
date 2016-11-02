@@ -128,38 +128,34 @@ public:
     {
         enum Reason
         {
-            CommandNotFound,
+            NoCommandMatch,
             NoAlternativeMatch,
             TooManyArgs,
             TooFewArgs,
+            BadArgument,
             ExpectedInt,
             ExpectedFloat,
             ExpectedLabel,
             ExpectedConstant,
-            StringLiteralDisallowed,
-
+            ExpectedVar,
             NoSuchVar,
-            NoSuchVarForced,
-
-            BadArgument, // idk what's the problem
-
             IdentifierIndexNesting,
             IdentifierIndexNegative,
             IdentifierIndexZero,
             IdentifierIndexOutOfRange,
-            
             VariableIndexNotInt,
             VariableIndexNotVar,
             VariableIndexIsArray,
-
-            VariableKindNotAllowed, // e.g. using local when global is required
+            VariableKindNotAllowed,
             VariableTypeMismatch,
+            StringLiteralNotAllowed,
         };
 
-        shared_ptr<const SyntaxTree>    context;
-        Reason                          reason;
+        shared_ptr<const SyntaxTree>  context;
+        Reason                        reason;
 
         void emit(ProgramContext&);
+        std::string to_string();
     };
 
     using MatchArgument = variant<const SyntaxTree*, int32_t, float>;
