@@ -6003,7 +6003,7 @@
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x3a9" Name="SAVE_NEWLINE_TO_DEBUG_FILE"/>
+    <Command ID="0x3a9" Name="SAVE_NEWLINE_TO_DEBUG_FILE" Supported="false"/>
     <Command ID="0x3aa" Name="POLICE_RADIO_MESSAGE">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -9665,7 +9665,7 @@
         <Arg Type="INT" Desc="Model ID" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x666" Name="IS_CHAR_TOUCHING_ANY_OBJECT"/>
+    <Command ID="0x666" Name="IS_CHAR_TOUCHING_ANY_OBJECT" Supported="false"/>
     <Command ID="0x667" Name="TASK_AIM_GUN_AT_COORD">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -9759,9 +9759,9 @@
         <Arg Type="INT" Desc="Particle FX" Out="true" AllowConst="false" Entity="FX_SYSTEM"/>
       </Args>
     </Command>
-    <Command ID="0x66f" Name="ADD_QUEUED_DIALOGUE"/>
-    <Command ID="0x670" Name="IS_DIALOGUE_FINISHED"/>
-    <Command ID="0x671" Name="IS_DIALOGUE_PLAYING"/>
+    <Command ID="0x66f" Name="ADD_QUEUED_DIALOGUE" Supported="false"/>
+    <Command ID="0x670" Name="IS_DIALOGUE_FINISHED" Supported="false"/>
+    <Command ID="0x671" Name="IS_DIALOGUE_PLAYING" Supported="false"/>
     <Command ID="0x672" Name="TASK_DESTROY_CAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -9782,7 +9782,7 @@
         <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x675" Name="CREATE_PED_GENERATOR_AT_ATTRACTOR"/>
+    <Command ID="0x675" Name="CREATE_PED_GENERATOR_AT_ATTRACTOR" Supported="false"/>
     <Command ID="0x676" Name="TASK_SHUFFLE_TO_NEXT_CAR_SEAT">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -9797,7 +9797,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x678" Name="GET_CHAR_AT_SCRIPTED_ATTRACTOR"/>
+    <Command ID="0x678" Name="GET_CHAR_AT_SCRIPTED_ATTRACTOR" Supported="false"/>
     <Command ID="0x679" Name="ATTACH_CAMERA_TO_VEHICLE">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -9972,7 +9972,7 @@
         <Arg Type="FLOAT" Desc="Z Coord" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x68f" Name="GET_CLOSEST_BUYABLE_OBJECT_TO_PLAYER"/>
+    <Command ID="0x68f" Name="GET_CLOSEST_BUYABLE_OBJECT_TO_PLAYER" Supported="false"/>
     <Command ID="0x690" Name="OPEN_FRIEND_LIST" Supported="false"/>
     <Command ID="0x691" Name="CLOSE_FRIEND_LIST" Supported="false"/>
     <Command ID="0x692" Name="REMOVE_FRIEND_LIST" Supported="false"/>
@@ -10023,12 +10023,12 @@
         <Arg Type="FLOAT" Desc="Z Rotation"/>
       </Args>
     </Command>
-    <Command ID="0x69c" Name="ATTACH_CAMERA_TO_OBJECT"/>
-    <Command ID="0x69d" Name="ATTACH_CAMERA_TO_OBJECT_LOOK_AT_VEHICLE"/>
-    <Command ID="0x69e" Name="ATTACH_CAMERA_TO_OBJECT_LOOK_AT_CHAR"/>
-    <Command ID="0x69f" Name="ATTACH_CAMERA_TO_OBJECT_LOOK_AT_OBJECT"/>
-    <Command ID="0x6a0" Name="ATTACH_CAMERA_TO_CHAR_LOOK_AT_OBJECT"/>
-    <Command ID="0x6a1" Name="ATTACH_CAMERA_TO_VEHICLE_LOOK_AT_OBJECT"/>
+    <Command ID="0x69c" Name="ATTACH_CAMERA_TO_OBJECT" Supported="false"/>
+    <Command ID="0x69d" Name="ATTACH_CAMERA_TO_OBJECT_LOOK_AT_VEHICLE" Supported="false"/>
+    <Command ID="0x69e" Name="ATTACH_CAMERA_TO_OBJECT_LOOK_AT_CHAR" Supported="false"/>
+    <Command ID="0x69f" Name="ATTACH_CAMERA_TO_OBJECT_LOOK_AT_OBJECT" Supported="false"/>
+    <Command ID="0x6a0" Name="ATTACH_CAMERA_TO_CHAR_LOOK_AT_OBJECT" Supported="false"/>
+    <Command ID="0x6a1" Name="ATTACH_CAMERA_TO_VEHICLE_LOOK_AT_OBJECT" Supported="false"/>
     <Command ID="0x6a2" Name="GET_CAR_SPEED_VECTOR">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -10043,14 +10043,14 @@
         <Arg Type="FLOAT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x6a4" Name="TASK_KILL_THREATS_ON_FOOT_WHILE_DUCKING"/>
+    <Command ID="0x6a4" Name="TASK_KILL_THREATS_ON_FOOT_WHILE_DUCKING" Supported="false"/>
     <Command ID="0x6a5" Name="TASK_DIVE_FROM_ATTACHMENT_AND_GET_UP">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
     </Command>
-    <Command ID="0x6a6" Name="TASK_PLAY_ANIM_WITH_VELOCITY_EXTRACTION"/>
+    <Command ID="0x6a6" Name="TASK_PLAY_ANIM_WITH_VELOCITY_EXTRACTION" Supported="false"/>
     <Command ID="0x6a7" Name="ATTACH_CHAR_TO_BIKE">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -10291,7 +10291,7 @@
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
       </Args>
     </Command>
-    <Command ID="0x6c6" Name="TASK_OPEN_DRIVER_DOOR"/>
+    <Command ID="0x6c6" Name="TASK_OPEN_DRIVER_DOOR" Supported="false"/>
     <Command ID="0x6c7" Name="TASK_CAR_TEMP_ACTION">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -10321,10 +10321,10 @@
         <Arg Type="FLOAT" Desc="Z Offset"/>
       </Args>
     </Command>
-    <Command ID="0x6cb" Name="SET_VEHICLE_RECORDS_COLLISIONS"/>
+    <Command ID="0x6cb" Name="SET_VEHICLE_RECORDS_COLLISIONS" Supported="false"/>
     <Command ID="0x6cc" Name="DRAW_CROSS_IN_FRONT_OF_DEBUG_CAMERA" Supported="false"/>
     <Command ID="0x6cd" Name="DRAW_DEBUG_CUBE" Supported="false"/>
-    <Command ID="0x6ce" Name="GET_CAR_LAST_ROUTE_COORDS"/>
+    <Command ID="0x6ce" Name="GET_CAR_LAST_ROUTE_COORDS" Supported="false"/>
     <Command ID="0x6cf" Name="DISPLAY_TIMER_BARS" Supported="false">
       <Args>
         <Arg Type="INT"/>
@@ -10510,7 +10510,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x6f4" Name="CREATE_SCRIPT_GANG_ROADBLOCK"/>
+    <Command ID="0x6f4" Name="CREATE_SCRIPT_GANG_ROADBLOCK" Supported="false"/>
     <Command ID="0x6f5" Name="GET_SCRIPT_FIRE_COORDS">
       <Args>
         <Arg Type="INT" Desc="Fire" Entity="SCRIPT_FIRE"/>
@@ -10519,8 +10519,8 @@
         <Arg Type="FLOAT" Desc="Z Coord" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x6f6" Name="CLEAR_TWO_PLAYER_CAMERA_MODE"/>
-    <Command ID="0x6f7" Name="SET_PLAYER_PASSENGER_CAN_SHOOT"/>
+    <Command ID="0x6f6" Name="CLEAR_TWO_PLAYER_CAMERA_MODE" Supported="false"/>
+    <Command ID="0x6f7" Name="SET_PLAYER_PASSENGER_CAN_SHOOT" Supported="false"/>
     <Command ID="0x6f8" Name="GET_NTH_CLOSEST_CAR_NODE_WITH_HEADING">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -10533,13 +10533,13 @@
         <Arg Type="FLOAT" Desc="Angle" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x6f9" Name="GET_HEIGHT_OF_CAR_WHEELS_FROM_GROUND"/>
+    <Command ID="0x6f9" Name="GET_HEIGHT_OF_CAR_WHEELS_FROM_GROUND" Supported="false"/>
     <Command ID="0x6fa" Name="SET_PLAYERS_CAN_BE_IN_SEPARATE_CARS">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x6fb" Name="SWITCH_PLAYER_CROSSHAIR"/>
+    <Command ID="0x6fb" Name="SWITCH_PLAYER_CROSSHAIR" Supported="false"/>
     <Command ID="0x6fc" Name="DOES_CAR_HAVE_STUCK_CAR_CHECK">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -10551,14 +10551,14 @@
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x6fe" Name="GET_CAR_VALUE"/>
+    <Command ID="0x6fe" Name="GET_CAR_VALUE" Supported="false"/>
     <Command ID="0x6ff" Name="ARE_ANY_CHARS_NEAR_CHAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x700" Name="SKIP_CUTSCENE_START"/>
+    <Command ID="0x700" Name="SKIP_CUTSCENE_START" Supported="false"/>
     <Command ID="0x701" Name="SKIP_CUTSCENE_END"/>
     <Command ID="0x702" Name="GET_PERCENTAGE_TAGGED_IN_AREA">
       <Args>
@@ -10675,8 +10675,8 @@
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x711" Name="ALLOCATE_SCRIPT_TO_PED_GENERATOR"/>
-    <Command ID="0x712" Name="ALLOCATE_SCRIPT_TO_RANDOM_PED"/>
+    <Command ID="0x711" Name="ALLOCATE_SCRIPT_TO_PED_GENERATOR" Supported="false"/>
+    <Command ID="0x712" Name="ALLOCATE_SCRIPT_TO_RANDOM_PED" Supported="false"/>
     <Command ID="0x713" Name="TASK_DRIVE_BY">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -10719,7 +10719,7 @@
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
       </Args>
     </Command>
-    <Command ID="0x718" Name="SET_UP_CONVERSATION_NODE"/>
+    <Command ID="0x718" Name="SET_UP_CONVERSATION_NODE" Supported="false"/>
     <Command ID="0x719" Name="FINISH_SETTING_UP_CONVERSATION"/>
     <Command ID="0x71a" Name="IS_CONVERSATION_AT_NODE">
       <Args>
@@ -10727,9 +10727,9 @@
         <Arg Type="TEXT_LABEL" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x71b" Name="CLEAR_ALL_CONVERSATIONS"/>
-    <Command ID="0x71c" Name="GET_CHAR_LIGHTING"/>
-    <Command ID="0x71d" Name="SET_CLOSEST_OBJECT_OF_TYPE_RENDER_SCORCHED"/>
+    <Command ID="0x71b" Name="CLEAR_ALL_CONVERSATIONS" Supported="false"/>
+    <Command ID="0x71c" Name="GET_CHAR_LIGHTING" Supported="false"/>
+    <Command ID="0x71d" Name="SET_CLOSEST_OBJECT_OF_TYPE_RENDER_SCORCHED" Supported="false"/>
     <Command ID="0x71e" Name="GET_OBJECT_HEALTH">
       <Args>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
@@ -10742,9 +10742,9 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x720" Name="GET_VEHICLE_WHEEL_UPGRADE_CLASS"/>
-    <Command ID="0x721" Name="GET_NUM_WHEELS_IN_UPGRADE_CLASS"/>
-    <Command ID="0x722" Name="GET_WHEEL_IN_UPGRADE_CLASS"/>
+    <Command ID="0x720" Name="GET_VEHICLE_WHEEL_UPGRADE_CLASS" Supported="false"/>
+    <Command ID="0x721" Name="GET_NUM_WHEELS_IN_UPGRADE_CLASS" Supported="false"/>
+    <Command ID="0x722" Name="GET_WHEEL_IN_UPGRADE_CLASS" Supported="false"/>
     <Command ID="0x723" Name="BREAK_OBJECT">
       <Args>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
@@ -10758,7 +10758,7 @@
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x725" Name="HELI_FLY_IN_DIRECTION"/>
+    <Command ID="0x725" Name="HELI_FLY_IN_DIRECTION" Supported="false"/>
     <Command ID="0x726" Name="HELI_FOLLOW_ENTITY">
       <Args>
         <Arg Type="INT" Desc="Helicopter" Entity="CAR"/>
@@ -10775,7 +10775,7 @@
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x728" Name="SET_UP_CONVERSATION_END_NODE"/>
+    <Command ID="0x728" Name="SET_UP_CONVERSATION_END_NODE" Supported="false"/>
     <Command ID="0x729" Name="TASK_USE_MOBILE_PHONE">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -10872,9 +10872,9 @@
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
       </Args>
     </Command>
-    <Command ID="0x738" Name="SET_ZONE_RADAR_COLOURS"/>
-    <Command ID="0x739" Name="GIVE_LOWRIDER_SUSPENSION_TO_CAR"/>
-    <Command ID="0x73a" Name="DOES_CAR_HAVE_LOWRIDER_SUSPENSION"/>
+    <Command ID="0x738" Name="SET_ZONE_RADAR_COLOURS" Supported="false"/>
+    <Command ID="0x739" Name="GIVE_LOWRIDER_SUSPENSION_TO_CAR" Supported="false"/>
+    <Command ID="0x73a" Name="DOES_CAR_HAVE_LOWRIDER_SUSPENSION" Supported="false"/>
     <Command ID="0x73b" Name="SET_CAR_CAN_GO_AGAINST_TRAFFIC">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -10887,7 +10887,7 @@
         <Arg Type="INT" Desc="Vehicle component ID"/>
       </Args>
     </Command>
-    <Command ID="0x73d" Name="GET_RANDOM_CAR_IN_SPHERE"/>
+    <Command ID="0x73d" Name="GET_RANDOM_CAR_IN_SPHERE" Supported="false"/>
     <Command ID="0x73e" Name="GET_RANDOM_CAR_IN_SPHERE_NO_SAVE">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -10910,7 +10910,7 @@
         <Arg Type="INT" Desc="Character/ped" Out="true" AllowConst="false" Entity="CHAR"/>
       </Args>
     </Command>
-    <Command ID="0x740" Name="GET_COORDS_OF_CLOSEST_COLLECTABLE1"/>
+    <Command ID="0x740" Name="GET_COORDS_OF_CLOSEST_COLLECTABLE1" Supported="false"/>
     <Command ID="0x741" Name="HAS_CHAR_BEEN_ARRESTED">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -10932,7 +10932,7 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
       </Args>
     </Command>
-    <Command ID="0x744" Name="GET_STAT_CHANGE_AMOUNT"/>
+    <Command ID="0x744" Name="GET_STAT_CHANGE_AMOUNT" Supported="false"/>
     <Command ID="0x745" Name="PLANE_STARTS_IN_AIR">
       <Args>
         <Arg Type="INT" Desc="Plane" Entity="CAR"/>
@@ -10952,7 +10952,7 @@
         <Arg Type="INT" Desc="Ped type" Enum="PEDTYPE"/>
       </Args>
     </Command>
-    <Command ID="0x748" Name="CLEAR_ALL_RELATIONSHIPS"/>
+    <Command ID="0x748" Name="CLEAR_ALL_RELATIONSHIPS" Supported="false"/>
     <Command ID="0x749" Name="CLEAR_GROUP_DECISION_MAKER_EVENT_RESPONSE">
       <Args>
         <Arg Type="INT" Desc="Decision maker" Entity="DECISION_MAKER"/>
@@ -11048,8 +11048,8 @@
     </Command>
     <Command ID="0x756" Name="TASK_GO_ON_PATROL" Supported="false"/>
     <Command ID="0x757" Name="GET_PATROL_ALERTNESS" Supported="false"/>
-    <Command ID="0x758" Name="SET_CHAR_SPECIAL_EVENT"/>
-    <Command ID="0x759" Name="SET_ATTRACTOR_AS_COVER_NODE"/>
+    <Command ID="0x758" Name="SET_CHAR_SPECIAL_EVENT" Supported="false"/>
+    <Command ID="0x759" Name="SET_ATTRACTOR_AS_COVER_NODE" Supported="false"/>
     <Command ID="0x75a" Name="PLAY_OBJECT_ANIM">
       <Args>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
@@ -11107,9 +11107,9 @@
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
       </Args>
     </Command>
-    <Command ID="0x764" Name="IS_SEARCHLIGHT_IN_ANGLED_AREA_2D"/>
-    <Command ID="0x765" Name="IS_SEARCHLIGHT_IN_ANGLED_AREA_3D"/>
-    <Command ID="0x766" Name="SWITCH_SEARCHLIGHT_BULB"/>
+    <Command ID="0x764" Name="IS_SEARCHLIGHT_IN_ANGLED_AREA_2D" Supported="false"/>
+    <Command ID="0x765" Name="IS_SEARCHLIGHT_IN_ANGLED_AREA_3D" Supported="false"/>
+    <Command ID="0x766" Name="SWITCH_SEARCHLIGHT_BULB" Supported="false"/>
     <Command ID="0x767" Name="SET_ZONE_POPULATION_TYPE">
       <Args>
         <Arg Type="TEXT_LABEL" Desc="Area name"/>
@@ -11144,7 +11144,7 @@
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x76e" Name="SET_NO_POLICE_DURING_LA_RIOTS"/>
+    <Command ID="0x76e" Name="SET_NO_POLICE_DURING_LA_RIOTS" Supported="false"/>
     <Command ID="0x76f" Name="IS_MESSAGE_BEING_DISPLAYED"/>
     <Command ID="0x770" Name="SET_CHAR_IS_TARGET_PRIORITY">
       <Args>
@@ -11166,9 +11166,9 @@
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x773" Name="CLEAR_HELP_WITH_THIS_LABEL"/>
-    <Command ID="0x774" Name="IS_SEARCHLIGHT_BULB_ON"/>
-    <Command ID="0x775" Name="CREATE_OIL_PUDDLE"/>
+    <Command ID="0x773" Name="CLEAR_HELP_WITH_THIS_LABEL" Supported="false"/>
+    <Command ID="0x774" Name="IS_SEARCHLIGHT_BULB_ON" Supported="false"/>
+    <Command ID="0x775" Name="CREATE_OIL_PUDDLE" Supported="false"/>
     <Command ID="0x776" Name="REQUEST_IPL">
       <Args>
         <Arg Type="ANY_TEXT_LABEL"/>
@@ -11184,7 +11184,7 @@
         <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x779" Name="TASK_OPEN_PASSENGER_DOOR"/>
+    <Command ID="0x779" Name="TASK_OPEN_PASSENGER_DOOR" Supported="false"/>
     <Command ID="0x77a" Name="SET_CHAR_RELATIONSHIP">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -11216,7 +11216,7 @@
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x77f" Name="ADD_INT_TO_VAR_CONSOLE"/>
+    <Command ID="0x77f" Name="ADD_INT_TO_VAR_CONSOLE" Supported="false"/>
     <Command ID="0x780" Name="HELI_KEEP_ENTITY_IN_VIEW">
       <Args>
         <Arg Type="INT" Desc="Helicopter" Entity="CAR"/>
@@ -11253,7 +11253,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x785" Name="GIVE_PLAYER_TATTOO"/>
+    <Command ID="0x785" Name="GIVE_PLAYER_TATTOO" Supported="false"/>
     <Command ID="0x786" Name="GET_NUMBER_OF_FIRES_IN_AREA">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -11265,7 +11265,7 @@
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x787" Name="SET_CHAR_TYRES_CAN_BE_BURST"/>
+    <Command ID="0x787" Name="SET_CHAR_TYRES_CAN_BE_BURST" Supported="false"/>
     <Command ID="0x788" Name="ATTACH_WINCH_TO_HELI">
       <Args>
         <Arg Type="INT" Desc="Helicopter" Entity="CAR"/>
@@ -11298,8 +11298,8 @@
         <Arg Type="TEXT_LABEL" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x78d" Name="ADD_FLOAT_TO_VAR_CONSOLE"/>
-    <Command ID="0x78e" Name="TASK_DRAG_CHAR_FROM_CAR"/>
+    <Command ID="0x78d" Name="ADD_FLOAT_TO_VAR_CONSOLE" Supported="false"/>
+    <Command ID="0x78e" Name="TASK_DRAG_CHAR_FROM_CAR" Supported="false"/>
     <Command ID="0x78f" Name="TASK_CLIMB">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -11311,7 +11311,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x791" Name="BUY_TATTOO"/>
+    <Command ID="0x791" Name="BUY_TATTOO" Supported="false"/>
     <Command ID="0x792" Name="CLEAR_CHAR_TASKS_IMMEDIATELY">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -11319,7 +11319,7 @@
     </Command>
     <Command ID="0x793" Name="STORE_CLOTHES_STATE"/>
     <Command ID="0x794" Name="RESTORE_CLOTHES_STATE"/>
-    <Command ID="0x795" Name="DELETE_WINCH_FOR_HELI"/>
+    <Command ID="0x795" Name="DELETE_WINCH_FOR_HELI" Supported="false"/>
     <Command ID="0x796" Name="GET_ROPE_HEIGHT_FOR_OBJECT">
       <Args>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
@@ -11345,9 +11345,9 @@
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
       </Args>
     </Command>
-    <Command ID="0x79a" Name="ATTACH_CAR_TO_ROPE_FOR_OBJECT"/>
-    <Command ID="0x79b" Name="ATTACH_CHAR_TO_ROPE_FOR_OBJECT"/>
-    <Command ID="0x79c" Name="ATTACH_OBJECT_TO_ROPE_FOR_OBJECT"/>
+    <Command ID="0x79a" Name="ATTACH_CAR_TO_ROPE_FOR_OBJECT" Supported="false"/>
+    <Command ID="0x79b" Name="ATTACH_CHAR_TO_ROPE_FOR_OBJECT" Supported="false"/>
+    <Command ID="0x79c" Name="ATTACH_OBJECT_TO_ROPE_FOR_OBJECT" Supported="false"/>
     <Command ID="0x79d" Name="PLAYER_ENTERED_DOCK_CRANE"/>
     <Command ID="0x79e" Name="PLAYER_ENTERED_BUILDINGSITE_CRANE"/>
     <Command ID="0x79f" Name="PLAYER_LEFT_CRANE"/>
@@ -11364,7 +11364,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x7a2" Name="SET_NEXT_EVENT_RESPONSE_SEQUENCE"/>
+    <Command ID="0x7a2" Name="SET_NEXT_EVENT_RESPONSE_SEQUENCE" Supported="false"/>
     <Command ID="0x7a3" Name="TASK_GOTO_CHAR_AIMING">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -11413,7 +11413,7 @@
         <Arg Type="INT" Desc="Searchlight handle" Out="true" AllowConst="false" Entity="SEARCHLIGHT"/>
       </Args>
     </Command>
-    <Command ID="0x7aa" Name="GET_SEARCHLIGHT_COORDS"/>
+    <Command ID="0x7aa" Name="GET_SEARCHLIGHT_COORDS" Supported="false"/>
     <Command ID="0x7ab" Name="IS_TRAILER_ATTACHED_TO_CAB">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -11426,8 +11426,8 @@
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
       </Args>
     </Command>
-    <Command ID="0x7ad" Name="GET_TRAILER_ATTACHED_TO_CAB"/>
-    <Command ID="0x7ae" Name="GET_CAB_ATTACHED_TO_TRAILER"/>
+    <Command ID="0x7ad" Name="GET_TRAILER_ATTACHED_TO_CAB" Supported="false"/>
+    <Command ID="0x7ae" Name="GET_CAB_ATTACHED_TO_TRAILER" Supported="false"/>
     <Command ID="0x7af" Name="GET_PLAYER_GROUP">
       <Args>
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
@@ -11447,7 +11447,7 @@
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x7b2" Name="SET_BEAT_ZONE_SIZE"/>
+    <Command ID="0x7b2" Name="SET_BEAT_ZONE_SIZE" Supported="false"/>
     <Command ID="0x7b3" Name="SET_GROUP_DEFAULT_TASK_ALLOCATOR">
       <Args>
         <Arg Type="INT" Entity="GROUP"/>
@@ -11460,12 +11460,12 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x7b5" Name="DISPLAY_TWO_ONSCREEN_COUNTERS"/>
-    <Command ID="0x7b6" Name="DISPLAY_TWO_ONSCREEN_COUNTERS_WITH_STRING"/>
-    <Command ID="0x7b7" Name="DISPLAY_NTH_TWO_ONSCREEN_COUNTERS"/>
-    <Command ID="0x7b8" Name="DISPLAY_NTH_TWO_ONSCREEN_COUNTERS_WITH_STRING"/>
+    <Command ID="0x7b5" Name="DISPLAY_TWO_ONSCREEN_COUNTERS" Supported="false"/>
+    <Command ID="0x7b6" Name="DISPLAY_TWO_ONSCREEN_COUNTERS_WITH_STRING" Supported="false"/>
+    <Command ID="0x7b7" Name="DISPLAY_NTH_TWO_ONSCREEN_COUNTERS" Supported="false"/>
+    <Command ID="0x7b8" Name="DISPLAY_NTH_TWO_ONSCREEN_COUNTERS_WITH_STRING" Supported="false"/>
     <Command ID="0x7b9" Name="TASK_KILL_CHAR_ON_FOOT_PATROL" Supported="false"/>
-    <Command ID="0x7ba" Name="HELI_AIM_AHEAD_OF_TARGET_ENTITY"/>
+    <Command ID="0x7ba" Name="HELI_AIM_AHEAD_OF_TARGET_ENTITY" Supported="false"/>
     <Command ID="0x7bb" Name="ACTIVATE_HELI_SPEED_CHEAT">
       <Args>
         <Arg Type="INT" Desc="Helicopter" Entity="CAR"/>
@@ -11504,7 +11504,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x7c2" Name="DISPLAY_PLAYBACK_RECORDED_CAR"/>
+    <Command ID="0x7c2" Name="DISPLAY_PLAYBACK_RECORDED_CAR" Supported="false"/>
     <Command ID="0x7c3" Name="GET_OBJECT_QUATERNION">
       <Args>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
@@ -11549,14 +11549,14 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
       </Args>
     </Command>
-    <Command ID="0x7c8" Name="DISPLAY_DEBUG_MESSAGE"/>
+    <Command ID="0x7c8" Name="DISPLAY_DEBUG_MESSAGE" Supported="false"/>
     <Command ID="0x7c9" Name="TASK_COMPLEX_PICKUP_OBJECT">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
       </Args>
     </Command>
-    <Command ID="0x7ca" Name="TASK_SIMPLE_PUTDOWN_OBJECT"/>
+    <Command ID="0x7ca" Name="TASK_SIMPLE_PUTDOWN_OBJECT" Supported="false"/>
     <Command ID="0x7cb" Name="LISTEN_TO_PLAYER_GROUP_COMMANDS">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -11579,22 +11579,22 @@
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x7ce" Name="SET_BULLET_WHIZZ_BY_DISTANCE"/>
-    <Command ID="0x7cf" Name="SET_TWO_PLAYER_CAM_MODE_SEPARATE_CARS"/>
+    <Command ID="0x7ce" Name="SET_BULLET_WHIZZ_BY_DISTANCE" Supported="false"/>
+    <Command ID="0x7cf" Name="SET_TWO_PLAYER_CAM_MODE_SEPARATE_CARS" Supported="false"/>
     <Command ID="0x7d0" Name="GET_CURRENT_DAY_OF_WEEK">
       <Args>
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x7d1" Name="SET_CURRENT_DAY_OF_WEEK"/>
-    <Command ID="0x7d2" Name="ACTIVATE_INTERIORS"/>
+    <Command ID="0x7d1" Name="SET_CURRENT_DAY_OF_WEEK" Supported="false"/>
+    <Command ID="0x7d2" Name="ACTIVATE_INTERIORS" Supported="false"/>
     <Command ID="0x7d3" Name="REGISTER_SCRIPT_BRAIN_FOR_CODE_USE">
       <Args>
         <Arg Type="INT"/>
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x7d4" Name="REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE"/>
+    <Command ID="0x7d4" Name="REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE" Supported="false"/>
     <Command ID="0x7d5" Name="APPLY_FORCE_TO_CAR">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -11634,7 +11634,7 @@
         <Arg Type="FLOAT" Desc="Z Rotation"/>
       </Args>
     </Command>
-    <Command ID="0x7dc" Name="GET_CAR_ROTATION_VELOCITY"/>
+    <Command ID="0x7dc" Name="GET_CAR_ROTATION_VELOCITY" Supported="false"/>
     <Command ID="0x7dd" Name="SET_CHAR_SHOOT_RATE">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -11656,8 +11656,8 @@
     </Command>
     <Command ID="0x7e0" Name="SET_BLIP_AS_FRIENDLY" Supported="false"/>
     <Command ID="0x7e1" Name="TASK_SWIM_TO_COORD" Supported="false"/>
-    <Command ID="0x7e2" Name="TASK_GO_STRAIGHT_TO_COORD_WITHOUT_STOPPING"/>
-    <Command ID="0x7e3" Name="GET_BEAT_INFO_FOR_CURRENT_TRACK"/>
+    <Command ID="0x7e2" Name="TASK_GO_STRAIGHT_TO_COORD_WITHOUT_STOPPING" Supported="false"/>
+    <Command ID="0x7e3" Name="GET_BEAT_INFO_FOR_CURRENT_TRACK" Supported="false"/>
     <Command ID="0x7e4" Name="GET_MODEL_DIMENSIONS">
       <Args>
         <Arg Type="INT" Desc="Model ID" Enum="MODEL"/>
@@ -11698,11 +11698,11 @@
         <Arg Type="INT" Desc="Ped type" Enum="PEDTYPE"/>
       </Args>
     </Command>
-    <Command ID="0x7e9" Name="HAS_CHAR_SPOTTED_CAR"/>
-    <Command ID="0x7ea" Name="SET_ROPE_HEIGHT_FOR_HELI"/>
-    <Command ID="0x7eb" Name="GET_ROPE_HEIGHT_FOR_HELI"/>
-    <Command ID="0x7ec" Name="IS_CAR_LOWRIDER"/>
-    <Command ID="0x7ed" Name="IS_PERFORMANCE_CAR"/>
+    <Command ID="0x7e9" Name="HAS_CHAR_SPOTTED_CAR" Supported="false"/>
+    <Command ID="0x7ea" Name="SET_ROPE_HEIGHT_FOR_HELI" Supported="false"/>
+    <Command ID="0x7eb" Name="GET_ROPE_HEIGHT_FOR_HELI" Supported="false"/>
+    <Command ID="0x7ec" Name="IS_CAR_LOWRIDER" Supported="false"/>
+    <Command ID="0x7ed" Name="IS_PERFORMANCE_CAR" Supported="false"/>
     <Command ID="0x7ee" Name="SET_CAR_ALWAYS_CREATE_SKIDS">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -11744,7 +11744,7 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
       </Args>
     </Command>
-    <Command ID="0x7f4" Name="SET_ONSCREEN_TIMER_DISPLAY"/>
+    <Command ID="0x7f4" Name="SET_ONSCREEN_TIMER_DISPLAY" Supported="false"/>
     <Command ID="0x7f5" Name="CONTROL_CAR_HYDRAULICS">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -11839,16 +11839,16 @@
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
     </Command>
-    <Command ID="0x805" Name="ALLOCATE_SCRIPT_TO_OBJECT"/>
+    <Command ID="0x805" Name="ALLOCATE_SCRIPT_TO_OBJECT" Supported="false"/>
     <Command ID="0x806" Name="GET_TOTAL_NUMBER_OF_PEDS_KILLED_BY_PLAYER">
       <Args>
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x807" Name="SET_TWO_PLAYER_CAM_MODE_SAME_CAR_SHOOTING"/>
-    <Command ID="0x808" Name="SET_TWO_PLAYER_CAM_MODE_SAME_CAR_NO_SHOOTING"/>
-    <Command ID="0x809" Name="SET_TWO_PLAYER_CAM_MODE_NOT_BOTH_IN_CAR"/>
+    <Command ID="0x807" Name="SET_TWO_PLAYER_CAM_MODE_SAME_CAR_SHOOTING" Supported="false"/>
+    <Command ID="0x808" Name="SET_TWO_PLAYER_CAM_MODE_SAME_CAR_NO_SHOOTING" Supported="false"/>
+    <Command ID="0x809" Name="SET_TWO_PLAYER_CAM_MODE_NOT_BOTH_IN_CAR" Supported="false"/>
     <Command ID="0x80a" Name="GET_LEVEL_DESIGN_COORDS_FOR_OBJECT">
       <Args>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
@@ -11863,15 +11863,15 @@
         <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x80c" Name="GET_CHAR_BREATH"/>
-    <Command ID="0x80d" Name="SET_CHAR_BREATH"/>
+    <Command ID="0x80c" Name="GET_CHAR_BREATH" Supported="false"/>
+    <Command ID="0x80d" Name="SET_CHAR_BREATH" Supported="false"/>
     <Command ID="0x80e" Name="GET_CHAR_HIGHEST_PRIORITY_EVENT">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
         <Arg Type="INT" Desc="Ped event ID" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x80f" Name="ARE_PATHS_LOADED_FOR_CAR"/>
+    <Command ID="0x80f" Name="ARE_PATHS_LOADED_FOR_CAR" Supported="false"/>
     <Command ID="0x810" Name="GET_PARKING_NODE_IN_AREA">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -11904,7 +11904,7 @@
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
     </Command>
-    <Command ID="0x813" Name="FORCE_NEXT_DIE_ANIM"/>
+    <Command ID="0x813" Name="FORCE_NEXT_DIE_ANIM" Supported="false"/>
     <Command ID="0x814" Name="ADD_STUNT_JUMP">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -11963,7 +11963,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x81b" Name="ARE_PATHS_LOADED_IN_AREA"/>
+    <Command ID="0x81b" Name="ARE_PATHS_LOADED_IN_AREA" Supported="false"/>
     <Command ID="0x81c" Name="SET_TEXT_EDGE">
       <Args>
         <Arg Type="INT"/>
@@ -11994,7 +11994,7 @@
         <Arg Type="INT" Desc="Model ID" Enum="CARPEDMODEL"/>
       </Args>
     </Command>
-    <Command ID="0x821" Name="IS_3D_COORD_IN_ZONE"/>
+    <Command ID="0x821" Name="IS_3D_COORD_IN_ZONE" Supported="false"/>
     <Command ID="0x822" Name="SET_FIRST_PERSON_IN_CAR_CAMERA_MODE">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -12008,7 +12008,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x824" Name="GET_CLOSEST_PICKUP_COORDS_TO_COORD"/>
+    <Command ID="0x824" Name="GET_CLOSEST_PICKUP_COORDS_TO_COORD" Supported="false"/>
     <Command ID="0x825" Name="SET_HELI_BLADES_FULL_SPEED">
       <Args>
         <Arg Type="INT" Desc="Helicopter" Entity="CAR"/>
@@ -12060,8 +12060,8 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
       </Args>
     </Command>
-    <Command ID="0x831" Name="IS_AUDIO_BUILD"/>
-    <Command ID="0x832" Name="CLEAR_QUEUED_DIALOGUE"/>
+    <Command ID="0x831" Name="IS_AUDIO_BUILD" Supported="false"/>
+    <Command ID="0x832" Name="CLEAR_QUEUED_DIALOGUE" Supported="false"/>
     <Command ID="0x833" Name="HAS_OBJECT_BEEN_PHOTOGRAPHED">
       <Args>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
@@ -12092,7 +12092,7 @@
         <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
       </Args>
     </Command>
-    <Command ID="0x838" Name="SET_OBJECT_ANIM_PLAYING_FLAG"/>
+    <Command ID="0x838" Name="SET_OBJECT_ANIM_PLAYING_FLAG" Supported="false"/>
     <Command ID="0x839" Name="GET_OBJECT_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Desc="Object" Entity="OBJECT"/>
@@ -12107,7 +12107,7 @@
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x83b" Name="GET_OBJECT_ANIM_TOTAL_TIME"/>
+    <Command ID="0x83b" Name="GET_OBJECT_ANIM_TOTAL_TIME" Supported="false"/>
     <Command ID="0x83c" Name="SET_CHAR_VELOCITY">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -12200,7 +12200,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x84f" Name="GET_GROUP_LEADER"/>
+    <Command ID="0x84f" Name="GET_GROUP_LEADER" Supported="false"/>
     <Command ID="0x850" Name="TASK_FOLLOW_FOOTSTEPS">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -12242,7 +12242,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x857" Name="SET_WATER_CONFIGURATION"/>
+    <Command ID="0x857" Name="SET_WATER_CONFIGURATION" Supported="false"/>
     <Command ID="0x858" Name="SET_HEADING_FOR_ATTACHED_PLAYER">
       <Args>
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
@@ -12270,15 +12270,15 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x85c" Name="TASK_USE_ATTRACTOR_ADVANCED"/>
-    <Command ID="0x85d" Name="TASK_FOLLOW_PATH_NODES_TO_COORD_SHOOTING"/>
+    <Command ID="0x85c" Name="TASK_USE_ATTRACTOR_ADVANCED" Supported="false"/>
+    <Command ID="0x85d" Name="TASK_FOLLOW_PATH_NODES_TO_COORD_SHOOTING" Supported="false"/>
     <Command ID="0x85e" Name="START_PLAYBACK_RECORDED_CAR_LOOPED">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
         <Arg Type="INT" Desc="Path ID"/>
       </Args>
     </Command>
-    <Command ID="0x85f" Name="START_PLAYBACK_RECORDED_CAR_USING_AI_LOOPED"/>
+    <Command ID="0x85f" Name="START_PLAYBACK_RECORDED_CAR_USING_AI_LOOPED" Supported="false"/>
     <Command ID="0x860" Name="SET_CHAR_AREA_VISIBLE">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -12290,8 +12290,8 @@
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
       </Args>
     </Command>
-    <Command ID="0x862" Name="GET_MODEL_NAME_FOR_DEBUG_ONLY"/>
-    <Command ID="0x863" Name="TASK_USE_NEARBY_ENTRY_EXIT"/>
+    <Command ID="0x862" Name="GET_MODEL_NAME_FOR_DEBUG_ONLY" Supported="false"/>
+    <Command ID="0x863" Name="TASK_USE_NEARBY_ENTRY_EXIT" Supported="false"/>
     <Command ID="0x864" Name="ENABLE_ENTRY_EXIT_PLAYER_GROUP_WARPING">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -12325,7 +12325,7 @@
         <Arg Type="FLOAT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x86a" Name="CLEAR_ALL_VIEW_VARIABLES"/>
+    <Command ID="0x86a" Name="CLEAR_ALL_VIEW_VARIABLES" Supported="false"/>
     <Command ID="0x86b" Name="CLEAR_THIS_INTEGER_WATCHPOINT">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
@@ -12336,10 +12336,10 @@
         <Arg Type="FLOAT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x86d" Name="CLEAR_ALL_BREAKPOINTS"/>
-    <Command ID="0x86e" Name="CLEAR_ALL_WATCHPOINTS"/>
-    <Command ID="0x86f" Name="IS_THIS_MODEL_A_TRAIN"/>
-    <Command ID="0x870" Name="GET_VEHICLE_CHAR_IS_STANDING_ON"/>
+    <Command ID="0x86d" Name="CLEAR_ALL_BREAKPOINTS" Supported="false"/>
+    <Command ID="0x86e" Name="CLEAR_ALL_WATCHPOINTS" Supported="false"/>
+    <Command ID="0x86f" Name="IS_THIS_MODEL_A_TRAIN" Supported="false"/>
+    <Command ID="0x870" Name="GET_VEHICLE_CHAR_IS_STANDING_ON" Supported="false"/>
     <Command ID="0x871" Name="SWITCH_START">
       <Args>
         <Arg Type="INT"/>
@@ -12413,7 +12413,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x877" Name="GET_VEHICLE_DIRT_LEVEL"/>
+    <Command ID="0x877" Name="GET_VEHICLE_DIRT_LEVEL" Supported="false"/>
     <Command ID="0x878" Name="SET_VEHICLE_DIRT_LEVEL">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -12453,14 +12453,14 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x880" Name="DRAW_RECT_WITH_TITLE"/>
+    <Command ID="0x880" Name="DRAW_RECT_WITH_TITLE" Supported="false"/>
     <Command ID="0x881" Name="SET_PLAYER_FIRE_BUTTON">
       <Args>
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x882" Name="SET_ATTRACTOR_RADIUS"/>
+    <Command ID="0x882" Name="SET_ATTRACTOR_RADIUS" Supported="false"/>
     <Command ID="0x883" Name="ATTACH_FX_SYSTEM_TO_CHAR_BONE">
       <Args>
         <Arg Type="INT" Desc="Particle FX" Entity="FX_SYSTEM"/>
@@ -12474,8 +12474,8 @@
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x885" Name="CONST_INT"/>
-    <Command ID="0x886" Name="CONST_FLOAT"/>
+    <Command ID="0x885" Name="CONST_INT" Supported="false"/>
+    <Command ID="0x886" Name="CONST_FLOAT" Supported="false"/>
     <Command ID="0x887" Name="SET_HEADING_LIMIT_FOR_ATTACHED_CHAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -12537,24 +12537,24 @@
       </Args>
     </Command>
     <Command ID="0x88e" Name="SET_TIME_ONE_DAY_FORWARD"/>
-    <Command ID="0x88f" Name="SET_TIME_ONE_DAY_BACK"/>
+    <Command ID="0x88f" Name="SET_TIME_ONE_DAY_BACK" Supported="false"/>
     <Command ID="0x890" Name="SET_TIMER_BEEP_COUNTDOWN_TIME">
       <Args>
         <Arg Type="INT" Desc="Global timer storage" Ref="true" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x891" Name="TASK_SIT_IN_RESTAURANT"/>
-    <Command ID="0x892" Name="GET_RANDOM_ATTRACTOR_ON_CLOSEST_OBJECT_OF_TYPE"/>
+    <Command ID="0x891" Name="TASK_SIT_IN_RESTAURANT" Supported="false"/>
+    <Command ID="0x892" Name="GET_RANDOM_ATTRACTOR_ON_CLOSEST_OBJECT_OF_TYPE" Supported="false"/>
     <Command ID="0x893" Name="ATTACH_TRAILER_TO_CAB">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
       </Args>
     </Command>
-    <Command ID="0x894" Name="ADD_INTERESTING_ENTITY_FOR_CHAR"/>
-    <Command ID="0x895" Name="CLEAR_INTERESTING_ENTITIES_FOR_CHAR"/>
-    <Command ID="0x896" Name="GET_CLOSEST_ATTRACTOR"/>
+    <Command ID="0x894" Name="ADD_INTERESTING_ENTITY_FOR_CHAR" Supported="false"/>
+    <Command ID="0x895" Name="CLEAR_INTERESTING_ENTITIES_FOR_CHAR" Supported="false"/>
+    <Command ID="0x896" Name="GET_CLOSEST_ATTRACTOR" Supported="false"/>
     <Command ID="0x897" Name="IS_VEHICLE_TOUCHING_OBJECT">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -12568,8 +12568,8 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x899" Name="ALLOCATE_SCRIPT_TO_ATTRACTOR"/>
-    <Command ID="0x89a" Name="GET_CLOSEST_ATTRACTOR_WITH_THIS_SCRIPT"/>
+    <Command ID="0x899" Name="ALLOCATE_SCRIPT_TO_ATTRACTOR" Supported="false"/>
+    <Command ID="0x89a" Name="GET_CLOSEST_ATTRACTOR_WITH_THIS_SCRIPT" Supported="false"/>
     <Command ID="0x89b" Name="IS_PLAYER_IN_POSITION_FOR_CONVERSATION">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -12581,7 +12581,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x89d" Name="GET_CONVERSATION_STATUS"/>
+    <Command ID="0x89d" Name="GET_CONVERSATION_STATUS" Supported="false"/>
     <Command ID="0x89e" Name="GET_RANDOM_CHAR_IN_SPHERE_ONLY_DRUGS_BUYERS">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -12608,7 +12608,7 @@
         <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x8a1" Name="GET_CHAR_MAP_ATTRACTOR_STATUS"/>
+    <Command ID="0x8a1" Name="GET_CHAR_MAP_ATTRACTOR_STATUS" Supported="false"/>
     <Command ID="0x8a2" Name="PLANE_ATTACK_PLAYER_USING_DOG_FIGHT">
       <Args>
         <Arg Type="INT" Desc="Plane" Entity="CAR"/>
@@ -12656,7 +12656,7 @@
         <Arg Type="INT" Desc="Script ID"/>
       </Args>
     </Command>
-    <Command ID="0x8aa" Name="STREAM_SCRIPT_INTERNAL"/>
+    <Command ID="0x8aa" Name="STREAM_SCRIPT_INTERNAL" Supported="false"/>
     <Command ID="0x8ab" Name="HAS_STREAMED_SCRIPT_LOADED">
       <Args>
         <Arg Type="INT" Desc="Script ID"/>
@@ -12675,14 +12675,14 @@
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x8ae" Name="DRAW_WINDOW_TEXT"/>
+    <Command ID="0x8ae" Name="DRAW_WINDOW_TEXT" Supported="false"/>
     <Command ID="0x8af" Name="SET_CHAR_MAX_HEALTH">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x8b0" Name="SET_CAR_PITCH"/>
+    <Command ID="0x8b0" Name="SET_CAR_PITCH" Supported="false"/>
     <Command ID="0x8b1" Name="SET_NIGHT_VISION">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -12840,10 +12840,10 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x8cc" Name="PICK_UP_OBJECT_WITH_WINCH"/>
-    <Command ID="0x8cd" Name="PICK_UP_VEHICLE_WITH_WINCH"/>
-    <Command ID="0x8ce" Name="PICK_UP_CHAR_WITH_WINCH"/>
-    <Command ID="0x8cf" Name="STORE_CAR_IN_NEAREST_IMPOUNDING_GARAGE"/>
+    <Command ID="0x8cc" Name="PICK_UP_OBJECT_WITH_WINCH" Supported="false"/>
+    <Command ID="0x8cd" Name="PICK_UP_VEHICLE_WITH_WINCH" Supported="false"/>
+    <Command ID="0x8ce" Name="PICK_UP_CHAR_WITH_WINCH" Supported="false"/>
+    <Command ID="0x8cf" Name="STORE_CAR_IN_NEAREST_IMPOUNDING_GARAGE" Supported="false"/>
     <Command ID="0x8d0" Name="IS_SKIP_CUTSCENE_BUTTON_PRESSED"/>
     <Command ID="0x8d1" Name="GET_CUTSCENE_OFFSET">
       <Args>
@@ -12876,7 +12876,7 @@
         <Arg Type="INT" Out="true" AllowConst="false" Entity="MENU"/>
       </Args>
     </Command>
-    <Command ID="0x8d5" Name="CONSTANT_INT"/>
+    <Command ID="0x8d5" Name="CONSTANT_INT" Supported="false"/>
     <Command ID="0x8d6" Name="SET_MENU_COLUMN_ORIENTATION">
       <Args>
         <Arg Type="INT" Entity="MENU"/>
@@ -13127,7 +13127,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x8fc" Name="GET_MENU_POSITION"/>
+    <Command ID="0x8fc" Name="GET_MENU_POSITION" Supported="false"/>
     <Command ID="0x8fd" Name="SET_HEATHAZE_EFFECT">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -13151,8 +13151,8 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x902" Name="SET_OBJECT_BEEN_PHOTOGRAPHED_FLAG"/>
-    <Command ID="0x903" Name="SET_CHAR_BEEN_PHOTOGRAPHED_FLAG"/>
+    <Command ID="0x902" Name="SET_OBJECT_BEEN_PHOTOGRAPHED_FLAG" Supported="false"/>
+    <Command ID="0x903" Name="SET_CHAR_BEEN_PHOTOGRAPHED_FLAG" Supported="false"/>
     <Command ID="0x904" Name="GET_HUD_COLOUR">
       <Args>
         <Arg Type="INT"/>
@@ -13192,8 +13192,8 @@
         <Arg Type="FLOAT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x90a" Name="IS_PLAYBACK_FOR_CAR_PAUSED"/>
-    <Command ID="0x90b" Name="TRIGGER_PED_BOUNCE"/>
+    <Command ID="0x90a" Name="IS_PLAYBACK_FOR_CAR_PAUSED" Supported="false"/>
+    <Command ID="0x90b" Name="TRIGGER_PED_BOUNCE" Supported="false"/>
     <Command ID="0x90c" Name="SET_SPECIFIC_ZONE_TO_TRIGGER_GANG_WAR">
       <Args>
         <Arg Type="TEXT_LABEL" Desc="Area name"/>
@@ -13216,7 +13216,7 @@
         <Arg Type="INT" Desc="Script ID"/>
       </Args>
     </Command>
-    <Command ID="0x911" Name="REGISTER_STREAMED_SCRIPT"/>
+    <Command ID="0x911" Name="REGISTER_STREAMED_SCRIPT" Supported="false"/>
     <Command ID="0x912" Name="SET_MESSAGE_FORMATTING">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -13265,7 +13265,7 @@
         <Arg Type="TEXT_LABEL" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x91b" Name="RESET_LATEST_CONSOLE_COMMAND"/>
+    <Command ID="0x91b" Name="RESET_LATEST_CONSOLE_COMMAND" Supported="false"/>
     <Command ID="0x91c" Name="GET_USER_OF_CLOSEST_MAP_ATTRACTOR">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -13315,7 +13315,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x921" Name="CAMERA_SET_SHAKE_SIMULATION"/>
+    <Command ID="0x921" Name="CAMERA_SET_SHAKE_SIMULATION" Supported="false"/>
     <Command ID="0x922" Name="CAMERA_SET_LERP_FOV">
       <Args>
         <Arg Type="FLOAT"/>
@@ -13342,7 +13342,7 @@
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x927" Name="ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR"/>
+    <Command ID="0x927" Name="ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR" Supported="false"/>
     <Command ID="0x928" Name="ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED">
       <Args>
         <Arg Type="INT" Desc="Script ID"/>
@@ -13359,7 +13359,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x92a" Name="SET_PLAYER_CAN_BE_DAMAGED"/>
+    <Command ID="0x92a" Name="SET_PLAYER_CAN_BE_DAMAGED" Supported="false"/>
     <Command ID="0x92b" Name="GET_GROUP_MEMBER">
       <Args>
         <Arg Type="INT" Desc="Group handle" Entity="GROUP"/>
@@ -13367,8 +13367,8 @@
         <Arg Type="INT" Desc="Character/ped" Out="true" AllowConst="false" Entity="CHAR"/>
       </Args>
     </Command>
-    <Command ID="0x92c" Name="GET_PLAYERS_GANG_IN_CAR_ACTIVE"/>
-    <Command ID="0x92d" Name="SET_PLAYERS_GANG_IN_CAR_ACTIVE"/>
+    <Command ID="0x92c" Name="GET_PLAYERS_GANG_IN_CAR_ACTIVE" Supported="false"/>
+    <Command ID="0x92d" Name="SET_PLAYERS_GANG_IN_CAR_ACTIVE" Supported="false"/>
     <Command ID="0x92e" Name="GET_WATER_HEIGHT_AT_COORDS">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -13392,10 +13392,10 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x932" Name="CAMERA_IS_FOV_RUNNING"/>
+    <Command ID="0x932" Name="CAMERA_IS_FOV_RUNNING" Supported="false"/>
     <Command ID="0x933" Name="CAMERA_IS_VECTOR_MOVE_RUNNING"/>
     <Command ID="0x934" Name="CAMERA_IS_VECTOR_TRACK_RUNNING"/>
-    <Command ID="0x935" Name="CAMERA_IS_SHAKE_RUNNING"/>
+    <Command ID="0x935" Name="CAMERA_IS_SHAKE_RUNNING" Supported="false"/>
     <Command ID="0x936" Name="CAMERA_SET_VECTOR_MOVE">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -13418,7 +13418,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x938" Name="CLEAR_ALL_QUEUED_DIALOGUE"/>
+    <Command ID="0x938" Name="CLEAR_ALL_QUEUED_DIALOGUE" Supported="false"/>
     <Command ID="0x939" Name="ATTACH_CAR_TO_OBJECT">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -13443,7 +13443,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x93c" Name="SET_ONSCREEN_COUNTER_COLOUR"/>
+    <Command ID="0x93c" Name="SET_ONSCREEN_COUNTER_COLOUR" Supported="false"/>
     <Command ID="0x93d" Name="SET_CINEMA_CAMERA">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -13455,7 +13455,7 @@
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x93f" Name="IS_FIRE_BUTTON_PRESSED"/>
+    <Command ID="0x93f" Name="IS_FIRE_BUTTON_PRESSED" Supported="false"/>
     <Command ID="0x940" Name="SET_GROUP_FOLLOW_STATUS">
       <Args>
         <Arg Type="INT" Desc="Group handle" Entity="GROUP"/>
@@ -13473,7 +13473,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x943" Name="SET_CAMERA_BEHIND_CHAR"/>
+    <Command ID="0x943" Name="SET_CAMERA_BEHIND_CHAR" Supported="false"/>
     <Command ID="0x944" Name="SET_CAMERA_IN_FRONT_OF_CHAR">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -13659,8 +13659,8 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x962" Name="DOES_CAR_HAVE_ROOF"/>
-    <Command ID="0x963" Name="SET_BLIP_FADE"/>
+    <Command ID="0x962" Name="DOES_CAR_HAVE_ROOF" Supported="false"/>
+    <Command ID="0x963" Name="SET_BLIP_FADE" Supported="false"/>
     <Command ID="0x964" Name="CREATE_MENU_GRID">
       <Args>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
@@ -13762,7 +13762,7 @@
         <Arg Type="INT" Desc="Decision maker" Out="true" AllowConst="false" Entity="DECISION_MAKER"/>
       </Args>
     </Command>
-    <Command ID="0x979" Name="LOAD_SHARED_CHAR_DECISION_MAKER"/>
+    <Command ID="0x979" Name="LOAD_SHARED_CHAR_DECISION_MAKER" Supported="false"/>
     <Command ID="0x97a" Name="REPORT_MISSION_AUDIO_EVENT_AT_POSITION">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -13789,8 +13789,8 @@
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
-    <Command ID="0x97e" Name="IS_POLICE_VEHICLE_IN_PURSUIT"/>
-    <Command ID="0x97f" Name="GET_CAR_COLOUR_FROM_MENU_INDEX"/>
+    <Command ID="0x97e" Name="IS_POLICE_VEHICLE_IN_PURSUIT" Supported="false"/>
+    <Command ID="0x97f" Name="GET_CAR_COLOUR_FROM_MENU_INDEX" Supported="false"/>
     <Command ID="0x980" Name="EXTINGUISH_FIRE_AT_POINT">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -13882,8 +13882,8 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x98f" Name="RADIANS_TO_DEGREES"/>
-    <Command ID="0x990" Name="DEGREES_TO_RADIANS"/>
+    <Command ID="0x98f" Name="RADIANS_TO_DEGREES" Supported="false"/>
+    <Command ID="0x990" Name="DEGREES_TO_RADIANS" Supported="false"/>
     <Command ID="0x991" Name="PAUSE_CURRENT_BEAT_TRACK">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -13920,7 +13920,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x999" Name="SET_PLAYER_FIRE_WITH_SHOULDER_BUTTON"/>
+    <Command ID="0x999" Name="SET_PLAYER_FIRE_WITH_SHOULDER_BUTTON" Supported="false"/>
     <Command ID="0x99a" Name="SET_CAR_COLLISION">
       <Args>
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
@@ -13991,7 +13991,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x9a5" Name="SET_CCTV_EFFECT"/>
+    <Command ID="0x9a5" Name="SET_CCTV_EFFECT" Supported="false"/>
     <Command ID="0x9a6" Name="SHOW_BLIPS_ON_ALL_LEVELS">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -14055,7 +14055,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x9b1" Name="GET_CPU_LEVEL"/>
+    <Command ID="0x9b1" Name="GET_CPU_LEVEL" Supported="false"/>
     <Command ID="0x9b2" Name="GET_RANDOM_CAR_MODEL_IN_MEMORY">
       <Args>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -14181,7 +14181,7 @@
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
       </Args>
     </Command>
-    <Command ID="0x9c6" Name="SET_ALL_CARS_IN_AREA_VISIBLE"/>
+    <Command ID="0x9c6" Name="SET_ALL_CARS_IN_AREA_VISIBLE" Supported="false"/>
     <Command ID="0x9c7" Name="SET_PLAYER_MODEL">
       <Args>
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
@@ -14240,7 +14240,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
-    <Command ID="0x9d3" Name="IS_AMBIENT_CRIME_ENABLED"/>
+    <Command ID="0x9d3" Name="IS_AMBIENT_CRIME_ENABLED" Supported="false"/>
     <Command ID="0x9d4" Name="CLEAR_WANTED_LEVEL_IN_GARAGE"/>
     <Command ID="0x9d5" Name="SET_CHAR_SAY_CONTEXT_IMPORTANT">
       <Args>
@@ -14287,7 +14287,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x9dc" Name="SET_CHAR_CAN_CLIMB_OUT_WATER"/>
+    <Command ID="0x9dc" Name="SET_CHAR_CAN_CLIMB_OUT_WATER" Supported="false"/>
     <Command ID="0x9dd" Name="MAKE_ROOM_IN_PLAYER_GANG_FOR_MISSION_PEDS">
       <Args>
         <Arg Type="INT"/>
@@ -14361,7 +14361,7 @@
         <Arg Type="INT" Desc="Car/vehicle" Entity="CAR"/>
       </Args>
     </Command>
-    <Command ID="0x9ea" Name="PLAYER_PUT_ON_GOGGLES"/>
+    <Command ID="0x9ea" Name="PLAYER_PUT_ON_GOGGLES" Supported="false"/>
     <Command ID="0x9eb" Name="PLAYER_TAKE_OFF_GOGGLES">
       <Args>
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
@@ -14404,7 +14404,7 @@
         <Arg Type="INT" Desc="Decision maker" Entity="DECISION_MAKER"/>
       </Args>
     </Command>
-    <Command ID="0x9f3" Name="GET_RANDOM_TRAIN_IN_SPHERE_NO_SAVE"/>
+    <Command ID="0x9f3" Name="GET_RANDOM_TRAIN_IN_SPHERE_NO_SAVE" Supported="false"/>
     <Command ID="0x9f4" Name="IGNORE_HEIGHT_DIFFERENCE_FOLLOWING_NODES">
       <Args>
         <Arg Type="INT" Desc="Character/ped" Entity="CHAR"/>
@@ -14429,7 +14429,7 @@
       </Args>
     </Command>
     <Command ID="0x9f8" Name="DO_WEAPON_STUFF_AT_START_OF_2P_GAME"/>
-    <Command ID="0x9f9" Name="SET_MENU_HEADER_ORIENTATION"/>
+    <Command ID="0x9f9" Name="SET_MENU_HEADER_ORIENTATION" Supported="false"/>
     <Command ID="0x9fa" Name="HAS_GAME_JUST_RETURNED_FROM_FRONTEND"/>
     <Command ID="0x9fb" Name="GET_CURRENT_LANGUAGE">
       <Args>
@@ -14459,7 +14459,7 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
       </Args>
     </Command>
-    <Command ID="0xa00" Name="IS_THIS_MODEL_A_BIKE"/>
+    <Command ID="0xa00" Name="IS_THIS_MODEL_A_BIKE" Supported="false"/>
     <Command ID="0xa01" Name="IS_THIS_MODEL_A_CAR">
       <Args>
         <Arg Type="INT" Desc="Model ID" Enum="CARPEDMODEL"/>
@@ -14472,8 +14472,8 @@
       </Args>
     </Command>
     <Command ID="0xa03" Name="IS_GANG_WAR_FIGHTING_GOING_ON"/>
-    <Command ID="0xa04" Name="SET_VEHICLE_FIRING_RATE_MULTIPLIER"/>
-    <Command ID="0xa05" Name="GET_VEHICLE_FIRING_RATE_MULTIPLIER"/>
+    <Command ID="0xa04" Name="SET_VEHICLE_FIRING_RATE_MULTIPLIER" Supported="false"/>
+    <Command ID="0xa05" Name="GET_VEHICLE_FIRING_RATE_MULTIPLIER" Supported="false"/>
     <Command ID="0xa06" Name="IS_NEXT_STATION_ALLOWED">
       <Args>
         <Arg Type="INT" Desc="Train" Entity="CAR"/>
@@ -14516,7 +14516,7 @@
         <Arg Type="INT" Desc="Player" Entity="PLAYER"/>
       </Args>
     </Command>
-    <Command ID="0xa0d" Name="BLOCK_VEHICLE_MODEL"/>
+    <Command ID="0xa0d" Name="BLOCK_VEHICLE_MODEL" Supported="false"/>
     <Command ID="0xa0e" Name="CLEAR_THIS_PRINT_BIG_NOW">
       <Args>
         <Arg Type="INT"/>
@@ -14807,7 +14807,7 @@
         <Arg Type="INT" Desc="En/Ex marker" Entity="USER_3D_MARKER"/>
       </Args>
     </Command>
-    <Command ID="0xa42" Name="REMOVE_ALLUSER_3D_MARKERS"/>
+    <Command ID="0xa42" Name="REMOVE_ALLUSER_3D_MARKERS" Supported="false"/>
     <Command ID="0xa43" Name="GET_RID_OF_PLAYER_PROSTITUTE"/>
     <Command ID="0xa44" Name="DISPLAY_NON_MINIGAME_HELP_MESSAGES">
       <Args>
