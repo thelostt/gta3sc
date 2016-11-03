@@ -27,7 +27,7 @@ def read_scmini(filename):
         return output
 
 def main(xmlname, ininame):
-    commands = commands_from_xml(xmlname)
+    commands = Config.from_file(xmlname).commands
     inidata  = read_scmini(ininame)
 
     commands_dict = {c.id: c for c in commands}

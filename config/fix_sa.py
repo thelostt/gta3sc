@@ -196,13 +196,17 @@ def add_allow_const_false_to_out_params(commands):
                 arg.allow_const = False
 
 def main():
-    gtasa_commands = {c.id: c for c in commands_from_xml("gtasa/commands.xml")}
-    gtavc_commands = {c.id: c for c in commands_from_xml("gtavc/commands.xml")}
-    gta3_commands  = {c.id: c for c in commands_from_xml("gta3/commands.xml")}
+    gtasa = Config.from_file("gtasa/commands.xml")
+    gtavc = Config.from_file("gtavc/commands.xml")
+    gta3  = Config.from_file("gta3/commands.xml")
+
+    gtasa_commands = {c.id: c for c in gtasa.commands}
+    gtavc_commands = {c.id: c for c in gtavc.commands}
+    gta3_commands  = {c.id: c for c in gta3.commands}
 
     discover_properties_from_description(gtasa_commands)
 
-    #commands_to_xml("gtasa/commands.xml", [c for c in gtasa_commands.itervalues()])
+    gtasa.save_config("gtasa/commands.xml")
 
 
 

@@ -3,7 +3,57 @@
 from lxml import objectify
 from lxml import etree
 
-__all__ = ['Command', 'Argument', 'commands_from_xml', 'commands_to_xml']
+__all__ = ['Config', 'Alternator', 'Enum', 'Command', 'Argument']
+
+class Alternator:
+    def __init__(self):
+        self.name = ""
+        self.alters = []
+
+    @staticmethod
+    def from_node(node):
+        init = Alternator()
+        init.name   = node.get("Name")
+        init.alters = [a.get("Name") for a in node.iter("Alternative")]
+        return init
+
+    def to_node(self):
+        node = etree.Element("Alternator", Name=self.name)
+        for a in self.alters:
+            etree.SubElement(node, "Alternative", Name=a)
+        return node
+
+class Enum:
+    def __init__(self):
+        self.name = ""
+        self.is_global = False  # global is a python keyword
+        self.constants = {}
+
+    @staticmethod
+    def from_node(node):
+        init = Enum()
+        init.name       = node.get("Name")
+        init.is_global  = str2bool(node.get("Global", "false"))
+        init.constants  = {}
+        last_value = -1
+        for a in node.iter("Constant"):
+            maybe_value = a.get("Value")
+            last_value = int(maybe_value, 0) if maybe_value is not None else last_value + 1
+            init.constants[a.get("Name")] = last_value
+        return init
+
+    def to_node(self):
+        last_value = -1
+        node = etree.Element("Enum", Name=self.name)
+        if self.is_global:
+            node.set("Global", bool2str(self.is_global))
+        for k,v in sorted(self.constants.items(), key=lambda x: x[1]):
+            if v == last_value + 1:
+                etree.SubElement(node, "Constant", Name=k)
+            else:
+                etree.SubElement(node, "Constant", Name=k, Value=str(v))
+            last_value = v
+        return node
 
 class Command:
     def __init__(self):
@@ -26,26 +76,27 @@ class Command:
     def has_optional(self):
         return len(self.args) > 0 and self.args[-1].optional == True
 
-    def init_from_node(self, c):
-        self.name      = c.get("Name")
-        self.id        = int(c.get("ID"), 16)
-        self.supported = str2bool(c.get("Supported", "true"))
-        self.args      = []
-        if hasattr(c, "Args") and hasattr(c.Args[0], "Arg"):
-            for a in c.Args[0].Arg:
-                arg = Argument()
-                arg.init_from_node(a)
-                self.args.append(arg)
+    @staticmethod
+    def from_node(node):
+        init = Command()
+        init.name = node.get("Name")
+        init.id = int(node.get("ID"), 16)
+        init.supported = str2bool(node.get("Supported", "true"))
+        init.args = []
+        node_args = node.find("Args")
+        if node_args is not None:
+            for a in node_args.iter("Arg"):
+                init.args.append(Argument.from_node(a))
+        return init
 
     def to_node(self):
         node = etree.Element("Command", Name=self.name, ID=hex(self.id))
         if self.supported == False:
             node.set("Supported", bool2str(self.supported))
         if len(self.args) > 0:
-            node_args = etree.Element("Args")
+            node_args = etree.SubElement(node, "Args")
             for a in self.args:
                 node_args.append(a.to_node())
-            node.append(node_args)
         return node
 
 class Argument:
@@ -73,18 +124,21 @@ class Argument:
     def has_enum(self, name):
         return any(x == name for x in self.enums)
 
-    def init_from_node(self, a):
-        self.type = a.get("Type")
-        self.desc = a.get("Desc", "")
-        self.out  = str2bool(a.get("Out", "false"))
-        self.ref  = str2bool(a.get("Ref", "false"))
-        self.optional = str2bool(a.get("Optional", "false"))
-        self.allow_const = str2bool(a.get("AllowConst", "true"))
-        self.allow_gvar = str2bool(a.get("AllowGlobalVar", "true"))
-        self.allow_lvar = str2bool(a.get("AllowLocalVar", "true"))
-        self.entity = a.get("Entity", None)
-        self.enums = a.get("Enum", None)
-        self.enums = [self.enums] if self.enums else []
+    @staticmethod
+    def from_node(node):
+        init = Argument()
+        init.type = node.get("Type")
+        init.desc = node.get("Desc", "")
+        init.out  = str2bool(node.get("Out", "false"))
+        init.ref  = str2bool(node.get("Ref", "false"))
+        init.optional = str2bool(node.get("Optional", "false"))
+        init.allow_const = str2bool(node.get("AllowConst", "true"))
+        init.allow_gvar = str2bool(node.get("AllowGlobalVar", "true"))
+        init.allow_lvar = str2bool(node.get("AllowLocalVar", "true"))
+        init.entity = node.get("Entity", None)
+        init.enums = node.get("Enum", None)
+        init.enums = [init.enums] if init.enums else []
+        return init
         
     def to_node(self):
         node = etree.Element("Arg", Type=self.type)
@@ -109,29 +163,55 @@ class Argument:
             node.set("Enum", self.enums[0])
         return node
     
+class Config:
+    def __init__(self):
+        self.commands = []
+        self.enums = []
+        self.alternators = []
 
-def commands_from_xml(filename):
-    commands = []
-    with open(filename) as f:
-        lines = "".join(f.readlines())
-        xobjc = objectify.fromstring(lines)
-        for node in xobjc.Commands[0].Command:
-            c = Command()
-            c.init_from_node(node)
-            commands.append(c)
-        return commands
+    @staticmethod
+    def from_file(filename):
+        c = Config()
+        c.read_config(filename)
+        return c
 
-def commands_to_xml(filename, commands, pretty_print=True):
-    root = etree.Element("GTA3Script")
-    base = etree.SubElement(root, "Commands") 
-    for c in commands:
-        base.append(c.to_node())
+    def read_config(self, filename):
+        tree = etree.parse(filename)
+        for item in tree.getroot():
+            if item.tag == "Alternators":
+                for subitem in item:
+                    if subitem.tag == "Alternator":
+                        self.alternators.append(Alternator.from_node(subitem))
+            elif item.tag == "Commands":
+                for subitem in item:
+                    if subitem.tag == "Command":
+                        self.commands.append(Command.from_node(subitem))
+            elif item.tag == "Constants":
+                for subitem in item:
+                    if subitem.tag == "Enum":
+                        self.enums.append(Enum.from_node(subitem))
 
-    with open(filename, 'w') as f:
-        f.write(etree.tostring(root,
-            pretty_print=pretty_print,
-            encoding="utf-8",
-            xml_declaration=True))
+    def save_config(self, filename, pretty_print=True):
+        root = etree.Element("GTA3Script")
+        if len(self.enums) > 0:
+            base = etree.SubElement(root, "Constants") 
+            for c in self.enums:
+                base.append(c.to_node())
+        if len(self.alternators) > 0:
+            base = etree.SubElement(root, "Alternators") 
+            for c in self.alternators:
+                base.append(c.to_node())
+        if len(self.commands) > 0:
+            base = etree.SubElement(root, "Commands") 
+            for c in self.commands:
+                base.append(c.to_node())
+
+        tree = etree.ElementTree(root)
+        tree.write(filename, encoding="utf-8", pretty_print=pretty_print, xml_declaration=True)
+
+
+
+
 
 #
 # Internal
@@ -153,3 +233,9 @@ def bool2str(x):
     print(type(x))
     assert False
 
+
+if __name__ == "__main__":
+    import sys
+    cfg = Config()
+    cfg.read_config(sys.argv[1])
+    cfg.save_config(sys.argv[1])
