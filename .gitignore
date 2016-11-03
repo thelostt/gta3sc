@@ -2,9 +2,6 @@
 /debug/
 /test/**/Output
 *.pyc
-*.class
-*.java
-__Test___input.txt
 
 #################
 ## C++
