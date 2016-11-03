@@ -875,7 +875,7 @@ static std::pair<std::string, std::vector<const Command*>>
         xml_attribute<>* attrib = node->first_attribute("Name");
 
         if(!attrib)
-            throw ConfigError("missing 'Name' attribute on '<Alternator> -> <Command>' node");
+            throw ConfigError("missing 'Name' attribute on '<Alternative>' node");
 
         auto it = commands.find(attrib->value());
         if(it != commands.end())
