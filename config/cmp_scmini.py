@@ -1,9 +1,9 @@
 #!/usr/bin/env python2
 """
   Examples:
-    py cmp_scmini.py out/gta3/commands.xml ini/SCM.ini
-    py cmp_scmini.py out/gtavc/commands.xml ini/VCSCM.ini
-    py cmp_scmini.py out/gtasa/commands.xml ini/SASCM.ini
+    py cmp_scmini.py gta3/commands.xml SCM.ini
+    py cmp_scmini.py gtavc/commands.xml VCSCM.ini
+    py cmp_scmini.py gtasa/commands.xml SASCM.ini
 """
 from gta3sc import *
 import sys

@@ -4,7 +4,7 @@
 // # Check SCM Header and IMG Building
 // RUN: mkdir "%/T/streaming" || echo _
 // RUN: %gta3sc %s --config=gtasa --guesser -o "%/T/streaming/main.scm"
-// RUN: %checksum "%T/streaming/main.scm" 1f2381aaf6f99e82c69c479689e16fcb
+// RUN: %checksum "%T/streaming/main.scm" 45ef8fb66c91271cb7b82c3946bc6eb2
 // RUN: %checksum "%T/streaming/script.img" 77f87eb2b15ff1589dcdbdb55453cf84
 //
 
@@ -60,6 +60,9 @@ LOAD_AND_LAUNCH_MISSION mission1.sc
 
     // CHECK-L: REMOVE_STREAMED_SCRIPT 0i8
     REMOVE_STREAMED_SCRIPT stream1.sc
+
+    // CHECK-L: SWITCH_OBJECT_BRAINS 0i8 1i8
+    SWITCH_OBJECT_BRAINS stream1.sc TRUE
 }
 
 // Add another mission block, this time after all streamed declarations happened.

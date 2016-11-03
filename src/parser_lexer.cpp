@@ -107,6 +107,7 @@ static const std::pair<string_view, size_t> script_registers[] = {
     { "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT",             1 },
     { "REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE",      1 },
     { "ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR",      1 },
+    { "SWITCH_OBJECT_BRAINS",                           1 },
 };
 
 static const std::pair<string_view, Token> expr_symbols[] = {
