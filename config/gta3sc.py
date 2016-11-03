@@ -1,3 +1,5 @@
+# -*- Python -*-
+
 from lxml import objectify
 from lxml import etree
 
