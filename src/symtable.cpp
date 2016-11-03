@@ -1318,7 +1318,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     || command_name == "START_NEW_STREAMED_SCRIPT"
                     || command_name == "GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT"
                     || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED"
-                    || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT")
+                    || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT"
+                    || command_name == "SWITCH_OBJECT_BRAINS")
                     {
                         //|| command_name == "REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE" -- unsupported
                         //|| command_name == "ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR" -- unsupported
