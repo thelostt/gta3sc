@@ -200,7 +200,9 @@ def main():
     gtavc_commands = {c.id: c for c in commands_from_xml("gtavc/commands.xml")}
     gta3_commands  = {c.id: c for c in commands_from_xml("gta3/commands.xml")}
 
-    commands_to_xml("gtasa/commands.xml", [c for c in gtasa_commands.itervalues()])
+    discover_properties_from_description(gtasa_commands)
+
+    #commands_to_xml("gtasa/commands.xml", [c for c in gtasa_commands.itervalues()])
 
 
 
