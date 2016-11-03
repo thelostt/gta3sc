@@ -196,12 +196,18 @@ def remove_enums_from_outputs(commands):
                 print(cmd.name)
                 arg.enums = []
 
+def add_allow_const_false_to_out_params(commands):
+    for cmd in commands.itervalues():
+        for arg in cmd.args:
+            if arg.out:
+                arg.allow_const = False
+
 def main():
     gtasa_commands = {c.id: c for c in commands_from_xml("gtasa/commands.xml")}
     gtavc_commands = {c.id: c for c in commands_from_xml("gtavc/commands.xml")}
     gta3_commands  = {c.id: c for c in commands_from_xml("gta3/commands.xml")}
 
-    remove_enums_from_outputs(gtasa_commands)
+    add_allow_const_false_to_out_params(gtasa_commands)
 
     commands_to_xml("gtasa/commands.xml", [c for c in gtasa_commands.itervalues()])
 
