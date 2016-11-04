@@ -4784,6 +4784,7 @@
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT"/>
+        <Arg Type="INT"/>
         <Arg Type="INT" Out="true" AllowConst="false" Entity="PICKUP"/>
       </Args>
     </Command>
@@ -4804,18 +4805,8 @@
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x2e5" Name="CREATE_CUTSCENE_OBJECT" Supported="false">
-      <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Out="true" AllowConst="false" Entity="OBJECT"/>
-      </Args>
-    </Command>
-    <Command ID="0x2e6" Name="SET_CUTSCENE_ANIM" Supported="false">
-      <Args>
-        <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="TEXT_LABEL"/>
-      </Args>
-    </Command>
+    <Command ID="0x2e5" Name="CREATE_CUTSCENE_OBJECT" Supported="false"/>
+    <Command ID="0x2e6" Name="SET_CUTSCENE_ANIM" Supported="false"/>
     <Command ID="0x2e7" Name="START_CUTSCENE"/>
     <Command ID="0x2e8" Name="GET_CUTSCENE_TIME">
       <Args>
@@ -9462,7 +9453,19 @@
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
     </Command>
-    <Command ID="0x636" Name="TASK_SIDE_STEP_AND_SHOOT" Supported="false"/>
+    <Command ID="0x636" Name="TASK_SIDE_STEP_AND_SHOOT" Supported="false">
+      <Args>
+        <Arg Type="INT" Desc="Unknown"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
     <Command ID="0x637" Name="TASK_GO_TO_COORD_WHILE_SHOOTING">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
@@ -10406,8 +10409,21 @@
         <Arg Type="INT" Entity="PLAYER"/>
       </Args>
     </Command>
-    <Command ID="0x6e0" Name="SET_TWO_PLAYER_CAMERA_MODE" Supported="false"/>
-    <Command ID="0x6e1" Name="TASK_CAR_MISSION" Supported="false"/>
+    <Command ID="0x6e0" Name="SET_TWO_PLAYER_CAMERA_MODE">
+      <Args>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0x6e1" Name="TASK_CAR_MISSION">
+      <Args>
+        <Arg Type="INT" Entity="CHAR"/>
+        <Arg Type="INT" Entity="CAR"/>
+        <Arg Type="INT" Entity="CAR"/>
+        <Arg Type="INT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
     <Command ID="0x6e2" Name="TASK_GO_TO_OBJECT">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
@@ -11654,8 +11670,20 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
       </Args>
     </Command>
-    <Command ID="0x7e0" Name="SET_BLIP_AS_FRIENDLY" Supported="false"/>
-    <Command ID="0x7e1" Name="TASK_SWIM_TO_COORD" Supported="false"/>
+    <Command ID="0x7e0" Name="SET_BLIP_AS_FRIENDLY">
+      <Args>
+        <Arg Type="INT" Entity="BLIP"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0x7e1" Name="TASK_SWIM_TO_COORD">
+      <Args>
+        <Arg Type="INT" Entity="CHAR"/>
+        <Arg Type="FLOAT" Desc="X Coord"/>
+        <Arg Type="FLOAT" Desc="Y Coord"/>
+        <Arg Type="FLOAT" Desc="Z Coord"/>
+      </Args>
+    </Command>
     <Command ID="0x7e2" Name="TASK_GO_STRAIGHT_TO_COORD_WITHOUT_STOPPING" Supported="false"/>
     <Command ID="0x7e3" Name="GET_BEAT_INFO_FOR_CURRENT_TRACK" Supported="false"/>
     <Command ID="0x7e4" Name="GET_MODEL_DIMENSIONS">
@@ -12954,8 +12982,20 @@
         <Arg Type="FLOAT" Desc="Angle"/>
       </Args>
     </Command>
-    <Command ID="0x8e0" Name="SET_EXTRA_POLICE_STATION_RESTART_POINT" Supported="false"/>
-    <Command ID="0x8e1" Name="FIND_NUMBER_TAGS_TAGGED" Supported="false"/>
+    <Command ID="0x8e0" Name="SET_EXTRA_POLICE_STATION_RESTART_POINT">
+      <Args>
+        <Arg Type="FLOAT" Desc="X Coord"/>
+        <Arg Type="FLOAT" Desc="Y Coord"/>
+        <Arg Type="FLOAT" Desc="Z Coord"/>
+        <Arg Type="FLOAT" Desc="Radius"/>
+        <Arg Type="FLOAT" Desc="Angle"/>
+      </Args>
+    </Command>
+    <Command ID="0x8e1" Name="FIND_NUMBER_TAGS_TAGGED">
+      <Args>
+        <Arg Type="INT" Out="true" AllowConst="false"/>
+      </Args>
+    </Command>
     <Command ID="0x8e2" Name="GET_TERRITORY_UNDER_CONTROL_PERCENTAGE">
       <Args>
         <Arg Type="INT" Out="true" AllowConst="false"/>
@@ -14299,8 +14339,21 @@
       </Args>
     </Command>
     <Command ID="0x9df" Name="RESTORE_PLAYER_AFTER_2P_GAME" Supported="false"/>
-    <Command ID="0x9e0" Name="SET_UP_SKIP_FOR_SPECIFIC_VEHICLE" Supported="false"/>
-    <Command ID="0x9e1" Name="GET_CAR_MODEL_VALUE" Supported="false"/>
+    <Command ID="0x9e0" Name="SET_UP_SKIP_FOR_SPECIFIC_VEHICLE">
+      <Args>
+        <Arg Type="FLOAT" Desc="X Coord"/>
+        <Arg Type="FLOAT" Desc="Y Coord"/>
+        <Arg Type="FLOAT" Desc="Z Coord"/>
+        <Arg Type="FLOAT" Desc="Angle"/>
+        <Arg Type="INT" Entity="CAR"/>
+      </Args>
+    </Command>
+    <Command ID="0x9e1" Name="GET_CAR_MODEL_VALUE">
+      <Args>
+        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Out="true" AllowConst="false"/>
+      </Args>
+    </Command>
     <Command ID="0x9e2" Name="CREATE_CAR_GENERATOR_WITH_PLATE">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>

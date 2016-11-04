@@ -42,8 +42,7 @@ def main(xmlname, ininame):
                 print("Missing opcode %.4X on XML." % (entry[0]))
                 count_bad += 1
             continue
-        if not xcmd.supported:
-            continue
+
         if len(xcmd.args) != entry[1]:
             if not xcmd.name in ["SAVE_STRING_TO_DEBUG_FILE"]:
                 if entry[1] != -1 or not xcmd.has_optional():
