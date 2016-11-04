@@ -12,8 +12,12 @@
 #include "system.hpp"
 #include "cpp/argv.hpp"
 
-int compile(fs::path input, fs::path output, ProgramContext& program);
-int decompile(fs::path input, fs::path output, ProgramContext& program);
+int compile(fs::path input, fs::path output, ProgramContext&);
+int decompile(fs::path input, fs::path output, ProgramContext&);
+
+template<typename OnOutput>
+bool decompile(const void* bytecode, size_t bytecode_size, ProgramContext&, Options::Lang, OnOutput);
+
 
 const char* help_message =
 R"(Usage: gta3sc [compile|decompile] file --config=<name> [options]
@@ -595,49 +599,28 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         for(auto& gen : gens)
             gen.generate();
 
-        auto generate_output = [&]
+        auto generate_output = [&](auto& main_scm, auto& script_img, bool has_script_img)
         {
-            FILE *f = 0, *script_img = 0;
             std::vector<std::reference_wrapper<const CodeGenerator>> into_script_img;
 
-            auto guard = make_scope_guard([&] {
-                if(f) fclose(f);
-                if(script_img) fclose(script_img);
-            });
-
-            f = u8fopen(output, "wb");
-            if(f == nullptr)
-            {
-                program.fatal_error(nocontext, "failed to open output for writing");
-                //return;
-            }
-
-            if(program.opt.streamed_scripts && !program.opt.headerless)
-            {
-                script_img = u8fopen(fs::path(output).replace_filename("script.img"), "wb");
-                if(!script_img)
-                {
-                    program.fatal_error(nocontext, "failed to open script.img for writing");
-                    //return;
-                }
-            }
+            // TODO allocate_file_space(main_scm, ...)
 
             if(!program.opt.headerless)
             {
                 CodeGeneratorData hgen(header, program);
                 hgen.generate();
-                write_file(f, hgen.buffer(), hgen.buffer_size());
+                write_file(main_scm, hgen.buffer(), hgen.buffer_size());
             }
 
             for(auto& gen : gens)
             {
                 if(gen.script->type != ScriptType::StreamedScript)
-                    write_file(f, gen.buffer(), gen.buffer_size());
+                    write_file(main_scm, gen.buffer(), gen.buffer_size());
                 else
                     into_script_img.emplace_back(std::cref(gen));
             }
 
-            if(script_img != nullptr)
+            if(has_script_img)
             {
                 // TODO endian independent img building
 
@@ -706,73 +689,38 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     add_entry(temp_filename.c_str(), script.size.value());
                 }
 
-                // TODO, fseek past eof isn't well-defined by the standard, do it in another way
-                // TODO check return status of fseek
+                // TODO check return status of allocate_file_space
                 
                 if(directory.empty())
                     end_offset = files_offset;
                 else
                     end_offset = (directory.back().offset + directory.back().streaming_size) * 2048;
 
-                fseek(script_img, end_offset - 1, SEEK_SET);
-                fputc(0, script_img);
-                fseek(script_img, 0, SEEK_SET);
+                allocate_file_space(script_img, end_offset);
 
-                write_file(script_img, &cd_header, sizeof(cd_header));
-                write_file(script_img, directory.data(), sizeof(CdEntry) * directory.size());
+                write_file(script_img, 0, &cd_header, sizeof(cd_header));
+                write_file(script_img, sizeof(cd_header), directory.data(), sizeof(CdEntry) * directory.size());
 
-                fseek(script_img, directory[0].offset * 2048, SEEK_SET); // aaa.scm
-                write_file(script_img, &aaa_scm, sizeof(aaa_scm));
+                // aaa.scm
+                write_file(script_img, directory[0].offset * 2048, &aaa_scm, sizeof(aaa_scm));
 
                 for(size_t i = 0; i < into_script_img.size(); ++i)
                 {
                     const CodeGenerator& gen = into_script_img[i].get();
-                    fseek(script_img, directory[1+i].offset * 2048, SEEK_SET);
-                    write_file(script_img, gen.buffer(), gen.buffer_size());
+                    write_file(script_img, directory[1+i].offset * 2048, gen.buffer(), gen.buffer_size());
                 }
             }
         };
 
-        auto generate_ir2 = [&]
+        bool use_script_img = program.opt.streamed_scripts && !program.opt.headerless;
+
+        if(program.opt.emit_ir2)
         {
-            program.error(nocontext, "ir2 generator needs to be reimplemented\n");
+            std::vector<uint8_t> main_scm;
+            std::vector<uint8_t> script_img;
 
-
-            /*
-            size_t subscripts_counter = 0;
-
-            auto lowest_main_gen = gens.begin();
-
-            auto highest_main_gen = std::max_element(gens.begin(), gens.end(), [](const CodeGenerator& a, const CodeGenerator& b)
-            {
-                size_t left = 0, right = 0;
-
-                if(a.script->type != ScriptType::Mission && a.script->type != ScriptType::StreamedScript)
-                    left = a.script->offset.value();
-
-                if(b.script->type != ScriptType::Mission && b.script->type != ScriptType::StreamedScript)
-                    right = b.script->offset.value();
-
-                return left < right;
-            });
-
-            Expects(lowest_main_gen != gens.end());
-            Expects(highest_main_gen != gens.end());
-
-            size_t main_block_size = highest_main_gen->script->offset.value() + highest_main_gen->script->size.value();
-
-            std::unique_ptr<uint8_t[]> main_block(new uint8_t[main_block_size]);
-            // TODO should we zero the memory?
-
-            for(auto& gen : gens)
-            {
-                if(gen.script->type == ScriptType::Mission || gen.script->type == ScriptType::StreamedScript)
-                    continue;
-
-                assert(gen.script->offset.value() + gen.buffer_size() <= main_block_size);
-
-                std::memcpy(&main_block[gen.script->offset.value()], gen.buffer(), gen.buffer_size()); 
-            }
+            // TODO remove this reserve once we use allocate_file for main_scm in generate_output
+            main_scm.reserve(2048 * 10);
 
             bool is_first_line = true;
             auto print_ir2_line = [&](const std::string& line)
@@ -788,73 +736,40 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 }
             };
 
-            if(true)
-            {
-                size_t lowest_offset = lowest_main_gen->script->offset.value();
-                auto disassembler = Disassembler(program, program.commands, &main_block[lowest_offset], main_block_size - lowest_offset);
+            generate_output(main_scm, script_img, use_script_img);
 
-                disassembler.set_offset_start(lowest_offset);
-                disassembler.run_analyzer();
-                auto output = disassembler.get_data();
-
-                auto ir2dc = DecompilerIR2(program.commands, std::move(output),
-                                           lowest_offset, main_block_size - lowest_offset,
-                                           "MAIN", true);
-
-                ir2dc.decompile(print_ir2_line);
-            }
-
-            for(auto& gen : gens)
-            {
-                if(gen.script->type != ScriptType::Mission && gen.script->type != ScriptType::StreamedScript)
-                    continue;
-
-                std::string script_name;
-                const char *start_block, *end_block;
-                int block_id;
-
-                auto disassembler = Disassembler(program, program.commands, gen.buffer(), gen.buffer_size());
-
-                if(gen.script->type == ScriptType::Mission)
-                {
-                    block_id = gen.script->mission_id.value();
-                    start_block = "#MISSION_BLOCK_START {}";
-                    end_block = "#MISSION_BLOCK_END";
-                    script_name = "MISSION_" + std::to_string(block_id);
-                }
-                else if(gen.script->type == ScriptType::StreamedScript)
-                {
-                    block_id = gen.script->streamed_id.value();
-                    start_block = "#STREAMED_BLOCK_START {}";
-                    end_block = "#STREAMED_BLOCK_END";
-                    script_name = "STREAM_" + std::to_string(block_id);
-                }
-                else
-                {
-                    Unreachable();
-                }
-
-                disassembler.set_offset_start(gen.script->offset.value());
-                disassembler.add_local_offset(gen.script->offset.value());
-                disassembler.run_analyzer();
-                auto output = disassembler.get_data();
-
-                auto ir2dc = DecompilerIR2(program.commands, std::move(output),
-                    gen.script->offset.value(), gen.script->size.value(),
-                    script_name,
-                    gen.script->type == ScriptType::Main);
-
-                print_ir2_line(fmt::format(start_block, block_id));
-                ir2dc.decompile(print_ir2_line);
-                print_ir2_line(end_block);
-            }
-            */
-        };
-
-        if(program.opt.emit_ir2)
-            generate_ir2();
+            if(!decompile(main_scm.data(), main_scm.size(), program, Options::Lang::IR2, print_ir2_line))
+                throw HaltJobException();
+        }
         else
-            generate_output();
+        {
+            FILE *main_scm = 0, *script_img = 0;
+
+            auto guard = make_scope_guard([&] {
+                if(main_scm) fclose(main_scm);
+                if(script_img) fclose(script_img);
+            });
+
+            main_scm = u8fopen(output, "wb");
+            if(main_scm == nullptr)
+            {
+                program.fatal_error(nocontext, "failed to open output for writing");
+                //return;
+            }
+
+            if(use_script_img)
+            {
+                script_img = u8fopen(fs::path(output).replace_filename("script.img"), "wb");
+                if(!script_img)
+                {
+                    program.fatal_error(nocontext, "failed to open script.img for writing");
+                    //return;
+                }
+            }
+
+            generate_output(main_scm, script_img, use_script_img);
+        }
+        
 
         if(program.has_error())
             throw HaltJobException();
@@ -867,43 +782,127 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
     return 0;
 }
 
+
+
 int decompile(fs::path input, fs::path output, ProgramContext& program)
 {
-    program.error(nocontext, "decompiler needs to be reimplemented\n");
-    return 1;
-
-    /*
-    const Commands& commands = program.commands;
-
-    FILE* outstream;
-
-    if(output.empty())
+    try
     {
-        outstream = stdout;
+        const Commands& commands = program.commands;
+
+        FILE* outstream;
+
+        auto lang = (program.opt.emit_ir2? Options::Lang::IR2 : Options::Lang::GTA3Script);
+
+        auto guard = make_scope_guard([&] {
+            if(outstream != stdout) fclose(outstream);
+        });
+
+        if(output.empty())
+        {
+            outstream = stdout;
+        }
+        else
+        {
+            outstream = u8fopen(output, "wb");
+            if(!outstream)
+                program.fatal_error(nocontext, "could not open file '{}' for writing", output.generic_u8string());
+        }
+
+        auto opt_bytecode = read_file_binary(input);
+        if(!opt_bytecode)
+            program.fatal_error(nocontext, "file '{}' does not exist", input.generic_u8string());
+
+        auto println = [&](const std::string line) { fprintf(outstream, "%s\n", line.c_str()); }; 
+        if(!decompile(opt_bytecode->data(), opt_bytecode->size(), program, lang, println))
+            throw HaltJobException();
+
+        return 0;
     }
-    else
+    catch(const HaltJobException&)
     {
-        outstream = u8fopen(output, "wb");
-        if(!outstream)
-            program.fatal_error(nocontext, "could not open file '{}' for writing", output.generic_u8string());
+        fprintf(stderr, "gta3sc: decompilation failed\n");
+        return EXIT_FAILURE;
     }
-
-    auto guard = make_scope_guard([&] {
-        if(outstream != stdout) fclose(outstream);
-    });
-
-    auto opt_decomp = Disassembler::from_file(program, commands, input);
-    if(!opt_decomp)
-        program.fatal_error(nocontext, "file '{}' does not exist", input.generic_u8string());
-
-    Disassembler decomp(std::move(*opt_decomp));
-    auto scm_header = decomp.read_header(DecompiledScmHeader::Version::Liberty).value();
-    decomp.analyze_header(scm_header);
-    decomp.run_analyzer();
-    auto data = decomp.get_data();
-
-    fprintf(outstream, "%s\n", DecompilerContext(commands, std::move(data)).decompile().c_str());
-
-    return 0;
-    */
 }
+
+template<typename OnOutput>
+bool decompile(const void* bytecode, size_t bytecode_size, ProgramContext& program, Options::Lang lang, OnOutput callback)
+{
+    try
+    {
+        auto opt_header = DecompiledScmHeader::from_bytecode(bytecode, bytecode_size, DecompiledScmHeader::Version::Liberty);
+        if(!opt_header)
+            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#1)");
+
+        DecompiledScmHeader& header = *opt_header;
+
+        BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, header.main_size) };
+        std::vector<BinaryFetcher> mission_segments = mission_segment_fetcher(bytecode, bytecode_size, header, program);
+
+        Disassembler main_segment_asm(program, program.commands, main_segment);
+        std::vector<Disassembler> mission_segments_asm;
+        mission_segments_asm.reserve(header.mission_offsets.size());
+
+        // this loop cannot be thread safely unfolded because of main_segment_asm being
+        // mutated on all the units.
+        for(auto& mission_bytecode : mission_segments)
+        {
+            mission_segments_asm.emplace_back(program, program.commands, mission_bytecode, main_segment_asm);
+            mission_segments_asm.back().run_analyzer();
+        }
+
+        if(true)
+        {
+            // run main segment analyzer after the missions analyzer
+            main_segment_asm.run_analyzer(header.code_offset);
+            main_segment_asm.disassembly(header.code_offset);
+        }
+
+        for(auto& mission_asm : mission_segments_asm)
+        {
+            mission_asm.disassembly();
+        }
+
+        if(lang == Options::Lang::GTA3Script)
+        {
+            {
+                callback("/***** Main Segment *****/");
+                DecompilerGTA3Script(program.commands, main_segment_asm.get_data(), 0).decompile(callback);
+            }
+
+            for(size_t i = 0; i < mission_segments_asm.size(); ++i)
+            {
+                auto& mission_asm = mission_segments_asm[i];
+                callback(fmt::format("/***** Mission Segment %d *****/", (int)(i)));
+                DecompilerGTA3Script(program.commands, mission_asm.get_data(), 1 + i).decompile(callback);
+            }
+        }
+        else if(lang == Options::Lang::IR2)
+        {
+            auto base_offset = 0;
+
+            auto main_ir2 = DecompilerIR2(program.commands, main_segment_asm.get_data(), 0, main_segment.size, "MAIN", true);
+            main_ir2.decompile(callback);
+
+            for(size_t i = 0; i < mission_segments_asm.size(); ++i)
+            {
+                auto& mission_asm = mission_segments_asm[i];
+                auto script_name = fmt::format("MISSION_{}", i);
+                callback(fmt::format("#MISSION_BLOCK_START {}", (int)(i)));
+                DecompilerIR2(program.commands, mission_asm.get_data(), 0, mission_segments[i].size, std::move(script_name), false, main_ir2).decompile(callback);
+                callback("#MISSION_BLOCK_END");
+            }
+        }
+
+        if(program.has_error())
+            throw HaltJobException();
+
+        return true;
+    }
+    catch(const HaltJobException&)
+    {
+        return false;
+    }
+}
+

@@ -75,19 +75,21 @@ struct DecompiledScmHeader
     };
 
     Version                               version;
+    size_t                                code_offset;
     uint32_t                              size_global_vars_space; // including the 8 bytes of GOTO at the top
     std::vector<std::string>              models;
     uint32_t                              main_size;
     std::vector<uint32_t>                 mission_offsets;
 
-    DecompiledScmHeader(Version version, uint32_t size_globals, std::vector<std::string> models,
-        uint32_t main_size, std::vector<uint32_t> mission_offsets) :
+    explicit DecompiledScmHeader(Version version, size_t code_offset, uint32_t size_globals, std::vector<std::string> models,
+                                 uint32_t main_size, std::vector<uint32_t> mission_offsets) :
         version(version), size_global_vars_space(size_globals), main_size(main_size),
-        models(std::move(models)), mission_offsets(std::move(mission_offsets))
+        models(std::move(models)), mission_offsets(std::move(mission_offsets)),
+        code_offset(code_offset)
     {
     }
 
-    static optional<DecompiledScmHeader> from_bytecode(const uint8_t* bytecode, size_t bytecode_size, Version version);
+    static optional<DecompiledScmHeader> from_bytecode(const void* bytecode, size_t bytecode_size, Version version);
 };
 
 // contrasts to CompiledData
@@ -121,7 +123,7 @@ static optional<std::string> get_immstr(const T&);
 static optional<std::string> get_immstr(const ArgVariant2&);
 
 /// Returns a vector of { bytecode, size } for each mission in the 
-std::vector<BinaryFetcher> mission_segment_fetcher(const uint8_t* bytecode, size_t bytecode_size,
+std::vector<BinaryFetcher> mission_segment_fetcher(const void* bytecode, size_t bytecode_size,
                                                    const DecompiledScmHeader& header, ProgramContext& program);
 
 
@@ -132,6 +134,10 @@ struct BinaryFetcher
 {
     const uint8_t* const bytecode;
     const size_t         size;
+
+    explicit BinaryFetcher(const void* bytecode, size_t size) :
+        bytecode(reinterpret_cast<const uint8_t*>(bytecode)), size(size)
+    {}
 
     optional<uint8_t> fetch_u8(size_t offset)
     {
@@ -275,10 +281,10 @@ public:
     }
 
     /// Step 1. Analyze the code.
-    void run_analyzer();
+    void run_analyzer(size_t from_offset = 0);
 
     /// Step 2. After analyzes, disassembly into a vector of pseudo-instructions.
-    void disassembly();
+    void disassembly(size_t from_offset = 0);
 
     /// Step 3. Get reference to output.
     const std::vector<DecompiledData>& get_data() const { return this->decompiled; }

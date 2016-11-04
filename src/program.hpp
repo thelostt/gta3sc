@@ -14,6 +14,12 @@ struct HaltJobException : public std::exception
 
 struct Options
 {
+    enum class Lang : uint8_t
+    {
+        IR2,
+        GTA3Script,
+    };
+
     enum class HeaderVersion : uint8_t
     {
         None,
@@ -193,45 +199,6 @@ inline std::string format_error(const char* type, const SyntaxTree& context_, co
     }
 }
 
-
-
-// TODO this is a weird type, we should probably get rid of it, leave only the program.error function
-class ProgramError
-{
-public:
-    template<typename... Args>
-    ProgramError(const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
-        : message_(format_error("error", context, msg, std::forward<Args>(args)...))
-    {}
-
-    template<typename... Args>
-    ProgramError(const SyntaxTree& context, const char* msg, Args&&... args)
-        : message_(format_error("error", context, msg, std::forward<Args>(args)...))
-    {}
-
-    template<typename... Args>
-    ProgramError(const Script& context, const char* msg, Args&&... args)
-        : message_(format_error("error", context, msg, std::forward<Args>(args)...))
-    {}
-
-    template<typename... Args>
-    ProgramError(tag_nocontext_t, const char* msg, Args&&... args)
-        : message_(format_error("error", nocontext, msg, std::forward<Args>(args)...))
-    {}
-
-    ProgramError(const SyntaxTree& context, const ProgramError& nocontext_error)
-        : message_(format_error(nullptr, context, nocontext_error.message().c_str()))
-    {}
-
-    const std::string& message() const
-    {
-        return this->message_;
-    }
-
-protected:
-    std::string message_;
-};
-
 class ProgramContext
 {
 public:
@@ -261,21 +228,16 @@ public:
         return (this->error_count > 0 || this->fatal_count > 0);
     }
 
-    void error(const ProgramError& pg_error)
+    template<typename Context, typename... Args>
+    void error(const Context& context, const char* msg, Args&&... args)
     {
         ++error_count;
-        this->puts(pg_error.message().c_str());
+        this->puts(format_error("error", context, msg, std::forward<Args>(args)...));
 
         /* TODO limit error_count
         if(error_count > 100)
             this->fatal_error(nocontext, "too many errors");
         */
-    }
-
-    template<typename Context, typename... Args>
-    void error(const Context& context, const char* msg, Args&&... args)
-    {
-        return error(ProgramError(context, msg, std::forward<Args>(args)...));
     }
 
     template<typename Context, typename... Args>

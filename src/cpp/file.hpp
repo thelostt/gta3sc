@@ -23,6 +23,13 @@ inline bool write_file(FILE* f, const void* data, size_t size)
     return (fwrite(data, 1, size, f) == size);
 }
 
+inline bool write_file(FILE* f, size_t offset, const void* data, size_t size)
+{
+    if(fseek(f, offset, SEEK_SET) != 0)
+        return false;
+    return (fwrite(data, 1, size, f) == size);
+}
+
 inline bool write_file(const fs::path& path, const void* data, size_t size)
 {
 #ifdef _WIN32
@@ -101,3 +108,34 @@ inline auto read_file_binary(const fs::path& path) -> optional<std::vector<uint8
     return nullopt;
 }
 
+// may be sparse, the FILE pointer after this call is undefined
+inline bool allocate_file_space(FILE* f, size_t size)
+{
+    // TODO check return status of fseek
+    // TODO, fseek past eof isn't well-defined by the standard, do it in another way
+    if(size > 0)
+    {
+        fseek(f, size - 1, SEEK_SET);
+        fputc(0, f);
+    }
+    return true;
+}
+
+inline bool allocate_file_space(std::vector<uint8_t>& vec, size_t size)
+{
+    if(vec.size() < size)
+        vec.resize(size);
+    return true;
+}
+
+inline bool write_file(std::vector<uint8_t>& vec, size_t offset, const void* data, size_t size)
+{
+    allocate_file_space(vec, offset + size);
+    std::memcpy(vec.data() + offset, data, size);
+    return true;
+}
+
+inline bool write_file(std::vector<uint8_t>& vec, const void* data, size_t size)
+{
+    return write_file(vec, vec.size(), data, size);
+}

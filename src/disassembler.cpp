@@ -11,9 +11,9 @@ optional<size_t> Disassembler::get_dataindex(uint32_t local_offset) const
     return nullopt;
 }
 
-void Disassembler::run_analyzer()
+void Disassembler::run_analyzer(size_t from_offset)
 {
-    this->to_explore.emplace(0x0);
+    this->to_explore.emplace(from_offset);
     this->analyze();
 }
 
@@ -470,13 +470,13 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
     return DecompiledData(start_offset, std::move(ccmd));
 }
 
-void Disassembler::disassembly()
+void Disassembler::disassembly(size_t from_offset)
 {
     std::vector<DecompiledData>& output = this->decompiled;
 
     output.reserve(this->hint_num_ops + 16); // +16 for unknown/hex areas
 
-    for(size_t offset = 0; offset < bf.size; )
+    for(size_t offset = from_offset; offset < bf.size; )
     {
         if(this->label_offsets.count(offset))
         {
@@ -507,7 +507,7 @@ void Disassembler::disassembly()
     }
 }
 
-optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const uint8_t* bytecode, size_t bytecode_size, Version version)
+optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* bytecode, size_t bytecode_size, Version version)
 {
     assert(version == DecompiledScmHeader::Version::Liberty
         || version == DecompiledScmHeader::Version::Miami);
@@ -521,6 +521,7 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const uint8_t* 
         auto seg1_offset = 0u;
         auto seg2_offset = bf.fetch_u32(seg1_offset + 3).value();
         auto seg3_offset = bf.fetch_u32(seg2_offset + 3).value();
+        auto seg4_offset = bf.fetch_u32(seg3_offset + 3).value();
 
         uint32_t size_globals = seg2_offset;
 
@@ -542,7 +543,7 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const uint8_t* 
             mission_offsets.emplace_back(bf.fetch_u32(seg3_offset + 8 + 8 + 4 + (4 *i)).value());
         }
 
-        return DecompiledScmHeader { version, size_globals, std::move(models), main_size, std::move(mission_offsets) };
+        return DecompiledScmHeader { version, seg4_offset, size_globals, std::move(models), main_size, std::move(mission_offsets) };
     }
     catch(const bad_optional_access&)
     {
@@ -551,9 +552,10 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const uint8_t* 
     }
 }
 
-auto mission_segment_fetcher(const uint8_t* bytecode, size_t bytecode_size, const DecompiledScmHeader& header, ProgramContext& program)
+auto mission_segment_fetcher(const void* bytecode_, size_t bytecode_size, const DecompiledScmHeader& header, ProgramContext& program)
     -> std::vector<BinaryFetcher>
 {
+    const uint8_t* bytecode = reinterpret_cast<const uint8_t*>(bytecode_);
 
     std::vector<BinaryFetcher> mission_segments;
     mission_segments.reserve(header.mission_offsets.size());

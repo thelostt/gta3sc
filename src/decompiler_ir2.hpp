@@ -31,15 +31,25 @@ protected:
     size_t base_offset;
     size_t script_size;
 
+    const DecompilerIR2& main_ir2; // may point to *this
     std::map<size_t, size_t> label_ids; // <local_offset, id>
 
 public:
     explicit DecompilerIR2(const Commands& commands, std::vector<DecompiledData> decompiled,
                            size_t base_offset, size_t script_size, std::string block_name, bool is_main_block)
+        : DecompilerIR2(commands, std::move(decompiled), base_offset, script_size, std::move(block_name), is_main_block, *this)
+    {
+    }
+
+    explicit DecompilerIR2(const Commands& commands, std::vector<DecompiledData> decompiled,
+                           size_t base_offset, size_t script_size, std::string block_name, bool is_main_block,
+                           const DecompilerIR2& main_ir2)
         : commands(commands), data(std::move(decompiled)),
           block_name(std::move(block_name)), base_offset(base_offset), script_size(script_size),
-        is_main_block(is_main_block)
+          is_main_block(is_main_block), main_ir2(main_ir2)
     {
+        assert(this->is_main_block || &main_ir2 != this);
+
         size_t label_id = 0;
         size_t last_offset;
 
@@ -70,17 +80,7 @@ public:
         }
     }
 
-    std::string decompile()
-    {
-        std::string output;
-        this->decompile([&output](const std::string& line) {
-            output += line;
-            output += '\n';
-        });
-        return output;
-    }
-
-    optional<std::string> decompile_label_arg(int value)
+    optional<std::string> decompile_label_arg(int value) const
     {
         auto make_output = [&](char c, const std::string& block_name, size_t offset) -> optional<std::string>
         {
@@ -98,6 +98,7 @@ public:
                     return output;
                 }
             }
+            __debugbreak(); // TODO REMOVE
             return nullopt;
         };
 
@@ -106,11 +107,14 @@ public:
             if(this->is_main_block)
                 return make_output('@', block_name, value);
             else
-                return nullopt;
+                return this->main_ir2.decompile_label_arg(value);
         }
         else
             return make_output('%', block_name, this->base_offset + size_t(-value));
     }
+
+private:
+
 };
 
 

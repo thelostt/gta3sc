@@ -3,73 +3,75 @@
 #include "stdinc.h"
 #include "disassembler.hpp"
 
-struct DecompilerContext;
+struct DecompilerGTA3Script;
 
 template<typename T>
-std::string decompile_data(const T&, DecompilerContext&);
-std::string decompile_data(const DecompiledData&, DecompilerContext&);
+std::string decompile_data(const T&, DecompilerGTA3Script&);
+std::string decompile_data(const DecompiledData&, DecompilerGTA3Script&);
 
-struct DecompilerContext
+struct DecompilerGTA3Script
 {
 private:
     std::vector<DecompiledData> data;
+    
 
 protected:
-    friend std::string decompile_data(const DecompiledCommand& ccmd, DecompilerContext& context);
+    friend std::string decompile_data(const DecompiledCommand& ccmd, DecompilerGTA3Script& context);
+    friend std::string decompile_data(const DecompiledLabelDef& label, DecompilerGTA3Script& context);
 
     const Commands& commands;
+    size_t unique_id;           //< Helper for labels
+    std::string script_name;    //< Helper for labels
 
 public:
-    DecompilerContext(const Commands& commands, std::vector<DecompiledData> decompiled)
-        : commands(commands), data(std::move(decompiled))
+    DecompilerGTA3Script(const Commands& commands, std::vector<DecompiledData> decompiled, size_t unique_id)
+        : commands(commands), data(std::move(decompiled)), unique_id(unique_id)
     {
     }
 
-    std::string decompile()
+    template<typename OnDecompile>
+    void decompile(OnDecompile callback)
     {
-        std::string output;
         for(auto& d : this->data)
         {
-            output += ::decompile_data(d, *this);
+            callback(::decompile_data(d, *this));
         }
-        return output;
     }
-
 };
 
 
 template<typename T>
-inline std::string decompile_data(const T& x, DecompilerContext&)
+inline std::string decompile_data(const T& x, DecompilerGTA3Script&)
 {
     return x.decompile_data();
 }
 
-inline std::string decompile_data(const EOAL&, DecompilerContext&)
+inline std::string decompile_data(const EOAL&, DecompilerGTA3Script&)
 {
     return std::string();
 }
 
-inline std::string decompile_data(const int8_t& value, DecompilerContext&)
+inline std::string decompile_data(const int8_t& value, DecompilerGTA3Script&)
 {
     return std::to_string(static_cast<int>(value)); // avoid charish behaviour
 }
 
-inline std::string decompile_data(const int16_t& value, DecompilerContext&)
+inline std::string decompile_data(const int16_t& value, DecompilerGTA3Script&)
 {
     return std::to_string(value);
 }
 
-inline std::string decompile_data(const int32_t& value, DecompilerContext&)
+inline std::string decompile_data(const int32_t& value, DecompilerGTA3Script&)
 {
     return std::to_string(value);
 }
 
-inline std::string decompile_data(const float& value, DecompilerContext&)
+inline std::string decompile_data(const float& value, DecompilerGTA3Script&)
 {
     return std::to_string(value);
 }
 
-inline std::string decompile_data(const DecompiledString& str, DecompilerContext&)
+inline std::string decompile_data(const DecompiledString& str, DecompilerGTA3Script&)
 {
     std::string output;
     char quotes = 0;
@@ -104,7 +106,7 @@ inline std::string decompile_data(const DecompiledString& str, DecompilerContext
     return output;
 }
 
-inline std::string decompile_data(const DecompiledVar& v, DecompilerContext&)
+inline std::string decompile_data(const DecompiledVar& v, DecompilerGTA3Script&)
 {
     std::string output;
     bool adma = (v.offset % 4) != 0;
@@ -122,7 +124,7 @@ inline std::string decompile_data(const DecompiledVar& v, DecompilerContext&)
     return output;
 }
 
-inline std::string decompile_data(const DecompiledVarArray& v, DecompilerContext& context)
+inline std::string decompile_data(const DecompiledVarArray& v, DecompilerGTA3Script& context)
 {
     std::string output;
     output += decompile_data(v.base, context);
@@ -132,12 +134,12 @@ inline std::string decompile_data(const DecompiledVarArray& v, DecompilerContext
     return output;
 }
 
-inline std::string decompile_data(const ArgVariant2& varg, DecompilerContext& context)
+inline std::string decompile_data(const ArgVariant2& varg, DecompilerGTA3Script& context)
 {
     return visit_one(varg, [&](const auto& arg) { return ::decompile_data(arg, context); });
 }
 
-inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerContext& context)
+inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerGTA3Script& context)
 {
     std::string output;
     
@@ -156,17 +158,25 @@ inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerConte
         output.push_back(' ');
     }
 
-    output.push_back('\n');
     return output;
 }
 
-inline std::string decompile_data(const DecompiledLabelDef& label, DecompilerContext&)
+inline std::string decompile_data(const DecompiledLabelDef& label, DecompilerGTA3Script& context)
 {
-    // TODO
-    return fmt::format("\nLABEL_{}:\n", label.offset);
+    if(context.script_name.empty())
+    {
+        if(context.unique_id == 0)
+            return fmt::format("\nLABEL_{}:", label.offset);
+        else
+            return fmt::format("\nLABEL_{}_{}:", context.unique_id, label.offset);
+    }
+    else
+    {
+        return fmt::format("\n{}_{}:", context.script_name, label.offset);
+    }
 }
 
-inline std::string decompile_data(const DecompiledHex& hex, DecompilerContext&)
+inline std::string decompile_data(const DecompiledHex& hex, DecompilerGTA3Script&)
 {
     std::string output;
     output.reserve(sizeof("\nHEX\n") + (hex.data.size() * 3) + sizeof("\nENDHEX\n\n") + 32);
@@ -178,11 +188,11 @@ inline std::string decompile_data(const DecompiledHex& hex, DecompilerContext&)
         snprintf(buffer, sizeof(buffer), "%.2X ", x);
         output.append(std::begin(buffer), std::end(buffer) - 1);
     }
-    output += "\nENDHEX\n\n";
+    output += "\nENDHEX\n";
     return output;
 }
 
-inline std::string decompile_data(const DecompiledData& data, DecompilerContext& context)
+inline std::string decompile_data(const DecompiledData& data, DecompilerGTA3Script& context)
 {
     return visit_one(data.data, [&](const auto& data) { return ::decompile_data(data, context); });
 }
