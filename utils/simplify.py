@@ -4,7 +4,7 @@
     py simplify.py gtasa/commands.xml
     py simplify.py gtasa/commands.xml any_2nd_arg_will_trigger_clear_useless
 """
-from gta3sc import *
+import gta3sc
 import sys
 
 AMBIGOUS_DESCRIPTION_ENTITY = {
@@ -49,7 +49,8 @@ AMBIGOUS_DESCRIPTION_ENUM = {
 }
 
 def main(xmlfile, clear_useless_data):
-    commands = commands_from_xml(xmlfile)
+    config = gta3sc.read_config(xmlfile)
+    commands = config.commands
 
     # Remove description from where Entity and Enum information is enough.
     for cmd in commands:
@@ -78,7 +79,8 @@ def main(xmlfile, clear_useless_data):
         # Simply rewriting the XML will simplify it.
         new_commands = commands
 
-    commands_to_xml(outname, new_commands, pretty_print=(not clear_useless_data))
+    config.commands = new_commands
+    config.save_config(outname, pretty_print=(not clear_useless_data))
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

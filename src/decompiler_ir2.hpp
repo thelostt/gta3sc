@@ -1,4 +1,5 @@
 // TODO doc comments
+// TODO conform to https://gist.github.com/thelink2012/a60a06a581ea78558bd7b8427103609d (specially strings)
 
 #include "stdinc.h"
 #include "disassembler.hpp"
@@ -297,6 +298,8 @@ inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerIR2& 
         context.is_label_arg = false;
     }
 
+    if(output.back() == ' ') output.pop_back();
+    if(output.back() == ' ') output.pop_back(); // again because of possible EOAL
     return output;
 }
 
@@ -308,16 +311,16 @@ inline std::string decompile_data(const DecompiledLabelDef& label, DecompilerIR2
 inline std::string decompile_data(const DecompiledHex& hex, DecompilerIR2&)
 {
     std::string output;
-    output.reserve(sizeof("\nHEX\n") + (hex.data.size() * 3) + sizeof("\nENDHEX\n\n") + 32);
+    output.reserve(sizeof("IR2_HEX ") + (hex.data.size() * 6) + 32);
 
-    output += "HEX\n";
+    output += "IR2_HEX ";
     for(auto& x : hex.data)
     {
-        char buffer[3+1];
-        snprintf(buffer, sizeof(buffer), "%.2X ", x);
-        output.append(std::begin(buffer), std::end(buffer) - 1);
+        char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%di8 ", int(int8_t(x)));
+        output.append(buffer);
     }
-    output += "\nENDHEX";
+    if(output.back() == ' ') output.pop_back();
     return output;
 }
 

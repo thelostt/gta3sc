@@ -1,9 +1,7 @@
 # -*- Python -*-
-
-from lxml import objectify
 from lxml import etree
 
-__all__ = ['Config', 'Alternator', 'Enum', 'Command', 'Argument']
+__all__ = ["Alternator", "Enum", "Command", "Argument", "Config", "read_config"]
 
 class Alternator:
     def __init__(self):
@@ -33,7 +31,7 @@ class Enum:
     def from_node(node):
         init = Enum()
         init.name       = node.get("Name")
-        init.is_global  = str2bool(node.get("Global", "false"))
+        init.is_global  = _str2bool(node.get("Global", "false"))
         init.constants  = {}
         last_value = -1
         for a in node.iter("Constant"):
@@ -46,7 +44,7 @@ class Enum:
         last_value = -1
         node = etree.Element("Enum", Name=self.name)
         if self.is_global:
-            node.set("Global", bool2str(self.is_global))
+            node.set("Global", _bool2str(self.is_global))
         for k,v in sorted(self.constants.items(), key=lambda x: x[1]):
             if v == last_value + 1:
                 etree.SubElement(node, "Constant", Name=k)
@@ -81,7 +79,7 @@ class Command:
         init = Command()
         init.name = node.get("Name")
         init.id = int(node.get("ID"), 16)
-        init.supported = str2bool(node.get("Supported", "true"))
+        init.supported = _str2bool(node.get("Supported", "true"))
         init.args = []
         node_args = node.find("Args")
         if node_args is not None:
@@ -92,7 +90,7 @@ class Command:
     def to_node(self):
         node = etree.Element("Command", Name=self.name, ID=hex(self.id))
         if self.supported == False:
-            node.set("Supported", bool2str(self.supported))
+            node.set("Supported", _bool2str(self.supported))
         if len(self.args) > 0:
             node_args = etree.SubElement(node, "Args")
             for a in self.args:
@@ -129,12 +127,12 @@ class Argument:
         init = Argument()
         init.type = node.get("Type")
         init.desc = node.get("Desc", "")
-        init.out  = str2bool(node.get("Out", "false"))
-        init.ref  = str2bool(node.get("Ref", "false"))
-        init.optional = str2bool(node.get("Optional", "false"))
-        init.allow_const = str2bool(node.get("AllowConst", "true"))
-        init.allow_gvar = str2bool(node.get("AllowGlobalVar", "true"))
-        init.allow_lvar = str2bool(node.get("AllowLocalVar", "true"))
+        init.out  = _str2bool(node.get("Out", "false"))
+        init.ref  = _str2bool(node.get("Ref", "false"))
+        init.optional = _str2bool(node.get("Optional", "false"))
+        init.allow_const = _str2bool(node.get("AllowConst", "true"))
+        init.allow_gvar = _str2bool(node.get("AllowGlobalVar", "true"))
+        init.allow_lvar = _str2bool(node.get("AllowLocalVar", "true"))
         init.entity = node.get("Entity", None)
         init.enums = node.get("Enum", None)
         init.enums = [init.enums] if init.enums else []
@@ -145,17 +143,17 @@ class Argument:
         if self.desc.strip() != "":
             node.set("Desc", self.desc)
         if self.out != False:
-            node.set("Out", bool2str(self.out))
+            node.set("Out", _bool2str(self.out))
         if self.ref != False:
-            node.set("Ref", bool2str(self.ref))
+            node.set("Ref", _bool2str(self.ref))
         if self.optional != False:
-            node.set("Optional", bool2str(self.optional))
+            node.set("Optional", _bool2str(self.optional))
         if self.allow_const != True:
-            node.set("AllowConst", bool2str(self.allow_const))
+            node.set("AllowConst", _bool2str(self.allow_const))
         if self.allow_gvar != True:
-            node.set("AllowGlobalVar", bool2str(self.allow_gvar))
+            node.set("AllowGlobalVar", _bool2str(self.allow_gvar))
         if self.allow_lvar != True:
-            node.set("AllowLocalVar", bool2str(self.allow_lvar))
+            node.set("AllowLocalVar", _bool2str(self.allow_lvar))
         if self.entity != None:
             node.set("Entity", self.entity)
         if len(self.enums) != 0:
@@ -168,12 +166,6 @@ class Config:
         self.commands = []
         self.enums = []
         self.alternators = []
-
-    @staticmethod
-    def from_file(filename):
-        c = Config()
-        c.read_config(filename)
-        return c
 
     def read_config(self, filename):
         tree = etree.parse(filename)
@@ -210,14 +202,13 @@ class Config:
         tree.write(filename, encoding="utf-8", pretty_print=pretty_print, xml_declaration=True)
 
 
+def read_config(filename):
+    c = Config()
+    c.read_config(filename)
+    return c
 
 
-
-#
-# Internal
-#
-
-def str2bool(x):
+def _str2bool(x):
     if x == "true":
         return True
     if x == "false":
@@ -225,7 +216,7 @@ def str2bool(x):
     print(x)
     assert False
 
-def bool2str(x):
+def _bool2str(x):
     if x == True:
         return "true"
     if x == False:

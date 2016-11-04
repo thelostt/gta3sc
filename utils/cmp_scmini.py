@@ -1,11 +1,11 @@
 #!/usr/bin/env python2
 """
   Examples:
-    py cmp_scmini.py gta3/commands.xml SCM.ini
-    py cmp_scmini.py gtavc/commands.xml VCSCM.ini
-    py cmp_scmini.py gtasa/commands.xml SASCM.ini
+    py cmp_scmini.py ../config/gta3/commands.xml SCM.ini
+    py cmp_scmini.py ../config/gtavc/commands.xml VCSCM.ini
+    py cmp_scmini.py ../config/gtasa/commands.xml SASCM.ini
 """
-from gta3sc import *
+import gta3sc
 import sys
 
 def read_scmini(filename):
@@ -27,7 +27,7 @@ def read_scmini(filename):
         return output
 
 def main(xmlname, ininame):
-    commands = Config.from_file(xmlname).commands
+    commands = gta3sc.read_config(xmlname).commands
     inidata  = read_scmini(ininame)
 
     commands_dict = {c.id: c for c in commands}

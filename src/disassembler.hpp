@@ -316,7 +316,7 @@ private:
         if(offset < this->offset_start)
         {
             // jump outer of code
-            __debugbreak();
+            //__debugbreak();
             return;
         }
 
@@ -325,7 +325,7 @@ private:
             // hm, there's a jump outer of code...
             // ...or we're not detecting flow instructions properly.
             // ??? TODO
-            __debugbreak();
+            //__debugbreak();
             return;
         }
 

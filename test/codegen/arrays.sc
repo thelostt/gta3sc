@@ -44,7 +44,7 @@
     tf[1] = 0.0
     // CHECK-NEXT-L: SET_LVAR_FLOAT 4@ 1.0f
     tf[2] = 1.0
-    // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL 5@s 'NAME1' 
+    // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL 5@s 'NAME1'
     ts[1] = NAME1
     // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL 7@s 'NAME2'
     ts[2] = NAME2
@@ -55,15 +55,15 @@
 
     // CHECK-NEXT-L: SET_VAR_INT &12(&8,2i) 1i8
     gi[g] = 1
-    // CHECK-NEXT-L: SET_VAR_INT &12(0@,2i) 2i8 
+    // CHECK-NEXT-L: SET_VAR_INT &12(0@,2i) 2i8
     gi[t] = 2
-    // CHECK-NEXT-L: SET_VAR_FLOAT &20(&8,2f) 1.0f 
+    // CHECK-NEXT-L: SET_VAR_FLOAT &20(&8,2f) 1.0f
     gf[g] = 1.0
     // CHECK-NEXT-L: SET_VAR_FLOAT &20(0@,2f) 2.0f
     gf[t] = 2.0
-    // CHECK-NEXT-L: SET_VAR_TEXT_LABEL s&28(&8,2s) 'NAME1' 
+    // CHECK-NEXT-L: SET_VAR_TEXT_LABEL s&28(&8,2s) 'NAME1'
     gs[g] = NAME1
-    // CHECK-NEXT-L: SET_VAR_TEXT_LABEL s&28(0@,2s) 'NAME2' 
+    // CHECK-NEXT-L: SET_VAR_TEXT_LABEL s&28(0@,2s) 'NAME2'
     gs[t] = NAME2
     // CHECK-NEXT-L: SET_VAR_TEXT_LABEL16 v&44(&8,2v) "NAME3"
     gv[g] = NAME3

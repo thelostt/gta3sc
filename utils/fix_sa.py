@@ -4,7 +4,7 @@
     It may be useful again in the future, so we're leaving it in the repository.
 """
 
-from gta3sc import *
+import gta3sc
 from collections import defaultdict, namedtuple
 
 def print_once(iterator):
@@ -196,9 +196,9 @@ def add_allow_const_false_to_out_params(commands):
                 arg.allow_const = False
 
 def main():
-    gtasa = Config.from_file("gtasa/commands.xml")
-    gtavc = Config.from_file("gtavc/commands.xml")
-    gta3  = Config.from_file("gta3/commands.xml")
+    gtasa = gta3sc.read_config("gtasa/commands.xml")
+    gtavc = gta3sc.read_config("gtavc/commands.xml")
+    gta3  = gta3sc.read_config("gta3/commands.xml")
 
     gtasa_commands = {c.id: c for c in gtasa.commands}
     gtavc_commands = {c.id: c for c in gtavc.commands}

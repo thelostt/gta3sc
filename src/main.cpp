@@ -770,6 +770,20 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 std::memcpy(&main_block[gen.script->offset.value()], gen.buffer(), gen.buffer_size()); 
             }
 
+            bool is_first_line = true;
+            auto print_ir2_line = [&](const std::string& line)
+            {
+                if(is_first_line)
+                {
+                    is_first_line = false;
+                    fprintf(stdout, "%s", line.c_str());
+                }
+                else
+                {
+                    fprintf(stdout, "\n%s", line.c_str());
+                }
+            };
+
             if(true)
             {
                 size_t lowest_offset = lowest_main_gen->script->offset.value();
@@ -783,9 +797,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                                            lowest_offset, main_block_size - lowest_offset,
                                            "MAIN", true);
 
-                ir2dc.decompile([](const std::string& line) {
-                    fprintf(stdout, "%s\n", line.c_str());
-                });
+                ir2dc.decompile(print_ir2_line);
             }
 
             for(auto& gen : gens)
@@ -794,7 +806,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     continue;
 
                 std::string script_name;
-                const char *start_block = nullptr, *end_block = nullptr;
+                const char *start_block, *end_block;
                 int block_id;
 
                 auto disassembler = Disassembler(program, program.commands, gen.buffer(), gen.buffer_size());
@@ -802,15 +814,15 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 if(gen.script->type == ScriptType::Mission)
                 {
                     block_id = gen.script->mission_id.value();
-                    start_block = "MISSION_BLOCK_START %d\n";
-                    end_block = "MISSION_BLOCK_END\n";
+                    start_block = "#MISSION_BLOCK_START {}";
+                    end_block = "#MISSION_BLOCK_END";
                     script_name = "MISSION_" + std::to_string(block_id);
                 }
                 else if(gen.script->type == ScriptType::StreamedScript)
                 {
                     block_id = gen.script->streamed_id.value();
-                    start_block = "STREAMED_BLOCK_START %d\n";
-                    end_block = "STREAMED_BLOCK_END\n";
+                    start_block = "#STREAMED_BLOCK_START {}";
+                    end_block = "#STREAMED_BLOCK_END";
                     script_name = "STREAM_" + std::to_string(block_id);
                 }
                 else
@@ -828,11 +840,9 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     script_name,
                     gen.script->type == ScriptType::Main);
 
-                if(start_block) fprintf(stdout, start_block, block_id);
-                ir2dc.decompile([](const std::string& line) {
-                    fprintf(stdout, "%s\n", line.c_str());
-                });
-                if(end_block) fprintf(stdout, end_block, block_id);
+                print_ir2_line(fmt::format(start_block, block_id));
+                ir2dc.decompile(print_ir2_line);
+                print_ir2_line(end_block);
             }
         };
 
