@@ -1,5 +1,6 @@
 #include "stdinc.h"
 #include "disassembler.hpp"
+#include "cdimage.hpp"
 
 optional<size_t> Disassembler::get_dataindex(uint32_t local_offset) const
 {
@@ -510,7 +511,10 @@ void Disassembler::disassembly(size_t from_offset)
 optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* bytecode, size_t bytecode_size, Version version)
 {
     assert(version == DecompiledScmHeader::Version::Liberty
-        || version == DecompiledScmHeader::Version::Miami);
+        || version == DecompiledScmHeader::Version::Miami
+        || version == DecompiledScmHeader::Version::SanAndreas);
+
+    bool is_sa = (version == DecompiledScmHeader::Version::SanAndreas);
 
     try
     {
@@ -522,6 +526,7 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* byt
         auto seg2_offset = bf.fetch_u32(seg1_offset + 3).value();
         auto seg3_offset = bf.fetch_u32(seg2_offset + 3).value();
         auto seg4_offset = bf.fetch_u32(seg3_offset + 3).value();
+        auto code_offset = seg4_offset;
 
         uint32_t size_globals = seg2_offset;
 
@@ -536,14 +541,36 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* byt
 
         auto main_size    = bf.fetch_u32(seg3_offset + 8 + 0).value();
         auto num_missions = bf.fetch_u16(seg3_offset + 8 + 8).value();
+        size_t incr       = is_sa? 4 : 0; // increment for u32 (num vars used in mission)
 
         std::vector<uint32_t> mission_offsets;
         for(size_t i = 0; i < num_missions; ++i)
         {
-            mission_offsets.emplace_back(bf.fetch_u32(seg3_offset + 8 + 8 + 4 + (4 *i)).value());
+            mission_offsets.emplace_back(bf.fetch_u32(seg3_offset + 8 + 8 + 4 + incr + (4*i)).value());
         }
 
-        return DecompiledScmHeader { version, seg4_offset, size_globals, std::move(models), main_size, std::move(mission_offsets) };
+        std::vector<std::pair<std::string, uint32_t>> streamed_scripts;
+        if(is_sa)
+        {
+            auto seg5_offset = bf.fetch_u32(seg4_offset + 3).value();
+            auto seg6_offset = bf.fetch_u32(seg5_offset + 3).value();
+            auto seg7_offset = bf.fetch_u32(seg6_offset + 3).value();
+            code_offset = seg7_offset;
+
+            auto num_scripts = bf.fetch_u32(seg4_offset + 8 + 4).value();
+            for(size_t i = 0; i < num_scripts; ++i)
+            {
+                char buffer[24];
+                auto name = bf.fetch_chars(seg4_offset + 8 + 4 + 4 + (28 * i), 20, buffer).value();
+                auto size = bf.fetch_u32(seg4_offset + 8 + 4 + 4 + (28 * i) + 20 + 4).value();
+                streamed_scripts.emplace_back(std::make_pair(buffer, size));
+            }
+        }
+
+        return DecompiledScmHeader {
+            version, code_offset, size_globals,
+            std::move(models), main_size, std::move(mission_offsets), std::move(streamed_scripts)
+        };
     }
     catch(const bad_optional_access&)
     {
@@ -552,7 +579,7 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* byt
     }
 }
 
-auto mission_segment_fetcher(const void* bytecode_, size_t bytecode_size, const DecompiledScmHeader& header, ProgramContext& program)
+auto mission_scripts_fetcher(const void* bytecode_, size_t bytecode_size, const DecompiledScmHeader& header, ProgramContext& program)
     -> std::vector<BinaryFetcher>
 {
     const uint8_t* bytecode = reinterpret_cast<const uint8_t*>(bytecode_);
@@ -568,19 +595,68 @@ auto mission_segment_fetcher(const void* bytecode_, size_t bytecode_size, const 
         size_t mission_offset = header.mission_offsets[i];
 
         if(mission_offset < header.main_size)
-            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#3)");
+            program.fatal_error(nocontext, "corrupted scm header");
 
         auto it = std::lower_bound(mission_offsets_sorted.begin(), mission_offsets_sorted.end(), mission_offset);
         if(it == mission_offsets_sorted.end() || *it != mission_offset)
-            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#2)");
+            program.fatal_error(nocontext, "corrupted scm header");
 
         size_t next_mission_offset  = it+1 != mission_offsets_sorted.end()? *(it+1) : bytecode_size;
 
         if(next_mission_offset > bytecode_size)
-            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#4)");
+            program.fatal_error(nocontext, "corrupted scm header");
 
         mission_segments.emplace_back(BinaryFetcher { (bytecode + mission_offset), (next_mission_offset - mission_offset) });
     }
 
     return mission_segments;
+}
+
+auto streamed_scripts_fetcher(const void* img_bytes_, size_t img_size, const DecompiledScmHeader& header, ProgramContext& program)
+    -> std::vector<BinaryFetcher>
+{
+    // TODO endian independent
+    const uint8_t* img_bytes = reinterpret_cast<const uint8_t*>(img_bytes_);
+
+    std::vector<BinaryFetcher> scripts;
+
+    if(img_size < sizeof(CdHeader))
+        program.fatal_error(nocontext, "corrupted img file");
+
+    auto& cdheader = reinterpret_cast<const CdHeader&>(*img_bytes);
+    if(memcmp(cdheader.magic, "VER2", 4) != 0 || img_size < cdheader.num_entries * sizeof(CdEntry))
+        program.fatal_error(nocontext, "corrupted img file");
+
+    auto entries = reinterpret_cast<const CdEntry*>(img_bytes + sizeof(CdHeader));
+    auto entries_end = entries + cdheader.num_entries;
+
+    for(auto& script_pair : header.streamed_scripts)
+    {
+        auto filename = script_pair.first + ".scm";
+
+        auto it = std::find_if(entries, entries_end, [&](const CdEntry& entry) {
+            // TODO entry.filenames mayn't have a null terminator!
+            return iequal_to()(filename, entry.filename);
+        });
+
+        if(it != entries_end)
+        {
+            auto offset = size_t(it->offset) * 2048;
+            auto bsize  = size_t(it->streaming_size) * 2048; // this size contains useless 00s
+            auto size   = script_pair.second;                // this size doesn't
+
+            if(offset + bsize > img_size)
+                program.error(nocontext, "entry for '{}' in img file is is sparse", filename);
+            else if(offset + size > img_size)
+                program.error(nocontext, "size for entry '{}' in img file does not match the size in the scm header", filename);
+            else
+                scripts.emplace_back(BinaryFetcher { img_bytes + offset, size });
+        }
+        else
+        {
+            program.error(nocontext, "streamed script '{}' not found in img file", filename);
+        }
+    }
+
+    return scripts;
 }

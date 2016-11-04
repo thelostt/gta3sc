@@ -5,7 +5,7 @@
 // RUN: mkdir "%/T/streaming" || echo _
 // RUN: %gta3sc %s --config=gtasa --guesser -o "%/T/streaming/main.scm"
 // RUN: %checksum "%T/streaming/main.scm" 45ef8fb66c91271cb7b82c3946bc6eb2
-// RUN: %checksum "%T/streaming/script.img" 77f87eb2b15ff1589dcdbdb55453cf84
+// RUN: %checksum "%T/streaming/script.img" d7168d3a64517c11ac12b963ec020681
 //
 
 VAR_INT n

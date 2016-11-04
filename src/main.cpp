@@ -11,12 +11,15 @@
 #include "program.hpp"
 #include "system.hpp"
 #include "cpp/argv.hpp"
+#include "cdimage.hpp"
 
 int compile(fs::path input, fs::path output, ProgramContext&);
 int decompile(fs::path input, fs::path output, ProgramContext&);
 
 template<typename OnOutput>
-bool decompile(const void* bytecode, size_t bytecode_size, ProgramContext&, Options::Lang, OnOutput);
+bool decompile(const void* bytecode, size_t bytecode_size,
+               const void* script_img, size_t script_img_size,
+               ProgramContext&, Options::Lang, OnOutput);
 
 
 const char* help_message =
@@ -620,23 +623,16 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     into_script_img.emplace_back(std::cref(gen));
             }
 
+            std::sort(into_script_img.begin(), into_script_img.end(), [](const auto& lhs, const auto& rhs) {
+                // TODO this creates a string every sorting pass! Fix this.
+                auto& lhs_script = *lhs.get().script;
+                auto& rhs_script = *rhs.get().script;
+                return iless()(lhs_script.path.stem().u8string(), rhs_script.path.stem().u8string());
+            });
+
             if(has_script_img)
             {
                 // TODO endian independent img building
-
-                struct alignas(4) CdHeader
-                {
-                    char magic[4];
-                    uint32_t num_entries;
-                };
-
-                struct alignas(4) CdEntry
-                {
-                    uint32_t offset;                // in sectors
-                    uint16_t streaming_size;        // in sectors
-                    uint16_t size_in_archive = 0;   // in sectors
-                    char     filename[24];
-                };
 
                 struct alignas(4) AAAScript
                 {
@@ -738,7 +734,10 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             generate_output(main_scm, script_img, use_script_img);
 
-            if(!decompile(main_scm.data(), main_scm.size(), program, Options::Lang::IR2, print_ir2_line))
+            auto status = decompile(main_scm.data(), main_scm.size(),
+                                    script_img.data(), script_img.size(), program,
+                                    Options::Lang::IR2, print_ir2_line);
+            if(!status)
                 throw HaltJobException();
         }
         else
@@ -813,8 +812,18 @@ int decompile(fs::path input, fs::path output, ProgramContext& program)
         if(!opt_bytecode)
             program.fatal_error(nocontext, "file '{}' does not exist", input.generic_u8string());
 
+        std::vector<uint8_t> script_img;
+        if(program.opt.streamed_scripts)
+        {
+            auto img_path = fs::path(input).replace_filename("script.img");
+            if(auto opt = read_file_binary(img_path))
+                script_img = std::move(*opt);
+            else
+                program.fatal_error(nocontext, "file '{}' does not exist", img_path.generic_u8string());
+        }
+
         auto println = [&](const std::string line) { fprintf(outstream, "%s\n", line.c_str()); }; 
-        if(!decompile(opt_bytecode->data(), opt_bytecode->size(), program, lang, println))
+        if(!decompile(opt_bytecode->data(), opt_bytecode->size(), script_img.data(), script_img.size(), program, lang, println))
             throw HaltJobException();
 
         return 0;
@@ -827,41 +836,85 @@ int decompile(fs::path input, fs::path output, ProgramContext& program)
 }
 
 template<typename OnOutput>
-bool decompile(const void* bytecode, size_t bytecode_size, ProgramContext& program, Options::Lang lang, OnOutput callback)
+bool decompile(const void* bytecode, size_t bytecode_size,
+               const void* script_img, size_t script_img_size,
+               ProgramContext& program, Options::Lang lang, OnOutput callback)
 {
+    Expects(!program.opt.streamed_scripts || script_img != nullptr);
+
     try
     {
-        auto opt_header = DecompiledScmHeader::from_bytecode(bytecode, bytecode_size, DecompiledScmHeader::Version::Liberty);
+        auto opt_header = DecompiledScmHeader::from_bytecode(bytecode, bytecode_size,
+                                                             program.opt.get_header<DecompiledScmHeader::Version>());
         if(!opt_header)
-            program.fatal_error(nocontext, "XXX Corrupted SCM Header (#1)");
+            program.fatal_error(nocontext, "corrupted scm header");
 
         DecompiledScmHeader& header = *opt_header;
+        size_t ignore_stream_id = -1;
+
+        {
+            auto it = std::find_if(header.streamed_scripts.begin(), header.streamed_scripts.end(), [](const auto& pair) {
+                return iequal_to()(pair.first, "AAA");
+            });
+            if(it != header.streamed_scripts.end())
+                ignore_stream_id = (it - header.streamed_scripts.begin());
+        }
 
         BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, header.main_size) };
-        std::vector<BinaryFetcher> mission_segments = mission_segment_fetcher(bytecode, bytecode_size, header, program);
+        std::vector<BinaryFetcher> mission_segments = mission_scripts_fetcher(bytecode, bytecode_size, header, program);
+        std::vector<BinaryFetcher> stream_segments;
+        if(program.opt.streamed_scripts)
+        {
+            stream_segments = streamed_scripts_fetcher(script_img, script_img_size, header, program);
+        }
 
-        Disassembler main_segment_asm(program, program.commands, main_segment);
+        // TODO add more has error in here?
+        if(program.has_error())
+            throw HaltJobException();
+
+        Disassembler main_segment_asm(program, main_segment);
         std::vector<Disassembler> mission_segments_asm;
+        std::vector<Disassembler> stream_segments_asm;
         mission_segments_asm.reserve(header.mission_offsets.size());
+        stream_segments_asm.reserve(header.streamed_scripts.size());
 
         // this loop cannot be thread safely unfolded because of main_segment_asm being
         // mutated on all the units.
         for(auto& mission_bytecode : mission_segments)
         {
-            mission_segments_asm.emplace_back(program, program.commands, mission_bytecode, main_segment_asm);
+            mission_segments_asm.emplace_back(program, mission_bytecode, main_segment_asm);
             mission_segments_asm.back().run_analyzer();
+        }
+
+        // this loop cannot be thread safely unfolded because of stream_segment_asm being
+        // mutated on all the units.
+        for(size_t i = 0; i < stream_segments.size(); ++i)
+        {
+            if(i != ignore_stream_id)
+            {
+                auto& stream_bytecode = stream_segments[i];
+                stream_segments_asm.emplace_back(program, stream_bytecode, main_segment_asm);
+                stream_segments_asm.back().run_analyzer();
+            }
         }
 
         if(true)
         {
-            // run main segment analyzer after the missions analyzer
+            // run main segment analyzer after the missions and streams analyzer
             main_segment_asm.run_analyzer(header.code_offset);
             main_segment_asm.disassembly(header.code_offset);
         }
 
         for(auto& mission_asm : mission_segments_asm)
-        {
             mission_asm.disassembly();
+
+        for(size_t i = 0; i < stream_segments.size(); ++i)
+        {
+            if(i != ignore_stream_id)
+            {
+                auto& stream_asm = stream_segments_asm[i];
+                stream_asm.disassembly();
+            }
         }
 
         if(lang == Options::Lang::GTA3Script)
@@ -876,6 +929,16 @@ bool decompile(const void* bytecode, size_t bytecode_size, ProgramContext& progr
                 auto& mission_asm = mission_segments_asm[i];
                 callback(fmt::format("/***** Mission Segment %d *****/", (int)(i)));
                 DecompilerGTA3Script(program.commands, mission_asm.get_data(), 1 + i).decompile(callback);
+            }
+
+            for(size_t i = 0; i < stream_segments_asm.size(); ++i)
+            {
+                if(i != ignore_stream_id)
+                {
+                    auto& stream_asm = stream_segments_asm[i];
+                    callback(fmt::format("/***** Streamed Segment %d *****/", (int)(i)));
+                    DecompilerGTA3Script(program.commands, stream_asm.get_data(), 1 + i).decompile(callback);
+                }
             }
         }
         else if(lang == Options::Lang::IR2)
@@ -892,6 +955,18 @@ bool decompile(const void* bytecode, size_t bytecode_size, ProgramContext& progr
                 callback(fmt::format("#MISSION_BLOCK_START {}", (int)(i)));
                 DecompilerIR2(program.commands, mission_asm.get_data(), 0, mission_segments[i].size, std::move(script_name), false, main_ir2).decompile(callback);
                 callback("#MISSION_BLOCK_END");
+            }
+
+            for(size_t i = 0; i < stream_segments_asm.size(); ++i)
+            {
+                if(i != ignore_stream_id)
+                {
+                    auto& stream_asm = stream_segments_asm[i];
+                    auto script_name = fmt::format("STREAM_{}", i);
+                    callback(fmt::format("#STREAMED_BLOCK_START {}", (int)(i)));
+                    DecompilerIR2(program.commands, stream_asm.get_data(), 0, stream_segments[i].size, std::move(script_name), false, main_ir2).decompile(callback);
+                    callback("#STREAMED_BLOCK_END");
+                }
             }
         }
 

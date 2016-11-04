@@ -72,6 +72,7 @@ struct DecompiledScmHeader
     {
         Liberty,
         Miami,
+        SanAndreas,
     };
 
     Version                               version;
@@ -80,12 +81,14 @@ struct DecompiledScmHeader
     std::vector<std::string>              models;
     uint32_t                              main_size;
     std::vector<uint32_t>                 mission_offsets;
+    std::vector<std::pair<std::string, uint32_t>> streamed_scripts;
 
     explicit DecompiledScmHeader(Version version, size_t code_offset, uint32_t size_globals, std::vector<std::string> models,
-                                 uint32_t main_size, std::vector<uint32_t> mission_offsets) :
+                                 uint32_t main_size, std::vector<uint32_t> mission_offsets,
+                                 std::vector<std::pair<std::string, uint32_t>> streamed_scripts) :
         version(version), size_global_vars_space(size_globals), main_size(main_size),
         models(std::move(models)), mission_offsets(std::move(mission_offsets)),
-        code_offset(code_offset)
+        code_offset(code_offset), streamed_scripts(std::move(streamed_scripts))
     {
     }
 
@@ -122,10 +125,13 @@ template<typename T>
 static optional<std::string> get_immstr(const T&);
 static optional<std::string> get_immstr(const ArgVariant2&);
 
-/// Returns a vector of { bytecode, size } for each mission in the 
-std::vector<BinaryFetcher> mission_segment_fetcher(const void* bytecode, size_t bytecode_size,
+/// Returns a vector of { bytecode, size } for each mission in the main.scm buffer.
+std::vector<BinaryFetcher> mission_scripts_fetcher(const void* bytecode, size_t bytecode_size,
                                                    const DecompiledScmHeader& header, ProgramContext& program);
 
+/// Returns a vector of { bytecode, size } for each streamed script in the img buffer.
+std::vector<BinaryFetcher> streamed_scripts_fetcher(const void* img_bytes, size_t img_size,
+                                                    const DecompiledScmHeader& header, ProgramContext& program);
 
 /// Interface to fetch little-endian bytes from a sequence of bytes in a easy and safe way.
 // TODO move to a utility header?
@@ -253,8 +259,8 @@ public:
     ///
     /// It's undefined what happens with the analyzer if data inside `fetcher.bytecode` is changed while
     /// this Disassembler object is still alive.
-    Disassembler(ProgramContext& program, const Commands& commands, BinaryFetcher fetcher, Disassembler& main_asm) :
-        bf(std::move(fetcher)), program(program), commands(commands), main_asm(main_asm)
+    Disassembler(ProgramContext& program, BinaryFetcher fetcher, Disassembler& main_asm) :
+        bf(std::move(fetcher)), program(program), commands(program.commands), main_asm(main_asm)
     {
         // This constructor **ALWAYS** run, put all common initialization here.
         this->offset_explored.resize(bf.size);
@@ -263,8 +269,8 @@ public:
     /// Constructs assuming `*this` to be the main code segment.
     ///
     /// Also see the warning regarding modifying `fetcher.bytecode` on the other constructor.
-    Disassembler(ProgramContext& program, const Commands& commands, BinaryFetcher fetcher) :
-        Disassembler(program, commands, std::move(fetcher), *this)
+    Disassembler(ProgramContext& program, BinaryFetcher fetcher) :
+        Disassembler(program, std::move(fetcher), *this)
     {
     }
 

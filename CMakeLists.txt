@@ -42,6 +42,7 @@ add_library(cppformat
 )
 
 set(GTA3SC_SRC_MAIN
+  src/cdimage.hpp
   src/annotation.hpp
   src/codegen.hpp
   src/commands.cpp
