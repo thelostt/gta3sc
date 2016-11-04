@@ -20,8 +20,12 @@ if(CMAKE_COMPILER_IS_CLANGXX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-parentheses-equality -Wno-tautological-compare")
 endif()
 
-# MSVC ITERATOR_DEBUG_LEVEL=2 breaks expected-lite
-add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
+if(MSVC)
+    # MSVC ITERATOR_DEBUG_LEVEL=2 breaks expected-lite
+    add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
+    # Fix some weird linker error on Debug builds
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Ob1")
+endif(MSVC)
 
 include_directories(
   deps
@@ -46,6 +50,7 @@ set(GTA3SC_SRC_MAIN
   src/decompiler.hpp
   src/decompiler_ir2.hpp
   src/disassembler.hpp
+  src/disassembler.cpp
   src/error.hpp
   src/main.cpp
   src/parser_lexer.cpp

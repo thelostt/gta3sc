@@ -112,7 +112,7 @@ int main(int argc, char** argv)
             {
                 if(!input.empty())
                 {
-                    fprintf(stderr, "gta3sc: error: input file appears twice.\n");
+                    fprintf(stderr, "gta3sc: error: input file appears twice\n");
                     return EXIT_FAILURE;
                 }
 
@@ -196,7 +196,7 @@ int main(int argc, char** argv)
                 }
                 else
                 {
-                    fprintf(stderr, "gta3sc: error: arbitrary config names not supported yet, must be 'gta3', 'gtavc' or 'gtasa'.\n");
+                    fprintf(stderr, "gta3sc: error: arbitrary config names not supported yet, must be 'gta3', 'gtavc' or 'gtasa'\n");
                     return EXIT_FAILURE;
                 }
             }
@@ -214,7 +214,7 @@ int main(int argc, char** argv)
                     options.header = Options::HeaderVersion::GTASA;
                 else
                 {
-                    fprintf(stderr, "gta3sc: error: invalid header version, must be 'gta3', 'gtavc' or 'gtasa'.\n");
+                    fprintf(stderr, "gta3sc: error: invalid header version, must be 'gta3', 'gtavc' or 'gtasa'\n");
                     return EXIT_FAILURE;
                 }
             }
@@ -375,7 +375,7 @@ int main(int argc, char** argv)
                 levelfile = "gta_vc.dat";
             else
             {
-                fprintf(stderr, "gta3sc: error: could not find level file (gta*.dat) in datadir '%s'.\n",
+                fprintf(stderr, "gta3sc: error: could not find level file (gta*.dat) in datadir '%s'\n",
                             datadir.generic_u8string().c_str());
                 return EXIT_FAILURE;
             }
@@ -416,7 +416,7 @@ int main(int argc, char** argv)
     }
 
     fs::path conf_path = config_path();
-    //fprintf(stderr, "gta3sc: using '%s' as configuration path.\n", conf_path.generic_u8string().c_str());
+    //fprintf(stderr, "gta3sc: using '%s' as configuration path\n", conf_path.generic_u8string().c_str());
 
     switch(action)
     {
@@ -735,6 +735,10 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         auto generate_ir2 = [&]
         {
+            program.error(nocontext, "ir2 generator needs to be reimplemented\n");
+
+
+            /*
             size_t subscripts_counter = 0;
 
             auto lowest_main_gen = gens.begin();
@@ -844,6 +848,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 ir2dc.decompile(print_ir2_line);
                 print_ir2_line(end_block);
             }
+            */
         };
 
         if(program.opt.emit_ir2)
@@ -864,6 +869,10 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
 int decompile(fs::path input, fs::path output, ProgramContext& program)
 {
+    program.error(nocontext, "decompiler needs to be reimplemented\n");
+    return 1;
+
+    /*
     const Commands& commands = program.commands;
 
     FILE* outstream;
@@ -896,4 +905,5 @@ int decompile(fs::path input, fs::path output, ProgramContext& program)
     fprintf(outstream, "%s\n", DecompilerContext(commands, std::move(data)).decompile().c_str());
 
     return 0;
+    */
 }
