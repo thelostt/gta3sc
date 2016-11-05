@@ -1,4 +1,4 @@
-// RUN: %gta3sc %s --config=gtasa --guesser -emit-ir2 | %FileCheck %s
+// RUN: %gta3sc %s --config=gtasa --guesser -emit-ir2 -o - | %FileCheck %s
 
 VAR_TEXT_LABEL label
 

@@ -1,4 +1,4 @@
-// RUN: %gta3sc %s --config=gta3 -emit-ir2 | %FileCheck %s
+// RUN: %gta3sc %s --config=gta3 -emit-ir2 -o - | %FileCheck %s
 // # SCM Header, Alignment and such performed by test/main-test-gta3/
 
 // Put declarations out of order, so we can ensure miss2 ordering.

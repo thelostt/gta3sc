@@ -1,4 +1,4 @@
-// RUN: %gta3sc %s --config=gtavc -moptimize-zero -emit-ir2 | %FileCheck %s
+// RUN: %gta3sc %s --config=gtavc -moptimize-zero -emit-ir2 -o - | %FileCheck %s
 
 // CHECK-L: SET_TIME_SCALE 0i8
 SET_TIME_SCALE 0.0

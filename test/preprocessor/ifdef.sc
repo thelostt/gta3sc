@@ -1,4 +1,4 @@
-// RUN: %gta3sc %s --config=gta3 -D TEST_SYMBOL -emit-ir2 | %FileCheck %s
+// RUN: %gta3sc %s --config=gta3 -D TEST_SYMBOL -emit-ir2 -o - | %FileCheck %s
 
 // CHECK-L: WAIT 1i8
 #ifdef TEST_SYMBOL

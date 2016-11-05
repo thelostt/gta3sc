@@ -1,5 +1,5 @@
-// RUN: %gta3sc %s --config=gta3 -emit-ir2 | %FileCheck %s
-// RUN: %gta3sc %s --config=gtavc -emit-ir2 | %FileCheck %s
+// RUN: %gta3sc %s --config=gta3 -emit-ir2 -o - | %FileCheck %s
+// RUN: %gta3sc %s --config=gtavc -emit-ir2 -o - | %FileCheck %s
 
 {
     // CHECK-L: SET_LVAR_INT 16@ 1i8

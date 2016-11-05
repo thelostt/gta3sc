@@ -451,10 +451,11 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         // if fsyntax-only bla bla
         // TODO .cs .scc
         output = input;
-        output.replace_extension(".scm");
+        output.replace_extension(program.opt.emit_ir2? ".ir2" : ".scm");
     }
 
-    try {
+    try
+    {
         std::vector<shared_ptr<Script>> scripts;
 
         //const char* input = "intro.sc";
@@ -718,11 +719,20 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         if(program.opt.emit_ir2)
         {
+            FILE *outstream = 0;
             std::vector<uint8_t> main_scm;
             std::vector<uint8_t> script_img;
 
+            auto guard = make_scope_guard([&] {
+                if(outstream && outstream != stdout) fclose(outstream);
+            });
+
             // TODO remove this reserve once we use allocate_file for main_scm in generate_output
             main_scm.reserve(2048 * 10);
+
+            outstream = (output != "-"? u8fopen(output, "wb") : stdout);
+            if(outstream == nullptr)
+                program.fatal_error(nocontext, "failed to open output for writing");
 
             bool is_first_line = true;
             auto print_ir2_line = [&](const std::string& line)
@@ -730,11 +740,11 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 if(is_first_line)
                 {
                     is_first_line = false;
-                    fprintf(stdout, "%s", line.c_str());
+                    fprintf(outstream, "%s", line.c_str());
                 }
                 else
                 {
-                    fprintf(stdout, "\n%s", line.c_str());
+                    fprintf(outstream, "\n%s", line.c_str());
                 }
             };
 
@@ -745,6 +755,8 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                                     Options::Lang::IR2, print_ir2_line);
             if(!status)
                 throw HaltJobException();
+
+            //fputc('<', outstream);
         }
         else
         {
@@ -757,19 +769,13 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             main_scm = u8fopen(output, "wb");
             if(main_scm == nullptr)
-            {
                 program.fatal_error(nocontext, "failed to open output for writing");
-                //return;
-            }
 
             if(use_script_img)
             {
                 script_img = u8fopen(fs::path(output).replace_filename("script.img"), "wb");
                 if(!script_img)
-                {
                     program.fatal_error(nocontext, "failed to open script.img for writing");
-                    //return;
-                }
             }
 
             generate_output(main_scm, script_img, use_script_img);
@@ -779,18 +785,25 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         if(program.has_error())
             throw HaltJobException();
 
-    } catch(const HaltJobException&) {
+        return 0;
+    }
+    catch(const HaltJobException&)
+    {
         fprintf(stderr, "gta3sc: compilation failed\n");
         return EXIT_FAILURE;
     }
-
-    return 0;
 }
 
 
 
 int decompile(fs::path input, fs::path output, ProgramContext& program)
 {
+    if(output.empty())
+    {
+        output = input;
+        output.replace_extension(program.opt.emit_ir2? ".ir2" : ".sc");
+    }
+
     try
     {
         const Commands& commands = program.commands;
@@ -803,16 +816,12 @@ int decompile(fs::path input, fs::path output, ProgramContext& program)
             if(outstream != stdout) fclose(outstream);
         });
 
-        if(output.empty())
-        {
-            outstream = stdout;
-        }
-        else
-        {
-            outstream = u8fopen(output, "wb");
-            if(!outstream)
-                program.fatal_error(nocontext, "could not open file '{}' for writing", output.generic_u8string());
-        }
+        if(lang == Options::Lang::GTA3Script)
+            program.fatal_error(nocontext, "GTA3script output is disabled, please use -emit-ir2 for IR2 output");
+
+        outstream = (output != "-"? u8fopen(output, "wb") : stdout);
+        if(!outstream)
+            program.fatal_error(nocontext, "could not open file '{}' for writing", output.generic_u8string());
 
         auto opt_bytecode = read_file_binary(input);
         if(!opt_bytecode)

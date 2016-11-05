@@ -3,8 +3,8 @@
 /debug/
 /test/**/Output
 *.pyc
-config/*.ir2
-utils/*.ir2
+config/**.ir2
+utils/**.ir2
 
 #################
 ## C++

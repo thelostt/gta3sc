@@ -1,4 +1,4 @@
-// RUN: %gta3sc %s --config=gta3 -emit-ir2 | %FileCheck %s
+// RUN: %gta3sc %s --config=gta3 -emit-ir2 -o - | %FileCheck %s
 
 // CHECK-L: SET_COLLECTABLE1_TOTAL 6i8
 SET_COLLECTABLE1_TOTAL 0
