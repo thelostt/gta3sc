@@ -69,4 +69,5 @@ def main(xmlname, ininame):
 if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("Usage: cmp_scmini.py <xmlfile> <inifile>")
+        sys.exit(1)
     main(sys.argv[1], sys.argv[2])

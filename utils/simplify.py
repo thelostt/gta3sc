@@ -85,4 +85,5 @@ def main(xmlfile, clear_useless_data):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage: simplify.py <xmlfile> <[clear_useless_data]>")
+        sys.exit(1)
     main(sys.argv[1], len(sys.argv) > 2)

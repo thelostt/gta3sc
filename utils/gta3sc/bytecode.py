@@ -1,9 +1,11 @@
 # -*- Python -*-
 
+from collections import namedtuple
+from itertools import chain
 import re
 
 __all__ = [
-    "Bytecode", "Data", "Arg", "Label", "Hex", "Command", 
+    "Bytecode", "Offset", "Scope", "Data", "Arg", "Label", "Hex", "Command", 
      "ArgNumber", "ArgLabel", "ArgString", "ArgVariable", "ArgArray",
      "read_ir2",
 ]
@@ -52,11 +54,29 @@ ARRAY_ELEM_TYPE_TEXTLABEL = 2
 ARRAY_ELEM_TYPE_TEXTLABEL16 = 3
 ARRAY_ELEM_TYPES = (ARRAY_ELEM_TYPE_INT, ARRAY_ELEM_TYPE_FLOAT, ARRAY_ELEM_TYPE_TEXTLABEL, ARRAY_ELEM_TYPE_TEXTLABEL16)
 
+BYTECODE_OFFSET_MAIN = 0
+BYTECODE_OFFSET_MISSION = 1
+BYTECODE_OFFSET_STREAMED = 2
+
+TABLE_SCOPE_SPAWNERS = {
+#   Name                ArgId
+    "START_NEW_SCRIPT": 0,
+    "LAUNCH_MISSION":   0,
+    "CALL":             3,
+    "CALLNOT":          3,
+}
+
 class Bytecode:
+
     def __init__(self, main_block, mission_blocks=[], streamed_blocks=[]):
         self.main_block = main_block
         self.mission_blocks = mission_blocks
         self.streamed_blocks = streamed_blocks
+
+        self.label_table = {}
+        for off, data in self:
+            if data.is_label():
+                self.label_table[data.name] = off
 
     def __str__(self):
         lines = []
@@ -71,16 +91,109 @@ class Bytecode:
             lines.append("#STREAMED_BLOCK_END")
         return "\n".join(lines)
 
+    def __iter__(self):
+        for i, data in enumerate(self.main_block):
+            yield (Offset(BYTECODE_OFFSET_MAIN, 0, i), data)
+        for block_id, block in enumerate(self.mission_blocks):
+            for i, data in enumerate(block):
+                yield (Offset(BYTECODE_OFFSET_MISSION, block_id, i), data)
+        for block_id, block in enumerate(self.streamed_blocks):
+            for i, data in enumerate(block):
+                yield (Offset(BYTECODE_OFFSET_STREAMED, block_id, i), data)
+
+    def get(self, offset):
+        the_block = None
+        if offset.type == BYTECODE_OFFSET_MAIN:
+            assert offset.block == 0
+            the_block = self.main_block
+        elif offset.type == BYTECODE_OFFSET_MISSION:
+            the_block = self.mission_blocks[offset.block]
+        elif offset.type == BYTECODE_OFFSET_STREAMED:
+            the_block = self.streamed_blocks[offset.block]
+        if the_block != None and offset.index < len(the_block):
+            return the_block[offset.index]
+        return None
+
+    def offset_from_label(self, name):
+        return self.label_table.get(name)
+
+    def offset_from_streamed(self, i):
+        return Offset(BYTECODE_OFFSET_STREAMED, i, 0)
+
+    def discover_scopes(self): # -> sorted [Scope, ...]
+        scopes_at = []
+        result = []
+        last_off = None
+
+        for off, data in self:
+            if data.is_command():
+                argid = TABLE_SCOPE_SPAWNERS.get(data.name)
+                if argid != None:
+                    scopes_at.append(self.offset_from_label(data.args[argid].value))
+
+            if last_off is None or off.type != last_off.type or off.block != last_off.block:
+                scopes_at.append(off)
+                last_off = off
+        
+        scopes_at = sorted(set(scopes_at))
+        for i, off in enumerate(scopes_at):
+            if i + 1 == len(scopes_at):
+                result.append(Scope(off, None))
+            else:
+                result.append(Scope(off, scopes_at[i+1]))
+
+        return result
+
+    def discover_global_arrays(self): # -> { offset: end_offset, ... }
+        return _discover_arrays(iter(self), False)
+
+    def discover_local_arrays(self, scope): # -> { offset: end_offset, ... }
+        return _discover_arrays(scope.iter_data(self), True)
+
+
+Offset = namedtuple("Offset", ['type', 'block', 'index'])
+
+ScopeBase = namedtuple('ScopeBase', ['start', 'end'])
+
+class Scope(ScopeBase):
+    # assert self.start until self.end doesn't change blocks/script types
+
+    def iter_data(self, bytecode):
+        off = self.start
+        while True:
+            data = bytecode.get(off)
+            if data is None or (self.end != None and off >= self.end):
+                return
+            yield (off, data)
+            off = Offset(off.type, off.block, off.index + 1)
+
+    @staticmethod
+    def from_offset(offset, scopelist): # scopelist shall be sorted
+        # think of this as a rectangle scanning lines in search for one line
+        for scope in scopelist:
+            if scope.end == None:
+                return scope if offset >= scope.start else None
+            if offset >= scope.end: # find the first scope in which the offset is before the scope end
+                continue
+            if offset >= scope.start: # once found, check if the offset is inside such scope
+                return scope
+            return None # not inside any scope
+
+    def owns_offset(self, offset):
+        if self.end == None:
+            return offset >= self.start
+        return offset >= self.start and offset < self.end
+
+    def find_script_name(self, bytecode):
+        for off, data in self.iter_data(bytecode):
+            if data.is_command() and data.name == "SCRIPT_NAME":
+                assert data.args[0].is_string()
+                return data.args[0].value
+
+
 class Data:
     def __init__(self, xtype):   # no need to call
         self.type = xtype
-
-    def __str__(self):
-        raise NotImplementedError # derived shall implement
-
-class Arg:
-    def __init__(self, datatype): # no need to call
-        self.type = datatype
 
     def __str__(self):
         raise NotImplementedError # derived shall implement
@@ -93,6 +206,28 @@ class Arg:
 
     def is_command(self):
         return self.type == DATA_COMMAND
+
+class Arg:
+    def __init__(self, datatype): # no need to call
+        self.type = datatype
+
+    def __str__(self):
+        raise NotImplementedError # derived shall implement
+
+    def is_number(self):
+        return False
+
+    def is_label(self):
+        return False
+
+    def is_string(self):
+        return False
+
+    def is_var(self): # returns true for both Var and Array
+        return False
+
+    def is_array(self): # returns false for Var
+        return False
 
 class Label(Data):
     def __init__(self, name):
@@ -118,7 +253,7 @@ class Command(Data):
     def __init__(self, not_flag, name, args):
         self.type = DATA_COMMAND
         self.not_flag = not_flag
-        self.name = name
+        self.name = name.upper()
         self.args = args
 
     def __str__(self):
@@ -134,6 +269,12 @@ class ArgNumber(Arg):
         assert numtype in DATATYPES_NUMERIC
         self.type = numtype
         self.value = value
+
+    def is_number(self):
+        return True
+
+    def is_float(self):
+        return self.type == DATATYPE_FLOAT
 
     def __str__(self):
         if self.type == DATATYPE_INT8:
@@ -155,6 +296,9 @@ class ArgLabel(Arg):
         self.type = labtype
         self.value = value
 
+    def is_label(self):
+        return True
+
     def __str__(self):
         if self.type == DATATYPE_GLOBAL_LABEL:
             return "@%s" % self.value
@@ -167,6 +311,9 @@ class ArgString(Arg):
         assert strtype in DATATYPES_STRING
         self.type = strtype
         self.value = value
+
+    def is_string(self):
+        return True
 
     def __str__(self):
         # TODO unescape
@@ -186,11 +333,29 @@ class ArgVariable(Arg):
         self.type = vartype
         self.offset = offset # i*1 for globals, i*4 for locals
 
+    def is_var(self):
+        return True
+
     def is_global(self):
         return self.type in DATATYPES_GLOBALVARS
 
     def is_local(self):
         return self.type in DATATYPES_LOCALVARS
+
+    def size_in_bytes(self):
+        if self.is_local():
+            datatype = DATATYPES_GLOBALVARS[DATATYPES_LOCALVARS.index(self.type)]
+        else:
+            datatype =  self.type
+
+        if datatype == DATATYPE_GLOBALVAR_NUMBER:
+            return 4
+        elif datatype == DATATYPE_GLOBALVAR_TEXTLABEL:
+            return 8
+        elif datatype == DATATYPE_GLOBALVAR_TEXTLABEL16:
+            return 16
+        else:
+            assert False
 
     def __str__(self):
         # TODO unescape
@@ -204,11 +369,17 @@ class ArgVariable(Arg):
 class ArgArray(Arg):
     def __init__(self, base, index, size, elem_type):
         assert elem_type in ARRAY_ELEM_TYPES
-        self.type = _type_from_base(base)
+        self.type = ArgArray._type_from_base(base)
         self.base = base
         self.index = index
         self.size = size
         self.elem_type = elem_type
+
+    def is_var(self):
+        return True
+
+    def is_array(self):
+        return True
 
     def __str__(self):
         etc = _char_from_elemtype(self.elem_type)
@@ -222,6 +393,7 @@ class ArgArray(Arg):
             return DATATYPES_LOCALVARS_ARRAY[DATATYPES_LOCALVARS.index(base.type)]
         else:
             raise ValueError("base is not a variable")
+
 
 
 def read_ir2(file):
@@ -271,7 +443,7 @@ def read_ir2(file):
         if token == 'i': return ARRAY_ELEM_TYPE_INT
         if token == 'f': return ARRAY_ELEM_TYPE_FLOAT
         if token == 's': return ARRAY_ELEM_TYPE_TEXTLABEL
-        if token == 's': return ARRAY_ELEM_TYPE_TEXTLABEL16
+        if token == 'v': return ARRAY_ELEM_TYPE_TEXTLABEL16
         return None
 
     def arg_from_token(token):
@@ -298,10 +470,10 @@ def read_ir2(file):
 
         m = RE_ARRAY.match(token)
         if m != None:
-            base = var_from_token(RE_ARRAY.group(1))
-            index = var_from_token(RE_ARRAY.group(2))
-            size = int(RE_ARRAY.group(3))
-            elem = elem_from_token(RE_ARRAY.group(4))
+            base = var_from_token(m.group(1))
+            index = var_from_token(m.group(2))
+            size = int(m.group(3))
+            elem = elem_from_token(m.group(4))
             return ArgArray(base, index, size, elem)
 
         m = RE_TEXTLABEL.match(token)
@@ -371,12 +543,24 @@ def _char_from_vartype(vartype):
     assert False
 
 def _char_from_elemtype(elem):
-    assert elemtype in ARRAY_ELEM_TYPES
+    assert elem in ARRAY_ELEM_TYPES
     if elem == ARRAY_ELEM_TYPE_INT: return 'i'
     if elem == ARRAY_ELEM_TYPE_FLOAT: return 'f'
     if elem == ARRAY_ELEM_TYPE_TEXTLABEL: return 's'
     if elem == ARRAY_ELEM_TYPE_TEXTLABEL16: return 'v'
     assert False
+
+def _discover_arrays(bytecode_iter, is_local): # -> { offset: arraysize_in_bytes, ... }
+    arrays = dict()
+    if is_local:
+        check_var_kind = lambda x: x.is_local()
+    else:
+        check_var_kind = lambda x: x.is_global()
+    for off, data in filter(lambda (o, d): d.is_command(), bytecode_iter):
+        for arg in filter(lambda a: a.is_array(), data.args):
+            if check_var_kind(arg.base):
+                arrays[arg.base.offset] = arg.size * arg.base.size_in_bytes()
+    return arrays
 
 if __name__ == "__main__":
     import sys

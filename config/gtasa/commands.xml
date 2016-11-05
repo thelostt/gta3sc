@@ -9284,7 +9284,7 @@
     </Command>
     <Command ID="0x615" Name="OPEN_SEQUENCE_TASK">
       <Args>
-        <Arg Type="INT" Entity="SEQUENCE_TASK"/>
+        <Arg Type="INT" Entity="SEQUENCE_TASK" Out="true"/>
       </Args>
     </Command>
     <Command ID="0x616" Name="CLOSE_SEQUENCE_TASK">
@@ -9331,7 +9331,7 @@
     </Command>
     <Command ID="0x61e" Name="CLEAR_ATTRACTOR">
       <Args>
-        <Arg Type="INT" Entity="SEQUENCE_TASK"/>
+        <Arg Type="INT" Entity="ATTRACTOR"/>
       </Args>
     </Command>
     <Command ID="0x61f" Name="CLEAR_ALL_ATTRACTORS" Supported="false"/>
@@ -9417,14 +9417,14 @@
     </Command>
     <Command ID="0x630" Name="SET_GROUP_LEADER">
       <Args>
-        <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="INT" Entity="GROUP"/>
+        <Arg Type="INT" Entity="CHAR"/>
       </Args>
     </Command>
     <Command ID="0x631" Name="SET_GROUP_MEMBER">
       <Args>
-        <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="INT" Entity="GROUP"/>
+        <Arg Type="INT" Entity="CHAR"/>
       </Args>
     </Command>
     <Command ID="0x632" Name="REMOVE_GROUP">
@@ -9554,7 +9554,7 @@
     </Command>
     <Command ID="0x64f" Name="PLAY_AND_KILL_FX_SYSTEM">
       <Args>
-        <Arg Type="INT" Entity="CHAR"/>
+        <Arg Type="INT" Entity="FX_SYSTEM"/>
       </Args>
     </Command>
     <Command ID="0x650" Name="KILL_FX_SYSTEM">
@@ -10360,12 +10360,12 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Radius"/>
-        <Arg Type="INT" Out="true" AllowConst="false"/>
+        <Arg Type="INT" Out="true" AllowConst="false" Entity="CHECKPOINT"/>
       </Args>
     </Command>
     <Command ID="0x6d6" Name="DELETE_CHECKPOINT">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Entity="CHECKPOINT"/>
       </Args>
     </Command>
     <Command ID="0x6d7" Name="SWITCH_RANDOM_TRAINS">
@@ -10739,8 +10739,8 @@
     <Command ID="0x719" Name="FINISH_SETTING_UP_CONVERSATION"/>
     <Command ID="0x71a" Name="IS_CONVERSATION_AT_NODE">
       <Args>
-        <Arg Type="INT"/>
-        <Arg Type="TEXT_LABEL" Out="true" AllowConst="false"/>
+        <Arg Type="INT" Entity="CHAR"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x71b" Name="CLEAR_ALL_CONVERSATIONS" Supported="false"/>
@@ -11017,7 +11017,7 @@
     </Command>
     <Command ID="0x74e" Name="SET_INFORM_RESPECTED_FRIENDS">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT"/>
       </Args>
@@ -11369,7 +11369,7 @@
     <Command ID="0x79f" Name="PLAYER_LEFT_CRANE"/>
     <Command ID="0x7a0" Name="PERFORM_SEQUENCE_TASK_FROM_PROGRESS">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="INT" Entity="SEQUENCE_TASK"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -11766,7 +11766,7 @@
     </Command>
     <Command ID="0x7f3" Name="SET_CHECKPOINT_COORDS">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Entity="CHECKPOINT"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
@@ -12431,12 +12431,12 @@
     </Command>
     <Command ID="0x876" Name="CREATE_BIRDS">
       <Args>
-        <Arg Type="FLOAT" Desc="X Coord"/>
-        <Arg Type="FLOAT" Desc="Y Coord"/>
-        <Arg Type="FLOAT" Desc="Z Coord"/>
-        <Arg Type="FLOAT" Desc="X Coord"/>
-        <Arg Type="FLOAT" Desc="Y Coord"/>
-        <Arg Type="FLOAT" Desc="Z Coord"/>
+        <Arg Type="PARAM" Desc="X Coord"/>
+        <Arg Type="PARAM" Desc="Y Coord"/>
+        <Arg Type="PARAM" Desc="Z Coord"/>
+        <Arg Type="PARAM" Desc="X Coord"/>
+        <Arg Type="PARAM" Desc="Y Coord"/>
+        <Arg Type="PARAM" Desc="Z Coord"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
       </Args>
@@ -13555,7 +13555,7 @@
     </Command>
     <Command ID="0x94a" Name="UPDATE_PICKUP_MONEY_PER_DAY">
       <Args>
-        <Arg Type="INT" Entity="PLAYER"/>
+        <Arg Type="INT" Entity="PICKUP"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
@@ -13946,7 +13946,7 @@
     <Command ID="0x995" Name="UNMARK_ALL_ROAD_NODES_AS_DONT_WANDER"/>
     <Command ID="0x996" Name="SET_CHECKPOINT_HEADING">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Entity="CHECKPOINT"/>
         <Arg Type="FLOAT" Desc="Angle"/>
       </Args>
     </Command>
@@ -14272,7 +14272,7 @@
     </Command>
     <Command ID="0x9d1" Name="DOES_PICKUP_EXIST">
       <Args>
-        <Arg Type="INT" Entity="PLAYER"/>
+        <Arg Type="INT" Entity="PICKUP"/>
       </Args>
     </Command>
     <Command ID="0x9d2" Name="ENABLE_AMBIENT_CRIME">

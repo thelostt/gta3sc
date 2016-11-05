@@ -1,5 +1,6 @@
 # -*- Python -*-
 from lxml import etree
+import os
 
 __all__ = ["Alternator", "Enum", "Command", "Argument", "Config", "read_config"]
 
@@ -7,6 +8,9 @@ class Alternator:
     def __init__(self):
         self.name = ""
         self.alters = []
+
+    def __iter__(self):
+        return iter(self.alters)
 
     @staticmethod
     def from_node(node):
@@ -73,6 +77,14 @@ class Command:
 
     def has_optional(self):
         return len(self.args) > 0 and self.args[-1].optional == True
+
+    def get_arg(self, i):
+        if i < len(self.args):
+            return self.args[i]
+        elif self.has_optional():
+            return self.args[-1]
+        else:
+            return None
 
     @staticmethod
     def from_node(node):
@@ -167,8 +179,11 @@ class Config:
         self.enums = []
         self.alternators = []
 
-    def read_config(self, filename):
-        tree = etree.parse(filename)
+    def get_alternator(self, name):
+        return next((x for x in self.alternators if x.name == name), None)
+
+    def read_config(self, file):
+        tree = etree.parse(file)
         for item in tree.getroot():
             if item.tag == "Alternators":
                 for subitem in item:
@@ -183,7 +198,7 @@ class Config:
                     if subitem.tag == "Enum":
                         self.enums.append(Enum.from_node(subitem))
 
-    def save_config(self, filename, pretty_print=True):
+    def save_config(self, file, pretty_print=True):
         root = etree.Element("GTA3Script")
         if len(self.enums) > 0:
             base = etree.SubElement(root, "Constants") 
@@ -199,12 +214,16 @@ class Config:
                 base.append(c.to_node())
 
         tree = etree.ElementTree(root)
-        tree.write(filename, encoding="utf-8", pretty_print=pretty_print, xml_declaration=True)
+        tree.write(file, encoding="utf-8", pretty_print=pretty_print, xml_declaration=True)
 
 
 def read_config(filename):
     c = Config()
-    c.read_config(filename)
+    if os.path.isdir(filename):
+        for subfile in os.listdir(filename):
+            c.read_config(os.path.join(filename, subfile))
+    else:
+        c.read_config(filename)
     return c
 
 
