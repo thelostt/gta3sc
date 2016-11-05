@@ -49,6 +49,7 @@ struct Options
     bool skip_cutscene = false;
     bool fsyntax_only = false;
     bool emit_ir2 = false;
+    bool linear_sweep = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;

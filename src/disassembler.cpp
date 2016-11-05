@@ -33,10 +33,11 @@ void Disassembler::explore(size_t offset)
 {
     if(offset >= bf.size)
     {
-        // hm, there's a jump outer of code...
-        // ...or we're not detecting flow instructions properly.
-        // ??? TODO
-        __debugbreak();
+        if(this->type == Type::RecursiveTraversal)
+        {
+            program.warning(nocontext, "a branch command jumps into the local offset {:X} which is outside the bytecode", offset);
+            program.note(nocontext, "use --verbose to find which block this offset belongs to");
+        }
         return;
     }
 
@@ -46,10 +47,19 @@ void Disassembler::explore(size_t offset)
     if(auto opt_cmdid = bf.fetch_u16(offset))
     {
         bool not_flag = (*opt_cmdid & 0x8000) != 0;
-        if(auto opt_cmd = this->commands.find_command(*opt_cmdid & 0x7FFF))
+        auto pureid = *opt_cmdid & 0x7FFF;
+        if(auto opt_cmd = this->commands.find_command(pureid))
         {
             if(explore_opcode(offset, *opt_cmd, not_flag))
                 return;
+
+            program.warning(nocontext, "could not disassembly opcode 0x{:X} at local offset 0x{:X}", pureid, offset);
+            program.note(nocontext, "use --verbose to find which block this offset belongs to");
+        }
+        else
+        {
+            program.warning(nocontext, "found unknown opcode 0x{:X} at local offset 0x{:X}", pureid, offset);
+            program.note(nocontext, "use --verbose to find which block this offset belongs to"); 
         }
     }
 
@@ -240,33 +250,45 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
 
         if(label_param >= 0)
         {
-            main_asm.to_explore.emplace(label_param);
             main_asm.label_offsets.emplace(label_param);
+
+            if(main_asm.type == Type::RecursiveTraversal)
+                main_asm.to_explore.emplace(label_param);
         }
         else
         {
-            this->to_explore.emplace(-label_param);
             this->label_offsets.emplace(-label_param);
+
+            if(this->type == Type::RecursiveTraversal)
+                this->to_explore.emplace(-label_param);
         }
     }
 
-    // add next instruction as the next thing to be explored, if this isn't a instruction that
-    // terminates execution or jumps unconditionally to another offset.
-    // TODO would be nice if this was actually configurable.
-    if(!this->commands.equal(command, this->commands.goto_())
-    && !this->commands.equal(command, this->commands.return_())
-    && !this->commands.equal(command, this->commands.ret())
-    && !this->commands.equal(command, this->commands.terminate_this_script())
-    && !this->commands.equal(command, this->commands.terminate_this_custom_script()))
-    // TODO more
+    if(this->type == Type::LinearSweep)
     {
-        if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)
+        // Add next instruction to be explored.
+        this->to_explore.emplace(offset);
+    }
+    else if(this->type == Type::RecursiveTraversal)
+    {
+        // add next instruction as the next thing to be explored, if this isn't a instruction that
+        // terminates execution or jumps unconditionally to another offset.
+        // TODO would be nice if this was actually configurable.
+        if(!this->commands.equal(command, this->commands.goto_())
+        && !this->commands.equal(command, this->commands.return_())
+        && !this->commands.equal(command, this->commands.ret())
+        && !this->commands.equal(command, this->commands.terminate_this_script())
+        && !this->commands.equal(command, this->commands.terminate_this_custom_script()))
+        // TODO more
         {
-            // we are at the last SWITCH_START/SWITCH_CONTINUED command, after this, the game will take a branch.
-        }
-        else
-        {
-            this->to_explore.emplace(offset);
+            if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)
+            {
+                // we are at the last SWITCH_START/SWITCH_CONTINUED command, after this, the game will take a branch.
+            }
+            else
+            {
+                this->to_explore.emplace(offset);
+            }
         }
     }
 

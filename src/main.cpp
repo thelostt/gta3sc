@@ -66,7 +66,9 @@ Options:
                            to -flocal-var-limit if not set.
   -ftimer-index=<n>        The local variable index of TIMERA.
   -fswitch-case-limit=<n>  The limit on the number of CASE in a SWITCH.
-  -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START and SKIP_CUTSCENE_END.
+  -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
+  --linear-sweep           Disassembler scans the code by the means of a
+                           linear-sweep instead of a recursive traversal.
 )";
 
 enum class Action
@@ -142,6 +144,10 @@ int main(int argc, char** argv)
             else if(optget(argv, nullptr, "--guesser", 0))
             {
                 options.guesser = true;
+            }
+            else if(optget(argv, nullptr, "--linear-sweep", 0))
+            {
+                options.linear_sweep = true;
             }
             else if(const char* name = optget(argv, nullptr, "--config", 1))
             {
@@ -844,6 +850,9 @@ bool decompile(const void* bytecode, size_t bytecode_size,
 
     try
     {
+        auto scan_type = program.opt.linear_sweep? Disassembler::Type::LinearSweep :
+                                                   Disassembler::Type::RecursiveTraversal;
+
         auto opt_header = DecompiledScmHeader::from_bytecode(bytecode, bytecode_size,
                                                              program.opt.get_header<DecompiledScmHeader::Version>());
         if(!opt_header)
@@ -872,7 +881,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
         if(program.has_error())
             throw HaltJobException();
 
-        Disassembler main_segment_asm(program, main_segment);
+        Disassembler main_segment_asm(program, main_segment, scan_type);
         std::vector<Disassembler> mission_segments_asm;
         std::vector<Disassembler> stream_segments_asm;
         mission_segments_asm.reserve(header.mission_offsets.size());
@@ -882,7 +891,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
         // mutated on all the units.
         for(auto& mission_bytecode : mission_segments)
         {
-            mission_segments_asm.emplace_back(program, mission_bytecode, main_segment_asm);
+            mission_segments_asm.emplace_back(program, mission_bytecode, main_segment_asm, scan_type);
             mission_segments_asm.back().run_analyzer();
         }
 
@@ -893,7 +902,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
             if(i != ignore_stream_id)
             {
                 auto& stream_bytecode = stream_segments[i];
-                stream_segments_asm.emplace_back(program, stream_bytecode, main_segment_asm);
+                stream_segments_asm.emplace_back(program, stream_bytecode, main_segment_asm, scan_type);
                 stream_segments_asm.back().run_analyzer();
             }
         }

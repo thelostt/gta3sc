@@ -225,6 +225,13 @@ struct BinaryFetcher
 ///
 struct Disassembler
 {
+public:
+    enum class Type
+    {
+        LinearSweep,            //< Scans the code from top to bottom.
+        RecursiveTraversal,     //< Scans the code by following branch instructions.
+    };
+
 private:
     ProgramContext&     program;
     const Commands&     commands;
@@ -247,6 +254,9 @@ private:
     /// Used internally to process the SWITCH_START/SWITCH_CONTINUED commands.
     std::size_t         switch_cases_left = 0;
 
+    /// Method of disassembling.
+    Type                type;
+
     /// Reference to the Disassembler of the main code segment.
     /// This reference may be pointing to *this.
     Disassembler&       main_asm;
@@ -259,8 +269,8 @@ public:
     ///
     /// It's undefined what happens with the analyzer if data inside `fetcher.bytecode` is changed while
     /// this Disassembler object is still alive.
-    Disassembler(ProgramContext& program, BinaryFetcher fetcher, Disassembler& main_asm) :
-        bf(std::move(fetcher)), program(program), commands(program.commands), main_asm(main_asm)
+    Disassembler(ProgramContext& program, BinaryFetcher fetcher, Disassembler& main_asm, Type type) :
+        bf(std::move(fetcher)), program(program), commands(program.commands), main_asm(main_asm), type(type)
     {
         // This constructor **ALWAYS** run, put all common initialization here.
         this->offset_explored.resize(bf.size);
@@ -269,8 +279,8 @@ public:
     /// Constructs assuming `*this` to be the main code segment.
     ///
     /// Also see the warning regarding modifying `fetcher.bytecode` on the other constructor.
-    Disassembler(ProgramContext& program, BinaryFetcher fetcher) :
-        Disassembler(program, std::move(fetcher), *this)
+    Disassembler(ProgramContext& program, BinaryFetcher fetcher, Type type) :
+        Disassembler(program, std::move(fetcher), *this, type)
     {
     }
 
