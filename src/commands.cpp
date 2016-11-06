@@ -88,9 +88,15 @@ optional<int32_t> Commands::find_constant(const string_view& value, bool context
 
 optional<int32_t> Commands::find_constant_all(const string_view& value) const
 {
+    // See https://github.com/thelink2012/gta3sc/issues/60
+    if(auto opt = enum_carpedmodels->find(value))
+        return opt;
+
     // TODO mayyybe speed up this? we didn't profile or anything.
     for(auto& enum_pair : enums)
     {
+        if(&enum_pair.second == &enum_carpedmodels)
+            continue;
         if(auto opt = enum_pair.second->find(value))
             return opt;
     }
