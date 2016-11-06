@@ -5,7 +5,7 @@ from itertools import chain
 import re
 
 __all__ = [
-    "Bytecode", "Offset", "Scope", "Data", "Arg", "Label", "Hex", "Command", 
+    "Bytecode", "Offset", "VarInfo", "Scope", "Data", "Arg", "Label", "Hex", "Command", 
      "ArgNumber", "ArgLabel", "ArgString", "ArgVariable", "ArgArray",
      "read_ir2",
 ]
@@ -175,6 +175,20 @@ class VarInfo:
         self.end_offset = end_offset
         self.type = typestring # may be None, meaning unknown type
         self.size = arraysize  # None means not array
+        self.enums = set()
+        self.entities = set()
+
+    @staticmethod
+    def from_offset(offset, varlist): # varlist should be sorted
+        # see comments in Scope.from_offset for details
+        for v in varlist:
+            if offset >= v.end_offset:
+                continue
+            if offset >= v.start_offset:
+                return v
+            return None
+
+
 
 class Scope(ScopeBase):
     # assert self.start until self.end doesn't change blocks/script types
@@ -615,6 +629,8 @@ def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo
         for i, arg in enumerate(data.args):
             if arg.is_var() and check_var_kind(arg):
 
+                arginfo = cmdinfo.get_arg(i) if cmdinfo else None
+
                 if arg.is_array():
                     offset_start = arg.base.offset
                     offset_end   = offset_start + (arg.size * arg.base.size_in_bytes())
@@ -628,7 +644,6 @@ def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo
 
                 vartype = None
                 if datatype == DATATYPE_GLOBALVAR_NUMBER:
-                    arginfo = cmdinfo.get_arg(i) if cmdinfo else None
                     if arginfo is None:
                         pass
                     elif arginfo.type == "INT":
@@ -652,6 +667,15 @@ def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo
                         var.type = vartype
                 else:
                     vardict[offset_start] = VarInfo(offset_start, offset_end, vartype, array_size)
+                    var = vardict[offset_start]
+
+                if arginfo != None:
+                    if len(arginfo.enums) > 0:
+                        assert len(arginfo.enums) == 1
+                        var.enums.add(arginfo.enums[0])
+                    if arginfo.entity:
+                        var.entities.add(arginfo.entity)
+
 
     result = list()
 

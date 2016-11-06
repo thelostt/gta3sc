@@ -5,7 +5,7 @@
 """
 import sys, os, errno
 import gta3sc
-from gta3sc.bytecode import Scope
+from gta3sc.bytecode import VarInfo, Scope
 from gta3sc.bytecode import DATATYPE_GLOBALVAR_NUMBER
 from gta3sc.bytecode import DATATYPE_GLOBALVAR_TEXTLABEL
 from gta3sc.bytecode import DATATYPE_GLOBALVAR_TEXTLABEL16
@@ -66,50 +66,92 @@ def converted_arg(ir2, arg, arginfo, enums=None):
     else:
         assert False
 
-def converted_expr(ir2, data, cmdinfo, op):
-    arg0 = converted_arg(ir2, data.args[0], cmdinfo.get_arg(0))
-    arg1 = converted_arg(ir2, data.args[1], cmdinfo.get_arg(1))
-    return "%s%s %s %s" % ("NOT " if data.not_flag else "", arg0, op, arg1)
+def find_constant_for_var(argvar, argconst, global_vars, local_vars, enums):
+    assert argvar.is_var()
+    assert argconst.is_number()
 
-def converted_data(ir2, data, commands, alternators, enums, subscripts=None, gosubfiles=None, alternative_name=None):
+    constant = None
+
+    if argvar.is_local():
+        var = VarInfo.from_offset(argvar.offset, local_vars)
+    else:
+        var = VarInfo.from_offset(argvar.offset, global_vars)
+
+    if len(var.enums) > 0:
+        for ve in var.enums:
+            enum_dict = enums.get(ve)
+            if enum_dict is not None:
+                constant = enum_dict.get(argconst.value)
+                if constant is not None:
+                    break
+
+    if constant is None:
+        constant = enums["CARPEDMODEL"].get(argconst.value)
+
+    assert constant != None
+
+    return constant
+
+def get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums):
+
+    args = [converted_arg(ir2, data.args[0], cmdinfo.get_arg(0)),
+            converted_arg(ir2, data.args[1], cmdinfo.get_arg(1))]
+
+    if data.name.startswith("IS_CONSTANT_") or data.name.endswith("_CONSTANT"):
+        tup = (1, 0) if data.name.endswith("_CONSTANT") else (0, 1)
+        const_id = tup[0]
+        var_id   = tup[1]
+        args[const_id] = find_constant_for_var(data.args[var_id], data.args[const_id], global_vars, local_vars, enums)
+
+    return args
+
+def converted_expr(ir2, data, cmdinfo, op, global_vars, local_vars, enums):
+    args = get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums)
+    return "%s%s %s %s" % ("NOT " if data.not_flag else "", args[0], op, args[1])
+
+def converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, subscripts=None, gosubfiles=None, alternative_name=None):
     if data.is_label():
         return "%s:" % data.name
     elif data.is_command():
         cmdinfo = commands[data.name]
-        output = "NOT " if data.not_flag else ""
+        not_prefix = "NOT " if data.not_flag else ""
+        output = not_prefix
         cmdname = data.name if not alternative_name else alternative_name
         if cmdname in alternators["SET"]:
-            return converted_expr(ir2, data, cmdinfo, '=')
+            return converted_expr(ir2, data, cmdinfo, '=', global_vars, local_vars, enums)
         elif cmdname in alternators["CSET"]:
-            return converted_expr(ir2, data, cmdinfo, '=#')
+            return converted_expr(ir2, data, cmdinfo, '=#', global_vars, local_vars, enums)
         elif cmdname in alternators["ADD_THING_TO_THING"]:
-            return converted_expr(ir2, data, cmdinfo, '+=')
+            return converted_expr(ir2, data, cmdinfo, '+=', global_vars, local_vars, enums)
         elif cmdname in alternators["SUB_THING_FROM_THING"]:
-            return converted_expr(ir2, data, cmdinfo, '-=')
+            return converted_expr(ir2, data, cmdinfo, '-=', global_vars, local_vars, enums)
         elif cmdname in alternators["MULT_THING_FROM_THING"]:
-            return converted_expr(ir2, data, cmdinfo, '*=')
+            return converted_expr(ir2, data, cmdinfo, '*=', global_vars, local_vars, enums)
         elif cmdname in alternators["DIV_THING_BY_THING"]:
-            return converted_expr(ir2, data, cmdinfo, '/=')
+            return converted_expr(ir2, data, cmdinfo, '/=', global_vars, local_vars, enums)
         elif cmdname in alternators["IS_THING_GREATER_THAN_THING"]:
-            return converted_expr(ir2, data, cmdinfo, '>')
+            return converted_expr(ir2, data, cmdinfo, '>', global_vars, local_vars, enums)
         elif cmdname in alternators["IS_THING_GREATER_OR_EQUAL_TO_THING"]:
-            return converted_expr(ir2, data, cmdinfo, '>=')
+            return converted_expr(ir2, data, cmdinfo, '>=', global_vars, local_vars, enums)
         elif cmdname in alternators["ADD_THING_TO_THING_TIMED"]:
-            return converted_expr(ir2, data, cmdinfo, '+=@')
+            return converted_expr(ir2, data, cmdinfo, '+=@', global_vars, local_vars, enums)
         elif cmdname in alternators["SUB_THING_FROM_THING_TIMED"]:
-            return converted_expr(ir2, data, cmdinfo, '-=@')
+            return converted_expr(ir2, data, cmdinfo, '-=@', global_vars, local_vars, enums)
         elif cmdname in alternators["IS_THING_EQUAL_TO_THING"]:
-            return converted_data(ir2, data, commands, alternators, enums, alternative_name='IS_THING_EQUAL_TO_THING')
+            if data.name.startswith("IS_CONSTANT_") or data.name.endswith("_CONSTANT"):
+                args = get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums)
+                return "%s%s %s %s" % (not_prefix, data.name, args[0], args[1])
+            return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='IS_THING_EQUAL_TO_THING')
         elif cmdname in alternators["ABS"]:
-            return converted_data(ir2, data, commands, alternators, enums, alternative_name='ABS')
+            return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='ABS')
         elif cmdname in alternators["IS_BIT_SET"]:
-            return converted_data(ir2, data, commands, alternators, enums, alternative_name='IS_BIT_SET')
+            return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='IS_BIT_SET')
         elif cmdname in alternators["SET_BIT"]:
-            return converted_data(ir2, data, commands, alternators, enums, alternative_name='SET_BIT')
+            return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='SET_BIT')
         elif cmdname in alternators["CLEAR_BIT"]:
-            return converted_data(ir2, data, commands, alternators, enums, alternative_name='CLEAR_BIT')
+            return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='CLEAR_BIT')
         elif cmdname in alternators["IS_EMPTY"]:
-            return converted_data(ir2, data, commands, alternators, enums, alternative_name='IS_EMPTY')
+            return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='IS_EMPTY')
         elif cmdname in ("SET_TOTAL_NUMBER_OF_MISSIONS", "SET_PROGRESS_TOTAL", "SET_COLLECTABLE1_TOTAL"):
             return "%s 0" % (cmdname)
         elif cmdname == "GOSUB_FILE":
@@ -195,6 +237,7 @@ def main(ir2file, xmlfile):
             gosubfiles[ir2.offset_from_label(data.args[1].value)] = filename
 
     global_vars = ir2.discover_global_vars(commands=commands)
+    local_vars = None
 
     print("//--------------------------")
 
@@ -226,7 +269,7 @@ def main(ir2file, xmlfile):
         def write_data(tab=0):
             tabing = ' ' * (tab*4)
             if data.is_label(): stream.write("\n")
-            line = converted_data(ir2, data, commands, alternators, enums, subscripts=subscripts, gosubfiles=gosubfiles)
+            line = converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, subscripts=subscripts, gosubfiles=gosubfiles)
             stream.write("%s%s\n" % (tabing, line))
 
         if current_scope == None:
