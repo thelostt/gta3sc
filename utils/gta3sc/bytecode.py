@@ -178,6 +178,15 @@ class VarInfo:
         self.enums = set()
         self.entities = set()
 
+        if self.type in ("INT", "FLOAT"):
+            self.elem_size = 4
+        elif self.type == "TEXT_LABEL":
+            self.elem_size = 8
+        elif self.type == "TEXT_LABEL16":
+            self.elem_size = 16
+        else:
+            self.elem_size = None
+
     @staticmethod
     def from_offset(offset, varlist): # varlist should be sorted
         # see comments in Scope.from_offset for details
@@ -188,6 +197,9 @@ class VarInfo:
                 return v
             return None
 
+    def index_from_offset(self, offset):
+        assert offset >= self.start_offset and offset < self.end_offset
+        return (offset - self.start_offset) / self.elem_size
 
 
 class Scope(ScopeBase):
@@ -386,6 +398,9 @@ class ArgVariable(Arg):
         else:
             return self.type
 
+    def get_offset(self):
+        return self.offset
+
     def size_in_bytes(self):
         datatype = self.get_datatype();
         if datatype == DATATYPE_GLOBALVAR_NUMBER:
@@ -426,6 +441,9 @@ class ArgArray(Arg):
 
     def is_local(self):
         return self.base.is_local()
+
+    def get_offset(self):
+        return self.base.get_offset()
 
     def __str__(self):
         etc = _char_from_elemtype(self.elem_type)
@@ -662,9 +680,12 @@ def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo
                 var = vardict.get(offset_start)
                 if var != None:
                     assert var.type == vartype or var.type == None or vartype == None
-                    assert var.size == array_size
+                    assert var.size == array_size or var.size == None or array_size == None 
                     if vartype != None:
                         var.type = vartype
+                    if array_size != None:
+                        var.size = array_size
+                        var.end_offset = offset_end
                 else:
                     vardict[offset_start] = VarInfo(offset_start, offset_end, vartype, array_size)
                     var = vardict[offset_start]
@@ -684,6 +705,7 @@ def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo
         if len(result) > 0:
             if v.start_offset < result[-1].end_offset:
                 continue
+        
         result.append(v)
 
     return result

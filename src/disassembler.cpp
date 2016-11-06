@@ -330,9 +330,11 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
                             (array_prop & 0x7F) == 2? DecompiledVarArray::ElemType::TextLabel :
                             (array_prop & 0x7F) == 3? DecompiledVarArray::ElemType::TextLabel16 :
                                                     DecompiledVarArray::ElemType::None;
+        bool is_index_global = (array_prop & 0x80) != 0;
+
         ccmd.args.emplace_back(DecompiledVarArray{
-            DecompiledVar{ is_global, type, var_offset * (is_global? 1u : 4u) },
-            DecompiledVar{ (array_prop & 0x80) != 0, VarType::Int, uint32_t(index_var) },
+            DecompiledVar{ is_global, type, uint32_t(var_offset) * (is_global? 1 : 4) },
+            DecompiledVar{ is_index_global, VarType::Int, uint32_t(index_var) * (is_index_global? 1 : 4) },
             array_size,
             elem_type,
         });

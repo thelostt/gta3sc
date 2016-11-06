@@ -9272,7 +9272,7 @@
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
-        <Arg Type="INT" Out="true" AllowConst="false"/>
+        <Arg Type="FLOAT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0x614" Name="SET_CHAR_ANIM_CURRENT_TIME">
@@ -9309,7 +9309,7 @@
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
-        <Arg Type="INT" Desc="Time (ms)" Out="true" AllowConst="false"/>
+        <Arg Type="FLOAT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0x61b" Name="CLEAR_SEQUENCE_TASK">
@@ -10991,8 +10991,8 @@
     <Command ID="0x74b" Name="DRAW_SPRITE_WITH_ROTATION">
       <Args>
         <Arg Type="INT"/>
-        <Arg Type="INT" Desc="2D pixel X"/>
-        <Arg Type="INT" Desc="2D pixel Y"/>
+        <Arg Type="FLOAT" Desc="2D pixel X"/>
+        <Arg Type="FLOAT" Desc="2D pixel Y"/>
         <Arg Type="FLOAT" Desc="Height"/>
         <Arg Type="FLOAT" Desc="Width"/>
         <Arg Type="FLOAT" Desc="Rotation"/>
@@ -13340,7 +13340,7 @@
     <Command ID="0x91f" Name="GET_PLANE_UNDERCARRIAGE_POSITION">
       <Args>
         <Arg Type="INT" Desc="Plane" Entity="CAR"/>
-        <Arg Type="INT" Out="true" AllowConst="false"/>
+        <Arg Type="FLOAT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0x920" Name="CAMERA_SET_VECTOR_TRACK">
@@ -13659,10 +13659,10 @@
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
-        <Arg Type="INT" Desc="Red (0-255)"/>
-        <Arg Type="INT" Desc="Green (0-255)"/>
-        <Arg Type="INT" Desc="Blue (0-255)"/>
-        <Arg Type="INT" Desc="Alpha (0-255)"/>
+        <Arg Type="FLOAT" Desc="Red (0-1)"/>
+        <Arg Type="FLOAT" Desc="Green (0-1)"/>
+        <Arg Type="FLOAT" Desc="Blue (0-1)"/>
+        <Arg Type="FLOAT" Desc="Alpha (0-1)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
       </Args>
@@ -14887,8 +14887,8 @@
     <Command ID="0xa49" Name="IS_XBOX_VERSION"/>
     <Command ID="0xa4a" Name="GET_PC_MOUSE_MOVEMENT">
       <Args>
-        <Arg Type="INT" Out="true" AllowConst="false"/>
-        <Arg Type="INT" Out="true" AllowConst="false"/>
+        <Arg Type="FLOAT" Out="true" AllowConst="false"/>
+        <Arg Type="FLOAT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0xa4b" Name="IS_PC_USING_JOYPAD"/>

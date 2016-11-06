@@ -258,6 +258,10 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                     return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexNotVar });
                 }
             }
+            else if(token.index == nullopt && (*opt_var)->count != nullopt)
+            {
+                return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedVarIndex });
+            }
 
             auto& var = *opt_var;
             if(!(arginfo.allow_global_var && var->global) && !(arginfo.allow_local_var && !var->global))
@@ -677,6 +681,7 @@ std::string Commands::MatchFailure::to_string()
         case VariableKindNotAllowed:    return "variable kind (global/local) not allowed for this argument";
         case VariableTypeMismatch:      return "variable type does not match argument type";
         case StringLiteralNotAllowed:   return "STRING literal not allowed here";
+        case ExpectedVarIndex:          return "use of array variable without a index";
         default:                        Unreachable();
     }
 }

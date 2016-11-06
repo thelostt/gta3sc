@@ -14,9 +14,27 @@ from gta3sc.bytecode import BYTECODE_OFFSET_MISSION
 from gta3sc.bytecode import BYTECODE_OFFSET_STREAMED
 from collections import defaultdict
 
-TIMER_INDICES = (16, 17)
+TIMER_INDICES = (32, 33)
 
-def converted_arg(ir2, arg, arginfo, enums=None):
+STREAM_COMMANDS = set([
+    "REGISTER_STREAMED_SCRIPT_INTERNAL",
+    "REGISTER_SCRIPT_BRAIN_FOR_CODE_USE",
+    "REGISTER_ATTRACTOR_SCRIPT_BRAIN_FOR_CODE_USE",
+    "STREAM_SCRIPT",
+    "HAS_STREAMED_SCRIPT_LOADED",
+    "MARK_STREAMED_SCRIPT_AS_NO_LONGER_NEEDED",
+    "REMOVE_STREAMED_SCRIPT",
+    "REGISTER_STREAMED_SCRIPT",
+    "START_NEW_STREAMED_SCRIPT",
+    "GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT",
+    "ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED",
+    "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT",
+    "REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE",
+    "ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR",
+    "SWITCH_OBJECT_BRAINS",
+])
+
+def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None):
     if arg.is_number():
         if arg.is_float():
             output = "%f" % arg.value
@@ -25,7 +43,7 @@ def converted_arg(ir2, arg, arginfo, enums=None):
                 output += "0"
             return output
         else:
-            if len(arginfo.enums) > 0:
+            if enums != None and len(arginfo.enums) > 0:
                 if arginfo.enums[0] == "MODEL":
                     if arg.value < 0:
                         return ir2.get_model(-arg.value - 1) or str(arg.value)
@@ -35,7 +53,7 @@ def converted_arg(ir2, arg, arginfo, enums=None):
                     enum = enums.get(arginfo.enums[0])
                     if enum != None:
                         return enum.get(arg.value, str(arg.value))
-            elif arginfo.desc.startswith("Boolean") and arg.value in (0,1):
+            elif enums != None and arginfo.desc.startswith("Boolean") and arg.value in (0,1):
                 return ("FALSE", "TRUE")[arg.value]
             return str(arg.value)
     elif arg.is_label():
@@ -48,7 +66,9 @@ def converted_arg(ir2, arg, arginfo, enums=None):
             return arg.value.upper()
     elif arg.is_var():
         if arg.is_array():
-            return "%s[%s]" % (converted_arg(arg.base), converted_arg(arg.index))
+            base = converted_arg(ir2, arg.base, arginfo, global_vars, local_vars, enums=enums)
+            index = converted_arg(ir2, arg.index, None, global_vars, local_vars, enums=None)
+            return "%s[%s]" % (base, index)
         elif arg.is_local() and arg.offset in (TIMER_INDICES[0] * 4, TIMER_INDICES[1] * 4):
             if arg.offset == TIMER_INDICES[0] * 4:
                 return "timera"
@@ -58,11 +78,13 @@ def converted_arg(ir2, arg, arginfo, enums=None):
             assert (arg.offset % 4) == 0
             index = arg.offset / 4
             prefix = 'l' if arg.is_local() else ''
+            var = VarInfo.from_offset(arg.offset, local_vars if arg.is_local() else global_vars)
+            arrsufix = "[%d]" % (1 + var.index_from_offset(arg.offset)) if var and var.size else ""
             if arg.get_datatype() in (DATATYPE_GLOBALVAR_TEXTLABEL, DATATYPE_GLOBALVAR_TEXTLABEL16):
                 assert arginfo.optional == False
-                return ("$%svar_%s" if arginfo.allow_const else "%svar_%s") % (prefix, index)
+                return ("$%svar_%s%s" if arginfo.allow_const else "%svar_%s%s") % (prefix, index, arrsufix)
             else:
-                return "%svar_%s" % (prefix, index)
+                return "%svar_%s%s" % (prefix, index, arrsufix)
     else:
         assert False
 
@@ -73,9 +95,9 @@ def find_constant_for_var(argvar, argconst, global_vars, local_vars, enums):
     constant = None
 
     if argvar.is_local():
-        var = VarInfo.from_offset(argvar.offset, local_vars)
+        var = VarInfo.from_offset(argvar.get_offset(), local_vars)
     else:
-        var = VarInfo.from_offset(argvar.offset, global_vars)
+        var = VarInfo.from_offset(argvar.get_offset(), global_vars)
 
     if len(var.enums) > 0:
         for ve in var.enums:
@@ -88,14 +110,17 @@ def find_constant_for_var(argvar, argconst, global_vars, local_vars, enums):
     if constant is None:
         constant = enums["CARPEDMODEL"].get(argconst.value)
 
-    assert constant != None
+    #assert constant != None
+    if constant == None:
+        #print("############## MISSING CONSTANT, USING 9999999")
+        constant = "9999999"
 
     return constant
 
 def get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums):
 
-    args = [converted_arg(ir2, data.args[0], cmdinfo.get_arg(0)),
-            converted_arg(ir2, data.args[1], cmdinfo.get_arg(1))]
+    args = [converted_arg(ir2, data.args[0], cmdinfo.get_arg(0), global_vars, local_vars),
+            converted_arg(ir2, data.args[1], cmdinfo.get_arg(1), global_vars, local_vars)]
 
     if data.name.startswith("IS_CONSTANT_") or data.name.endswith("_CONSTANT"):
         tup = (1, 0) if data.name.endswith("_CONSTANT") else (0, 1)
@@ -157,7 +182,7 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
         elif cmdname == "GOSUB_FILE":
             assert data.args[1].is_label()
             arg1 = gosubfiles[ir2.offset_from_label(data.args[1].value)]
-            arg0 = converted_arg(ir2, data.args[0], cmdinfo.get_arg(0), enums)
+            arg0 = converted_arg(ir2, data.args[0], cmdinfo.get_arg(0), global_vars, local_vars, enums=enums)
             return "GOSUB_FILE %s %s" % (arg0, arg1)
         elif cmdname == "LAUNCH_MISSION":
             assert data.args[0].is_label()
@@ -167,14 +192,22 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
             assert data.args[0].is_number()
             mission_offset = ir2.offset_from_mission(data.args[0].value)
             return "LOAD_AND_LAUNCH_MISSION %s" % (filename_from_offset(mission_offset))
-        elif cmdname == "REGISTER_STREAMED_SCRIPT_INTERNAL":
+        elif cmdname in STREAM_COMMANDS:
             assert data.args[0].is_number()
-            streamed_offset = ir2.offset_from_mission(data.args[0].value)
-            return "REGISTER_STREAMED_SCRIPT %s" % (filename_from_offset(streamed_offset))
+            if cmdname == "REGISTER_STREAMED_SCRIPT_INTERNAL":
+                cmdname = "REGISTER_STREAMED_SCRIPT"
+            output += cmdname
+            for i, arg in enumerate(data.args):
+                if i == 0:
+                    streamed_offset = ir2.offset_from_streamed(data.args[0].value)
+                    output += " %s" % (filename_from_offset(streamed_offset))
+                else:
+                    output += " %s" % converted_arg(ir2, arg, cmdinfo.get_arg(i), global_vars, local_vars, enums=enums)
+            return output
         else:
             output += cmdname
             for i, arg in enumerate(data.args):
-                output += " %s" % converted_arg(ir2, arg, cmdinfo.get_arg(i), enums)
+                output += " %s" % converted_arg(ir2, arg, cmdinfo.get_arg(i), global_vars, local_vars, enums=enums)
             return output
     else:
         assert False
@@ -189,22 +222,25 @@ def filename_from_offset(offset):
 
 def print_vars(stream, vars, is_local, tab=0):
     any_var = False
-    last_var_index = -1 if is_local else 1
+    last_var_ending = 0 if is_local else 2
+    last_var_sizeb = 4
     pfx = 'l' if is_local else ''
     pfxu = (' ' * (tab*4)) + pfx.upper()
     for v in vars:
         this_var_index = v.start_offset / 4
-        if is_local and this_var_index >= TIMER_INDICES[0]:
-            break
+        if is_local and this_var_index in TIMER_INDICES:
+            continue
         any_var = True
-        for k in range(last_var_index + 1, this_var_index):
-            stream.write("%sVAR_INT %svar_%d // unused variable\n" % (pfxu, pfx, k))
+        for k in range(last_var_ending, this_var_index):
+            if k not in TIMER_INDICES:
+                stream.write("%sVAR_INT %svar_%d // unused variable\n" % (pfxu, pfx, k))
         comment = "// unknown type" if not v.type else ""
         if v.size == None:
             stream.write("%sVAR_%s %svar_%d%s\n" % (pfxu, v.type or "INT", pfx, this_var_index, comment))
         else:
             stream.write("%sVAR_%s %svar_%d[%d]%s\n" % (pfxu, v.type, pfx, this_var_index, v.size, comment))
-        last_var_index = this_var_index
+        last_var_ending = v.end_offset / 4
+    
     if any_var:
         stream.write("\n\n")
 
@@ -256,6 +292,7 @@ def main(ir2file, xmlfile):
     for off, data in ir2:
 
         def on_scope_begin(old_scope, new_scope):
+            print("############ ENTERING SCOPE OF %s" % new_scope.find_script_name(ir2))
             if new_scope.start in subscripts or (old_scope.start.type != new_scope.start.type or old_scope.start.block != new_scope.start.block):
                 if new_scope.start.type != BYTECODE_OFFSET_MAIN or new_scope.start in subscripts:
                     stream.write("%s\n" % ("MISSION_START", "MISSION_START", "SCRIPT_START")[new_scope.start.type])

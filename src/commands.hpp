@@ -149,6 +149,7 @@ public:
             VariableKindNotAllowed,
             VariableTypeMismatch,
             StringLiteralNotAllowed,
+            ExpectedVarIndex,
         };
 
         shared_ptr<const SyntaxTree>  context;
