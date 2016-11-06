@@ -165,7 +165,7 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
         elif cmdname in alternators["IS_THING_EQUAL_TO_THING"]:
             if data.name.startswith("IS_CONSTANT_") or data.name.endswith("_CONSTANT"):
                 args = get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums)
-                return "%s%s %s %s" % (not_prefix, data.name, args[0], args[1])
+                return "%s%s %s %s" % (not_prefix, "IS_THING_EQUAL_TO_THING", args[0], args[1])
             return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='IS_THING_EQUAL_TO_THING')
         elif cmdname in alternators["ABS"]:
             return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='ABS')

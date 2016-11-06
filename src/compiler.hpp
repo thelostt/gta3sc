@@ -254,8 +254,8 @@ private:
                 compile_statements(node);
                 break;
             case NodeType::NOT:
-                if(!program.opt.relax_conditions)
-                    program.error(node, "NOT disallowed outside of a conditional statement");
+                if(!program.opt.relax_not)
+                    program.error(node, "NOT disallowed outside of a conditional statement [-frelax-not]");
                 compile_statement(node.child(0), !not_flag);
                 break;
             case NodeType::Command:
@@ -272,8 +272,6 @@ private:
             case NodeType::GreaterEqual:
             case NodeType::Lesser:
             case NodeType::LesserEqual:
-                if(!program.opt.relax_conditions)
-                    program.error(node, "expression disallowed outside of a conditional statement");
                 compile_condition(node, not_flag);
                 break;
             case NodeType::Equal:

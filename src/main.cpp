@@ -69,6 +69,7 @@ Options:
   -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
   --linear-sweep           Disassembler scans the code by the means of a
                            linear-sweep instead of a recursive traversal.
+  -frelax-not              Allows the use of NOT outside of conditions.
 )";
 
 enum class Action
@@ -258,6 +259,10 @@ int main(int argc, char** argv)
             else if(optflag(argv, "-fscript-name-check", &flag))
             {
                 options.script_name_check = flag;
+            }
+            else if(optflag(argv, "-frelax-not", &flag))
+            {
+                options.relax_not = flag;
             }
             else if(optflag(argv, "-fswitch", &flag))
             {
