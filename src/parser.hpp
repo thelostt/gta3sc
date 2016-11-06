@@ -26,7 +26,7 @@ enum class Token
 
     Integer,
     Float,
-    Identifier,
+    Text,
     String,
 
     NOT,
@@ -95,7 +95,7 @@ enum class NodeType
 
     Integer,
     Float,
-    Identifier,
+    Text,
     String,
 
     NOT,
@@ -134,6 +134,7 @@ struct Miss2Identifier
 
     enum Error
     {
+        InvalidIdentifier,
         NestingOfArrays,
         NegativeIndex,
         OutOfRange,
@@ -143,6 +144,12 @@ struct Miss2Identifier
     optional<variant<size_t, string_view>>  index;
 
     static auto match(const string_view& value) -> expected<Miss2Identifier, Error>;
+
+    static bool is_identifier(const string_view& value)
+    {
+        auto first_char = value.empty()? '\0' : value.front();
+        return (first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z') || first_char == '$';
+    }
 };
 
 class TokenStream : public std::enable_shared_from_this<TokenStream>
@@ -178,6 +185,9 @@ public:
         ///
         /// \throws std::logic_error if offset is out of range.
         std::pair<size_t, size_t> linecol_from_offset(size_t offset) const;
+
+        /// Gets the text in the stream in the specified range.
+        string_view get_text(size_t begin, size_t end) const; 
     };
 
     // Used for error messages
@@ -433,6 +443,7 @@ inline const char* to_string(Miss2Identifier::Error e)
 {
     switch(e)
     {
+        case Miss2Identifier::InvalidIdentifier:return "invalid identifier";
         case Miss2Identifier::NestingOfArrays:  return "nesting of arrays not allowed";
         case Miss2Identifier::NegativeIndex:    return "index cannot be negative";
         case Miss2Identifier::OutOfRange:       return "index out of range";

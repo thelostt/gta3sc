@@ -17,12 +17,12 @@ SET_TIME_SCALE 1.0.9 // valid, same as 1.0
 SET_TIME_SCALE 1.0f9 // valid, same as 1.0
 SET_TIME_SCALE 1.0-9 // expected-error {{invalid numeric literal}}
 
-// Identifier Tokens
+// Text Tokens
 PRINT_HELP ab3
-PRINT_HELP $ab3
-PRINT_HELP _ab3   // expected-error {{invalid identifier}}
-PRINT_HELP ab3^?_ // valid
-PRINT_HELP WHILE  // valid. identifier, not a keyword.
+PRINT_HELP ab3^?
+PRINT_HELP WHILE
+PRINT_HELP __abc // valid on this test because it doesn't get to
+                 // the semantic analyzing phase
 
 // String Tokens
 SAVE_STRING_TO_DEBUG_FILE "A string to rule them all"

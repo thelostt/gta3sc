@@ -1,0 +1,16 @@
+// RUN: %dis %gta3sc %s --config=gtasa --guesser -fsyntax-only 2>&1 | %verify %s
+
+VAR_TEXT_LABEL text8
+VAR_TEXT_LABEL16 text16
+
+PRINT_HELP abc
+PRINT_HELP _abc // expected-error {{invalid identifier}}
+
+LAUNCH_MISSION _a.sc
+
+CUSTOM_PLATE_FOR_NEXT_CAR 0 __abc___
+
+text8 = __abc  // expected-error {{could not match alternative}}
+text16 = __abc
+
+TERMINATE_THIS_SCRIPT

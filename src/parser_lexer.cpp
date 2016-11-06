@@ -88,28 +88,6 @@ static const std::pair<string_view, Token> keycommands[] = {
     DEFINE_TOKEN(LVAR_TEXT_LABEL16),
 };
 
-static const std::pair<string_view, size_t> script_registers[] = {
-    // COMMAND                                  FILENAME_ID
-    { "LAUNCH_MISSION",                                 1 },
-    { "LOAD_AND_LAUNCH_MISSION",                        1 },
-    { "GOSUB_FILE",                                     2 },
-    { "REGISTER_STREAMED_SCRIPT",                       1 },
-    { "REGISTER_SCRIPT_BRAIN_FOR_CODE_USE",             1 },
-    { "REGISTER_ATTRACTOR_SCRIPT_BRAIN_FOR_CODE_USE",   1 },
-    { "STREAM_SCRIPT",                                  1 },
-    { "HAS_STREAMED_SCRIPT_LOADED",                     1 },
-    { "MARK_STREAMED_SCRIPT_AS_NO_LONGER_NEEDED",       1 },
-    { "REMOVE_STREAMED_SCRIPT",                         1 },
-    { "REGISTER_STREAMED_SCRIPT",                       1 },
-    { "START_NEW_STREAMED_SCRIPT",                      1 },
-    { "GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT",     1 },
-    { "ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED",         1 },
-    { "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT",             1 },
-    { "REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE",      1 },
-    { "ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR",      1 },
-    { "SWITCH_OBJECT_BRAINS",                           1 },
-};
-
 static const std::pair<string_view, Token> expr_symbols[] = {
     // Order matters (by length)
     // 3-length
@@ -274,18 +252,12 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
 
         return token.first + token.second;
     }
-    else if((*begin >= 'a' && *begin <= 'z') || (*begin >= 'A' && *begin <= 'Z') || *begin == '$')
-    {
-        auto token = lex_gettok(begin, end).value();
-        auto it = token.first + token.second;
-        lexer.add_token(Token::Identifier, begin_pos, std::distance(begin, it));
-        return it;
-    }
     else
     {
         auto token = lex_gettok(begin, end).value();
-        lexer.error(std::make_pair(begin_pos, token.second), "invalid identifier");
-        return token.first + token.second;
+        auto it = token.first + token.second;
+        lexer.add_token(Token::Text, begin_pos, std::distance(begin, it));
+        return it;
     }
 }
 
@@ -295,7 +267,6 @@ static void lex_command(LexerContext& lexer, const char* begin, const char* end,
     if(auto cmdtok = lex_gettok(begin, end))
     {
         bool is_keycommand = false;
-        size_t script_register_id = SIZE_MAX;
 
         auto it = cmdtok->first + cmdtok->second;
 
@@ -318,32 +289,11 @@ static void lex_command(LexerContext& lexer, const char* begin, const char* end,
         {
             size_t tok_begin = begin_pos + std::distance(begin, cmdtok->first);
             lexer.add_token(Token::Command, tok_begin, cmdtok->second);
-
-            for(auto& regcmd : script_registers)
-            {
-                if(lex_istokeq(*cmdtok, regcmd.first))
-                {
-                    script_register_id = regcmd.second;
-                    break;
-                }
-            }
         }
 
         for(size_t id = 1; it != end; ++id)
         {
-            if(id != script_register_id)
-            {
-                it = lex_token(lexer, it, end, begin_pos + std::distance(begin, it));
-            }
-            else
-            {
-                // this is a filename token, just get whatever is delimited by spaces
-                if(auto token = lex_gettok(it, end))
-                {
-                    lexer.add_token(Token::Identifier, begin_pos + std::distance(begin, token->first), token->second);
-                    it = token->first + token->second;
-                }
-            }
+            it = lex_token(lexer, it, end, begin_pos + std::distance(begin, it));
         }
     }
 }
@@ -743,6 +693,13 @@ auto TokenStream::TextStream::linecol_from_offset(size_t offset) const -> std::p
     throw std::logic_error("bad offset on linecol_from_offset");
 }
 
+string_view TokenStream::TextStream::get_text(size_t begin, size_t end) const
+{
+    Expects(begin <= end && end <= this->data.size());
+    auto data = this->data.c_str();
+    return string_view(data + begin, end - begin);
+}
+
 std::string TokenStream::to_string() const
 {
     std::string output;
@@ -758,6 +715,9 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
 {
     size_t begin_index = std::string::npos;
     bool is_number_index = true;
+
+    if(!Miss2Identifier::is_identifier(value))
+        return make_unexpected(Miss2Identifier::InvalidIdentifier);
 
     for(size_t i = 0; i < value.size(); ++i)
     {

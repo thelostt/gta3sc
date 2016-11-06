@@ -895,7 +895,7 @@ private:
                 return arg_node.annotation<float>();
             }
 
-            case NodeType::Identifier:
+            case NodeType::Text:
             {
                 if(auto opt_int = arg_node.maybe_annotation<int32_t>())
                 {

@@ -139,6 +139,7 @@ public:
             ExpectedConstant,
             ExpectedVar,
             NoSuchVar,
+            InvalidIdentifier,
             IdentifierIndexNesting,
             IdentifierIndexNegative,
             IdentifierIndexOutOfRange,

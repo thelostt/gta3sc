@@ -24,6 +24,11 @@ struct ParserContext
         this->instream->filename = std::make_shared<std::string>(tstream.text.stream_name);
         this->instream->tstream = tstream.shared_from_this();
     }
+
+    string_view get_text(const TokenData& token) const
+    {
+        return tstream.text.get_text(token.begin, token.end);
+    }
 };
 
 struct ParserSuccess
@@ -249,9 +254,10 @@ static ParserResult parse_statement(ParserContext& parser, token_iterator begin,
 */
 static ParserResult parse_identifier(ParserContext& parser, token_iterator begin, token_iterator end)
 {
-    if(begin != end && begin->type == Token::Identifier)
+    if(begin != end && begin->type == Token::Text)
     {
-        return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Identifier, parser.instream, *begin)));
+        if(Miss2Identifier::is_identifier(parser.get_text(*begin)))
+            return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Text, parser.instream, *begin)));
     }
     return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
@@ -303,7 +309,7 @@ static ParserResult parse_scope_statement(ParserContext& parser, token_iterator 
 
 /*
     argument
-        :	(INTEGER | FLOAT | IDENTIFIER | STRING)
+        :	(INTEGER | FLOAT | TEXT | STRING)
         ;
 */
 static ParserResult parse_argument(ParserContext& parser, token_iterator begin, token_iterator end)
@@ -322,9 +328,9 @@ static ParserResult parse_argument(ParserContext& parser, token_iterator begin, 
         shared_ptr<SyntaxTree> node(new SyntaxTree(NodeType::Float, parser.instream, *begin));
         return std::make_pair(std::next(begin), ParserSuccess(std::move(node)));
     }
-    else if(begin->type == Token::Identifier)
+    else if(begin->type == Token::Text)
     {
-        shared_ptr<SyntaxTree> node(new SyntaxTree(NodeType::Identifier, parser.instream, *begin));
+        shared_ptr<SyntaxTree> node(new SyntaxTree(NodeType::Text, parser.instream, *begin));
         return std::make_pair(std::next(begin), ParserSuccess(std::move(node)));
     }
     else if(begin->type == Token::String)
@@ -464,8 +470,8 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
             optional<NodeType> opa;
             auto second = std::next(begin);
 
-            if((begin->type == Token::Identifier && (opa = unary_operators(second->type)))
-            || (second->type == Token::Identifier && (opa = unary_operators(begin->type))))
+            if((begin->type == Token::Text && (opa = unary_operators(second->type)))
+            || (second->type == Token::Text && (opa = unary_operators(begin->type))))
             {
                 ParserState state = ParserSuccess(nullptr);
                 ParserState ident;
@@ -475,8 +481,8 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
 
                 if(is<ParserSuccess>(state))
                 {
-                    auto op_it = (begin->type == Token::Identifier? second : begin);
-                    auto id_it = (begin->type != Token::Identifier? second : begin);
+                    auto op_it = (begin->type == Token::Text? second : begin);
+                    auto id_it = (begin->type != Token::Text? second : begin);
 
                     std::tie(std::ignore, ident) = parse_identifier(parser, id_it, end);
 
@@ -623,7 +629,7 @@ static ParserResult parse_actual_command_statement(ParserContext& parser, token_
         if(is<ParserSuccess>(arguments))
         {
             shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::Command, parser.instream, *begin));
-            tree->add_child(shared_ptr<SyntaxTree> { new SyntaxTree(NodeType::Identifier, parser.instream, *begin) });
+            tree->add_child(shared_ptr<SyntaxTree> { new SyntaxTree(NodeType::Text, parser.instream, *begin) });
             tree->take_childs(get<ParserSuccess>(arguments).tree);
             return std::make_pair(it, ParserSuccess(std::move(tree)));
         }

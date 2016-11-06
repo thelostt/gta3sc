@@ -225,6 +225,9 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         }
     };
 
+    if(!Miss2Identifier::is_identifier(arg.ident))
+        return make_unexpected(MatchFailure{ hint, MatchFailure::InvalidIdentifier });
+
     if(auto var_ident = maybe_var_identifier(arg.ident, arginfo))
     {
         auto opt_token = Miss2Identifier::match(var_ident->first);
@@ -232,6 +235,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         {
             switch(opt_token.error())
             {
+                case Miss2Identifier::InvalidIdentifier:return make_unexpected(MatchFailure{ hint, MatchFailure::InvalidIdentifier });
                 case Miss2Identifier::NestingOfArrays:  return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexNesting });
                 case Miss2Identifier::NegativeIndex:    return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexNegative });
                 case Miss2Identifier::OutOfRange:       return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexOutOfRange });
@@ -283,34 +287,46 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
 }
 
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
-                      string_view ident, const Command::Arg& arginfo,
+                      string_view text, const Command::Arg& arginfo,
                       const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
 {
     switch(arginfo.type)
     {
         case ArgType::Label:
-            if(symtable.find_label(ident))
-                return &arginfo;
+            if(Miss2Identifier::is_identifier(text))
+            {
+                if(symtable.find_label(text))
+                    return &arginfo;
+                else
+                    return make_unexpected(MatchFailure { hint, MatchFailure::ExpectedLabel });
+            }
             else
-                return make_unexpected(MatchFailure { hint, MatchFailure::ExpectedLabel });
+                return make_unexpected(MatchFailure{ hint, MatchFailure::InvalidIdentifier });
 
         case ArgType::Constant:
-            if(commands.find_constant_all(ident))
-                return &arginfo;
+            if(Miss2Identifier::is_identifier(text))
+            {
+                if(commands.find_constant_all(text))
+                    return &arginfo;
+                else
+                    return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedConstant });
+            }
             else
-                return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedConstant });
+                return make_unexpected(MatchFailure{ hint, MatchFailure::InvalidIdentifier });
 
         case ArgType::TextLabel:
         case ArgType::TextLabel16:
         case ArgType::AnyTextLabel:
         {
-            auto exp_var = match_arg(commands, hint, TagVar { ident }, arginfo, symtable, scope_ptr);
-            if(exp_var || exp_var.error().reason != MatchFailure::NoSuchVar)
+            auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr);
+            if(exp_var)
                 return exp_var;
-            else if(arginfo.allow_constant)
+            else if(exp_var.error().reason == MatchFailure::NoSuchVar && arginfo.allow_constant)
+                return &arginfo;
+            else if(exp_var.error().reason == MatchFailure::InvalidIdentifier && arginfo.type == ArgType::AnyTextLabel && arginfo.allow_constant)
                 return &arginfo;
             else
-                return make_unexpected(MatchFailure{ hint, MatchFailure::BadArgument });
+                return exp_var; // error state
         }
 
         case ArgType::Integer:
@@ -323,11 +339,11 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
 
             if(arginfo.allow_constant && arginfo.type != ArgType::Float)
             {
-                if(commands.find_constant_for_arg(ident, arginfo))
+                if(commands.find_constant_for_arg(text, arginfo))
                     return &arginfo;
             }
 
-            auto exp_var = match_arg(commands, hint, TagVar { ident }, arginfo, symtable, scope_ptr);
+            auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr);
             if(exp_var || exp_var.error().reason != MatchFailure::NoSuchVar)
                 return exp_var;
             else if(arginfo.uses_enum(commands.get_models_enum())) // allow unknown models
@@ -351,7 +367,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
             return match_arg(commands, hint, 0, arginfo, symtable, scope_ptr);
         case NodeType::Float:
             return match_arg(commands, hint, 0.0f, arginfo, symtable, scope_ptr);
-        case NodeType::Identifier:
+        case NodeType::Text:
             return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr);
         case NodeType::String:
             return make_unexpected(MatchFailure{ hint, MatchFailure::StringLiteralNotAllowed });
@@ -539,7 +555,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                 break;
             }
 
-            case NodeType::Identifier:
+            case NodeType::Text:
             {
                 if(node.maybe_annotation<const StreamedFileAnnotation&>())
                 {
@@ -669,6 +685,7 @@ std::string Commands::MatchFailure::to_string()
         case ExpectedConstant:          return "expected constant";
         case ExpectedVar:               return "expected variable";
         case NoSuchVar:                 return "variable does not exist";
+        case InvalidIdentifier:         return ::to_string(Miss2Identifier::InvalidIdentifier);
         case IdentifierIndexNesting:    return ::to_string(Miss2Identifier::NestingOfArrays);
         case IdentifierIndexNegative:   return ::to_string(Miss2Identifier::NegativeIndex);
         case IdentifierIndexOutOfRange: return ::to_string(Miss2Identifier::OutOfRange);
