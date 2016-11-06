@@ -35,7 +35,7 @@ void Disassembler::explore(size_t offset)
     {
         if(this->type == Type::RecursiveTraversal)
         {
-            program.warning(nocontext, "a branch command jumps into the local offset {:X} which is outside the bytecode", offset);
+            program.warning(nocontext, "a branch command jumps into the local offset 0x{:X} which is outside the bytecode", offset);
             program.note(nocontext, "use --verbose to find which block this offset belongs to");
         }
         return;
@@ -557,8 +557,9 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* byt
         models.reserve(num_models);
         for(size_t i = 0; i < num_models; ++i)
         {
-            auto model_name = bf.fetch_chars(seg2_offset + 8 + 4 + 24 + (24 * i), 24).value();
-            models.emplace_back(std::move(model_name));
+            char buffer[32];
+            bf.fetch_chars(seg2_offset + 8 + 4 + 24 + (24 * i), 24, buffer).value();
+            models.emplace_back(buffer);
         }
 
         auto main_size    = bf.fetch_u32(seg3_offset + 8 + 0).value();

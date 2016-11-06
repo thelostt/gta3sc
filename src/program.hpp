@@ -50,6 +50,7 @@ struct Options
     bool fsyntax_only = false;
     bool emit_ir2 = false;
     bool linear_sweep = false;
+    bool relax_conditions = true;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;

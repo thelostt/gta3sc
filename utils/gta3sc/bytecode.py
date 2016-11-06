@@ -60,6 +60,7 @@ BYTECODE_OFFSET_STREAMED = 2
 
 TABLE_SCOPE_SPAWNERS = {
 #   Name                ArgId
+    "GOSUB_FILE":       1,
     "START_NEW_SCRIPT": 0,
     "LAUNCH_MISSION":   0,
     "CALL":             3,
@@ -68,10 +69,11 @@ TABLE_SCOPE_SPAWNERS = {
 
 class Bytecode:
 
-    def __init__(self, main_block, mission_blocks=[], streamed_blocks=[]):
+    def __init__(self, main_block, mission_blocks=[], streamed_blocks=[], models=[]):
         self.main_block = main_block
         self.mission_blocks = mission_blocks
         self.streamed_blocks = streamed_blocks
+        self.models = models
 
         self.label_table = {}
         for off, data in self:
@@ -114,8 +116,14 @@ class Bytecode:
             return the_block[offset.index]
         return None
 
+    def get_model(self, i):
+        return self.models[i] if i < len(self.models) else None
+
     def offset_from_label(self, name):
         return self.label_table.get(name)
+
+    def offset_from_mission(self, i):
+        return Offset(BYTECODE_OFFSET_MISSION, i, 0)
 
     def offset_from_streamed(self, i):
         return Offset(BYTECODE_OFFSET_STREAMED, i, 0)
@@ -144,6 +152,12 @@ class Bytecode:
 
         return result
 
+    def discover_global_vars(self, commands=None):  # -> sorted [VarInfo, ...]
+        return _discover_vars(iter(self), False, commands=commands)
+
+    def discover_local_vars(self, scope, commands=None):  # -> sorted [VarInfo, ...]
+        return _discover_vars(iter(scope.iter_data(self)), True, commands=commands)
+
     def discover_global_arrays(self): # -> { offset: end_offset, ... }
         return _discover_arrays(iter(self), False)
 
@@ -154,6 +168,13 @@ class Bytecode:
 Offset = namedtuple("Offset", ['type', 'block', 'index'])
 
 ScopeBase = namedtuple('ScopeBase', ['start', 'end'])
+
+class VarInfo:
+    def __init__(self, start_offset, end_offset, typestring, arraysize):
+        self.start_offset = start_offset
+        self.end_offset = end_offset
+        self.type = typestring # may be None, meaning unknown type
+        self.size = arraysize  # None means not array
 
 class Scope(ScopeBase):
     # assert self.start until self.end doesn't change blocks/script types
@@ -315,6 +336,9 @@ class ArgString(Arg):
     def is_string(self):
         return True
 
+    def is_buffer128(self):
+        return self.type == DATATYPE_BUFFER128
+
     def __str__(self):
         # TODO unescape
         if self.type == DATATYPE_TEXTLABEL8:
@@ -342,12 +366,14 @@ class ArgVariable(Arg):
     def is_local(self):
         return self.type in DATATYPES_LOCALVARS
 
-    def size_in_bytes(self):
+    def get_datatype(self): # returns the GLOBALVAR version of the datatype
         if self.is_local():
-            datatype = DATATYPES_GLOBALVARS[DATATYPES_LOCALVARS.index(self.type)]
+            return DATATYPES_GLOBALVARS[DATATYPES_LOCALVARS.index(self.type)]
         else:
-            datatype =  self.type
+            return self.type
 
+    def size_in_bytes(self):
+        datatype = self.get_datatype();
         if datatype == DATATYPE_GLOBALVAR_NUMBER:
             return 4
         elif datatype == DATATYPE_GLOBALVAR_TEXTLABEL:
@@ -380,6 +406,12 @@ class ArgArray(Arg):
 
     def is_array(self):
         return True
+
+    def is_global(self):
+        return self.base.is_global()
+
+    def is_local(self):
+        return self.base.is_local()
 
     def __str__(self):
         etc = _char_from_elemtype(self.elem_type)
@@ -494,6 +526,7 @@ def read_ir2(file):
     main_block = []
     mission_blocks = []
     streamed_blocks = []
+    models = []
 
     current_block = main_block
 
@@ -501,18 +534,21 @@ def read_ir2(file):
         line = line.rstrip('\r\n')
         assert len(line) > 0 and not line[0].isspace() and not line[-1].isspace()
         if line[0] == '#':
-            if line.startswith("#MISSION_BLOCK_START"):
-                assert len(mission_blocks) == int(line.split()[1])
+            tokens = line.split()
+            if tokens[0] == "#MISSION_BLOCK_START":
+                assert len(mission_blocks) == int(tokens[1])
                 current_block = []
-            elif line.startswith("#STREAMED_BLOCK_START"):
-                assert len(streamed_blocks) == int(line.split()[1])
+            elif tokens[0] == "#STREAMED_BLOCK_START":
+                assert len(streamed_blocks) == int(tokens[1])
                 current_block = []
-            elif line.startswith("#MISSION_BLOCK_END"):
+            elif  tokens[0] == "#MISSION_BLOCK_END":
                 mission_blocks.append(current_block)
                 current_block = None
-            elif line.startswith("#STREAMED_BLOCK_END"):
+            elif tokens[0] == "#STREAMED_BLOCK_END":
                 streamed_blocks.append(current_block)
                 current_block = None
+            elif tokens[0] == "#DEFINE_MODEL":
+                models.append(tokens[1])
         elif line[-1] == ':':
             label = Label(line[:-1])
             current_block.append(label)
@@ -527,7 +563,7 @@ def read_ir2(file):
             else:
                 current_block.append(Command(not_flag, cmdname, cmdargs))
 
-    return Bytecode(main_block, mission_blocks, streamed_blocks)
+    return Bytecode(main_block, mission_blocks, streamed_blocks, models)
 
 
 def _char_from_vartype(vartype):
@@ -561,6 +597,72 @@ def _discover_arrays(bytecode_iter, is_local): # -> { offset: arraysize_in_bytes
             if check_var_kind(arg.base):
                 arrays[arg.base.offset] = arg.size * arg.base.size_in_bytes()
     return arrays
+
+
+def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo, ...]
+
+    # probably optimizable, but this is Python mate!
+
+    vardict = dict()
+
+    if is_local:
+        check_var_kind = lambda x: x.is_local()
+    else:
+        check_var_kind = lambda x: x.is_global()
+
+    for off, data in filter(lambda (o, d): d.is_command(), bytecode_iter):
+        cmdinfo = commands.get(data.name, None) if commands else None
+        for i, arg in enumerate(data.args):
+            if arg.is_var() and check_var_kind(arg):
+
+                if arg.is_array():
+                    offset_start = arg.base.offset
+                    offset_end   = offset_start + (arg.size * arg.base.size_in_bytes())
+                    array_size   = arg.size
+                    datatype     = arg.base.get_datatype()
+                else:
+                    offset_start = arg.offset
+                    offset_end   = offset_start + arg.size_in_bytes()
+                    array_size   = None
+                    datatype     = arg.get_datatype()
+
+                vartype = None
+                if datatype == DATATYPE_GLOBALVAR_NUMBER:
+                    arginfo = cmdinfo.get_arg(i) if cmdinfo else None
+                    if arginfo is None:
+                        pass
+                    elif arginfo.type == "INT":
+                        vartype = "INT"
+                    elif arginfo.type == "FLOAT":
+                        vartype = "FLOAT"
+                    elif arginfo.type == "PARAM":
+                        vartype = None
+                    else:
+                        assert False
+                elif datatype == DATATYPE_GLOBALVAR_TEXTLABEL:
+                    vartype = "TEXT_LABEL"
+                elif datatype == DATATYPE_GLOBALVAR_TEXTLABEL16:
+                    vartype = "TEXT_LABEL16"                    
+                
+                var = vardict.get(offset_start)
+                if var != None:
+                    assert var.type == vartype or var.type == None or vartype == None
+                    assert var.size == array_size
+                    if vartype != None:
+                        var.type = vartype
+                else:
+                    vardict[offset_start] = VarInfo(offset_start, offset_end, vartype, array_size)
+
+    result = list()
+
+    varlist = sorted(vardict.itervalues(), key=lambda k: k.start_offset)
+    for v in varlist:
+        if len(result) > 0:
+            if v.start_offset < result[-1].end_offset:
+                continue
+        result.append(v)
+
+    return result
 
 if __name__ == "__main__":
     import sys

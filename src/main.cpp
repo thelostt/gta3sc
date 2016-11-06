@@ -961,7 +961,15 @@ bool decompile(const void* bytecode, size_t bytecode_size,
         }
         else if(lang == Options::Lang::IR2)
         {
-            auto base_offset = 0;
+            {
+                std::string temp_string;
+                for(size_t i = 0; i < header.models.size(); ++i)
+                {
+                    temp_string = header.models[i];
+                    std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
+                    callback(fmt::format("#DEFINE_MODEL {} -{}", temp_string, i+1));
+                }
+            }
 
             auto main_ir2 = DecompilerIR2(program.commands, main_segment_asm.get_data(), 0, main_segment.size, "MAIN", true);
             main_ir2.decompile(callback);

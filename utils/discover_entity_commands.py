@@ -86,7 +86,7 @@ def main(ir2file, xmlfile):
 
     scopes = ir2.discover_scopes()
     current_scope = None
-    first_scope = scopes[0].start if len(scopes) > 0 else None
+    first_scope = scopes[0] if len(scopes) > 0 else None
 
     commands = {cmd.name: cmd for cmd in config.commands}
     cmds_set = set(config.get_alternator("SET"))
@@ -101,7 +101,7 @@ def main(ir2file, xmlfile):
     for off, data in ir2:
 
         if current_scope == None:
-            if first_scope != None and off >= first_scope:
+            if first_scope != None and off >= first_scope.start:
                 current_scope = Scope.from_offset(off, scopes)
                 assert current_scope != None
         elif not current_scope.owns_offset(off):
