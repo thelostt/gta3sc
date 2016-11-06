@@ -136,7 +136,6 @@ struct Miss2Identifier
     {
         NestingOfArrays,
         NegativeIndex,
-        ZeroIndex,
         OutOfRange,
     };
 
@@ -436,7 +435,6 @@ inline const char* to_string(Miss2Identifier::Error e)
     {
         case Miss2Identifier::NestingOfArrays:  return "nesting of arrays not allowed";
         case Miss2Identifier::NegativeIndex:    return "index cannot be negative";
-        case Miss2Identifier::ZeroIndex:        return "index cannot be zero";
         case Miss2Identifier::OutOfRange:       return "index out of range";
         default:                                Unreachable();
     }

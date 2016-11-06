@@ -234,7 +234,6 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
             {
                 case Miss2Identifier::NestingOfArrays:  return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexNesting });
                 case Miss2Identifier::NegativeIndex:    return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexNegative });
-                case Miss2Identifier::ZeroIndex:        return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexZero });
                 case Miss2Identifier::OutOfRange:       return make_unexpected(MatchFailure{ hint, MatchFailure::IdentifierIndexOutOfRange });
                 default:                                Unreachable();
             }
@@ -465,8 +464,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
             else if(is<size_t>(*token.index))
             {
                 auto& index = get<size_t>(*token.index);
-                Expects(index > 0);
-                return VarAnnotation{ *opt_var, index_type(index - 1) };
+                return VarAnnotation{ *opt_var, index_type(index) };
             }
             else
             {
@@ -673,7 +671,6 @@ std::string Commands::MatchFailure::to_string()
         case NoSuchVar:                 return "variable does not exist";
         case IdentifierIndexNesting:    return ::to_string(Miss2Identifier::NestingOfArrays);
         case IdentifierIndexNegative:   return ::to_string(Miss2Identifier::NegativeIndex);
-        case IdentifierIndexZero:       return ::to_string(Miss2Identifier::ZeroIndex);
         case IdentifierIndexOutOfRange: return ::to_string(Miss2Identifier::OutOfRange);
         case VariableIndexNotInt:       return "variable in index is not of INT type";
         case VariableIndexNotVar:       return "identifier between brackets is not a variable";

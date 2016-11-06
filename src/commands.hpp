@@ -141,7 +141,6 @@ public:
             NoSuchVar,
             IdentifierIndexNesting,
             IdentifierIndexNegative,
-            IdentifierIndexZero,
             IdentifierIndexOutOfRange,
             VariableIndexNotInt,
             VariableIndexNotVar,

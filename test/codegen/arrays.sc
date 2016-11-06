@@ -20,38 +20,38 @@
     LVAR_INT t_max_offset
 
     // CHECK-NEXT-L: SET_VAR_INT &12 0i8
-    gi[1] = 0
+    gi[0] = 0
     // CHECK-NEXT-L: SET_VAR_INT &16 1i8
-    gi[2] = 1
+    gi[1] = 1
     // CHECK-NEXT-L: SET_VAR_FLOAT &20 0.0f
-    gf[1] = 0.0
+    gf[0] = 0.0
     // CHECK-NEXT-L: SET_VAR_FLOAT &24 1.0f
-    gf[2] = 1.0
+    gf[1] = 1.0
     // CHECK-NEXT-L: SET_VAR_TEXT_LABEL s&28 'NAME1'
-    gs[1] = NAME1
+    gs[0] = NAME1
     // CHECK-NEXT-L: SET_VAR_TEXT_LABEL s&36 'NAME2'
-    gs[2] = NAME2
+    gs[1] = NAME2
     // CHECK-NEXT-L: SET_VAR_TEXT_LABEL16 v&44 "NAME3"
-    gv[1] = NAME3
+    gv[0] = NAME3
     // CHECK-NEXT-L: SET_VAR_TEXT_LABEL16 v&60 "NAME4"
-    gv[2] = NAME4
+    gv[1] = NAME4
 
     // CHECK-NEXT-L: SET_LVAR_INT 1@ 0i8
-    ti[1] = 0
+    ti[0] = 0
     // CHECK-NEXT-L: SET_LVAR_INT 2@ 1i8
-    ti[2] = 1
+    ti[1] = 1
     // CHECK-NEXT-L: SET_LVAR_FLOAT 3@ 0.0f
-    tf[1] = 0.0
+    tf[0] = 0.0
     // CHECK-NEXT-L: SET_LVAR_FLOAT 4@ 1.0f
-    tf[2] = 1.0
+    tf[1] = 1.0
     // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL 5@s 'NAME1'
-    ts[1] = NAME1
+    ts[0] = NAME1
     // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL 7@s 'NAME2'
-    ts[2] = NAME2
+    ts[1] = NAME2
     // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL16 9@v "NAME3"
-    tv[1] = NAME3
+    tv[0] = NAME3
     // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL16 13@v "NAME4"
-    tv[2] = NAME4
+    tv[1] = NAME4
 
     // CHECK-NEXT-L: SET_VAR_INT &12(&8,2i) 1i8
     gi[g] = 1

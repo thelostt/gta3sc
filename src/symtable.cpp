@@ -793,15 +793,20 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                         if(token.index != nullopt)
                         {
-                            if(is<string_view>(*token.index))
+                            if(is<size_t>(*token.index))
+                            {
+                                count = get<size_t>(*token.index);
+                                if(*count == 0)
+                                {
+                                    program.error(varnode, "declaring a zero-sized array");
+                                    count = 1; // fallback
+                                }
+                            }
+                            else
                             {
                                 // TODO allow enum?
                                 program.error(varnode, "index must be constant");
                                 count = 1; // fallback
-                            }
-                            else
-                            {
-                                count = get<size_t>(*token.index);
                             }
                         }
                     }

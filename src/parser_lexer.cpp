@@ -778,12 +778,10 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
                 if(is_number_index)
                 {
                     int index_value = std::stoi(index.to_string());
-                    if(index_value > 0)
+                    if(index_value >= 0)
                         return Miss2Identifier{ ident, index_type(index_value) };
-                    else if(index_value < 0)
+                    else
                         return make_unexpected(Miss2Identifier::NegativeIndex);
-                    else // == 0
-                        return make_unexpected(Miss2Identifier::ZeroIndex);
                 }
                 else
                     return Miss2Identifier{ ident, index_type(index) };
