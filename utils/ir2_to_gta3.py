@@ -34,7 +34,7 @@ STREAM_COMMANDS = set([
     "SWITCH_OBJECT_BRAINS",
 ])
 
-def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None):
+def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None, no_index=False):
     if arg.is_number():
         if arg.is_float():
             output = "%f" % arg.value
@@ -66,7 +66,7 @@ def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None):
             return arg.value.upper()
     elif arg.is_var():
         if arg.is_array():
-            base = converted_arg(ir2, arg.base, arginfo, global_vars, local_vars, enums=enums)
+            base = converted_arg(ir2, arg.base, arginfo, global_vars, local_vars, enums=enums, no_index=True)
             index = converted_arg(ir2, arg.index, None, global_vars, local_vars, enums=None)
             return "%s[%s]" % (base, index)
         elif arg.is_local() and arg.offset in (TIMER_INDICES[0] * 4, TIMER_INDICES[1] * 4):
@@ -77,9 +77,12 @@ def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None):
         else:
             assert (arg.offset % 4) == 0
             index = arg.offset / 4
+            arrsufix = ""
             prefix = 'l' if arg.is_local() else ''
             var = VarInfo.from_offset(arg.offset, local_vars if arg.is_local() else global_vars)
-            arrsufix = "[%d]" % (1 + var.index_from_offset(arg.offset)) if var and var.size else ""
+            if not no_index and var and var.size:
+                index = var.start_offset / 4
+                arrsufix = "[%d]" % var.index_from_offset(arg.offset)
             if arg.get_datatype() in (DATATYPE_GLOBALVAR_TEXTLABEL, DATATYPE_GLOBALVAR_TEXTLABEL16):
                 assert arginfo.optional == False
                 return ("$%svar_%s%s" if arginfo.allow_const else "%svar_%s%s") % (prefix, index, arrsufix)
@@ -179,6 +182,8 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
             return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='IS_EMPTY')
         elif cmdname in ("SET_TOTAL_NUMBER_OF_MISSIONS", "SET_PROGRESS_TOTAL", "SET_COLLECTABLE1_TOTAL"):
             return "%s 0" % (cmdname)
+        elif cmdname == "SKIP_CUTSCENE_START_INTERNAL":
+            return "SKIP_CUTSCENE_START"
         elif cmdname == "GOSUB_FILE":
             assert data.args[1].is_label()
             arg1 = gosubfiles[ir2.offset_from_label(data.args[1].value)]
@@ -351,15 +356,15 @@ def main(ir2file, xmlfile):
 
         if got_mission_terminate[0] == False and\
            data.is_command() and data.name == "TERMINATE_THIS_SCRIPT":
-            stream.write("    MISSION_END\n\n\n")
+            stream.write("    %s\n\n\n" % ("MISSION_END", "MISSION_END", "SCRIPT_END")[current_scope.start.type])
+
             got_mission_terminate[0] = True
         else:
             tab = int(current_scope != None and current_scope != first_scope)
             if got_mission_terminate[0] == False: tab += 1
             write_data(tab=tab)
 
-    if current_scope != None:
-        current_scope = None
+    if current_scope != None and current_scope != first_scope:
         stream.write("}")
 
     if stream != sys.stdout:

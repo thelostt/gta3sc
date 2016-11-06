@@ -536,7 +536,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
     };
 
     /*
-        assignment2Statement : (id=identifier opa2=assignmentOperators2 a=argument newLine) -> ^(OP_EQ $id ^($opa2  ^($id) $a)) ;
+        assignment2Statement : (id=identifier opa2=assignmentOperators2 a=argument newLine) -> ^(OP_EQ $id ^($opa2  $id $a)) ;
     */
     auto parse_assigment2_statement = [&](ParserContext& parser, token_iterator begin, token_iterator end) -> ParserResult
     {

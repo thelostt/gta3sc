@@ -17,6 +17,17 @@ VAR_FLOAT x y z
     i = i + 2
 }
 
+//
+{
+    // CHECK-NEXT: SUB_INT_VAR_FROM_INT_VAR &8 &8
+    i = i - i
+    // CHECK-NEXT: SUB_VAL_FROM_INT_VAR &8 4i8
+    i = i - 4
+    // CHECK-NEXT: SET_VAR_INT_TO_VAR_INT &8 &12
+    // CHECK-NEXT: SUB_VAL_FROM_INT_VAR &8 5i8
+    i = j - 5
+}
+
 // Test VAR = CONST
 {
     // CHECK: IS_INT_VAR_GREATER_THAN_CONSTANT &16 [\di]+

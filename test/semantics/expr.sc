@@ -17,6 +17,11 @@ x = 2.0 +@ x  // expected-error {{cannot do VAR1 = THING +@ VAR1}}
 x = x +@ 2.0
 x = 2.0 -@ x  // expected-error {{cannot do VAR1 = THING -@ VAR1}} 
 x = x -@ 2.0
+// ...except that those are valid...
+x = x - x
+x = x / x
+x = x +@ x
+x = x -@ x
 
 // Increment/Decrement only works with integers
 ++i

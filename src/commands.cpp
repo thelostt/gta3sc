@@ -298,7 +298,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                 if(symtable.find_label(text))
                     return &arginfo;
                 else
-                    return make_unexpected(MatchFailure { hint, MatchFailure::ExpectedLabel });
+                    return make_unexpected(MatchFailure { hint, MatchFailure::NoSuchLabel });
             }
             else
                 return make_unexpected(MatchFailure{ hint, MatchFailure::InvalidIdentifier });
@@ -309,7 +309,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                 if(commands.find_constant_all(text))
                     return &arginfo;
                 else
-                    return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedConstant });
+                    return make_unexpected(MatchFailure{ hint, MatchFailure::NoSuchConstant });
             }
             else
                 return make_unexpected(MatchFailure{ hint, MatchFailure::InvalidIdentifier });
@@ -349,7 +349,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
             else if(arginfo.uses_enum(commands.get_models_enum())) // allow unknown models
                 return &arginfo;
             else
-                return make_unexpected(MatchFailure{ hint, MatchFailure::BadArgument });
+                return make_unexpected(MatchFailure{ hint, MatchFailure::NoSuchVar });
         }
 
         default:
@@ -361,6 +361,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                       const SyntaxTree& arg, const Command::Arg& arginfo,
                       const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
 {
+    // TODO FIXME this matcher gives wrong error messages
     switch(arg.type())
     {
         case NodeType::Integer:
@@ -681,10 +682,10 @@ std::string Commands::MatchFailure::to_string()
         case BadArgument:               return "bad argument";
         case ExpectedInt:               return "expected integer";
         case ExpectedFloat:             return "expected float";
-        case ExpectedLabel:             return "expected label";
-        case ExpectedConstant:          return "expected constant";
+        case NoSuchLabel:               return "no label with this name";
+        case NoSuchConstant:            return "no string constant with this value";
+        case NoSuchVar:                 return "no variable with this name";
         case ExpectedVar:               return "expected variable";
-        case NoSuchVar:                 return "variable does not exist";
         case InvalidIdentifier:         return ::to_string(Miss2Identifier::InvalidIdentifier);
         case IdentifierIndexNesting:    return ::to_string(Miss2Identifier::NestingOfArrays);
         case IdentifierIndexNegative:   return ::to_string(Miss2Identifier::NegativeIndex);

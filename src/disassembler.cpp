@@ -321,7 +321,7 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
     auto parse_array = [this, &ccmd](size_t offset, bool is_global, VarType type)
     {
         auto var_offset = *bf.fetch_u16(offset+0);
-        auto index_var  = *bf.fetch_i16(offset+2);
+        auto index_var  = *bf.fetch_u16(offset+2);
         auto array_size = *bf.fetch_u8(offset+4);
         auto array_prop = *bf.fetch_u8(offset+5);
 

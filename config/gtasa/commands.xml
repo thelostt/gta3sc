@@ -1099,29 +1099,29 @@
     <Command ID="0xba" Name="PRINT_BIG">
       <Args>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
-        <Arg Type="INT" Desc="Time (ms)" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" Desc="Time (ms)"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0xbb" Name="PRINT">
       <Args>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
-        <Arg Type="INT" Desc="Time (ms)" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" Desc="Time (ms)"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0xbc" Name="PRINT_NOW">
       <Args>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
-        <Arg Type="INT" Desc="Time (ms)" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" Desc="Time (ms)"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0xbd" Name="PRINT_SOON" Supported="false">
       <Args>
         <Arg Type="TEXT_LABEL"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0xbe" Name="CLEAR_PRINTS"/>
@@ -3653,8 +3653,8 @@
     </Command>
     <Command ID="0x23c" Name="LOAD_SPECIAL_CHARACTER">
       <Args>
-        <Arg Type="TEXT_LABEL"/>
         <Arg Type="INT"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x23d" Name="HAS_SPECIAL_CHARACTER_LOADED">
@@ -7845,8 +7845,8 @@
     <Command ID="0x500" Name="IS_PLAYER_WEARING">
       <Args>
         <Arg Type="INT" Entity="PLAYER"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
         <Arg Type="INT" Desc="Ped body part ID"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x501" Name="SET_PLAYER_CAN_DO_DRIVE_BY">
@@ -9201,7 +9201,7 @@
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
-        <Arg Type="INT" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -10648,7 +10648,7 @@
         <Arg Type="INT" Desc="Ped bone ID"/>
         <Arg Type="INT"/>
         <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
-        <Arg Type="INT" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
         <Arg Type="INT" Desc="Time (ms)"/>
       </Args>
     </Command>
@@ -10721,11 +10721,11 @@
     </Command>
     <Command ID="0x716" Name="IS_CLOSEST_OBJECT_OF_TYPE_SMASHED_OR_DAMAGED">
       <Args>
-        <Arg Type="INT" Enum="MODEL"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Radius"/>
+        <Arg Type="INT" Enum="MODEL"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
@@ -11858,7 +11858,7 @@
         <Arg Type="FLOAT" Desc="Angle"/>
         <Arg Type="FLOAT" Desc="Radius"/>
         <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
-        <Arg Type="INT" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -12529,7 +12529,7 @@
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="ANY_TEXT_LABEL" Desc="Animation name"/>
-        <Arg Type="INT" Desc="Animation file (IFP)"/>
+        <Arg Type="ANY_TEXT_LABEL" Desc="Animation file (IFP)"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -12729,7 +12729,7 @@
     <Command ID="0x8b4" Name="IS_GLOBAL_VAR_BIT_SET_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x8b5" Name="IS_GLOBAL_VAR_BIT_SET_VAR">
@@ -12747,7 +12747,7 @@
     <Command ID="0x8b7" Name="IS_LOCAL_VAR_BIT_SET_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x8b8" Name="IS_LOCAL_VAR_BIT_SET_VAR">
@@ -12765,7 +12765,7 @@
     <Command ID="0x8ba" Name="SET_GLOBAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x8bb" Name="SET_GLOBAL_VAR_BIT_VAR">
@@ -12783,7 +12783,7 @@
     <Command ID="0x8bd" Name="SET_LOCAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x8be" Name="SET_LOCAL_VAR_BIT_VAR">
@@ -12801,7 +12801,7 @@
     <Command ID="0x8c0" Name="CLEAR_GLOBAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x8c1" Name="CLEAR_GLOBAL_VAR_BIT_VAR">
@@ -12819,7 +12819,7 @@
     <Command ID="0x8c3" Name="CLEAR_LOCAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x8c4" Name="CLEAR_LOCAL_VAR_BIT_VAR">
@@ -13272,7 +13272,7 @@
     </Command>
     <Command ID="0x914" Name="REGISTER_STREAMED_SCRIPT_INTERNAL">
       <Args>
-        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x915" Name="SET_WEATHER_TO_APPROPRIATE_TYPE_NOW"/>
@@ -13302,7 +13302,7 @@
     </Command>
     <Command ID="0x91a" Name="GET_LATEST_CONSOLE_COMMAND">
       <Args>
-        <Arg Type="TEXT_LABEL" Out="true" AllowConst="false"/>
+        <Arg Type="TEXT_LABEL16" Out="true" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0x91b" Name="RESET_LATEST_CONSOLE_COMMAND" Supported="false"/>
@@ -13562,7 +13562,7 @@
     <Command ID="0x94b" Name="GET_NAME_OF_ENTRY_EXIT_CHAR_USED">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="TEXT_LABEL" Out="true" AllowConst="false"/>
+        <Arg Type="TEXT_LABEL16" Out="true" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0x94c" Name="GET_POSITION_OF_ENTRY_EXIT_CHAR_USED">
@@ -13704,8 +13704,8 @@
     <Command ID="0x964" Name="CREATE_MENU_GRID">
       <Args>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
-        <Arg Type="INT" Desc="2D pixel X"/>
-        <Arg Type="INT" Desc="2D pixel Y"/>
+        <Arg Type="FLOAT" Desc="2D pixel X"/>
+        <Arg Type="FLOAT" Desc="2D pixel Y"/>
         <Arg Type="FLOAT" Desc="Width"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>

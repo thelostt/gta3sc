@@ -8,6 +8,16 @@
 
 // TODO android compiler registers START_CUTSCENE stuff before the global variable space
 
+static auto get_base_var_annotation(const SyntaxTree& var_node) -> optional<shared_ptr<Var>>
+{
+    if(auto opt = var_node.maybe_annotation<const shared_ptr<Var>&>())
+        return *opt;
+    else if(auto opt = var_node.maybe_annotation<const ArrayAnnotation&>())
+        return opt->base;
+    else
+        return nullopt;
+}
+
 uint32_t Var::space_taken(VarType type, size_t count)
 {
     switch(type)
@@ -113,7 +123,8 @@ void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type
 
     if(arg_type != 0)
     {
-        auto& var = var_node.annotation<const shared_ptr<Var>&>();
+        auto var = get_base_var_annotation(var_node).value();
+
         auto& varinfo = this->add_or_find_varinfo(var);
 
         if(is_output)
@@ -166,8 +177,8 @@ void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, Pr
     if(!program.opt.entity_tracking)
         return;
 
-    auto opt_lhs_var = lhs.maybe_annotation<const shared_ptr<Var>&>();
-    auto opt_rhs_var = rhs.maybe_annotation<const shared_ptr<Var>&>();
+    auto opt_lhs_var = get_base_var_annotation(lhs);
+    auto opt_rhs_var = get_base_var_annotation(rhs);
 
     if(opt_lhs_var && opt_rhs_var)
     {
@@ -1452,12 +1463,16 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         }
 
                         auto a_var = a.maybe_annotation<shared_ptr<Var>>();
+                        auto b_var = b.maybe_annotation<shared_ptr<Var>>();
                         auto c_var = c.maybe_annotation<shared_ptr<Var>>();
 
-                        if(a_var && c_var && a_var == c_var)
+                        if(a_var && c_var && a_var == c_var) // Y = THING op Y
                         {
                             if(message)
-                                program.error(node, message);
+                            {
+                                if(a_var != b_var || b_var != c_var) // allow Y = Y / Y
+                                    program.error(node, message);
+                            }
 
                             auto exp_cmd_set2 = commands.match(alter_cmds1, node, { &a, &c }, symbols, current_scope);
                             auto exp_cmd_op2  = commands.match(*alter_op, node, { &a, &b }, symbols, current_scope);
