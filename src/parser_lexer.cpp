@@ -239,26 +239,27 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
         lexer.add_token(Token::String, begin_pos, std::distance(begin, it) + 1);
         return std::next(it);
     }
-    else if((*begin >= '0' && *begin <= '9') || *begin == '-' || *begin == '.')
+
+    if((*begin >= '0' && *begin <= '9') || *begin == '-' || *begin == '.')
     {
         auto token = lex_gettok(begin, end).value();
 
         if(is_integer(token))
+        {
             lexer.add_token(Token::Integer, begin_pos, token.second);
+            return token.first + token.second;
+        }
         else if(is_float(token))
+        {
             lexer.add_token(Token::Float, begin_pos, token.second);
-        else
-            lexer.error(std::make_pair(begin_pos, token.second), "invalid numeric literal");
+            return token.first + token.second;
+        }
+    }
 
-        return token.first + token.second;
-    }
-    else
-    {
-        auto token = lex_gettok(begin, end).value();
-        auto it = token.first + token.second;
-        lexer.add_token(Token::Text, begin_pos, std::distance(begin, it));
-        return it;
-    }
+    auto token = lex_gettok(begin, end).value();
+    auto it = token.first + token.second;
+    lexer.add_token(Token::Text, begin_pos, std::distance(begin, it));
+    return it;
 }
 
 /// Lexes a command context.

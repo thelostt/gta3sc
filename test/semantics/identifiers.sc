@@ -7,6 +7,7 @@ PRINT_HELP abc
 PRINT_HELP _abc // expected-error {{invalid identifier}}
 
 LAUNCH_MISSION _a.sc
+LAUNCH_MISSION 4x4.sc // actually a tokenizer test
 
 CUSTOM_PLATE_FOR_NEXT_CAR 0 __abc___
 
