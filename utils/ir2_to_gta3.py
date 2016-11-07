@@ -137,7 +137,7 @@ def converted_expr(ir2, data, cmdinfo, op, global_vars, local_vars, enums):
     args = get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums)
     return "%s%s %s %s" % ("NOT " if data.not_flag else "", args[0], op, args[1])
 
-def converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, subscripts=None, gosubfiles=None, alternative_name=None):
+def converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, filename_by_offset=None, alternative_name=None):
     if data.is_label():
         return "%s:" % data.name
     elif data.is_command():
@@ -186,17 +186,17 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
             return "SKIP_CUTSCENE_START"
         elif cmdname == "GOSUB_FILE":
             assert data.args[1].is_label()
-            arg1 = gosubfiles[ir2.offset_from_label(data.args[1].value)]
+            arg1 = os.path.basename(filename_by_offset[ir2.offset_from_label(data.args[1].value)])
             arg0 = converted_arg(ir2, data.args[0], cmdinfo.get_arg(0), global_vars, local_vars, enums=enums)
             return "GOSUB_FILE %s %s" % (arg0, arg1)
         elif cmdname == "LAUNCH_MISSION":
             assert data.args[0].is_label()
-            arg0 = subscripts[ir2.offset_from_label(data.args[0].value)]
+            arg0 = os.path.basename(filename_by_offset[ir2.offset_from_label(data.args[0].value)])
             return "LAUNCH_MISSION %s" % (arg0)
         elif cmdname == "LOAD_AND_LAUNCH_MISSION_INTERNAL":
             assert data.args[0].is_number()
             mission_offset = ir2.offset_from_mission(data.args[0].value)
-            return "LOAD_AND_LAUNCH_MISSION %s" % (filename_from_offset(mission_offset))
+            return "LOAD_AND_LAUNCH_MISSION %s" % os.path.basename(filename_by_offset[mission_offset])
         elif cmdname in STREAM_COMMANDS:
             assert data.args[0].is_number()
             if cmdname == "REGISTER_STREAMED_SCRIPT_INTERNAL":
@@ -205,7 +205,7 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
             for i, arg in enumerate(data.args):
                 if i == 0:
                     streamed_offset = ir2.offset_from_streamed(data.args[0].value)
-                    output += " %s" % (filename_from_offset(streamed_offset))
+                    output += " %s" % os.path.basename(filename_by_offset[streamed_offset])
                 else:
                     output += " %s" % converted_arg(ir2, arg, cmdinfo.get_arg(i), global_vars, local_vars, enums=enums)
             return output
@@ -217,15 +217,7 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
     else:
         assert False
 
-def filename_from_offset(offset):
-    if offset.type == BYTECODE_OFFSET_MISSION:
-        return "mission%d.sc" % offset.block
-    elif offset.type == BYTECODE_OFFSET_STREAMED:
-        return "stream%d.sc" % offset.block
-    else:
-        assert False
-
-def print_vars(stream, vars, is_local, tab=0):
+def print_vars(stream, vars, is_local, is_mission, tab=0):
     any_var = False
     last_var_ending = 0 if is_local else 2
     last_var_sizeb = 4
@@ -237,6 +229,8 @@ def print_vars(stream, vars, is_local, tab=0):
             continue
         any_var = True
         for k in range(last_var_ending, this_var_index):
+            if k < 32 and is_mission:
+                continue
             if k not in TIMER_INDICES:
                 stream.write("%sVAR_INT %svar_%d // unused variable\n" % (pfxu, pfx, k))
         comment = "// unknown type" if not v.type else ""
@@ -247,35 +241,49 @@ def print_vars(stream, vars, is_local, tab=0):
         last_var_ending = v.end_offset / 4
     
     if any_var:
-        stream.write("\n\n")
+        stream.write("\n")
 
-def main(ir2file, xmlfile):
+def main(ir2file, xmlfile, output_dir):
     config = gta3sc.read_config(xmlfile)
     ir2 = gta3sc.read_ir2(ir2file)
 
     scopes_before_label = False
-    split_files = True
-    output_dir = "test"
 
     commands    = {cmd.name: cmd for cmd in config.commands}
     alternators = defaultdict(set, {alt.name: set(alt.alters) for alt in config.alternators})
     enums       = {enum.name: {v: k for k,v in enum.constants.iteritems()} for enum in config.enums}
 
     scopes = ir2.discover_scopes()
+    filename_by_offset = dict()
     subscripts = dict()
     gosubfiles = dict()
     current_scope = None
     first_scope = scopes[0] if len(scopes) > 0 else None
 
+    for i in range(len(ir2.mission_blocks)):
+        script_offset = ir2.offset_from_mission(i)
+        script_name   = Scope.from_offset(script_offset, scopes).find_script_name(ir2)
+        filename_by_offset[script_offset] = "missions/%s.sc" % script_name.lower()
+
+    for i in range(len(ir2.streamed_blocks)):
+        script_offset = ir2.offset_from_streamed(i)
+        stream_name   = ir2.get_stream_name(i)
+        filename_by_offset[script_offset] = "streams/%s.sc" % stream_name.lower()
+
     for off, data in ir2:
         if data.is_command() and data.name == "LAUNCH_MISSION":
             assert data.args[0].is_label()
-            filename = "subscript%d.sc" % len(subscripts)
-            subscripts[ir2.offset_from_label(data.args[0].value)] = filename
+            script_offset = ir2.offset_from_label(data.args[0].value)
+            script_name   = Scope.from_offset(script_offset, scopes).find_script_name(ir2)
+            filename = "%s.sc" % script_name.lower() if script_name else "subscript%d.sc" % len(subscripts)
+            filename_by_offset[script_offset] = filename
+            subscripts[script_offset] = filename
         elif data.is_command() and data.name == "GOSUB_FILE":
             assert data.args[1].is_label()
-            filename = "gosub%d.sc" % len(gosubfiles)
-            gosubfiles[ir2.offset_from_label(data.args[1].value)] = filename
+            filename = "gosub%d.sc" % len(gosubs)
+            script_offset = ir2.offset_from_label(data.args[1].value)
+            filename_by_offset[script_offset] = filename
+            gosubfiles[script_offset] = filename
 
     global_vars = ir2.discover_global_vars(commands=commands)
     local_vars = None
@@ -284,20 +292,34 @@ def main(ir2file, xmlfile):
 
     try:
         os.makedirs(os.path.join(output_dir, "main"))
+        os.makedirs(os.path.join(output_dir, "main", "missions"))
+        os.makedirs(os.path.join(output_dir, "main", "streams"))
     except OSError as e:
         if e.errno != errno.EEXIST:
             raise
 
-    stream = sys.stdout if not split_files else open(os.path.join(output_dir, "main.sc"), 'w')
+    stream = open(os.path.join(output_dir, "main.sc"), 'w')
 
     got_mission_terminate = [None] # hack
+    is_mission = False
+    print_script_terminate_for = None
 
-    print_vars(stream, global_vars, False)
+    print_vars(stream, global_vars, False, False)
 
     for off, data in ir2:
 
+        if print_script_terminate_for != None:
+            if print_script_terminate_for.type != BYTECODE_OFFSET_STREAMED or print_script_terminate_for.block != off.block:
+                if print_script_terminate_for.type == BYTECODE_OFFSET_STREAMED:
+                    stream.write("}\n")
+                stream.write("%s\n" % ("MISSION_END", "MISSION_END", "SCRIPT_END")[print_script_terminate_for.type])
+                got_mission_terminate[0] = True
+            else:
+                stream.write("    TERMINATE_THIS_SCRIPT\n")
+            print_script_terminate_for = None
+
         def on_scope_begin(old_scope, new_scope):
-            print("############ ENTERING SCOPE OF %s" % new_scope.find_script_name(ir2))
+            print("Converting %s" % new_scope.find_script_name(ir2))
             if new_scope.start in subscripts or (old_scope.start.type != new_scope.start.type or old_scope.start.block != new_scope.start.block):
                 if new_scope.start.type != BYTECODE_OFFSET_MAIN or new_scope.start in subscripts:
                     stream.write("%s\n" % ("MISSION_START", "MISSION_START", "SCRIPT_START")[new_scope.start.type])
@@ -311,7 +333,7 @@ def main(ir2file, xmlfile):
         def write_data(tab=0):
             tabing = ' ' * (tab*4)
             if data.is_label(): stream.write("\n")
-            line = converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, subscripts=subscripts, gosubfiles=gosubfiles)
+            line = converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, filename_by_offset=filename_by_offset)
             stream.write("%s%s\n" % (tabing, line))
 
         if current_scope == None:
@@ -320,60 +342,64 @@ def main(ir2file, xmlfile):
                 assert current_scope != None
         elif not current_scope.owns_offset(off):
             previous_scope = current_scope
-            if current_scope != first_scope:
+            if current_scope != first_scope and previous_scope.start.type != BYTECODE_OFFSET_STREAMED:
                 stream.write("}\n")
             current_scope = Scope.from_offset(off, scopes)
             assert current_scope != None
 
             on_scope_end(previous_scope, current_scope)
 
-            if split_files:
-                if off.type != BYTECODE_OFFSET_MAIN:
-                    stream.close()
-                    stream = open(os.path.join(output_dir, "main", filename_from_offset(off)), 'w')
-                elif off in subscripts or off in gosubfiles:
-                    filename = subscripts.get(off) or gosubfiles.get(off)
-                    stream.close()
-                    stream = open(os.path.join(output_dir, "main", filename), 'w')
+            if off.type != BYTECODE_OFFSET_MAIN:
+                stream.close()
+                stream = open(os.path.join(output_dir, "main", filename_by_offset[off]), 'w')
+            elif off in subscripts or off in gosubfiles:
+                filename = subscripts.get(off) or gosubfiles.get(off)
+                stream.close()
+                stream = open(os.path.join(output_dir, "main", filename), 'w')
 
             on_scope_begin(previous_scope, current_scope)
             local_vars = ir2.discover_local_vars(current_scope, commands=commands)
+
+            is_mission = (current_scope.start.type == BYTECODE_OFFSET_MISSION)
+            is_stream  = (current_scope.start.type == BYTECODE_OFFSET_STREAMED)
 
             if data.is_label():
                 if scopes_before_label:
                     stream.write("\n{")
                     write_data(tab=1)
-                    print_vars(stream, local_vars, True, tab=1)
+                    print_vars(stream, local_vars, True, is_mission, tab=1)
                     continue
                 else:
                     write_data(tab=0)
                     stream.write("{\n")
-                    print_vars(stream, local_vars, True, tab=1)
+                    print_vars(stream, local_vars, True, is_mission, tab=1)
                     continue
             else:
                 stream.write("{\n")
-                print_vars(stream, local_vars, True, tab=1)
+                print_vars(stream, local_vars, True, is_mission, tab=1)
 
         if got_mission_terminate[0] == False and\
            data.is_command() and data.name == "TERMINATE_THIS_SCRIPT":
-            stream.write("    %s\n\n\n" % ("MISSION_END", "MISSION_END", "SCRIPT_END")[current_scope.start.type])
-
-            got_mission_terminate[0] = True
+           print_script_terminate_for = off
         else:
             tab = int(current_scope != None and current_scope != first_scope)
-            if got_mission_terminate[0] == False: tab += 1
+            if got_mission_terminate[0] == False and not is_stream:
+                tab += 1
             write_data(tab=tab)
 
     if current_scope != None and current_scope != first_scope:
-        stream.write("}")
+        stream.write("}\n")
+
+    if print_script_terminate_for != None:
+        stream.write("%s\n" % ("MISSION_END", "MISSION_END", "SCRIPT_END")[print_script_terminate_for.type])
 
     if stream != sys.stdout:
         stream.close()
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print("Usage: discover_entity_commands.py <ir2_script> <xmlfile>")
+    if len(sys.argv) < 4:
+        print("Usage: discover_entity_commands.py <ir2_script> <xmlfile> <output_dir>")
         sys.exit(1)
-    main(sys.argv[1], sys.argv[2])
+    main(sys.argv[1], sys.argv[2], sys.argv[3])
 

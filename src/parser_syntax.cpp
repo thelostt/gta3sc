@@ -140,7 +140,7 @@ static bool expect_endtoken(ParserState& state, token_iterator begin, token_iter
 {
     if(it == end || it->type != type)
     {
-        const char* what = type == Token::ScopeEnd? "closing curly bracket ('}')" :
+        const char* what = type == Token::ScopeEnd? "closing curly bracket ('}}')" :
                            type == Token::ENDIF? "ENDIF" :
                            type == Token::ENDWHILE? "ENDWHILE" :
                            type == Token::ENDREPEAT? "ENDREPEAT" :

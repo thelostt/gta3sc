@@ -976,6 +976,16 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                 }
             }
 
+            {
+                std::string temp_string;
+                for(size_t i = 0; i < header.streamed_scripts.size(); ++i)
+                {
+                    temp_string = header.streamed_scripts[i].first;
+                    std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
+                    callback(fmt::format("#DEFINE_STREAM {} {}", temp_string, i));
+                }
+            }
+
             auto main_ir2 = DecompilerIR2(program.commands, main_segment_asm.get_data(), 0, main_segment.size, "MAIN", true);
             main_ir2.decompile(callback);
 

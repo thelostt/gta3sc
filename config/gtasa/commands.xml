@@ -12729,7 +12729,7 @@
     <Command ID="0x8b4" Name="IS_GLOBAL_VAR_BIT_SET_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x8b5" Name="IS_GLOBAL_VAR_BIT_SET_VAR">
@@ -12747,7 +12747,7 @@
     <Command ID="0x8b7" Name="IS_LOCAL_VAR_BIT_SET_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x8b8" Name="IS_LOCAL_VAR_BIT_SET_VAR">
@@ -12765,7 +12765,7 @@
     <Command ID="0x8ba" Name="SET_GLOBAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x8bb" Name="SET_GLOBAL_VAR_BIT_VAR">
@@ -12783,7 +12783,7 @@
     <Command ID="0x8bd" Name="SET_LOCAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x8be" Name="SET_LOCAL_VAR_BIT_VAR">
@@ -12801,7 +12801,7 @@
     <Command ID="0x8c0" Name="CLEAR_GLOBAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x8c1" Name="CLEAR_GLOBAL_VAR_BIT_VAR">
@@ -12819,7 +12819,7 @@
     <Command ID="0x8c3" Name="CLEAR_LOCAL_VAR_BIT_CONST">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x8c4" Name="CLEAR_LOCAL_VAR_BIT_VAR">

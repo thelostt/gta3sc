@@ -69,11 +69,12 @@ TABLE_SCOPE_SPAWNERS = {
 
 class Bytecode:
 
-    def __init__(self, main_block, mission_blocks=[], streamed_blocks=[], models=[]):
+    def __init__(self, main_block, mission_blocks=[], streamed_blocks=[], models=[], stream_names=[]):
         self.main_block = main_block
         self.mission_blocks = mission_blocks
         self.streamed_blocks = streamed_blocks
         self.models = models
+        self.stream_names = stream_names
 
         self.label_table = {}
         for off, data in self:
@@ -118,6 +119,9 @@ class Bytecode:
 
     def get_model(self, i):
         return self.models[i] if i < len(self.models) else None
+
+    def get_stream_name(self, i):
+        return self.stream_names[i] if i < len(self.stream_names) else None
 
     def offset_from_label(self, name):
         return self.label_table.get(name)
@@ -559,6 +563,7 @@ def read_ir2(file):
     mission_blocks = []
     streamed_blocks = []
     models = []
+    stream_names = []
 
     current_block = main_block
 
@@ -581,6 +586,8 @@ def read_ir2(file):
                 current_block = None
             elif tokens[0] == "#DEFINE_MODEL":
                 models.append(tokens[1])
+            elif tokens[0] == "#DEFINE_STREAM":
+                stream_names.append(tokens[1])
         elif line[-1] == ':':
             label = Label(line[:-1])
             current_block.append(label)
@@ -595,7 +602,7 @@ def read_ir2(file):
             else:
                 current_block.append(Command(not_flag, cmdname, cmdargs))
 
-    return Bytecode(main_block, mission_blocks, streamed_blocks, models)
+    return Bytecode(main_block, mission_blocks, streamed_blocks, models, stream_names)
 
 
 def _char_from_vartype(vartype):
@@ -705,7 +712,7 @@ def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo
         if len(result) > 0:
             if v.start_offset < result[-1].end_offset:
                 continue
-        
+
         result.append(v)
 
     return result
