@@ -1,6 +1,9 @@
 // RUN: %gta3sc %s --config=gtasa --guesser -emit-ir2 -o - | %FileCheck %s
 VAR_INT n
 
+// CHECK-L: NOP
+NOP
+
 // Using a default case, and an out of order case.
 {
     // CHECK-L: SWITCH_START &8 4i8 1i8 @MAIN_5 50i8 @MAIN_4 100i8 @MAIN_1 200i16 @MAIN_2 300i16 @MAIN_3 -1i8 @MAIN_6 -1i8 @MAIN_6 -1i8 @MAIN_6

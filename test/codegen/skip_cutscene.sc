@@ -1,6 +1,6 @@
 // RUN: %gta3sc %s --config=gtasa --guesser -emit-ir2 -o - | %FileCheck %s
 
-// CHECK-NEXT-L: SKIP_CUTSCENE_START_INTERNAL @MAIN_1
+// CHECK-L: SKIP_CUTSCENE_START_INTERNAL @MAIN_1
 SKIP_CUTSCENE_START
 // CHECK-NEXT-L: WAIT 2i8
 // CHECK-NEXT-L: WAIT 3i8

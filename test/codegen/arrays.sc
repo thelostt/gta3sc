@@ -19,6 +19,9 @@
     VAR_INT  g_max_offset
     LVAR_INT t_max_offset
 
+    // CHECK: NOP
+    NOP
+
     // CHECK-NEXT-L: SET_VAR_INT &12 0i8
     gi[0] = 0
     // CHECK-NEXT-L: SET_VAR_INT &16 1i8
