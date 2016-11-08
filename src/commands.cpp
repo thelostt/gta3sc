@@ -621,13 +621,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                     {
                         if(auto opt_var = find_var(node.text()))
                         {
-                            bool was_annotated = node.is_annotated();
                             annotate_var(node, *opt_var);
-                            if(!was_annotated) // i.e. do this only once
-                            {
-                                script.process_entity_type(node, arginfo.entity_type, !arginfo.allow_constant, program);
-                                // TODO arginfo.out instead of !arginfo.allow_constant ^
-                            }
                             break;
                         }
                     }

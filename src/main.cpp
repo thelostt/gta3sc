@@ -576,11 +576,14 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             script->annotate_tree(symbols, program);
         }
 
+        if(program.has_error())
+            throw HaltJobException();
+
         // not thread-safe
         std::vector<std::string> models = Script::compute_unknown_models(scripts);
 
         // not thread-safe
-        Script::verify_entity_types(scripts, symbols, program);
+        Script::handle_special_commands(scripts, symbols, program);
 
         // not thread-safe
         Script::verify_script_names(scripts, program);

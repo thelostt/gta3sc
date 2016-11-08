@@ -37,21 +37,6 @@ struct Label;
 struct Script : std::enable_shared_from_this<Script>
 {
 public:
-    /// Variable Information (information is local to this Script object)
-    struct VarInfo
-    {
-        /// The type of the entity (see commands.hpp).
-        EntityType entity_type = 0;
-
-        /// Whether a entity was assigned (with CREATE_CAR and such) to this variable.
-        /// This is not set if the entity was only sent to commands (such as SET_CAR_COORDINATES).
-        bool entity_assigned = false;
-
-        /// Whether the entity was used (with e.g. SET_CAR_COORDINATES) before being created (with e.g. CREATE_CAR).
-        bool entity_used_before_assign = false;
-    };
-
-public:
     static shared_ptr<Script> create(ProgramContext& program, fs::path path, ScriptType type)
     {
         auto tstream = TokenStream::tokenize(program, path);
@@ -93,33 +78,9 @@ public:
     /// of the scripts in the `scripts` vector should be running while this method is executed.
     static auto compute_unknown_models(const std::vector<shared_ptr<Script>>& scripts) -> std::vector<std::string>;
 
-    /// Verifies if all entity types in all scripts match.
-    ///
-    /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
-    /// of the scripts in the `scripts` vector should be running while this method is executed.
-    static void verify_entity_types(const std::vector<shared_ptr<Script>>& scripts, const SymTable& symtable, ProgramContext&);
-
-    /// Checks if the variable is being used as the correct entity type, and assign VarInfo to this Script.
-    ///
-    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output, ProgramContext&);
-
-    /// Called when two things get assigned to the other, so entity typing can be checked.
-    ///
-    /// This is like process_entity_type, but called on assignment operations.
-    ///
-    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext&);
-    /// See assign_entity_type above.
-    void assign_entity_type(const shared_ptr<Var>& dst, const shared_ptr<Var>& src,
-                            const SyntaxTree& error_helper, ProgramContext&);
-
-    /// Send values from (arg_begin, arg_end) to the local variables in the target label.
-    ///
-    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
-    void send_input_vars(const SyntaxTree& target_label_node,
-                         SyntaxTree::const_iterator arg_begin, SyntaxTree::const_iterator arg_end,
-                         ProgramContext&);
+    /// TODO doc
+    /// \warning Not thread-safe.
+    static void handle_special_commands(const std::vector<shared_ptr<Script>>&, SymTable&, ProgramContext&);
 
     /// Verifies if any script name conflicts between script units.
     ///
@@ -154,15 +115,6 @@ public:
     /// List of unknown models referenced by this script.
     /// TODO explain further on which compilation step this value gets to be available.
     std::vector<std::pair<std::string, int32_t>> models;
-
-    /// Information of the variable usage in this script.
-    ///
-    /// Do note this is how this script views the specified variable. Thus the variable isn't necessarly
-    /// declared in this script (for instance local variables of START_NEW_SCRIPT).
-    ///
-    /// TODO explain further on which compilation step this value gets to be available.
-    std::vector<std::pair<shared_ptr<Var>, VarInfo>> varinfo;
-
     /// The script names used in this script.
     std::set<std::string, iless> script_names;
 
@@ -189,37 +141,6 @@ public:
         return this->models.at(i).second;
     }
 
-    optional<const VarInfo&> find_varinfo(const shared_ptr<Var>& var) const
-    {
-        auto it = std::find_if(varinfo.begin(), varinfo.end(), [&](const auto& mpair) {
-            return mpair.first == var;
-        });
-
-        if(it != varinfo.end())
-            return it->second;
-
-        return nullopt;
-    }
-
-    optional<VarInfo&> find_varinfo(const shared_ptr<Var>& var)
-    {
-        if(auto opt = const_cast<const Script&>(*this).find_varinfo(var))
-        {
-            auto& k = *opt;
-            auto& r = const_cast<VarInfo&>(k);
-            return r;
-        }
-        return nullopt;
-    }
-
-    // \warning All references to varinfos may be invalidated after a call to this method.
-    VarInfo& add_or_find_varinfo(const shared_ptr<Var>& var)
-    {
-        if(auto opt = find_varinfo(var))
-            return *opt;
-        return this->varinfo.emplace(varinfo.end(), var, VarInfo{})->second;
-    }
-
 private:
     struct priv_ctor {};
 
@@ -237,11 +158,12 @@ struct Var
 {
     const bool                global;
     const VarType             type;
-    uint32_t                  index; /// (not offset, index indeed)
-    const optional<uint32_t>  count; /// If an array, the number of elements of it.
+    EntityType                entity;///< The entity type of this variable. Only avaiabile after Script::verify_special_commands(...). 
+    uint32_t                  index; ///< (not offset, index indeed)
+    const optional<uint32_t>  count; ///< If an array, the number of elements of it.
 
     Var(bool global, VarType type, uint32_t index, optional<uint32_t> count)
-        : global(global), type(type), index(index), count(count)
+        : entity(0), global(global), type(type), index(index), count(count)
     {}
 
     /// \returns the space, in words (i.e. bytes/4), that this variable takes in memory.

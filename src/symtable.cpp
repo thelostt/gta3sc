@@ -8,6 +8,8 @@
 
 // TODO android compiler registers START_CUTSCENE stuff before the global variable space
 
+// TODO this source needs to be separated in a few others
+
 static auto get_base_var_annotation(const SyntaxTree& var_node) -> optional<shared_ptr<Var>>
 {
     if(auto opt = var_node.maybe_annotation<const shared_ptr<Var>&>())
@@ -116,254 +118,218 @@ auto Script::compute_unknown_models(const std::vector<shared_ptr<Script>>& scrip
     return models;
 }
 
-void Script::process_entity_type(const SyntaxTree& var_node, EntityType arg_type, bool is_output, ProgramContext& program)
+void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scripts, SymTable& symbols, ProgramContext& program)
 {
-    if(!program.opt.entity_tracking)
-        return;
-
-    if(arg_type != 0)
+    auto handle_script_input = [&program](const SyntaxTree& arg_node, const shared_ptr<Var>& lvar) -> bool
     {
-        auto var = get_base_var_annotation(var_node).value();
-
-        auto& varinfo = this->add_or_find_varinfo(var);
-
-        if(is_output)
+        if(auto opt_arg_var = get_base_var_annotation(arg_node))
         {
-            if(varinfo.entity_type != 0 && varinfo.entity_type != arg_type)
-            {
-                if(varinfo.entity_assigned)
-                {
-                    program.error(var_node,
-                        "variable has been already used to create a entity typed  '{}'",
-                        program.commands.find_entity_name(varinfo.entity_type).value()
-                    );
-                }
-                else
-                {
-                    program.error(var_node,
-                        "variable has been previosly used as a entity typed  '{}'",
-                        program.commands.find_entity_name(varinfo.entity_type).value()
-                    );
-                }
-            }
+            auto& argvar = *opt_arg_var;
 
-            varinfo.entity_type = arg_type;
-            varinfo.entity_assigned = true;
-        }
-        else
-        {
-            if(varinfo.entity_type == 0)
-            {
-                // Do not error, maybe it was assigned in another script.
-                // We'll check this in verify_entity_types.
-                varinfo.entity_used_before_assign = true;
-            }
-            else if(varinfo.entity_type != arg_type)
-            {
-                program.error(var_node,
-                    "variable expected to have entity typed '{}' but had '{}' ",
-                    program.commands.find_entity_name(arg_type).value(),
-                    program.commands.find_entity_name(varinfo.entity_type).value()
-                );
-            }
-
-            varinfo.entity_type = arg_type;
-        }
-    }
-}
-
-void Script::assign_entity_type(const SyntaxTree& lhs, const SyntaxTree& rhs, ProgramContext& program)
-{
-    if(!program.opt.entity_tracking)
-        return;
-
-    auto opt_lhs_var = get_base_var_annotation(lhs);
-    auto opt_rhs_var = get_base_var_annotation(rhs);
-
-    if(opt_lhs_var && opt_rhs_var)
-    {
-        this->assign_entity_type(*opt_lhs_var, *opt_rhs_var, rhs, program);
-    }
-}
-
-void Script::assign_entity_type(const shared_ptr<Var>& dst_var, const shared_ptr<Var>& src_var,
-                                const SyntaxTree& error_helper, ProgramContext& program)
-{
-    if(!program.opt.entity_tracking)
-        return;
-
-    EntityType lhs_type = 0;
-    EntityType rhs_type = 0;
-
-    {
-        auto opt_lhsinfo = this->find_varinfo(dst_var);
-        auto opt_rhsinfo = this->find_varinfo(src_var);
-        if(opt_lhsinfo) lhs_type = opt_lhsinfo->entity_type;
-        if(opt_rhsinfo) rhs_type = opt_rhsinfo->entity_type;
-    }
-
-    // NONE = NONE
-    if(lhs_type == 0 && rhs_type == 0)
-        return;
-
-    // ENTITY = NONE or ENTITY = ENTITY (with different types)
-    if(lhs_type != 0 && lhs_type != rhs_type)
-    {
-        program.error(error_helper,
-            "destination variable has entity type '{}' but trying to assign '{}'",
-            program.commands.find_entity_name(lhs_type).value(),
-            program.commands.find_entity_name(rhs_type).value()
-        );
-    }
-
-    // NONE = ENTITY or ENTITY = ENTITY
-    if(rhs_type != 0)
-    {
-        auto& lhsinfo = this->add_or_find_varinfo(dst_var);
-        auto& rhsinfo = this->find_varinfo(src_var).value();
-        lhsinfo.entity_assigned = true;
-        lhsinfo.entity_type     = rhsinfo.entity_type;
-    }
-}
-
-void Script::verify_entity_types(const std::vector<shared_ptr<Script>>& scripts,
-                                 const SymTable& symtable, ProgramContext& program)
-{
-    if(!program.opt.entity_tracking)
-        return;
-
-    /// Keep track of entities assigned in previous scripts.
-    std::map<shared_ptr<Var>, EntityType> assigned_vars;
-
-    for(auto s1 = scripts.begin(); s1 != scripts.end(); ++s1)
-    {
-        for(auto& vinfo_pair : (*s1)->varinfo)
-        {
-            auto& var    = vinfo_pair.first;
-            auto& vinfo1 = vinfo_pair.second;
-
-            // If at this script the variable has been used as a entity before being assigned a entity,
-            // ensure any previous script assigned a entity to the variable.
-            if(vinfo1.entity_used_before_assign)
-            {
-                if(assigned_vars.find(var) == assigned_vars.end())
-                {
-                    program.error(**s1,
-                        "variable '{}' expected to have entity typed '{}', but had '{}' during its usage", // had 'NONE'
-                        symtable.find_var_name(var).value(), 
-                        program.commands.find_entity_name(vinfo1.entity_type).value(),
-                        program.commands.find_entity_name(0).value()
-                    );
-                }
-            }
-
-            // Check mismatch entity with previous scripts.
-            auto ait = assigned_vars.find(var);
-            if(ait != assigned_vars.end())
-            {
-                if(ait->second != vinfo1.entity_type)
-                {
-                    program.error(**s1,
-                        "variable '{}' has different entity types in two or more scripts",
-                        symtable.find_var_name(var).value()
-                    );
-                    program.note(**s1, "first seen as '{}', now as '{}'", // TODO improve context
-                        program.commands.find_entity_name(ait->second).value(),
-                        program.commands.find_entity_name(vinfo1.entity_type).value());
-                }
-            }
-            else
-            {
-                // If this script assigned a entity to the variable, let's keep that info.
-                if(vinfo1.entity_assigned)
-                {
-                    assigned_vars.emplace(var, vinfo1.entity_type);
-                }
-            }
-        }
-    }
-}
-
-void Script::send_input_vars(const SyntaxTree& target_label_node,
-                             SyntaxTree::const_iterator arg_begin, SyntaxTree::const_iterator arg_end,
-                             ProgramContext& program)
-{
-    // TODO handle TEXT_LABEL and TEXT_LABEL16 properly for CALL commands?
-
-    auto check_var_matches = [&](const SyntaxTree& arg_node, const shared_ptr<Var>& lvar) -> bool
-    {
-        if(auto opt_arg_var = arg_node.maybe_annotation<const shared_ptr<Var>&>())
-        {
-            this->assign_entity_type(lvar, *opt_arg_var, arg_node, program);
-
-            if((*opt_arg_var)->type != lvar->type)
+            if(argvar->type != lvar->type)
             {
                 program.error(arg_node, "type mismatch in target label");
+                // TODO more info
                 return false;
             }
-        }
-        else if(auto opt_arg_var = arg_node.maybe_annotation<const ArrayAnnotation&>())
-        {
-            auto& arg_var = opt_arg_var->base;
 
-            this->assign_entity_type(lvar, arg_var, arg_node, program);
-
-            if(arg_var->type != lvar->type)
+            if(lvar->entity && argvar->entity != lvar->entity)
             {
-                program.error(arg_node, "type mismatch in target label");
+                program.error(arg_node, "entity type mismatch in target label");
+                // TODO more info
                 return false;
             }
+
+            lvar->entity = argvar->entity;
+            return true;
         }
         else
         {
             program.error(arg_node, "type mismatch in target label");
+            // TODO more info
             return false;
         }
-        return true;
     };
 
-    if(auto opt_target_label = target_label_node.maybe_annotation<const shared_ptr<Label>&>())
+    auto send_input_vars = [&](const SyntaxTree::const_iterator& input_begin,
+                               const SyntaxTree::const_iterator& input_end,
+                               shared_ptr<const Scope>& target_scope)
     {
-        if(auto& target_scope = (*opt_target_label)->scope)
+        size_t target_var_index = 0;
+        for(auto arginput = input_begin; arginput != input_end; ++arginput)
         {
-            size_t target_var_index = 0;
-            for(auto arg = arg_begin; arg != arg_end; ++arg)
+            auto lvar = target_scope->var_at(target_var_index);
+
+            if(!lvar)
             {
-                auto lvar = target_scope->var_at(target_var_index++);
+                program.error(**arginput, "not enough local variables in target label");
+                break;
+            }
 
-                if(!lvar)
-                {
-                    program.error(**arg, "not enough variables in target label");
+            switch(lvar->type)
+            {
+                case VarType::Int:
+                    ++target_var_index;
+                    if((**arginput).maybe_annotation<const int32_t&>())
+                        break;
+                    handle_script_input(**arginput, lvar);
                     break;
-                }
+                case VarType::Float:
+                    ++target_var_index;
+                    if((**arginput).maybe_annotation<const float&>())
+                        break;
+                    handle_script_input(**arginput, lvar);
+                    break;
+                case VarType::TextLabel:
+                    target_var_index += 2;
+                    program.error(**arginput, "type mismatch in target label because LVAR_TEXT_LABEL is not allowed");
+                    break;
+                case VarType::TextLabel16:
+                    target_var_index += 4;
+                    program.error(**arginput, "type mismatch in target label because LVAR_TEXT_LABEL16 is not allowed");
+                    break;
+                default:
+                    Unreachable();
+            }
+        }
+    };
 
-                switch(lvar->type)
+    auto handle_start_new_script = [&](const SyntaxTree& node, const Command& command)
+    {
+        if(!program.opt.entity_tracking || node.child_count() < 2)
+            return;
+
+        auto& arglabel_node = node.child(1);
+
+        auto opt_target_label = arglabel_node.maybe_annotation<const shared_ptr<Label>&>();
+        if(!opt_target_label)
+        {
+            program.warning(arglabel_node, "target label is not a label identifier");
+            return;
+        }
+
+        auto& target_scope = (*opt_target_label)->scope;
+        if(!target_scope)
+        {
+            auto where = program.opt.scope_then_label? "after" : "before";
+            program.error(arglabel_node, "expected scope in target label");
+            program.note(arglabel_node, "add a '{{' {} the target label", where);
+            return;
+        }
+
+        send_input_vars(std::next(node.begin(), 2), node.end(), target_scope);
+    };
+
+    auto handle_start_new_streamed_script = [&](const SyntaxTree& node, const Command& command)
+    {
+        if(!program.opt.entity_tracking || node.child_count() < 2)
+            return;
+
+        // TODO
+        return;
+    };
+
+    auto handle_entity_command = [&](const SyntaxTree& node, const Command& command)
+    {
+        if(!program.opt.entity_tracking)
+            return;
+
+        size_t i = 0;
+        for(auto it = std::next(node.begin()); it != node.end(); ++it, ++i)
+        {
+            auto& arginfo = command.arg(i).value();
+            if(arginfo.entity_type != 0)
+            {
+                if(auto opt_argvar = get_base_var_annotation(**it))
                 {
-                    case VarType::Int:
-                        if((**arg).maybe_annotation<const int32_t&>())
-                            break;
-                        check_var_matches(**arg, lvar);
-                        break;
-                    case VarType::Float:
-                        if((**arg).maybe_annotation<const float&>())
-                            break;
-                        check_var_matches(**arg, lvar);
-                        break;
-                    case VarType::TextLabel:
-                    case VarType::TextLabel16:
-                        program.error(**arg, "type mismatch in target label because LVAR_TEXT_LABEL is not allowed");
-                        break;
-                    default:
-                        Unreachable();
+                    auto& argvar = **opt_argvar;
+                    auto isout = !arginfo.allow_constant; // TODO arginfo.out
+
+                    if(isout)
+                    {
+                        if(argvar.entity && argvar.entity != arginfo.entity_type)
+                        {
+                            auto type_old = program.commands.find_entity_name(argvar.entity).value();
+                            auto type_new = program.commands.find_entity_name(arginfo.entity_type).value();
+                            program.error(**it, "variable has already been used to create a entity of type {}", type_old);
+                        }
+
+                        argvar.entity = arginfo.entity_type;
+                    }
+                    else
+                    {
+                        if(argvar.entity != arginfo.entity_type)
+                        {
+                            auto expect = program.commands.find_entity_name(arginfo.entity_type).value();
+                            auto got    = program.commands.find_entity_name(argvar.entity).value();
+                            program.error(**it, "expected variable of type {} but got {}", expect, got);
+                        }
+                    }
                 }
             }
         }
-        else
+    };
+
+    // TODO this method may be entirely skipped if no entity tracking enabled?
+
+    for(auto& script : scripts)
+    {
+        script->tree->depth_first([&](const SyntaxTree& node)
         {
-            program.error(target_label_node, "expected scope in target label");
-            program.note(target_label_node, "add a '{{' before the target label");
-            // TODO ^ instruction should be different between III/VC (before or after)
-        }
+            switch(node.type())
+            {
+                case NodeType::Command:
+                {
+                    if(auto opt_command = node.maybe_annotation<std::reference_wrapper<const Command>>())
+                    {
+                        auto& command = (*opt_command).get();
+                        if(program.commands.equal(command, program.commands.start_new_script()))
+                            handle_start_new_script(node, command);
+                        else if(program.commands.equal(command, program.commands.start_new_streamed_script()))
+                            handle_start_new_streamed_script(node, command);
+                        else
+                            handle_entity_command(node, command);
+                    }
+                    return false;
+                }
+
+                case NodeType::Equal:
+                {
+                    auto& a = node.child(0);
+                    auto& b = node.child(1);
+
+                    // handle only a = b, not a = b op c (TODO that should be handled as well).
+                    if(!b.maybe_annotation<std::reference_wrapper<const Command>>())
+                    {
+                        auto& command = node.annotation<std::reference_wrapper<const Command>>().get();
+                        if(program.commands.equal(command, program.commands.set()))
+                        {
+                            auto opt_avar = get_base_var_annotation(a);
+                            auto opt_bvar = get_base_var_annotation(b);
+                            if(opt_avar && opt_bvar)
+                            {
+                                auto& avar = **opt_avar;
+                                auto& bvar = **opt_bvar;
+
+                                if(avar.entity && avar.entity != bvar.entity)
+                                {
+                                    auto type_a = program.commands.find_entity_name(avar.entity).value();
+                                    auto type_b = program.commands.find_entity_name(bvar.entity).value();
+                                    program.error(node, "assignment of variable of type {} into one of type {}", type_b, type_a);
+                                }
+
+                                avar.entity = bvar.entity;
+                            }
+                        }
+                    }
+
+                    return false;
+                }
+
+                default:
+                    return true;
+            }
+        });
     }
 }
 
@@ -901,23 +867,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
         }
     };
 
-    auto handle_start_new_script = [&](const SyntaxTree& node)
-    {
-        if(node.child_count() >= 2) // ensure XML definition is correct
-        {
-            //auto arg_begin = node.child_count() > 2? std::advance(node.begin(), 2) : node.end();
-            auto arg_begin = node.child_count() > 2? std::next(node.begin(), 2) : node.end();
-            this->send_input_vars(node.child(1), arg_begin, node.end(), program);
-        }
-    };
-
-    auto handle_start_new_streamed_script = [&](const SyntaxTree& node)
-    {
-        // Type checking and entity passing isn't handled according to analyzes of
-        // the original San Andreas SCM. TODO include a compiler flag to do so?
-        // The implementation is as simple as calling handle_start_new_script :)
-    };
-
     auto handle_script_name = [&](const SyntaxTree& node)
     {
         if(!program.opt.script_name_check)
@@ -925,7 +874,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
         if(node.child_count() == 2) // ensure XML definition is correct
         {
-            // why does it segfault with const TextLabelAnnotation& ???
             if(auto opt_script_name = node.child(1).maybe_annotation<const TextLabelAnnotation&>())
             {
                 if(!this->script_names.emplace(opt_script_name->string).second)
@@ -1373,11 +1321,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));
 
-                        if(commands.equal(command, commands.start_new_script()))
-                            handle_start_new_script(node);
-                        else if(commands.equal(command, commands.start_new_streamed_script()))
-                            handle_start_new_streamed_script(node);
-                        else if(commands.equal(command, commands.script_name()))
+                        if(commands.equal(command, commands.script_name()))
                             handle_script_name(node);
                         else if(commands.equal(command, commands.set_collectable1_total()))
                             replace_arg0(node, symbols.count_collectable1);
