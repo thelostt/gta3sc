@@ -15,3 +15,4 @@
 -fmission-var-begin=34
 -fmission-var-limit=1024
 -fswitch-case-limit=75
+-farray-elem-limit=255

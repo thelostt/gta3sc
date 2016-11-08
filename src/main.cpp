@@ -71,6 +71,7 @@ Options:
   -fmission-var-begin=<n>  Mission variables will start from the index <n>.
   -ftimer-index=<n>        The local variable index of TIMERA.
   -fswitch-case-limit=<n>  The limit on the number of CASE in a SWITCH.
+  -farray-elem-limit=<n>   The limit of array elements in a single array.
   -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
   --linear-sweep           Disassembler scans the code by the means of a
                            linear-sweep instead of a recursive traversal.
@@ -276,6 +277,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optint(argv, "-fswitch-case-limit", &temp_i32))
             {
                 options.switch_case_limit = temp_i32 < 0? nullopt : optional<uint32_t>(temp_i32);
+            }
+            else if(optint(argv, "-farray-elem-limit", &temp_i32))
+            {
+                options.array_elem_limit = temp_i32 < 0? nullopt : optional<uint32_t>(temp_i32);
             }
             else if(optflag(argv, "-fsyntax-only", nullptr))
             {

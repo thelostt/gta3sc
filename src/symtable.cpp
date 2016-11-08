@@ -761,8 +761,6 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
             case NodeType::VAR_TEXT_LABEL: case NodeType::LVAR_TEXT_LABEL:
             case NodeType::VAR_TEXT_LABEL16: case NodeType::LVAR_TEXT_LABEL16:
             {
-                // TODO arrays have a [256] index limit?
-
                 bool global; VarType vartype;
 
                 std::tie(global, vartype) = token_to_vartype(node.type());
@@ -811,6 +809,11 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                                 {
                                     program.error(varnode, "declaring a zero-sized array");
                                     count = 1; // fallback
+                                }
+                                else if(program.opt.array_elem_limit && *count > *program.opt.array_elem_limit)
+                                {
+                                    auto elem_limit = *program.opt.array_elem_limit;
+                                    program.error(varnode, "arrays are limited to a maximum of {} elements", elem_limit);
                                 }
                             }
                             else
