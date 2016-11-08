@@ -1,7 +1,7 @@
 #!/usr/bin/env python2
 """
   Examples:
-    py ir2_to_gta3.py main.ir2 ../config/gta3
+    py ir2_to_gta3.py main.ir2 ../config/gta3 output/
 """
 import sys, os, errno
 import gta3sc
@@ -14,7 +14,8 @@ from gta3sc.bytecode import BYTECODE_OFFSET_MISSION
 from gta3sc.bytecode import BYTECODE_OFFSET_STREAMED
 from collections import defaultdict
 
-TIMER_INDICES = (32, 33)
+TIMER_INDICES = (-1, -1)
+MISSION_LVAR_BEGIN = 0
 
 STREAM_COMMANDS = set([
     "REGISTER_STREAMED_SCRIPT_INTERNAL",
@@ -229,7 +230,7 @@ def print_vars(stream, vars, is_local, is_mission, tab=0):
             continue
         any_var = True
         for k in range(last_var_ending, this_var_index):
-            if k < 32 and is_mission:
+            if k < MISSION_LVAR_BEGIN and is_mission:
                 continue
             if k not in TIMER_INDICES:
                 stream.write("%sVAR_INT %svar_%d // unused variable\n" % (pfxu, pfx, k))
@@ -243,11 +244,18 @@ def print_vars(stream, vars, is_local, is_mission, tab=0):
     if any_var:
         stream.write("\n")
 
-def main(ir2file, xmlfile, output_dir):
-    config = gta3sc.read_config(xmlfile)
+def main(ir2file, configpath, output_dir):
+
+    cmdline = dict(gta3sc.read_commandline(configpath))
+    config = gta3sc.read_config(configpath)
     ir2 = gta3sc.read_ir2(ir2file)
 
-    scopes_before_label = False
+    scopes_before_label = bool(cmdline["-fscope-then-label"])
+    timer_index = int(cmdline["-ftimer-index"])
+    global TIMER_INDICES # HACK!!!!!!!!!!!
+    global MISSION_LVAR_BEGIN #
+    TIMER_INDICES = (timer_index + 0, timer_index + 1)
+    MISSION_LVAR_BEGIN = max(0, int(cmdline["-fmission-var-begin"]))
 
     commands    = {cmd.name: cmd for cmd in config.commands}
     alternators = defaultdict(set, {alt.name: set(alt.alters) for alt in config.alternators})
@@ -285,7 +293,7 @@ def main(ir2file, xmlfile, output_dir):
             filename_by_offset[script_offset] = filename
             gosubfiles[script_offset] = filename
 
-    global_vars = ir2.discover_global_vars(commands=commands)
+    global_vars = ir2.discover_global_vars(config=config)
     local_vars = None
 
     print("//--------------------------")
@@ -358,7 +366,7 @@ def main(ir2file, xmlfile, output_dir):
                 stream = open(os.path.join(output_dir, "main", filename), 'w')
 
             on_scope_begin(previous_scope, current_scope)
-            local_vars = ir2.discover_local_vars(current_scope, commands=commands)
+            local_vars = ir2.discover_local_vars(current_scope, config=config)
 
             is_mission = (current_scope.start.type == BYTECODE_OFFSET_MISSION)
             is_stream  = (current_scope.start.type == BYTECODE_OFFSET_STREAMED)
@@ -399,7 +407,7 @@ def main(ir2file, xmlfile, output_dir):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: discover_entity_commands.py <ir2_script> <xmlfile> <output_dir>")
+        print("Usage: discover_entity_commands.py <ir2_script> <configpath> <output_dir>")
         sys.exit(1)
     main(sys.argv[1], sys.argv[2], sys.argv[3])
 

@@ -1,4 +1,0 @@
-RUN: curl -L https://dl.dropboxusercontent.com/u/35476123/Docs/gta3sc/test/gta3sc_main-test-gta3.tar.gz -o "%/T/gta3sc_main-test-gta3.tar.gz"
-RUN: tar -xzf "%/T/gta3sc_main-test-gta3.tar.gz" -C "%/T" --force-local
-RUN: %gta3sc "%/T/main.sc" --config=gta3 -pedantic
-RUN: %checksum "%/T/main.scm" 694cdeb27de4aee3d20f223604ea5375

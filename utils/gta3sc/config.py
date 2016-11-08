@@ -1,6 +1,7 @@
 # -*- Python -*-
 from lxml import etree
 import os
+import re
 
 __all__ = ["Alternator", "Enum", "Command", "Argument", "Config", "read_config"]
 
@@ -221,10 +222,25 @@ def read_config(filename):
     c = Config()
     if os.path.isdir(filename):
         for subfile in os.listdir(filename):
-            c.read_config(os.path.join(filename, subfile))
+            if subfile.endswith(".xml"):
+                c.read_config(os.path.join(filename, subfile))
     else:
         c.read_config(filename)
     return c
+
+def read_commandline(configpath):
+    result = []
+    with open(os.path.join(configpath, "commandline.txt")) as f:
+        for command in re.split(r"[\r\n\t ]", f.read()):
+            split = command.split('=')
+            left  = split[0]
+            right = split[1] if len(split) > 1 else True
+            if left.startswith("-fno-") or left.startswith("-mno-"):
+                assert right == True
+                left = left[:2] + left[5:]
+                right = False
+            result.append((left, right))
+    return result
 
 
 def _str2bool(x):
