@@ -329,6 +329,8 @@ struct SymTable
     uint16_t count_set_total_number_of_missions = 0;
     uint16_t count_set_collectable1_total = 0;
 
+    uint32_t offset_global_vars = 0;
+
 
     /// Construts a SymTable from the symbols in `script`.
     static SymTable from_script(Script& script, ProgramContext& program)
@@ -364,7 +366,7 @@ struct SymTable
     {
         if(auto highest_var = this->highest_global_var())
             return (*highest_var)->end_offset();
-        return 0;
+        return this->offset_global_vars;
     }
 
     /// Finds global var `name` or local var `name` in `current_scope`. `current_scope` may be nullptr,
@@ -450,6 +452,7 @@ struct SymTable
     /// Shifts all global vars offsets by `offset`. The unit is not bytes, but indices.
     void apply_offset_to_vars(uint32_t offset_in_index)
     {
+        this->offset_global_vars += offset_in_index * 4;
         for(auto& var : global_vars)
             var.second->index += offset_in_index;
     }

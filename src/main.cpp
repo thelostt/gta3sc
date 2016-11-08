@@ -68,12 +68,14 @@ Options:
   -flocal-var-limit=<n>    The index limit of local variables.
   -fmission-var-limit=<n>  The index limit of mission local variables. Defaults
                            to -flocal-var-limit if not set. Use -1 to unset.
+  -fmission-var-begin=<n>  Mission variables will start from the index <n>.
   -ftimer-index=<n>        The local variable index of TIMERA.
   -fswitch-case-limit=<n>  The limit on the number of CASE in a SWITCH.
   -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
   --linear-sweep           Disassembler scans the code by the means of a
                            linear-sweep instead of a recursive traversal.
   -frelax-not              Allows the use of NOT outside of conditions.
+  
 )";
 
 enum class Action
@@ -266,6 +268,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optint(argv, "-fmission-var-limit", &temp_i32))
             {
                 options.mission_var_limit = temp_i32 < 0? nullopt : optional<uint32_t>(temp_i32);
+            }
+            else if(optint(argv, "-fmission-var-begin", &temp_i32))
+            {
+                options.mission_var_begin = std::max(0, temp_i32);
             }
             else if(optint(argv, "-fswitch-case-limit", &temp_i32))
             {

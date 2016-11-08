@@ -11,5 +11,6 @@
 -fno-skip-cutscene
 -ftimer-index=16
 -flocal-var-limit=16
+-fmission-var-begin=-1
 -fmission-var-limit=-1
 -fswitch-case-limit=-1

@@ -684,7 +684,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 }
                 else
                 {
-                    local_index = 0;
+                    local_index = (script.type != ScriptType::Mission? 0 : program.opt.mission_var_begin);
                     current_scope = table.add_scope();
                     current_scope->vars.emplace("TIMERA", std::make_shared<Var>(false, VarType::Int, program.opt.timer_index + 0, nullopt));
                     current_scope->vars.emplace("TIMERB", std::make_shared<Var>(false, VarType::Int, program.opt.timer_index + 1, nullopt));

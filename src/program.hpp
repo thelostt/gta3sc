@@ -58,6 +58,7 @@ struct Options
     //
     int32_t            timer_index = 0;
     uint32_t           local_var_limit = 0;
+    uint32_t           mission_var_begin = 0;
     optional<uint32_t> mission_var_limit;
     optional<uint32_t> switch_case_limit;
 
