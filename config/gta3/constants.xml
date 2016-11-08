@@ -55,10 +55,26 @@
     </Enum>
 
     <!--
-      No constant for the following enums was found by the decompiler, but they exist in the gtavc/constants.xml; 
+      No constant for the following enums were found by the decompiler, but they exist in the gtavc/constants.xml; 
       TODO check the relevante of those enums on III.
     -->
     <Enum Name="CONTACT">
+      <Constant Name="CONTACT_LUIGI"/>
+      <Constant Name="CONTACT_JOEY"/>
+      <Constant Name="CONTACT_TONI"/>
+      <Constant Name="CONTACT_FRANKIE"/>
+      <Constant Name="CONTACT_ASUKA"/>
+      <Constant Name="CONTACT_KENJI"/>
+      <Constant Name="CONTACT_RAY"/>
+      <Constant Name="CONTACT_LOVE"/>
+      <Constant Name="CONTACT_MARIA"/>
+      <Constant Name="CONTACT_RAY_SUBURBAN"/>
+      <Constant Name="CONTACT_ASUKA_SUBURBAN"/>
+      <Constant Name="CONTACT_KENJI_SUBURBAN"/>
+      <Constant Name="CONTACT_8BALL"/>
+      <Constant Name="CONTACT_HISPANIC"/>
+      <Constant Name="CONTACT_YARDIE"/>
+      <Constant Name="CONTACT_HOODS"/>
     </Enum>
     <Enum Name="FACING">
     </Enum>
@@ -294,11 +310,28 @@
       <Constant Name="GANG_MAFIA" Value="0"/>
     </Enum>
     <Enum Name="GARAGE">
-      <Constant Name="GARAGE_COLLECTSPECIFICCARS" Value="7"/>
-      <Constant Name="GARAGE_FOR_SCRIPT_TO_OPEN_AND_CLOSE" Value="19"/>
-      <Constant Name="GARAGE_MISSION" Value="1"/>
-      <Constant Name="GARAGE_MISSION_KEEPCAR" Value="14"/>
-      <Constant Name="GARAGE_MISSION_KEEPCAR_REMAINCLOSED" Value="21"/>
+      <Constant Name="GARAGE_NONE"/>
+      <Constant Name="GARAGE_MISSION"/>
+      <Constant Name="GARAGE_BOMBSHOP1"/>
+      <Constant Name="GARAGE_BOMBSHOP2"/>
+      <Constant Name="GARAGE_BOMBSHOP3"/>
+      <Constant Name="GARAGE_RESPRAY"/>
+      <Constant Name="GARAGE_COLLECTORSITEMS"/>
+      <Constant Name="GARAGE_COLLECTSPECIFICCARS"/>
+      <Constant Name="GARAGE_COLLECTCARS_1"/>
+      <Constant Name="GARAGE_COLLECTCARS_2"/>
+      <Constant Name="GARAGE_COLLECTCARS_3"/>
+      <Constant Name="GARAGE_FORCARTOCOMEOUTOF"/>
+      <Constant Name="GARAGE_60SECONDS"/>
+      <Constant Name="GARAGE_CRUSHER"/>
+      <Constant Name="GARAGE_MISSION_KEEPCAR"/>
+      <Constant Name="GARAGE_FOR_SCRIPT_TO_OPEN"/>
+      <Constant Name="GARAGE_HIDEOUT_ONE"/>
+      <Constant Name="GARAGE_HIDEOUT_TWO"/>
+      <Constant Name="GARAGE_HIDEOUT_THREE"/>
+      <Constant Name="GARAGE_FOR_SCRIPT_TO_OPEN_AND_CLOSE"/>
+      <Constant Name="GARAGE_KEEPS_OPENING_FOR_SPECIFIC_CAR"/>
+      <Constant Name="GARAGE_MISSION_KEEPCAR_REMAINCLOSED"/>
     </Enum>
     <Enum Name="HUD_FLASH">
       <Constant Name="HUD_FLASH_HEALTH" Value="4"/>

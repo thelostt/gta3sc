@@ -156,11 +156,11 @@ class Bytecode:
 
         return result
 
-    def discover_global_vars(self, commands=None):  # -> sorted [VarInfo, ...]
-        return _discover_vars(iter(self), False, commands=commands)
+    def discover_global_vars(self, config=None):  # -> sorted [VarInfo, ...]
+        return _discover_vars(iter(self), False, config=config)
 
-    def discover_local_vars(self, scope, commands=None):  # -> sorted [VarInfo, ...]
-        return _discover_vars(iter(scope.iter_data(self)), True, commands=commands)
+    def discover_local_vars(self, scope, config=None):  # -> sorted [VarInfo, ...]
+        return _discover_vars(iter(scope.iter_data(self)), True, config=config)
 
     def discover_global_arrays(self): # -> { offset: end_offset, ... }
         return _discover_arrays(iter(self), False)
@@ -638,9 +638,12 @@ def _discover_arrays(bytecode_iter, is_local): # -> { offset: arraysize_in_bytes
     return arrays
 
 
-def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo, ...]
+def _discover_vars(bytecode_iter, is_local, config=None): # -> sorted [VarInfo, ...]
 
     # probably optimizable, but this is Python mate!
+
+    commands = {cmd.name: cmd for cmd in config.commands}
+    cmds_set = set(config.get_alternator("SET"))
 
     vardict = dict()
 
@@ -704,6 +707,15 @@ def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo
                     if arginfo.entity:
                         var.entities.add(arginfo.entity)
 
+    # run again for entity/constant assignment discovery
+    for off, data in filter(lambda (o, d): d.is_command(), bytecode_iter):
+        if data.name in cmds_set and data.args[0].is_var() and data.args[1].is_var():
+            lhs_var = vardict[data.args[0].get_offset()]
+            rhs_var = vardict[data.args[1].get_offset()]
+            lhs_var.enums.update(rhs_var.enums)
+            lhs_var.entities.update(rhs_var.entities)
+            rhs_var.enums.update(lhs_var.enums)
+            rhs_var.entities.update(lhs_var.entities)
 
     result = list()
 
@@ -711,6 +723,8 @@ def _discover_vars(bytecode_iter, is_local, commands=None): # -> sorted [VarInfo
     for v in varlist:
         if len(result) > 0:
             if v.start_offset < result[-1].end_offset:
+                result[-1].enums.update(v.enums)
+                result[-1].entities.update(v.entities)
                 continue
 
         result.append(v)

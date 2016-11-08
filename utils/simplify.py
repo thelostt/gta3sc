@@ -80,7 +80,7 @@ def main(xmlfile, clear_useless_data):
         new_commands = commands
 
     config.commands = new_commands
-    config.save_config(outname, pretty_print=(not clear_useless_data))
+    config.save_config(xmlfile, pretty_print=(not clear_useless_data))
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

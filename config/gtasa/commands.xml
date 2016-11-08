@@ -6191,7 +6191,7 @@
     <Command ID="0x3cf" Name="LOAD_MISSION_AUDIO">
       <Args>
         <Arg Type="INT"/>
-        <Arg Type="INT" Desc="Sound ID"/>
+        <Arg Type="INT" Enum="SOUND"/>
       </Args>
     </Command>
     <Command ID="0x3d0" Name="HAS_MISSION_AUDIO_LOADED">
@@ -12310,7 +12310,7 @@
     <Command ID="0x860" Name="SET_CHAR_AREA_VISIBLE">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="INT" Desc="Boolean true/false"/>
+        <Arg Type="INT" Enum="VIS"/>
       </Args>
     </Command>
     <Command ID="0x861" Name="IS_ATTACHED_PLAYER_HEADING_ACHIEVED">
@@ -13808,13 +13808,13 @@
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Enum="SOUND"/>
       </Args>
     </Command>
     <Command ID="0x97b" Name="REPORT_MISSION_AUDIO_EVENT_AT_OBJECT">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Enum="SOUND"/>
       </Args>
     </Command>
     <Command ID="0x97c" Name="ATTACH_MISSION_AUDIO_TO_OBJECT">
@@ -14295,7 +14295,7 @@
     <Command ID="0x9d6" Name="SET_CHAR_SAY_SCRIPT">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Enum="SOUND"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
@@ -14449,7 +14449,7 @@
     <Command ID="0x9f1" Name="REPORT_MISSION_AUDIO_EVENT_AT_CHAR">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Enum="SOUND"/>
       </Args>
     </Command>
     <Command ID="0x9f2" Name="DOES_DECISION_MAKER_EXIST">
@@ -14478,7 +14478,7 @@
     <Command ID="0x9f7" Name="REPORT_MISSION_AUDIO_EVENT_AT_CAR">
       <Args>
         <Arg Type="INT" Entity="CAR"/>
-        <Arg Type="INT"/>
+        <Arg Type="INT" Enum="SOUND"/>
       </Args>
     </Command>
     <Command ID="0x9f8" Name="DO_WEAPON_STUFF_AT_START_OF_2P_GAME"/>
