@@ -911,7 +911,7 @@ static std::pair<std::string, std::vector<const Command*>>
     return { name_attrib->value(), std::move(alternatives) };
 }
 
-Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
+Commands Commands::from_xml(const std::string& config_name, const std::vector<fs::path>& xml_list)
 {
     using namespace rapidxml;
 
@@ -940,17 +940,17 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
 
     auto xml_parse = [](const fs::path& path) -> XmlData
     {
-        auto buffer = std::string();
-        auto doc    = std::make_unique<xml_document<>>(); // buffer should be alive as long as doc
-
         fs::path full_xml_path(path);
         try
         {
-            buffer = read_file_utf8(full_xml_path).value();
+            auto opt_buffer = read_file_utf8(full_xml_path);
+            if(opt_buffer == nullopt)
+                throw ConfigError("failed to read xml {}: {}", full_xml_path.generic_u8string(), "could not open file for reading");
 
-            doc->parse<0>(&buffer[0]); // buffer will get modified here
+            auto doc = std::make_unique<xml_document<>>(); // buffer should be alive as long as doc
+            doc->parse<0>(&(*opt_buffer)[0]); // buffer will get modified here
 
-            return XmlData { std::move(buffer), std::move(doc) };
+            return XmlData{ std::move(*opt_buffer), std::move(doc) };
         }
         catch(const rapidxml::parse_error& e)
         {
@@ -964,7 +964,23 @@ Commands Commands::from_xml(const std::vector<fs::path>& xml_list)
 
     for(auto& xml_path : xml_list)
     {
-        xml_vector.emplace_back(xml_parse(config_path() / xml_path));
+        fs::path path;
+        {
+            if(!xml_path.is_absolute())
+            {
+                auto begin = xml_path.begin();
+                if(begin != xml_path.end() && (*begin == "." || *begin == ".."))
+                    path = xml_path;
+                else
+                    path = config_path() / config_name / xml_path;
+            }
+            else
+            {
+                path = xml_path;
+            }
+        }
+
+        xml_vector.emplace_back(xml_parse(path));
 
         if(xml_node<>* root_node = xml_vector.back().doc->first_node("GTA3Script"))
         {

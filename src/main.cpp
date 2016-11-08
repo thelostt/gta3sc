@@ -23,7 +23,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
 
 
 const char* help_message =
-R"(Usage: gta3sc [compile|decompile] file --config=<name> [options]
+R"(Usage: gta3sc [compile|decompile] --config=<name> file [options]
 Options:
   --help                   Display this information
   -o <file>                Place the output into <file>
@@ -33,6 +33,10 @@ Options:
   --datadir=<path>         Path to where IDE and DAT files are in.
                            The compiler will still try to behave properly
                            without this, but this is still recommended.
+  --levelfile=<name>       Name of the level data file in the data directory.
+  --add-config=<path>      Adds an additional XML definition file.
+                           If the path is not absolute or starts with './' or
+                           '../', uses a path relative to 'config/<name>/'.
   -pedantic                Forbid the usage of extensions not in R* compiler.
   --guesser                Allows the use of language features not completly
                            known or understood by the modding community.
@@ -63,7 +67,7 @@ Options:
   -moptimize-zero          Compiles 0.0 as 0, using a 8 bit data type.
   -flocal-var-limit=<n>    The index limit of local variables.
   -fmission-var-limit=<n>  The index limit of mission local variables. Defaults
-                           to -flocal-var-limit if not set.
+                           to -flocal-var-limit if not set. Use -1 to unset.
   -ftimer-index=<n>        The local variable index of TIMERA.
   -fswitch-case-limit=<n>  The limit on the number of CASE in a SWITCH.
   -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
@@ -79,42 +83,25 @@ enum class Action
     Decompile,
 };
 
-int main(int argc, char** argv)
+
+struct DataInfo
 {
-    // Due to main() not having a ProgramContext yet, error reporting must be done using fprintf(stderr, ...).
+    fs::path    datadir;
+    std::string levelfile;
+};
 
-    Action action = Action::None;
-    Options options;
-    fs::path input, output;
-    std::string config_name;
-    optional<ProgramContext> program; // delay construction of ProgramContext
-    std::map<std::string, uint32_t, iless> default_models;
-    std::map<std::string, uint32_t, iless> level_models;
+struct ConfigInfo
+{
+    std::string           config_name;
+    std::vector<fs::path> add_config_files;
+};
 
-    fs::path datadir;
-    const char* levelfile = nullptr;
-
-    ++argv;
-
-    if(*argv && **argv != '-')
-    {
-        if(!strcmp(*argv, "compile"))
-        {
-            ++argv;
-            action = Action::Compile;
-        }
-
-        if(!strcmp(*argv, "decompile"))
-        {
-            ++argv;
-            action = Action::Decompile;
-        }
-    }
-
+bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data, ConfigInfo& conf, Options& options)
+{
     try
     {
         bool flag;
-        uint32_t temp_i32;
+        int32_t temp_i32;
 
         while(*argv)
         {
@@ -123,7 +110,7 @@ int main(int argc, char** argv)
                 if(!input.empty())
                 {
                     fprintf(stderr, "gta3sc: error: input file appears twice\n");
-                    return EXIT_FAILURE;
+                    return false;
                 }
 
                 input = *argv;
@@ -132,7 +119,7 @@ int main(int argc, char** argv)
             else if(optget(argv, "-h", "--help", 0))
             {
                 fprintf(stdout, "%s", help_message);
-                return EXIT_SUCCESS;
+                return true;
             }
             else if(const char* o = optget(argv, "-o", nullptr, 1))
             {
@@ -152,71 +139,49 @@ int main(int argc, char** argv)
             }
             else if(const char* name = optget(argv, nullptr, "--config", 1))
             {
-                config_name = name;
+                // avoid infinite recursion of parse_args(...) calls
+                if(iequal_to()(conf.config_name, name))
+                    continue;
 
-                if(config_name == "gta3")
+                conf.config_name = name;
+
+                if(auto opt_cmdline = read_file_utf8(config_path() / conf.config_name / "commandline.txt"))
                 {
-                    levelfile = "gta3.dat";
-                    options.header = Options::HeaderVersion::GTA3;
-                    options.use_half_float = true;
-                    options.has_text_label_prefix = false;
-                    options.skip_single_ifs = false;
-                    options.fswitch = false;
-                    options.scope_then_label = false;
-                    options.farrays = false;
-                    options.streamed_scripts = false;
-                    options.text_label_vars = false;
-                    options.skip_cutscene = false;
-                    options.timer_index = 16;
-                    options.local_var_limit = 16;
-                    options.mission_var_limit = nullopt;
-                    options.switch_case_limit = nullopt;
-                }
-                else if(config_name == "gtavc")
-                {
-                    levelfile = "gta_vc.dat";
-                    options.header = Options::HeaderVersion::GTAVC;
-                    options.use_half_float = false;
-                    options.has_text_label_prefix = false;
-                    options.skip_single_ifs = false;
-                    options.fswitch = false;
-                    options.scope_then_label = true;
-                    options.farrays = false;
-                    options.streamed_scripts = false;
-                    options.text_label_vars = false;
-                    options.skip_cutscene = false;
-                    options.timer_index = 16;
-                    options.local_var_limit = 16;
-                    options.mission_var_limit = nullopt;
-                    options.switch_case_limit = nullopt;
-                }
-                else if(config_name == "gtasa")
-                {
-                    levelfile = "gta.dat";
-                    options.header = Options::HeaderVersion::GTASA;
-                    options.use_half_float = false;
-                    options.has_text_label_prefix = true;
-                    options.skip_single_ifs = false;
-                    options.fswitch = true;
-                    options.scope_then_label = true;
-                    options.farrays = true;
-                    options.streamed_scripts = true;
-                    options.text_label_vars = true;
-                    options.skip_cutscene = true;
-                    options.timer_index = 32;
-                    options.local_var_limit = 32;
-                    options.mission_var_limit = 1024;
-                    options.switch_case_limit = 75;
+                    auto& cmdline = *opt_cmdline;
+                    small_vector<char*, 32> args;
+
+                    auto it = !cmdline.empty()? &cmdline[0] : nullptr;
+                    auto end = it + cmdline.size();
+                    for(; it != end; )
+                    {
+                        it = std::find_if_not(it, end, ::isspace);
+                        args.emplace_back(it);
+                        it = std::find_if(it, end, ::isspace);
+                        if(it != end) *it++ = '\0';
+                    }
+                    args.emplace_back(nullptr);
+
+                    char** argv2 = args.data();
+                    if(!parse_args(argv2, input, output, data, conf, options))
+                        return false;
                 }
                 else
                 {
-                    fprintf(stderr, "gta3sc: error: arbitrary config names not supported yet, must be 'gta3', 'gtavc' or 'gtasa'\n");
-                    return EXIT_FAILURE;
+                    fprintf(stderr, "gta3sc: error: config path is missing commandline.txt file\n");
+                    return false;
                 }
+            }
+            else if(const char* path = optget(argv, nullptr, "--add-config", 1))
+            {
+                conf.add_config_files.emplace_back(path);
             }
             else if(const char* path = optget(argv, nullptr, "--datadir", 1))
             {
-                datadir = path;
+                data.datadir = path;
+            }
+            else if(const char* name = optget(argv, nullptr, "--levelfile", 1))
+            {
+                data.levelfile = name;
             }
             else if(const char* ver = optget(argv, nullptr, "-mheader", 1))
             {
@@ -229,7 +194,7 @@ int main(int argc, char** argv)
                 else
                 {
                     fprintf(stderr, "gta3sc: error: invalid header version, must be 'gta3', 'gtavc' or 'gtasa'\n");
-                    return EXIT_FAILURE;
+                    return false;
                 }
             }
             else if(optflag(argv, "-mno-header", nullptr))
@@ -284,6 +249,10 @@ int main(int argc, char** argv)
             {
                 options.streamed_scripts = flag;
             }
+            else if(optflag(argv, "-ftext-label-vars", &flag))
+            {
+                options.text_label_vars = flag;
+            }
             else if(optflag(argv, "-fskip-cutscene", &flag))
             {
                 options.skip_cutscene = flag;
@@ -296,11 +265,11 @@ int main(int argc, char** argv)
             else if(optint(argv, "-flocal-var-limit", &options.local_var_limit)) {}
             else if(optint(argv, "-fmission-var-limit", &temp_i32))
             {
-                options.mission_var_limit = temp_i32;
+                options.mission_var_limit = temp_i32 < 0? nullopt : optional<uint32_t>(temp_i32);
             }
             else if(optint(argv, "-fswitch-case-limit", &temp_i32))
             {
-                options.switch_case_limit = temp_i32;
+                options.switch_case_limit = temp_i32 < 0? nullopt : optional<uint32_t>(temp_i32);
             }
             else if(optflag(argv, "-fsyntax-only", nullptr))
             {
@@ -321,15 +290,51 @@ int main(int argc, char** argv)
             else
             {
                 fprintf(stderr, "gta3sc: error: unregonized argument '%s'\n", *argv);
-                return EXIT_FAILURE;
+                return false;
             }
         }
+
+        return true;
     }
     catch(const invalid_opt& e)
     {
         fprintf(stderr, "gta3sc: error: %s\n", e.what());
-        return EXIT_FAILURE;
+        return false;
     }
+}
+
+int main(int argc, char** argv)
+{
+    // Due to main() not having a ProgramContext yet, error reporting must be done using fprintf(stderr, ...).
+
+    Action action = Action::None;
+    Options options;
+    fs::path input, output;
+    ConfigInfo conf;
+    DataInfo data;
+    
+    optional<ProgramContext> program; // delay construction of ProgramContext
+    std::map<std::string, uint32_t, iless> default_models;
+    std::map<std::string, uint32_t, iless> level_models;
+
+    ++argv;
+
+    if(*argv && **argv != '-')
+    {
+        if(!strcmp(*argv, "compile"))
+        {
+            ++argv;
+            action = Action::Compile;
+        }
+        else if(!strcmp(*argv, "decompile"))
+        {
+            ++argv;
+            action = Action::Decompile;
+        }
+    }
+
+    if(!parse_args(argv, input, output, data, conf, options))
+        return EXIT_FAILURE;
 
     if(input.empty())
     {
@@ -337,7 +342,7 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if(config_name.empty())
+    if(conf.config_name.empty())
     {
         fprintf(stderr, "gta3sc: error: no game config specified [--config=<name>]\n");
         return EXIT_FAILURE;
@@ -381,28 +386,28 @@ int main(int argc, char** argv)
         return EXIT_FAILURE;
     }
 
-    if(!datadir.empty())
+    if(!data.datadir.empty())
     {
-        if(levelfile == nullptr)
+        if(data.levelfile.empty())
         {
-            if(fs::exists(datadir / "gta.dat"))
-                levelfile = "gta.dat";
-            else if(fs::exists(datadir / "gta3.dat"))
-                levelfile = "gta3.dat";
-            else if(fs::exists(datadir / "gta_vc.dat"))
-                levelfile = "gta_vc.dat";
+            if(fs::exists(data.datadir / "gta.dat"))
+                data.levelfile = "gta.dat";
+            else if(fs::exists(data.datadir / "gta3.dat"))
+                data.levelfile = "gta3.dat";
+            else if(fs::exists(data.datadir / "gta_vc.dat"))
+                data.levelfile = "gta_vc.dat";
             else
             {
                 fprintf(stderr, "gta3sc: error: could not find level file (gta*.dat) in datadir '%s'\n",
-                            datadir.generic_u8string().c_str());
+                            data.datadir.generic_u8string().c_str());
                 return EXIT_FAILURE;
             }
         }
 
         try
         {
-            default_models = load_dat(datadir / "default.dat", true);
-            level_models   = load_dat(datadir / levelfile, false);
+            default_models = load_dat(data.datadir / "default.dat", true);
+            level_models   = load_dat(data.datadir / data.levelfile, false);
         }
         catch(const ConfigError& e)
         {
@@ -414,14 +419,15 @@ int main(int argc, char** argv)
     try
     {
         std::vector<fs::path> config_files;
-        config_files.reserve(4);
+        config_files.reserve(4 + conf.add_config_files.size());
 
-        config_files.emplace_back(config_name + "/alternators.xml");
-        config_files.emplace_back(config_name + "/commands.xml");
-        config_files.emplace_back(config_name + "/constants.xml");
-        if(datadir.empty()) config_files.emplace_back(config_name + "/default.xml");
+        config_files.emplace_back("alternators.xml");
+        config_files.emplace_back("commands.xml");
+        config_files.emplace_back("constants.xml");
+        if(data.datadir.empty()) config_files.emplace_back("default.xml");
+        std::move(conf.add_config_files.begin(), conf.add_config_files.end(), std::back_inserter(config_files));
 
-        Commands commands = Commands::from_xml(config_files);
+        Commands commands = Commands::from_xml(conf.config_name, config_files);
         commands.add_default_models(default_models);
 
         program.emplace(std::move(options), std::move(commands));

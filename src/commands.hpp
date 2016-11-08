@@ -216,7 +216,8 @@ public:
     Commands(Commands&&) = default;
 
     ///
-    static Commands from_xml(const std::vector<fs::path>& xml_list);
+    static Commands from_xml(const std::string& config_name, const std::vector<fs::path>& xml_list);
+    // TODO ^ make the paths of xml_list absolute? i.e. move modifies to outside?
 
     /// Adds the default models associated with the program context into the CARPEDMODEL enum.
     ///

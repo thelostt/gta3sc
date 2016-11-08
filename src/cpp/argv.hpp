@@ -177,7 +177,7 @@ inline const char* optint(char**& argv, const char* longopt, T* out, int base = 
                 throw invalid_opt(fmt::format("argument '{}' value is too little or too big: '{}'.", longopt, value));
             }
         }
-        catch(const std::exception&)
+        catch(const std::logic_error&)
         {
             throw invalid_opt(fmt::format("argument '{}' expectes a integer, got '{}'.", longopt, value));
         }

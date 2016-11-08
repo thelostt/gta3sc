@@ -1,0 +1,15 @@
+--levelfile=gta_vc.dat
+-mheader=gtavc
+-mno-q11.4
+-mno-typed-text-label
+-mno-skip-if
+-fno-switch
+-fno-arrays
+-fscope-then-label
+-fno-streamed-scripts
+-fno-text-label-vars
+-fno-skip-cutscene
+-ftimer-index=16
+-flocal-var-limit=16
+-fmission-var-limit=-1
+-fswitch-case-limit=-1

@@ -1,0 +1,16 @@
+--add-config=sounds.xml
+--levelfile=gta.dat
+-mheader=gtasa
+-mno-q11.4
+-mtyped-text-label
+-mno-skip-if
+-fswitch
+-farrays
+-fscope-then-label
+-fstreamed-scripts
+-ftext-label-vars
+-fskip-cutscene
+-ftimer-index=32
+-flocal-var-limit=32
+-fmission-var-limit=1024
+-fswitch-case-limit=75
