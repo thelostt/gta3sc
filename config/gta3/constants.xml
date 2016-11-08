@@ -53,11 +53,26 @@
       <Constant Name="CARLOCK_FORCE_SHUT_DOORS"/>
       <Constant Name="CARLOCK_LOCKED_BUT_CAN_BE_DAMAGED"/>
     </Enum>
+    <Enum Name="FACING">
+      <Constant Name="FACING_FORWARD"/>
+      <Constant Name="FACING_LEFT"/>
+      <Constant Name="FACING_BACK"/>
+      <Constant Name="FACING_RIGHT"/>
+    </Enum>
 
-    <!--
-      No constant for the following enums were found by the decompiler, but they exist in the gtavc/constants.xml; 
-      TODO check the relevante of those enums on III.
-    -->
+    <Enum Name="COUNTER_DISPLAY">
+      <Constant Name="COUNTER_DISPLAY_NUMBER"/>
+      <Constant Name="COUNTER_DISPLAY_BAR"/>
+    </Enum>
+    <Enum Name="BLIPCOLOUR">
+      <Constant Name="RED"/>
+      <Constant Name="GREEN"/>
+      <Constant Name="BLUE"/>
+      <Constant Name="WHITE"/>
+      <Constant Name="YELLOW"/>
+      <Constant Name="PURPLE"/>
+      <Constant Name="CYAN"/>
+    </Enum>
     <Enum Name="CONTACT">
       <Constant Name="CONTACT_LUIGI"/>
       <Constant Name="CONTACT_JOEY"/>
@@ -76,64 +91,131 @@
       <Constant Name="CONTACT_YARDIE"/>
       <Constant Name="CONTACT_HOODS"/>
     </Enum>
-    <Enum Name="FACING">
-    </Enum>
-    <Enum Name="WALKSTYLE">
-    </Enum>
-    <Enum Name="ANNOUNCEMENT">
-    </Enum>
-    <Enum Name="BONE">
-    </Enum>
-    <Enum Name="PLAYER_MOOD">
-    </Enum>
-    <Enum Name="KILLFRENZY" Global="true">
-    </Enum>
     <Enum Name="TEMPACT">
-    </Enum>
-    <Enum Name="SETPIECE">
+      <Constant Name="TEMPACT_NONE"/>
+      <Constant Name="TEMPACT_WAIT"/>
+      <Constant Name="TEMPACT_REVERSE"/>
+      <Constant Name="TEMPACT_HANDBRAKETURNLEFT"/>
+      <Constant Name="TEMPACT_HANDBRAKETURNRIGHT"/>
+      <Constant Name="TEMPACT_HANDBRAKESTRAIGHT"/>
+      <Constant Name="TEMPACT_TURNLEFT"/>
+      <Constant Name="TEMPACT_TURNRIGHT"/>
+      <Constant Name="TEMPACT_GOFORWARD"/>
+      <Constant Name="TEMPACT_SWERVELEFT"/>
+      <Constant Name="TEMPACT_SWERVERIGHT"/>
     </Enum>
     <Enum Name="POWERPOINT">
-    </Enum>
-    <Enum Name="REPLAYCAMMODE">
+      <Constant Name="POWERPOINT_NONE"/>
+      <Constant Name="POWERPOINT_HEALTH"/>
+      <Constant Name="POWERPOINT_HIDEOUT_INDUSTRIAL"/>
+      <Constant Name="POWERPOINT_HIDEOUT_COMMERCIAL"/>
+      <Constant Name="POWERPOINT_HIDEOUT_SUBURBAN"/>
     </Enum>
     <Enum Name="CAM_ZOOM">
-    </Enum>
-    <Enum Name="VIS">
-    </Enum>
-    <Enum Name="PROP">
+      <Constant Name="CAM_ZOOM_ONE"/>
+      <Constant Name="CAM_ZOOM_TWO"/>
+      <Constant Name="CAM_ZOOM_THREE"/>
     </Enum>
     <Enum Name="ATTITUDE">
+      <Constant Name="HATES"/>
+      <Constant Name="NEUTRAL"/>
+      <Constant Name="LOVES"/>
     </Enum>
     <Enum Name="FORMATION">
+      <Constant Name="FORMATION_NONE"/>
+      <Constant Name="FORMATION_BEHIND"/>
+      <Constant Name="FORMATION_BACKLEFT"/>
+      <Constant Name="FORMATION_BACKRIGHT"/>
+      <Constant Name="FORMATION_FRONTLEFT"/>
+      <Constant Name="FORMATION_FRONTRIGHT"/>
+      <Constant Name="FORMATION_LEFT"/>
+      <Constant Name="FORMATION_RIGHT"/>
+      <Constant Name="FORMATION_FRONT"/>
     </Enum>
     <Enum Name="MOTION_BLUR">
+      <Constant Name="MOTION_BLUR_NONE"/>
+      <Constant Name="MOTION_BLUR_SNIPER"/>
+      <Constant Name="MOTION_BLUR_LIGHT_SCENE"/>
+      <Constant Name="MOTION_BLUR_SECURITY_CAM"/>
+      <Constant Name="MOTION_BLUR_CUT_SCENE"/>
+      <Constant Name="MOTION_BLUR_INTRO"/>
+      <Constant Name="MOTION_BLUR_INTRO2"/>
+      <Constant Name="MOTION_BLUR_SNIPER_ZOOM"/>
+      <Constant Name="MOTION_BLUR_INTRO3"/>
+      <Constant Name="MOTION_BLUR_INTRO4"/>
     </Enum>
     <Enum Name="PEDGRP">
     </Enum>
-    <Enum Name="WHEEL">
-    </Enum>
     <Enum Name="DOOR">
+      <Constant Name="BONNET"/>
+      <Constant Name="BOOT"/>
+      <Constant Name="FRONT_LEFT_DOOR"/>
+      <Constant Name="FRONT_RIGHT_DOOR"/>
+      <Constant Name="REAR_LEFT_DOOR"/>
+      <Constant Name="REAR_RIGHT_DOOR"/>
+      <Constant Name="MAX_DOORS"/>
+    </Enum>
+    <Enum Name="BLIP_DISPLAY">
+      <Constant Name="NEITHER"/>
+      <Constant Name="MARKER_ONLY"/>
+      <Constant Name="BLIP_ONLY"/>
+      <Constant Name="BOTH"/>
+    </Enum>
+    <Enum Name="CHANGECAMMODE">
+      <Constant Name="NONE"/>
+      <Constant Name="INTERPOLATION"/>
+      <Constant Name="JUMP_CUT"/>
+    </Enum>
+    <Enum Name="CORONATYPE">
+      <Constant Name="CORONATYPE_SHINYSTAR"/>
+      <Constant Name="CORONATYPE_HEADLIGHT"/>
+      <Constant Name="CORONATYPE_MOON"/>
+      <Constant Name="CORONATYPE_REFLECTION"/>
+      <Constant Name="CORONATYPE_HEADLIGHTLINE"/>
+      <Constant Name="CORONATYPE_HEX"/>
+      <Constant Name="CORONATYPE_CIRCLE"/>
+      <Constant Name="CORONATYPE_RING"/>
+      <Constant Name="CORONATYPE_STREAK"/>
+      <Constant Name="CORONATYPE_NONE"/>
+    </Enum>
+    <Enum Name="FADE">
+      <Constant Name="FADE_OUT"/>
+      <Constant Name="FADE_IN"/>
+    </Enum>
+    <Enum Name="WEATHER">
+      <Constant Name="WEATHER_SUNNY"/>
+      <Constant Name="WEATHER_CLOUDY"/>
+      <Constant Name="WEATHER_RAINY"/>
+      <Constant Name="WEATHER_FOGGY"/>
+    </Enum>
+    <Enum Name="RADAR_SPRITE">
+      <Constant Name="RADAR_SPRITE_ASUKA" Value="1"/>
+      <Constant Name="RADAR_SPRITE_BOMB" Value="2"/>
+      <Constant Name="RADAR_SPRITE_CAT" Value="3"/>
+      <Constant Name="RADAR_SPRITE_DON" Value="6"/>
+      <Constant Name="RADAR_SPRITE_EIGHT" Value="7"/>
+      <Constant Name="RADAR_SPRITE_JOEY" Value="10"/>
+      <Constant Name="RADAR_SPRITE_KENJI" Value="11"/>
+      <Constant Name="RADAR_SPRITE_LUIGI" Value="13"/>
+      <Constant Name="RADAR_SPRITE_RAY" Value="15"/>
+      <Constant Name="RADAR_SPRITE_SAL" Value="16"/>
+      <Constant Name="RADAR_SPRITE_SPRAY" Value="18"/>
+      <Constant Name="RADAR_SPRITE_TONY" Value="19"/>
+      <Constant Name="RADAR_SPRITE_WEAPON" Value="20"/>
+      <Constant Name="RADAR_SPRITE_ICE" Value="9"/>
+      <Constant Name="RADAR_SPRITE_EL" Value="8"/>
+      <Constant Name="RADAR_SPRITE_LIZ" Value="12"/>
     </Enum>
     
     <!--
       The following constants were found by using a decompiler and matching the leaked source code.
       Those are all the constants used in GTA III main.scm. They aren't the complete set of constants
-      since the SCM doesn't use them all. TODO find more constant names for those enums.
+      since the SCM doesn't use them all.
     -->
     <Enum Name="ANIM">
       <Constant Name="ANIM_GANG2_PED" Value="9"/>
       <Constant Name="ANIM_PANIC_CHUNKYPED" Value="18"/>
       <Constant Name="ANIM_SEXY_WOMANPED" Value="15"/>
-    </Enum>
-    <Enum Name="BLIPCOLOUR">
-      <Constant Name="GREEN" Value="1"/>
-      <Constant Name="PURPLE" Value="5"/>
-      <Constant Name="RED" Value="0"/>
-    </Enum>
-    <Enum Name="BLIP_DISPLAY">
-      <Constant Name="BLIP_ONLY" Value="2"/>
-      <Constant Name="BOTH" Value="3"/>
-      <Constant Name="MARKER_ONLY" Value="1"/>
     </Enum>
     <Enum Name="CAMMODE">
       <Constant Name="BEHINDCAR" Value="3"/>
@@ -268,18 +350,6 @@
       <Constant Name="CUT_OBJ4" Value="188"/>
       <Constant Name="CUT_OBJ5" Value="189"/>
     </Enum>
-    <Enum Name="CHANGECAMMODE">
-      <Constant Name="INTERPOLATION" Value="1"/>
-      <Constant Name="JUMP_CUT" Value="2"/>
-    </Enum>
-    <Enum Name="CORONATYPE">
-      <Constant Name="CORONATYPE_CIRCLE" Value="6"/>
-      <Constant Name="CORONATYPE_HEX" Value="5"/>
-    </Enum>
-    <Enum Name="COUNTER_DISPLAY">
-      <Constant Name="COUNTER_DISPLAY_BAR" Value="1"/>
-      <Constant Name="COUNTER_DISPLAY_NUMBER" Value="0"/>
-    </Enum>
     <Enum Name="DRIVINGMODE">
       <Constant Name="DRIVINGMODE_AVOIDCARS" Value="2"/>
       <Constant Name="DRIVINGMODE_SLOWDOWNFORCARS" Value="1"/>
@@ -290,10 +360,6 @@
       <Constant Name="EXPLOSION_GRENADE" Value="0"/>
       <Constant Name="EXPLOSION_HELI" Value="5"/>
     </Enum>
-    <Enum Name="FADE">
-      <Constant Name="FADE_IN" Value="1"/>
-      <Constant Name="FADE_OUT" Value="0"/>
-    </Enum>
     <Enum Name="FLARETYPE">
       <Constant Name="FLARETYPE_NONE" Value="0"/>
     </Enum>
@@ -302,7 +368,9 @@
       <Constant Name="FOLLOW_ROUTE_LOOP" Value="3"/>
     </Enum>
     <Enum Name="FONT">
-      <Constant Name="FONT_BANK" Value="0"/>
+      <Constant Name="FONT_BANK"/>
+      <Constant Name="FONT_STANDARD"/>
+      <Constant Name="FONT_HEADING"/>
     </Enum>
     <Enum Name="GANG">
       <Constant Name="GANG_COLOMBIAN" Value="5"/>
@@ -338,10 +406,10 @@
       <Constant Name="HUD_FLASH_RADAR" Value="8"/>
     </Enum>
     <Enum Name="LEVEL">
-      <Constant Name="LEVEL_COMMERCIAL" Value="2"/>
-      <Constant Name="LEVEL_GENERIC" Value="0"/>
-      <Constant Name="LEVEL_INDUSTRIAL" Value="1"/>
-      <Constant Name="LEVEL_SUBURBAN" Value="3"/>
+      <Constant Name="LEVEL_GENERIC"/>
+      <Constant Name="LEVEL_INDUSTRIAL"/>
+      <Constant Name="LEVEL_COMMERCIAL"/>
+      <Constant Name="LEVEL_SUBURBAN"/>
     </Enum>
     <Enum Name="MISSION">
       <Constant Name="MISSION_BLOCKPLAYER_FARAWAY" Value="4"/>
@@ -390,21 +458,6 @@
       <Constant Name="POBJECT_FIREBALL_AND_SMOKE" Value="15"/>
       <Constant Name="POBJECT_PAVEMENT_STEAM_SLOWMOTION" Value="1"/>
       <Constant Name="POBJECT_WALL_STEAM_SLOWMOTION" Value="3"/>
-    </Enum>
-    <Enum Name="RADAR_SPRITE">
-      <Constant Name="RADAR_SPRITE_ASUKA" Value="1"/>
-      <Constant Name="RADAR_SPRITE_BOMB" Value="2"/>
-      <Constant Name="RADAR_SPRITE_CAT" Value="3"/>
-      <Constant Name="RADAR_SPRITE_DON" Value="6"/>
-      <Constant Name="RADAR_SPRITE_EIGHT" Value="7"/>
-      <Constant Name="RADAR_SPRITE_JOEY" Value="10"/>
-      <Constant Name="RADAR_SPRITE_KENJI" Value="11"/>
-      <Constant Name="RADAR_SPRITE_LUIGI" Value="13"/>
-      <Constant Name="RADAR_SPRITE_RAY" Value="15"/>
-      <Constant Name="RADAR_SPRITE_SAL" Value="16"/>
-      <Constant Name="RADAR_SPRITE_SPRAY" Value="18"/>
-      <Constant Name="RADAR_SPRITE_TONY" Value="19"/>
-      <Constant Name="RADAR_SPRITE_WEAPON" Value="20"/>
     </Enum>
     <Enum Name="RADIO">
       <Constant Name="HEAD_RADIO" Value="0"/>
@@ -496,12 +549,6 @@
       <Constant Name="WEAPONTYPE_UNARMED" Value="0"/>
       <Constant Name="WEAPONTYPE_UZI" Value="3"/>
       <Constant Name="WEAPONTYPE_UZI_DRIVEBY" Value="19"/>
-    </Enum>
-    <Enum Name="WEATHER">
-      <Constant Name="WEATHER_CLOUDY" Value="1"/>
-      <Constant Name="WEATHER_FOGGY" Value="3"/>
-      <Constant Name="WEATHER_RAINY" Value="2"/>
-      <Constant Name="WEATHER_SUNNY" Value="0"/>
     </Enum>
   </Constants>
 </GTA3Script>
