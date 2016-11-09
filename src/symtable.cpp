@@ -594,7 +594,12 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
     auto add_script = [&](ScriptType type, const SyntaxTree& command)
     {
         if(script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
-            table.add_script(type, command, program);
+        {
+            if(program.opt.output_cleo && type != ScriptType::MainExtension)
+                program.error(command, "this command is not allowed in custom scripts");
+            else
+                table.add_script(type, command, program);
+        }
         else
             program.error(command, "scripts can only be required from main or extension scripts");
     };
@@ -728,6 +733,12 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 bool global; VarType vartype;
 
                 std::tie(global, vartype) = token_to_vartype(node.type());
+
+                if(global && program.opt.output_cleo)
+                {
+                    program.error(node, "declaring global variables in custom scripts isn't allowed");
+                    return false;
+                }
 
                 if(!global && current_scope == nullptr)
                 {
@@ -1327,6 +1338,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             replace_arg0(node, symbols.count_mission_passed);
                         else if(commands.equal(command, commands.set_progress_total()))
                             replace_arg0(node, symbols.count_progress);
+                        else if(commands.equal(command, commands.terminate_this_script()) && program.opt.output_cleo)
+                            program.error(node, "command not allowed in custom scripts, please use TERMINATE_THIS_CUSTOM_SCRIPT");
                         else if(commands.equal(command, commands.skip_cutscene_start()))
                         {
                             if(!program.opt.skip_cutscene)

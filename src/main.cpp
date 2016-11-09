@@ -604,6 +604,12 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         // not thread-safe
         std::vector<std::string> models = Script::compute_unknown_models(scripts);
 
+        if(program.opt.output_cleo)
+        {
+            for(auto& model : models)
+                program.error(nocontext, "use of non-default model {} in custom script", model);
+        }
+
         // not thread-safe
         Script::handle_special_commands(scripts, symbols, program);
 
