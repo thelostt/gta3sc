@@ -45,6 +45,9 @@ struct Command
         bool allow_constant : 1;    /// Allow literal values
         bool allow_global_var : 1;  /// Allow global variables
         bool allow_local_var : 1;   /// Allow local variables
+        bool allow_text_label : 1;  /// Allow text labels (and its variables) [valid for PARAM arguments only].
+        bool allow_pointer : 1;     /// Allow INT values in ANY_TEXT_LABEL arguments.
+        bool preserve_case : 1;     /// Preserves the case of a string literal.
         std::vector<shared_ptr<Enum>> enums;
         EntityType entity_type;     /// Entity type of this argument. Zero means none.
 
@@ -53,7 +56,8 @@ struct Command
 
         explicit Arg(ArgType type) :
             type(type), optional(false),
-            is_output(false), allow_constant(true), allow_global_var(true), allow_local_var(true)
+            is_output(false), allow_constant(true), allow_global_var(true), allow_local_var(true),
+            preserve_case(false), allow_pointer(false), allow_text_label(false)
         {
         }
 

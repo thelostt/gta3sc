@@ -122,6 +122,9 @@ class Argument:
         self.allow_lvar = False
         self.entity = None
         self.enums = []
+        self.allow_text_label = False # valid only for PARAM types
+        self.allow_pointer = False
+        self.preserve_case = False
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
@@ -146,6 +149,9 @@ class Argument:
         init.allow_const = _str2bool(node.get("AllowConst", "false" if init.out else "true"))
         init.allow_gvar = _str2bool(node.get("AllowGlobalVar", "true"))
         init.allow_lvar = _str2bool(node.get("AllowLocalVar", "true"))
+        init.allow_text_label = _str2bool(node.get("AllowTextLabel", "false"))
+        init.allow_pointer = _str2bool(node.get("AllowPointer", "false"))
+        init.preserve_case = _str2bool(node.get("PreserveCase", "false"))
         init.entity = node.get("Entity", None)
         init.enums = node.get("Enum", None)
         init.enums = [init.enums] if init.enums else []
@@ -167,6 +173,12 @@ class Argument:
             node.set("AllowGlobalVar", _bool2str(self.allow_gvar))
         if self.allow_lvar != True:
             node.set("AllowLocalVar", _bool2str(self.allow_lvar))
+        if self.allow_text_label == True:
+            node.set("AllowTextLabel", _bool2str(self.allow_text_label))
+        if self.allow_pointer == True:
+            node.set("AllowPointer", _bool2str(self.allow_pointer))
+        if self.preserve_case == True:
+            node.set("PreserveCase", _bool2str(self.preserve_case))
         if self.entity != None:
             node.set("Entity", self.entity)
         if len(self.enums) != 0:

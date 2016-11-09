@@ -742,7 +742,9 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::TextLabel;
     else if(!strcmp(string, "TEXT_LABEL16"))
         return ArgType::TextLabel16;
-    else if(!strcmp(string, "ANY_TEXT_LABEL"))
+    else if(!strcmp(string, "ANY_TEXT_LABEL")) // TODO remove me?
+        return ArgType::AnyTextLabel;
+    else if(!strcmp(string, "STRING"))
         return ArgType::AnyTextLabel;
     else
         throw ConfigError("unexpected 'Type' attribute: {}", string);
@@ -829,6 +831,9 @@ static std::pair<std::string, Command>
             auto allow_const_attrib  = arg_node->first_attribute("AllowConst");
             auto allow_gvar_attrib   = arg_node->first_attribute("AllowGlobalVar");
             auto allow_lvar_attrib   = arg_node->first_attribute("AllowLocalVar");
+            auto allow_text_label_attrib = arg_node->first_attribute("AllowTextLabel");
+            auto allow_pointer_attrib= arg_node->first_attribute("AllowPointer");
+            auto preserve_case_attrib= arg_node->first_attribute("PreserveCase");
             auto entity_attrib       = arg_node->first_attribute("Entity");
             auto enum_attrib         = arg_node->first_attribute("Enum");
 
@@ -845,6 +850,9 @@ static std::pair<std::string, Command>
             arg.allow_constant = xml_to_bool(allow_const_attrib, arg.is_output? false : true);
             arg.allow_global_var= xml_to_bool(allow_gvar_attrib, true);
             arg.allow_local_var = xml_to_bool(allow_lvar_attrib, true);
+            arg.allow_text_label = xml_to_bool(allow_text_label_attrib, false);
+            arg.allow_pointer = xml_to_bool(allow_pointer_attrib, false);
+            arg.preserve_case = xml_to_bool(preserve_case_attrib, false);
             arg.entity_type = 0;
 
             if(enum_attrib)
