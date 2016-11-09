@@ -170,11 +170,9 @@ inline std::string decompile_data(const int32_t& value, DecompilerIR2& context)
 
 inline std::string decompile_data(const float& value, DecompilerIR2&)
 {
-    std::string output = std::to_string(value);
-    output.erase(output.find_last_not_of('0') + 1, std::string::npos);
-    if(output.back() == '.') output.push_back('0');
-    output += "f";
-    return output;
+    char buffer[32];
+    sprintf(buffer, "%.6af", value);
+    return buffer;
 }
 
 inline std::string decompile_data(const DecompiledString& str, DecompilerIR2&)

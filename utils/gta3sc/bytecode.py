@@ -337,10 +337,7 @@ class ArgNumber(Arg):
         if self.type == DATATYPE_INT32:
             return "%di32" % self.value
         if self.type == DATATYPE_FLOAT:
-            output = "%f" % self.value
-            output = output.rstrip('0')
-            if output[-1] == '.': output += '0'
-            return output + 'f'
+            return "%.6af" % self.value
         assert False
 
 class ArgLabel(Arg):
@@ -476,7 +473,7 @@ def read_ir2(file):
     RE_INT8 = re.compile(r"^(-?[0-9]+)i8$")
     RE_INT16 = re.compile(r"^(-?[0-9]+)i16$")
     RE_INT32 = re.compile(r"^(-?[0-9]+)i32$")
-    RE_FLOAT = re.compile(r"^(-?[0-9]+\.[0-9]+(?:e-?[0-9]+)?)f$")
+    RE_FLOAT = re.compile(r"^(-?0x[01]\.[0-9a-f]{6}p[+-][0-9]+)f$")
     RE_GLOBALOFF = re.compile(r"^@([_A-Z][_A-Z0-9]*)$")
     RE_LOCALOFF = re.compile(r"^%([_A-Z][_A-Z0-9]*)$")
     RE_GLOBALVAR = re.compile(r"^([sv]?)&([0-9]+)$")
@@ -527,7 +524,7 @@ def read_ir2(file):
         if m != None: return ArgNumber(DATATYPE_INT32, int(m.group(1)))
 
         m = RE_FLOAT.match(token)
-        if m != None: return ArgNumber(DATATYPE_FLOAT, float(m.group(1)))
+        if m != None: return ArgNumber(DATATYPE_FLOAT, float.fromhex(m.group(1)))
 
         m = RE_GLOBALOFF.match(token)
         if m != None: return ArgLabel(DATATYPE_GLOBAL_LABEL, m.group(1))

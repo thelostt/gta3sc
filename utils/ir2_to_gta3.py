@@ -65,7 +65,7 @@ SA_VAR_ARRAYS = [
 def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None, no_index=False):
     if arg.is_number():
         if arg.is_float():
-            output = "%f" % arg.value
+            output = "%.12f" % arg.value
             output = output.rstrip("0")
             if output.endswith("."):
                 output += "0"
