@@ -177,6 +177,9 @@ struct Var
 
     /// \returns the byte offset (index*4) on which this variable ends in memory (i.e. where the next variable is).
     uint32_t end_offset() { return (index + space_taken()) * 4; }
+
+    /// \returns whether this is a TEXT_LABEL or TEXT_LABEL16 variable.
+    bool is_text_var() { return type == VarType::TextLabel || type == VarType::TextLabel16; }
 };
 
 /// Scope information.

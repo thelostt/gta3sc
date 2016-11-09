@@ -82,7 +82,7 @@
       <Args>
         <Arg Type="INT" Entity="FILE"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true"/>
+        <Arg Type="PARAM" PreserveCase="true" AllowTextLabel="true"/>
       </Args>
     </Command>
     <Command ID="0xa9f" Name="GET_THIS_SCRIPT_STRUCT">
@@ -119,7 +119,7 @@
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xaa6" Name="CALL_METHOD">
@@ -128,7 +128,7 @@
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xaa7" Name="CALL_FUNCTION_RETURN">
@@ -136,7 +136,7 @@
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Ref="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Ref="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xaa8" Name="CALL_METHOD_RETURN">
@@ -145,7 +145,7 @@
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Ref="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Ref="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xaa9" Name="IS_GAME_VERSION_ORIGINAL"/>
@@ -192,13 +192,13 @@
       <Args>
         <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Ref="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Ref="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xab2" Name="CLEO_RETURN"> <!-- Renamed from RET; See above -->
       <Args>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xab3" Name="SET_CLEO_SHARED_VAR">
@@ -366,7 +366,7 @@
     <Command ID="0xace" Name="PRINT_HELP_FORMATTED">
       <Args>
         <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xacf" Name="PRINT_BIG_FORMATTED">
@@ -374,21 +374,21 @@
         <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xad0" Name="PRINT_FORMATTED">
       <Args>
         <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xad1" Name="PRINT_FORMATTED_NOW">
       <Args>
         <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
         <Arg Type="INT"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xad2" Name="GET_CHAR_PLAYER_IS_TARGETING">
@@ -401,7 +401,7 @@
       <Args>
         <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
         <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xad4" Name="SCAN_STRING">
@@ -441,7 +441,7 @@
       <Args>
         <Arg Type="INT" Entity="FILE"/>
         <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
-        <Arg Type="PARAM" AllowTextLabel="true" Optional="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0xada" Name="SCAN_FILE">
