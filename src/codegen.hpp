@@ -421,21 +421,21 @@ inline void generate_code(const CompiledString& str, CodeGenerator& codegen)
             Expects(str.storage.size() <= 8);  // enforced on annotation
             if(codegen.program.opt.has_text_label_prefix)
                 codegen.emplace_u8(9);
-            codegen.emplace_chars(8, str.storage.c_str(), true);
+            codegen.emplace_chars(8, str.storage.c_str(), !str.preserve_case);
             break;
         case CompiledString::Type::TextLabel16:
             Expects(str.storage.size() <= 16); // enforced on annotation
             codegen.emplace_u8(0xF);
-            codegen.emplace_chars(16, str.storage.c_str(), true);
+            codegen.emplace_chars(16, str.storage.c_str(), !str.preserve_case);
             break;
         case CompiledString::Type::StringVar:
             Expects(str.storage.size() <= 127);  // enforced on annotation
             codegen.emplace_u8(0xE);
             codegen.emplace_u8(static_cast<uint8_t>(str.storage.size()));
-            codegen.emplace_chars(str.storage.size(), str.storage.c_str(), true);
+            codegen.emplace_chars(str.storage.size(), str.storage.c_str(), !str.preserve_case);
             break;
         case CompiledString::Type::String128:
-            codegen.emplace_chars(128, str.storage.c_str(), true);
+            codegen.emplace_chars(128, str.storage.c_str(), !str.preserve_case);
             break;
         default:
             Unreachable();

@@ -298,6 +298,7 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optget(argv, nullptr, "--cs", 0))
             {
                 options.cleo.emplace(0);
+                options.output_cleo = true;
                 options.headerless = true;
                 options.use_local_offsets = true;
             }
@@ -488,7 +489,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         
         if(program.opt.emit_ir2)
             newext = ".ir2";
-        else if(program.opt.cleo && program.opt.headerless && program.opt.use_local_offsets)
+        else if(program.opt.output_cleo)
             newext = ".cs";
         else
             newext = ".scm";
@@ -901,22 +902,25 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                const void* script_img, size_t script_img_size,
                ProgramContext& program, Options::Lang lang, OnOutput callback)
 {
-    Expects(!program.opt.streamed_scripts || script_img != nullptr);
+    Expects(!program.opt.streamed_scripts || program.opt.headerless || script_img != nullptr);
 
     try
     {
+        optional<DecompiledScmHeader> opt_header;
+        size_t ignore_stream_id = -1;
+
         auto scan_type = program.opt.linear_sweep? Disassembler::Type::LinearSweep :
                                                    Disassembler::Type::RecursiveTraversal;
 
-        auto opt_header = DecompiledScmHeader::from_bytecode(bytecode, bytecode_size,
-                                                             program.opt.get_header<DecompiledScmHeader::Version>());
-        if(!opt_header)
-            program.fatal_error(nocontext, "corrupted scm header");
-
-        DecompiledScmHeader& header = *opt_header;
-        size_t ignore_stream_id = -1;
-
+        if(!program.opt.headerless)
         {
+            opt_header = DecompiledScmHeader::from_bytecode(bytecode, bytecode_size,
+                                                            program.opt.get_header<DecompiledScmHeader::Version>());
+            if(!opt_header)
+                program.fatal_error(nocontext, "corrupted scm header");
+
+            DecompiledScmHeader& header = *opt_header;
+
             auto it = std::find_if(header.streamed_scripts.begin(), header.streamed_scripts.end(), [](const auto& pair) {
                 return iequal_to()(pair.first, "AAA");
             });
@@ -924,12 +928,19 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                 ignore_stream_id = (it - header.streamed_scripts.begin());
         }
 
-        BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, header.main_size) };
-        std::vector<BinaryFetcher> mission_segments = mission_scripts_fetcher(bytecode, bytecode_size, header, program);
+        BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, opt_header? opt_header->main_size : bytecode_size) };
+        std::vector<BinaryFetcher> mission_segments;
         std::vector<BinaryFetcher> stream_segments;
-        if(program.opt.streamed_scripts)
+
+        if(!program.opt.headerless)
         {
-            stream_segments = streamed_scripts_fetcher(script_img, script_img_size, header, program);
+            DecompiledScmHeader& header = *opt_header;
+
+            mission_segments = mission_scripts_fetcher(bytecode, bytecode_size, header, program);
+            if(program.opt.streamed_scripts)
+            {
+                stream_segments = streamed_scripts_fetcher(script_img, script_img_size, header, program);
+            }
         }
 
         // TODO add more has error in here?
@@ -939,34 +950,40 @@ bool decompile(const void* bytecode, size_t bytecode_size,
         Disassembler main_segment_asm(program, main_segment, scan_type);
         std::vector<Disassembler> mission_segments_asm;
         std::vector<Disassembler> stream_segments_asm;
-        mission_segments_asm.reserve(header.mission_offsets.size());
-        stream_segments_asm.reserve(header.streamed_scripts.size());
 
-        // this loop cannot be thread safely unfolded because of main_segment_asm being
-        // mutated on all the units.
-        for(auto& mission_bytecode : mission_segments)
+        if(!program.opt.headerless)
         {
-            mission_segments_asm.emplace_back(program, mission_bytecode, main_segment_asm, scan_type);
-            mission_segments_asm.back().run_analyzer();
-        }
+            DecompiledScmHeader& header = *opt_header;
 
-        // this loop cannot be thread safely unfolded because of stream_segment_asm being
-        // mutated on all the units.
-        for(size_t i = 0; i < stream_segments.size(); ++i)
-        {
-            if(i != ignore_stream_id)
+            mission_segments_asm.reserve(header.mission_offsets.size());
+            stream_segments_asm.reserve(header.streamed_scripts.size());
+
+            // this loop cannot be thread safely unfolded because of main_segment_asm being
+            // mutated on all the units.
+            for(auto& mission_bytecode : mission_segments)
             {
-                auto& stream_bytecode = stream_segments[i];
-                stream_segments_asm.emplace_back(program, stream_bytecode, main_segment_asm, scan_type);
-                stream_segments_asm.back().run_analyzer();
+                mission_segments_asm.emplace_back(program, mission_bytecode, main_segment_asm, scan_type);
+                mission_segments_asm.back().run_analyzer();
+            }
+
+            // this loop cannot be thread safely unfolded because of stream_segment_asm being
+            // mutated on all the units.
+            for(size_t i = 0; i < stream_segments.size(); ++i)
+            {
+                if(i != ignore_stream_id)
+                {
+                    auto& stream_bytecode = stream_segments[i];
+                    stream_segments_asm.emplace_back(program, stream_bytecode, main_segment_asm, scan_type);
+                    stream_segments_asm.back().run_analyzer();
+                }
             }
         }
 
         if(true)
         {
             // run main segment analyzer after the missions and streams analyzer
-            main_segment_asm.run_analyzer(header.code_offset);
-            main_segment_asm.disassembly(header.code_offset);
+            main_segment_asm.run_analyzer(opt_header? opt_header->code_offset : 0);
+            main_segment_asm.disassembly(opt_header? opt_header->code_offset : 0);
         }
 
         for(auto& mission_asm : mission_segments_asm)
@@ -1007,21 +1024,23 @@ bool decompile(const void* bytecode, size_t bytecode_size,
         }
         else if(lang == Options::Lang::IR2)
         {
+            if(!program.opt.headerless)
             {
                 std::string temp_string;
-                for(size_t i = 0; i < header.models.size(); ++i)
+                for(size_t i = 0; i < opt_header->models.size(); ++i)
                 {
-                    temp_string = header.models[i];
+                    temp_string = opt_header->models[i];
                     std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
                     callback(fmt::format("#DEFINE_MODEL {} -{}", temp_string, i+1));
                 }
             }
 
+            if(!program.opt.headerless)
             {
                 std::string temp_string;
-                for(size_t i = 0; i < header.streamed_scripts.size(); ++i)
+                for(size_t i = 0; i < opt_header->streamed_scripts.size(); ++i)
                 {
-                    temp_string = header.streamed_scripts[i].first;
+                    temp_string = opt_header->streamed_scripts[i].first;
                     std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
                     callback(fmt::format("#DEFINE_STREAM {} {}", temp_string, i));
                 }

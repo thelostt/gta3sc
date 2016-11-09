@@ -41,7 +41,8 @@ Commands::Commands(std::multimap<std::string, Command, iless> commands_,
     this->cmd_TERMINATE_THIS_SCRIPT         = find_command("TERMINATE_THIS_SCRIPT");
     this->cmd_SCRIPT_NAME                   = find_command("SCRIPT_NAME");
     this->cmd_RETURN                        = find_command("RETURN");
-    this->cmd_RET                           = find_command("RET");
+    this->cmd_CLEO_RETURN                   = find_command("CLEO_RETURN");
+    this->cmd_TERMINATE_THIS_CUSTOM_SCRIPT  = find_command("TERMINATE_THIS_CUSTOM_SCRIPT");
     this->cmd_GOTO                          = find_command("GOTO");
     this->cmd_GOTO_IF_FALSE                 = find_command("GOTO_IF_FALSE");
     this->cmd_ANDOR                         = find_command("ANDOR");
@@ -51,7 +52,6 @@ Commands::Commands(std::multimap<std::string, Command, iless> commands_,
     this->cmd_SKIP_CUTSCENE_START_INTERNAL  = find_command("SKIP_CUTSCENE_START_INTERNAL");
     this->alt_SET                           = find_alternator("SET");
     this->alt_CSET                          = find_alternator("CSET");
-    this->alt_TERMINATE_THIS_CUSTOM_SCRIPT  = find_alternator("TERMINATE_THIS_CUSTOM_SCRIPT");
     this->alt_ADD_THING_TO_THING            = find_alternator("ADD_THING_TO_THING");
     this->alt_SUB_THING_FROM_THING          = find_alternator("SUB_THING_FROM_THING");
     this->alt_MULT_THING_BY_THING           = find_alternator("MULT_THING_BY_THING");
@@ -213,7 +213,10 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         switch(var->type)
         {
             case VarType::Int:
-                return (arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param);
+                return (arginfo.type == ArgType::Integer
+                     || arginfo.type == ArgType::Constant 
+                     || arginfo.type == ArgType::Param 
+                     || (arginfo.type == ArgType::AnyTextLabel && arginfo.allow_pointer));
             case VarType::Float:
                 return (arginfo.type == ArgType::Float || arginfo.type == ArgType::Param);
             case VarType::TextLabel:
@@ -371,6 +374,8 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         case NodeType::Text:
             return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr);
         case NodeType::String:
+            if(arginfo.type == ArgType::AnyTextLabel)
+                return &arginfo;
             return make_unexpected(MatchFailure{ hint, MatchFailure::StringLiteralNotAllowed });
         default:
             Unreachable();
@@ -552,7 +557,26 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
             case NodeType::String:
             {
-                // TODO, currently Unreachable() due to special handling of it.
+                if(arginfo.type == ArgType::AnyTextLabel)
+                {
+                    if(!program.opt.cleo)
+                        program.error(node, "string literals on arguments are disallowed [-fcleo]");
+
+                    if(node.is_annotated())
+                        Expects(node.maybe_annotation<const TextLabelAnnotation&>());
+                    else
+                    {
+                        if(node.text().size() > 127)
+                            program.error(node, "string is too long, maximum size is {}", 127);
+                        else
+                            node.set_annotation(TextLabelAnnotation{ true, arginfo.preserve_case, remove_quotes(node.text()).to_string() });
+                    }
+                }
+                else
+                {
+                    // TODO, SAVE_STRING_TO_DEBUG_FILE currently Unreachable() due to special handling of it.
+                    Unreachable();
+                }
                 break;
             }
 
@@ -595,7 +619,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                             if(node.text().size() > limit)
                                 program.error(node, "identifier is too long, maximum size is {}", limit);
                             else
-                                node.set_annotation(TextLabelAnnotation { arginfo.type != ArgType::TextLabel, node.text().to_string() });
+                                node.set_annotation(TextLabelAnnotation { arginfo.type != ArgType::TextLabel, false, node.text().to_string() });
                         }
                         break;
                     }

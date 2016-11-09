@@ -276,7 +276,7 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
         // TODO would be nice if this was actually configurable.
         if(!this->commands.equal(command, this->commands.goto_())
         && !this->commands.equal(command, this->commands.return_())
-        && !this->commands.equal(command, this->commands.ret())
+        && !this->commands.equal(command, this->commands.cleo_return())
         && !this->commands.equal(command, this->commands.terminate_this_script())
         && !this->commands.equal(command, this->commands.terminate_this_custom_script()))
         // TODO more
@@ -354,7 +354,7 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
             Expects(std::next(it, 3) != command.args.end() && std::next(it, 3)->type == ArgType::Buffer32);
             it += 3;
 
-            ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*bf.fetch_chars(offset, 128)) });
+            ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, true, std::move(*bf.fetch_chars(offset, 128)) });
             offset += 128;
 
             continue;
@@ -368,7 +368,7 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
             if(it->type == ArgType::TextLabel)
             {
                 offset = offset - 1; // there was no data type, remove one byte
-                ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, std::move(*bf.fetch_chars(offset, 8)) });
+                ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, true, std::move(*bf.fetch_chars(offset, 8)) });
                 offset += 8;
                 continue;
             }
@@ -470,19 +470,19 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
                 break;
 
             case 0x09: // Immediate 8-byte string (SA)
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*bf.fetch_chars(offset, 8)) });
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, true, std::move(*bf.fetch_chars(offset, 8)) });
                 offset += 8;
                 break;
 
             case 0x0F: // Immediate 16-byte string (SA)
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel16, std::move(*bf.fetch_chars(offset, 16)) });
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel16, true, std::move(*bf.fetch_chars(offset, 16)) });
                 offset += 16;
                 break;
 
             case 0x0E: // Immediate variable-length string (SA)
             {
                 auto count = *bf.fetch_u8(offset);
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::StringVar, std::move(*bf.fetch_chars(offset+1, count)) });
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::StringVar, true, std::move(*bf.fetch_chars(offset+1, count)) });
                 offset += count + 1;
                 break;
             }

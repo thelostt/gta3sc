@@ -188,7 +188,8 @@ protected:
     optional<const Command&> cmd_START_NEW_STREAMED_SCRIPT;
     optional<const Command&> cmd_TERMINATE_THIS_SCRIPT;
     optional<const Command&> cmd_SCRIPT_NAME;
-    optional<const Command&> cmd_RET;
+    optional<const Command&> cmd_CLEO_RETURN;
+    optional<const Command&> cmd_TERMINATE_THIS_CUSTOM_SCRIPT;
     optional<const Command&> cmd_GOTO;
     optional<const Command&> cmd_GOTO_IF_FALSE;
     optional<const Command&> cmd_ANDOR;
@@ -199,7 +200,6 @@ protected:
     optional<const Command&> cmd_SKIP_CUTSCENE_START_INTERNAL;
     optional<const Alternator&> alt_SET;
     optional<const Alternator&> alt_CSET;
-    optional<const Alternator&> alt_TERMINATE_THIS_CUSTOM_SCRIPT;
     optional<const Alternator&> alt_ADD_THING_TO_THING;
     optional<const Alternator&> alt_SUB_THING_FROM_THING;
     optional<const Alternator&> alt_MULT_THING_BY_THING;
@@ -445,9 +445,9 @@ public:
         return this->cmd_SCRIPT_NAME;
     }
 
-    optional<const Alternator&> terminate_this_custom_script() const // TODO not an alternator
+    optional<const Command&> terminate_this_custom_script() const // TODO not an alternator
     {
-        return this->alt_TERMINATE_THIS_CUSTOM_SCRIPT;
+        return this->cmd_TERMINATE_THIS_CUSTOM_SCRIPT;
     }
 
     optional<const Command&> return_() const    // can't be named purely return() because of the C keyword
@@ -455,9 +455,9 @@ public:
         return this->cmd_RETURN;
     }
 
-    optional<const Command&> ret() const
+    optional<const Command&> cleo_return() const
     {
-        return this->cmd_RET;
+        return this->cmd_CLEO_RETURN;
     }
 
     optional<const Command&> goto_() const    // can't be named purely goto() because of the C keyword

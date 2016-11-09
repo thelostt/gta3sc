@@ -51,6 +51,7 @@ struct Options
     bool emit_ir2 = false;
     bool linear_sweep = false;
     bool relax_not = false;
+    bool output_cleo = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;
