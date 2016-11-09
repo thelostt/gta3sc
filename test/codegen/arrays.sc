@@ -26,9 +26,9 @@
     gi[0] = 0
     // CHECK-NEXT-L: SET_VAR_INT &16 1i8
     gi[1] = 1
-    // CHECK-NEXT-L: SET_VAR_FLOAT &20 0.0f
-    gf[0] = 0.0
-    // CHECK-NEXT-L: SET_VAR_FLOAT &24 1.0f
+    // CHECK-NEXT-L: SET_VAR_FLOAT &20 0x0.000000p+0f
+    gf[0] =  0.0
+    // CHECK-NEXT-L: SET_VAR_FLOAT &24 0x1.000000p+0f
     gf[1] = 1.0
     // CHECK-NEXT-L: SET_VAR_TEXT_LABEL s&28 'NAME1'
     gs[0] = NAME1
@@ -43,9 +43,9 @@
     ti[0] = 0
     // CHECK-NEXT-L: SET_LVAR_INT 2@ 1i8
     ti[1] = 1
-    // CHECK-NEXT-L: SET_LVAR_FLOAT 3@ 0.0f
-    tf[0] = 0.0
-    // CHECK-NEXT-L: SET_LVAR_FLOAT 4@ 1.0f
+    // CHECK-NEXT-L: SET_LVAR_FLOAT 3@ 0x0.000000p+0f
+    tf[0] =  0.0
+    // CHECK-NEXT-L: SET_LVAR_FLOAT 4@ 0x1.000000p+0f
     tf[1] = 1.0
     // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL 5@s 'NAME1'
     ts[0] = NAME1
@@ -60,9 +60,9 @@
     gi[g] = 1
     // CHECK-NEXT-L: SET_VAR_INT &12(0@,2i) 2i8
     gi[t] = 2
-    // CHECK-NEXT-L: SET_VAR_FLOAT &20(&8,2f) 1.0f
+    // CHECK-NEXT-L: SET_VAR_FLOAT &20(&8,2f) 0x1.000000p+0f
     gf[g] = 1.0
-    // CHECK-NEXT-L: SET_VAR_FLOAT &20(0@,2f) 2.0f
+    // CHECK-NEXT-L: SET_VAR_FLOAT &20(0@,2f) 0x1.000000p+1f
     gf[t] = 2.0
     // CHECK-NEXT-L: SET_VAR_TEXT_LABEL s&28(&8,2s) 'NAME1'
     gs[g] = NAME1
@@ -77,9 +77,9 @@
     ti[g] = 1
     // CHECK-NEXT-L: SET_LVAR_INT 1@(0@,2i) 2i8
     ti[t] = 2
-    // CHECK-NEXT-L: SET_LVAR_FLOAT 3@(&8,2f) 1.0f
+    // CHECK-NEXT-L: SET_LVAR_FLOAT 3@(&8,2f) 0x1.000000p+0f
     tf[g] = 1.0
-    // CHECK-NEXT-L: SET_LVAR_FLOAT 3@(0@,2f) 2.0f
+    // CHECK-NEXT-L: SET_LVAR_FLOAT 3@(0@,2f) 0x1.000000p+1f
     tf[t] = 2.0
     // CHECK-NEXT-L: SET_LVAR_TEXT_LABEL 5@s(&8,2s) 'NAME1'
     ts[g] = NAME1
