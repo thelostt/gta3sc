@@ -25,8 +25,9 @@ bool decompile(const void* bytecode, size_t bytecode_size,
 const char* help_message =
 R"(Usage: gta3sc [compile|decompile] --config=<name> file [options]
 Options:
-  --help                   Display this information
-  -o <file>                Place the output into <file>
+  --help                   Display this information.
+  -o <file>                Place the output into <file>.
+  --cs                     Outputs a CLEO script. This also sets -fcleo.
   --config=<name>          Which compilation configurations to use (gta3,gtavc,
                            gtasa). This effectively reads the data files at
                            '/config/<name>/' and sets some appropriate flags.
@@ -76,7 +77,7 @@ Options:
   --linear-sweep           Disassembler scans the code by the means of a
                            linear-sweep instead of a recursive traversal.
   -frelax-not              Allows the use of NOT outside of conditions.
-  
+  -fcleo                   Enables the use of CLEO features.
 )";
 
 enum class Action
@@ -290,6 +291,16 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.emit_ir2 = true;
             }
+            else if(optflag(argv, "-fcleo", nullptr))
+            {
+                options.cleo.emplace(0);
+            }
+            else if(optget(argv, nullptr, "--cs", 0))
+            {
+                options.cleo.emplace(0);
+                options.headerless = true;
+                options.use_local_offsets = true;
+            }
             else if(const char* name = optget(argv, "-D", nullptr, 1))
             {
                 options.define(name);
@@ -430,12 +441,13 @@ int main(int argc, char** argv)
     try
     {
         std::vector<fs::path> config_files;
-        config_files.reserve(4 + conf.add_config_files.size());
+        config_files.reserve(5 + conf.add_config_files.size());
 
         config_files.emplace_back("alternators.xml");
         config_files.emplace_back("commands.xml");
         config_files.emplace_back("constants.xml");
         if(data.datadir.empty()) config_files.emplace_back("default.xml");
+        if(options.cleo) config_files.emplace_back("cleo.xml");
         std::move(conf.add_config_files.begin(), conf.add_config_files.end(), std::back_inserter(config_files));
 
         Commands commands = Commands::from_xml(conf.config_name, config_files);
@@ -471,9 +483,18 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
     if(output.empty())
     {
         // if fsyntax-only bla bla
-        // TODO .cs .scc
+        // TODO .cs .cm .scc
+        const char* newext = nullptr;
+        
+        if(program.opt.emit_ir2)
+            newext = ".ir2";
+        else if(program.opt.cleo && program.opt.headerless && program.opt.use_local_offsets)
+            newext = ".cs";
+        else
+            newext = ".scm";
+
         output = input;
-        output.replace_extension(program.opt.emit_ir2? ".ir2" : ".scm");
+        output.replace_extension(newext);
     }
 
     try
