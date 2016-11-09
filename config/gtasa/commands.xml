@@ -747,14 +747,14 @@
     </Command>
     <Command ID="0x7c" Name="ADD_TIMED_FLOAT_VAR_TO_FLOAT_LVAR">
       <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x7d" Name="ADD_TIMED_FLOAT_LVAR_TO_FLOAT_VAR">
       <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x7e" Name="SUB_TIMED_VAL_FROM_FLOAT_VAR">
@@ -783,14 +783,14 @@
     </Command>
     <Command ID="0x82" Name="SUB_TIMED_FLOAT_VAR_FROM_FLOAT_LVAR">
       <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x83" Name="SUB_TIMED_FLOAT_LVAR_FROM_FLOAT_VAR">
       <Args>
-        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x84" Name="SET_VAR_INT_TO_VAR_INT">
@@ -11088,12 +11088,12 @@
     </Command>
     <Command ID="0x75d" Name="LOAD_PRICES">
       <Args>
-        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x75e" Name="LOAD_SHOP">
       <Args>
-        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="ANY_TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x75f" Name="GET_NUMBER_OF_ITEMS_IN_SHOP">
@@ -12901,44 +12901,44 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT"/>
-        <Arg Type="INT" Out="true" AllowConst="false" Entity="MENU"/>
+        <Arg Type="INT" Out="true" AllowConst="false" />
       </Args>
     </Command>
     <Command ID="0x8d5" Name="CONSTANT_INT" Supported="false"/>
     <Command ID="0x8d6" Name="SET_MENU_COLUMN_ORIENTATION">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x8d7" Name="GET_MENU_ITEM_SELECTED">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0x8d8" Name="GET_MENU_ITEM_ACCEPTED">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT" Out="true" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0x8d9" Name="ACTIVATE_MENU_ITEM">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>
     </Command>
     <Command ID="0x8da" Name="DELETE_MENU">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
       </Args>
     </Command>
     <Command ID="0x8db" Name="SET_MENU_COLUMN">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT"/>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
@@ -13086,7 +13086,7 @@
     </Command>
     <Command ID="0x8ee" Name="SET_MENU_ITEM_WITH_NUMBER">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
@@ -13095,7 +13095,7 @@
     </Command>
     <Command ID="0x8ef" Name="SET_MENU_ITEM_WITH_2_NUMBERS">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="TEXT_LABEL" Desc="GXT entry"/>
@@ -13105,8 +13105,8 @@
     </Command>
     <Command ID="0x8f0" Name="APPEND_TO_NEXT_CUTSCENE">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x8f1" Name="GET_NAME_OF_INFO_ZONE">
@@ -13242,7 +13242,7 @@
     <Command ID="0x90d" Name="CLEAR_SPECIFIC_ZONES_TO_TRIGGER_GANG_WAR"/>
     <Command ID="0x90e" Name="SET_ACTIVE_MENU_ITEM">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT"/>
       </Args>
     </Command>
@@ -13711,7 +13711,7 @@
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
         <Arg Type="INT"/>
-        <Arg Type="INT" Out="true" AllowConst="false" Entity="MENU"/>
+        <Arg Type="INT" Out="true" AllowConst="false" />
       </Args>
     </Command>
     <Command ID="0x965" Name="IS_CHAR_SWIMMING">
@@ -14322,7 +14322,7 @@
     </Command>
     <Command ID="0x9db" Name="SET_MENU_COLUMN_WIDTH">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT"/>
         <Arg Type="INT"/>
       </Args>
@@ -14690,7 +14690,7 @@
     </Command>
     <Command ID="0xa22" Name="CHANGE_CAR_COLOUR_FROM_MENU">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
@@ -14698,7 +14698,7 @@
     </Command>
     <Command ID="0xa23" Name="HIGHLIGHT_MENU_ITEM">
       <Args>
-        <Arg Type="INT" Entity="MENU"/>
+        <Arg Type="INT" />
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Boolean true/false"/>
       </Args>

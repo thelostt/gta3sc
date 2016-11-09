@@ -41,6 +41,7 @@ struct Command
     {
         ArgType type;               /// Fundamental type of argument.
         bool optional : 1;          /// Allows as many optional arguments as possible (must be the last arg).
+        bool is_output : 1;         /// Whether this argument outputs values into a variable.
         bool allow_constant : 1;    /// Allow literal values
         bool allow_global_var : 1;  /// Allow global variables
         bool allow_local_var : 1;   /// Allow local variables
@@ -51,7 +52,8 @@ struct Command
         {}
 
         explicit Arg(ArgType type) :
-            type(type), optional(false), allow_constant(true), allow_global_var(true), allow_local_var(true)
+            type(type), optional(false),
+            is_output(false), allow_constant(true), allow_global_var(true), allow_local_var(true)
         {
         }
 

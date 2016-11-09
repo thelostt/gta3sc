@@ -190,7 +190,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                       int32_t arg, const Command::Arg& arginfo,
                       const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
 {
-    if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Param)
+    if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param)
         return &arginfo;
     return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedInt });
 }
@@ -841,7 +841,8 @@ static std::pair<std::string, Command>
             Command::Arg arg;
             arg.type = xml_to_argtype(type_attrib->value());
             arg.optional = xml_to_bool(optional_attrib, false);
-            arg.allow_constant = xml_to_bool(allow_const_attrib, true);
+            arg.is_output = xml_to_bool(out_attrib, false);
+            arg.allow_constant = xml_to_bool(allow_const_attrib, arg.is_output? false : true);
             arg.allow_global_var= xml_to_bool(allow_gvar_attrib, true);
             arg.allow_local_var = xml_to_bool(allow_lvar_attrib, true);
             arg.entity_type = 0;

@@ -156,11 +156,11 @@ class Bytecode:
 
         return result
 
-    def discover_global_vars(self, config=None):  # -> sorted [VarInfo, ...]
-        return _discover_vars(iter(self), False, config=config)
+    def discover_global_vars(self, config=None, more_info=None):  # -> sorted [VarInfo, ...]
+        return _discover_vars(iter(self), False, config=config, more_info=more_info)
 
-    def discover_local_vars(self, scope, config=None):  # -> sorted [VarInfo, ...]
-        return _discover_vars(iter(scope.iter_data(self)), True, config=config)
+    def discover_local_vars(self, scope, config=None, more_info=None):  # -> sorted [VarInfo, ...]
+        return _discover_vars(iter(scope.iter_data(self)), True, config=config, more_info=more_info)
 
     def discover_global_arrays(self): # -> { offset: end_offset, ... }
         return _discover_arrays(iter(self), False)
@@ -174,13 +174,8 @@ Offset = namedtuple("Offset", ['type', 'block', 'index'])
 ScopeBase = namedtuple('ScopeBase', ['start', 'end'])
 
 class VarInfo:
-    def __init__(self, start_offset, end_offset, typestring, arraysize):
-        self.start_offset = start_offset
-        self.end_offset = end_offset
+    def __init__(self, start_offset, typestring, arraysize):
         self.type = typestring # may be None, meaning unknown type
-        self.size = arraysize  # None means not array
-        self.enums = set()
-        self.entities = set()
 
         if self.type in ("INT", "FLOAT"):
             self.elem_size = 4
@@ -190,6 +185,13 @@ class VarInfo:
             self.elem_size = 16
         else:
             self.elem_size = None
+
+        self.start_offset = start_offset
+        self.end_offset = start_offset + (self.elem_size or 4) * (arraysize or 1)
+        
+        self.size = arraysize  # None means not array
+        self.enums = set()
+        self.entities = set()
 
     @staticmethod
     def from_offset(offset, varlist): # varlist should be sorted
@@ -638,7 +640,7 @@ def _discover_arrays(bytecode_iter, is_local): # -> { offset: arraysize_in_bytes
     return arrays
 
 
-def _discover_vars(bytecode_iter, is_local, config=None): # -> sorted [VarInfo, ...]
+def _discover_vars(bytecode_iter, is_local, config=None, more_info=None): # -> sorted [VarInfo, ...]
 
     # probably optimizable, but this is Python mate!
 
@@ -651,6 +653,10 @@ def _discover_vars(bytecode_iter, is_local, config=None): # -> sorted [VarInfo, 
         check_var_kind = lambda x: x.is_local()
     else:
         check_var_kind = lambda x: x.is_global()
+
+    if more_info != None:
+        for v in more_info:
+            vardict[v.start_offset] = v
 
     for off, data in filter(lambda (o, d): d.is_command(), bytecode_iter):
         cmdinfo = commands.get(data.name, None) if commands else None
@@ -697,7 +703,7 @@ def _discover_vars(bytecode_iter, is_local, config=None): # -> sorted [VarInfo, 
                         var.size = array_size
                         var.end_offset = offset_end
                 else:
-                    vardict[offset_start] = VarInfo(offset_start, offset_end, vartype, array_size)
+                    vardict[offset_start] = VarInfo(offset_start, vartype, array_size)
                     var = vardict[offset_start]
 
                 if arginfo != None:

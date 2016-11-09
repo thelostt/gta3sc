@@ -35,6 +35,33 @@ STREAM_COMMANDS = set([
     "SWITCH_OBJECT_BRAINS",
 ])
 
+SA_VAR_ARRAYS = [
+#   SCOPE       VAR
+    (None,      VarInfo(4*2706, "INT", 15)),
+    (None,      VarInfo(4*528, "INT", 4)),
+    (None,      VarInfo(4*1717, "INT", 18)),
+    ('LA1FIN2', VarInfo(4*233, "INT", 2)),
+    ('LA1FIN2', VarInfo(4*235, "INT", 3)),
+    ('MUSIC3',  VarInfo(4*66, "INT", 2)),
+    ('MUSIC3',  VarInfo(4*69, "INT", 2)),
+    ('SCRASH3', VarInfo(4*60, "INT", 3)),
+    ('WUZI1',   VarInfo(4*101, "INT", 3)),
+    ('STEAL2',  VarInfo(4*92, "INT", 3)),
+    ('HEIST2',  VarInfo(4*165, "INT", 2)),
+    ('RIOT2',   VarInfo(4*37, "INT", 6)),
+    ('RIOT2',   VarInfo(4*43, "INT", 6)),
+    ('RIOT2',   VarInfo(4*49, "INT", 6)),
+    ('RIOT2',   VarInfo(4*55, "INT", 6)),
+    ('RIOT2',   VarInfo(4*61, "INT", 6)),
+    ('RIOT2',   VarInfo(4*79, "INT", 6)),
+    ('RIOT2',   VarInfo(4*96, "INT", 6)),
+    ('RIOT2',   VarInfo(4*102, "INT", 6)),
+    ('RIOT2',   VarInfo(4*108, "INT", 6)),
+    ('RIOT2',   VarInfo(4*114, "INT", 6)),
+    ('RIOT2',   VarInfo(4*120, "INT", 6)),
+    ('RIOT2',   VarInfo(4*132, "INT", 6)),
+]
+
 def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None, no_index=False):
     if arg.is_number():
         if arg.is_float():
@@ -117,7 +144,8 @@ def find_constant_for_var(argvar, argconst, global_vars, local_vars, enums):
     #assert constant != None
     if constant == None:
         #print("############## MISSING CONSTANT, USING 9999999")
-        constant = "9999999"
+        #constant = "9999999"
+        return str(argconst.value)
 
     return constant
 
@@ -136,6 +164,9 @@ def get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums):
 
 def converted_expr(ir2, data, cmdinfo, op, global_vars, local_vars, enums):
     args = get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums)
+    if data.name.startswith("IS_CONSTANT_") or data.name.endswith("_CONSTANT"):
+        if args[0].isdigit() or args[1].isdigit(): # couldn't find constant
+            return "%s%s %s %s" % ("NOT " if data.not_flag else "", data.name, args[0], args[1])
     return "%s%s %s %s" % ("NOT " if data.not_flag else "", args[0], op, args[1])
 
 def converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, filename_by_offset=None, alternative_name=None):
@@ -154,7 +185,7 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
             return converted_expr(ir2, data, cmdinfo, '+=', global_vars, local_vars, enums)
         elif cmdname in alternators["SUB_THING_FROM_THING"]:
             return converted_expr(ir2, data, cmdinfo, '-=', global_vars, local_vars, enums)
-        elif cmdname in alternators["MULT_THING_FROM_THING"]:
+        elif cmdname in alternators["MULT_THING_BY_THING"]:
             return converted_expr(ir2, data, cmdinfo, '*=', global_vars, local_vars, enums)
         elif cmdname in alternators["DIV_THING_BY_THING"]:
             return converted_expr(ir2, data, cmdinfo, '/=', global_vars, local_vars, enums)
@@ -169,7 +200,10 @@ def converted_data(ir2, data, commands, alternators, enums, global_vars, local_v
         elif cmdname in alternators["IS_THING_EQUAL_TO_THING"]:
             if data.name.startswith("IS_CONSTANT_") or data.name.endswith("_CONSTANT"):
                 args = get_args_for_expr(ir2, data, cmdinfo, global_vars, local_vars, enums)
-                return "%s%s %s %s" % (not_prefix, "IS_THING_EQUAL_TO_THING", args[0], args[1])
+                if not args[0].isdigit() and not args[1].isdigit(): # could convert constant
+                    return "%s%s %s %s" % (not_prefix, "IS_THING_EQUAL_TO_THING", args[0], args[1])
+                else:
+                    return "%s%s %s %s" % (not_prefix, data.name, args[0], args[1])
             return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='IS_THING_EQUAL_TO_THING')
         elif cmdname in alternators["ABS"]:
             return converted_data(ir2, data, commands, alternators, enums, global_vars, local_vars, alternative_name='ABS')
@@ -252,6 +286,7 @@ def main(ir2file, configpath, output_dir):
 
     scopes_before_label = bool(cmdline["-fscope-then-label"])
     timer_index = int(cmdline["-ftimer-index"])
+    farrays = bool(cmdline["-farrays"])
     global TIMER_INDICES # HACK!!!!!!!!!!!
     global MISSION_LVAR_BEGIN #
     TIMER_INDICES = (timer_index + 0, timer_index + 1)
@@ -267,6 +302,7 @@ def main(ir2file, configpath, output_dir):
     gosubfiles = dict()
     current_scope = None
     first_scope = scopes[0] if len(scopes) > 0 else None
+    current_scope_name = None
 
     for i in range(len(ir2.mission_blocks)):
         script_offset = ir2.offset_from_mission(i)
@@ -293,7 +329,12 @@ def main(ir2file, configpath, output_dir):
             filename_by_offset[script_offset] = filename
             gosubfiles[script_offset] = filename
 
-    global_vars = ir2.discover_global_vars(config=config)
+    if farrays:
+        more_info = [v for (s,v) in SA_VAR_ARRAYS if s == None]
+    else:
+        more_info = None
+
+    global_vars = ir2.discover_global_vars(config=config, more_info=more_info)
     local_vars = None
 
     print("//--------------------------")
@@ -327,7 +368,7 @@ def main(ir2file, configpath, output_dir):
             print_script_terminate_for = None
 
         def on_scope_begin(old_scope, new_scope):
-            print("Converting %s" % new_scope.find_script_name(ir2))
+            print("Converting %s" % current_scope_name)
             if new_scope.start in subscripts or (old_scope.start.type != new_scope.start.type or old_scope.start.block != new_scope.start.block):
                 if new_scope.start.type != BYTECODE_OFFSET_MAIN or new_scope.start in subscripts:
                     stream.write("%s\n" % ("MISSION_START", "MISSION_START", "SCRIPT_START")[new_scope.start.type])
@@ -355,6 +396,10 @@ def main(ir2file, configpath, output_dir):
             current_scope = Scope.from_offset(off, scopes)
             assert current_scope != None
 
+            current_scope_name = current_scope.find_script_name(ir2)
+            if current_scope_name is None:
+                current_scope_name = "??"
+
             on_scope_end(previous_scope, current_scope)
 
             if off.type != BYTECODE_OFFSET_MAIN:
@@ -366,7 +411,13 @@ def main(ir2file, configpath, output_dir):
                 stream = open(os.path.join(output_dir, "main", filename), 'w')
 
             on_scope_begin(previous_scope, current_scope)
-            local_vars = ir2.discover_local_vars(current_scope, config=config)
+
+            if farrays and current_scope_name != None:
+                more_info = [v for (s,v) in SA_VAR_ARRAYS if s == current_scope_name]
+            else:
+                more_info = None
+
+            local_vars = ir2.discover_local_vars(current_scope, config=config, more_info=more_info)
 
             is_mission = (current_scope.start.type == BYTECODE_OFFSET_MISSION)
             is_stream  = (current_scope.start.type == BYTECODE_OFFSET_STREAMED)

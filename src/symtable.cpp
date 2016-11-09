@@ -243,9 +243,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                 if(auto opt_argvar = get_base_var_annotation(**it))
                 {
                     auto& argvar = **opt_argvar;
-                    auto isout = !arginfo.allow_constant; // TODO arginfo.out
-
-                    if(isout)
+                    if(arginfo.is_output)
                     {
                         if(argvar.entity && argvar.entity != arginfo.entity_type)
                         {

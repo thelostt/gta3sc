@@ -745,13 +745,13 @@
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7c" Name="ADD_TIMED_FLOAT_VAR_TO_FLOAT_LVAR">
+    <Command ID="0x7c" Name="ADD_TIMED_FLOAT_LVAR_TO_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x7d" Name="ADD_TIMED_FLOAT_LVAR_TO_FLOAT_VAR">
+    <Command ID="0x7d" Name="ADD_TIMED_FLOAT_VAR_TO_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
@@ -781,13 +781,13 @@
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x82" Name="SUB_TIMED_FLOAT_VAR_FROM_FLOAT_LVAR">
+    <Command ID="0x82" Name="SUB_TIMED_FLOAT_LVAR_FROM_FLOAT_VAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x83" Name="SUB_TIMED_FLOAT_LVAR_FROM_FLOAT_VAR">
+    <Command ID="0x83" Name="SUB_TIMED_FLOAT_VAR_FROM_FLOAT_LVAR">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>

@@ -143,7 +143,7 @@ class Argument:
         init.out  = _str2bool(node.get("Out", "false"))
         init.ref  = _str2bool(node.get("Ref", "false"))
         init.optional = _str2bool(node.get("Optional", "false"))
-        init.allow_const = _str2bool(node.get("AllowConst", "true"))
+        init.allow_const = _str2bool(node.get("AllowConst", "false" if init.out else "true"))
         init.allow_gvar = _str2bool(node.get("AllowGlobalVar", "true"))
         init.allow_lvar = _str2bool(node.get("AllowLocalVar", "true"))
         init.entity = node.get("Entity", None)
@@ -161,7 +161,7 @@ class Argument:
             node.set("Ref", _bool2str(self.ref))
         if self.optional != False:
             node.set("Optional", _bool2str(self.optional))
-        if self.allow_const != True:
+        if self.allow_const == False and self.out == False:
             node.set("AllowConst", _bool2str(self.allow_const))
         if self.allow_gvar != True:
             node.set("AllowGlobalVar", _bool2str(self.allow_gvar))
