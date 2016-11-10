@@ -25,8 +25,11 @@ bool decompile(const void* bytecode, size_t bytecode_size,
 const char* help_message =
 R"(Usage: gta3sc [compile|decompile] --config=<name> file [options]
 Options:
-  --help                   Display this information
-  -o <file>                Place the output into <file>
+  --help                   Display this information.
+  -o <file>                Place the output into <file>.
+  --cs                     Outputs a CLEO script. This also sets -fcleo.
+  --cm                     Outputs a CLEO custom mission.
+                           This also sets -fcleo and -fmission-script.
   --config=<name>          Which compilation configurations to use (gta3,gtavc,
                            gtasa). This effectively reads the data files at
                            '/config/<name>/' and sets some appropriate flags.
@@ -76,7 +79,8 @@ Options:
   --linear-sweep           Disassembler scans the code by the means of a
                            linear-sweep instead of a recursive traversal.
   -frelax-not              Allows the use of NOT outside of conditions.
-  
+  -fcleo                   Enables the use of CLEO features.
+  -fmission-script         Compiling a mission script.
 )";
 
 enum class Action
@@ -290,6 +294,30 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.emit_ir2 = true;
             }
+            else if(optflag(argv, "-fcleo", nullptr))
+            {
+                options.cleo.emplace(0);
+            }
+            else if(optget(argv, nullptr, "--cs", 0))
+            {
+                options.cleo.emplace(0);
+                options.output_cleo = true;
+                options.mission_script = false;
+                options.headerless = true;
+                options.use_local_offsets = true;
+            }
+            else if(optget(argv, nullptr, "--cm", 0))
+            {
+                options.cleo.emplace(0);
+                options.output_cleo = true;
+                options.mission_script = true;
+                options.headerless = true;
+                options.use_local_offsets = true;
+            }
+            else if(optflag(argv, "-fmission-script", nullptr))
+            {
+                options.mission_script = true;
+            }
             else if(const char* name = optget(argv, "-D", nullptr, 1))
             {
                 options.define(name);
@@ -426,16 +454,17 @@ int main(int argc, char** argv)
             return EXIT_FAILURE;
         }
     }
-
+    
     try
     {
         std::vector<fs::path> config_files;
-        config_files.reserve(4 + conf.add_config_files.size());
+        config_files.reserve(5 + conf.add_config_files.size());
 
         config_files.emplace_back("alternators.xml");
         config_files.emplace_back("commands.xml");
         config_files.emplace_back("constants.xml");
         if(data.datadir.empty()) config_files.emplace_back("default.xml");
+        if(options.cleo) config_files.emplace_back("cleo.xml");
         std::move(conf.add_config_files.begin(), conf.add_config_files.end(), std::back_inserter(config_files));
 
         Commands commands = Commands::from_xml(conf.config_name, config_files);
@@ -471,9 +500,18 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
     if(output.empty())
     {
         // if fsyntax-only bla bla
-        // TODO .cs .scc
+        // TODO .cs .cm .scc
+        const char* newext = nullptr;
+        
+        if(program.opt.emit_ir2)
+            newext = ".ir2";
+        else if(program.opt.output_cleo)
+            newext = program.opt.mission_script? ".cm" : ".cs";
+        else
+            newext = ".scm";
+
         output = input;
-        output.replace_extension(program.opt.emit_ir2? ".ir2" : ".scm");
+        output.replace_extension(newext);
     }
 
     try
@@ -484,7 +522,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         //const char* input = "test.sc";
         //const char* input = "gta3_src/main.sc";
 
-        auto main = Script::create(program, input, ScriptType::Main);
+        auto main = Script::create(program, input, program.opt.mission_script? ScriptType::Mission : ScriptType::Main);
 
         if(main == nullptr)
         {
@@ -573,6 +611,11 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         for(auto& script : scripts)
         {
+            script->compute_scope_outputs(symbols, program);
+        }
+
+        for(auto& script : scripts)
+        {
             script->annotate_tree(symbols, program);
         }
 
@@ -581,6 +624,12 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         // not thread-safe
         std::vector<std::string> models = Script::compute_unknown_models(scripts);
+
+        if(program.opt.output_cleo)
+        {
+            for(auto& model : models)
+                program.error(nocontext, "use of non-default model {} in custom script", model);
+        }
 
         // not thread-safe
         Script::handle_special_commands(scripts, symbols, program);
@@ -880,22 +929,25 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                const void* script_img, size_t script_img_size,
                ProgramContext& program, Options::Lang lang, OnOutput callback)
 {
-    Expects(!program.opt.streamed_scripts || script_img != nullptr);
+    Expects(!program.opt.streamed_scripts || program.opt.headerless || script_img != nullptr);
 
     try
     {
+        optional<DecompiledScmHeader> opt_header;
+        size_t ignore_stream_id = -1;
+
         auto scan_type = program.opt.linear_sweep? Disassembler::Type::LinearSweep :
                                                    Disassembler::Type::RecursiveTraversal;
 
-        auto opt_header = DecompiledScmHeader::from_bytecode(bytecode, bytecode_size,
-                                                             program.opt.get_header<DecompiledScmHeader::Version>());
-        if(!opt_header)
-            program.fatal_error(nocontext, "corrupted scm header");
-
-        DecompiledScmHeader& header = *opt_header;
-        size_t ignore_stream_id = -1;
-
+        if(!program.opt.headerless)
         {
+            opt_header = DecompiledScmHeader::from_bytecode(bytecode, bytecode_size,
+                                                            program.opt.get_header<DecompiledScmHeader::Version>());
+            if(!opt_header)
+                program.fatal_error(nocontext, "corrupted scm header");
+
+            DecompiledScmHeader& header = *opt_header;
+
             auto it = std::find_if(header.streamed_scripts.begin(), header.streamed_scripts.end(), [](const auto& pair) {
                 return iequal_to()(pair.first, "AAA");
             });
@@ -903,12 +955,19 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                 ignore_stream_id = (it - header.streamed_scripts.begin());
         }
 
-        BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, header.main_size) };
-        std::vector<BinaryFetcher> mission_segments = mission_scripts_fetcher(bytecode, bytecode_size, header, program);
+        BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, opt_header? opt_header->main_size : bytecode_size) };
+        std::vector<BinaryFetcher> mission_segments;
         std::vector<BinaryFetcher> stream_segments;
-        if(program.opt.streamed_scripts)
+
+        if(!program.opt.headerless)
         {
-            stream_segments = streamed_scripts_fetcher(script_img, script_img_size, header, program);
+            DecompiledScmHeader& header = *opt_header;
+
+            mission_segments = mission_scripts_fetcher(bytecode, bytecode_size, header, program);
+            if(program.opt.streamed_scripts)
+            {
+                stream_segments = streamed_scripts_fetcher(script_img, script_img_size, header, program);
+            }
         }
 
         // TODO add more has error in here?
@@ -918,34 +977,40 @@ bool decompile(const void* bytecode, size_t bytecode_size,
         Disassembler main_segment_asm(program, main_segment, scan_type);
         std::vector<Disassembler> mission_segments_asm;
         std::vector<Disassembler> stream_segments_asm;
-        mission_segments_asm.reserve(header.mission_offsets.size());
-        stream_segments_asm.reserve(header.streamed_scripts.size());
 
-        // this loop cannot be thread safely unfolded because of main_segment_asm being
-        // mutated on all the units.
-        for(auto& mission_bytecode : mission_segments)
+        if(!program.opt.headerless)
         {
-            mission_segments_asm.emplace_back(program, mission_bytecode, main_segment_asm, scan_type);
-            mission_segments_asm.back().run_analyzer();
-        }
+            DecompiledScmHeader& header = *opt_header;
 
-        // this loop cannot be thread safely unfolded because of stream_segment_asm being
-        // mutated on all the units.
-        for(size_t i = 0; i < stream_segments.size(); ++i)
-        {
-            if(i != ignore_stream_id)
+            mission_segments_asm.reserve(header.mission_offsets.size());
+            stream_segments_asm.reserve(header.streamed_scripts.size());
+
+            // this loop cannot be thread safely unfolded because of main_segment_asm being
+            // mutated on all the units.
+            for(auto& mission_bytecode : mission_segments)
             {
-                auto& stream_bytecode = stream_segments[i];
-                stream_segments_asm.emplace_back(program, stream_bytecode, main_segment_asm, scan_type);
-                stream_segments_asm.back().run_analyzer();
+                mission_segments_asm.emplace_back(program, mission_bytecode, main_segment_asm, scan_type);
+                mission_segments_asm.back().run_analyzer();
+            }
+
+            // this loop cannot be thread safely unfolded because of stream_segment_asm being
+            // mutated on all the units.
+            for(size_t i = 0; i < stream_segments.size(); ++i)
+            {
+                if(i != ignore_stream_id)
+                {
+                    auto& stream_bytecode = stream_segments[i];
+                    stream_segments_asm.emplace_back(program, stream_bytecode, main_segment_asm, scan_type);
+                    stream_segments_asm.back().run_analyzer();
+                }
             }
         }
 
         if(true)
         {
             // run main segment analyzer after the missions and streams analyzer
-            main_segment_asm.run_analyzer(header.code_offset);
-            main_segment_asm.disassembly(header.code_offset);
+            main_segment_asm.run_analyzer(opt_header? opt_header->code_offset : 0);
+            main_segment_asm.disassembly(opt_header? opt_header->code_offset : 0);
         }
 
         for(auto& mission_asm : mission_segments_asm)
@@ -986,21 +1051,23 @@ bool decompile(const void* bytecode, size_t bytecode_size,
         }
         else if(lang == Options::Lang::IR2)
         {
+            if(!program.opt.headerless)
             {
                 std::string temp_string;
-                for(size_t i = 0; i < header.models.size(); ++i)
+                for(size_t i = 0; i < opt_header->models.size(); ++i)
                 {
-                    temp_string = header.models[i];
+                    temp_string = opt_header->models[i];
                     std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
                     callback(fmt::format("#DEFINE_MODEL {} -{}", temp_string, i+1));
                 }
             }
 
+            if(!program.opt.headerless)
             {
                 std::string temp_string;
-                for(size_t i = 0; i < header.streamed_scripts.size(); ++i)
+                for(size_t i = 0; i < opt_header->streamed_scripts.size(); ++i)
                 {
-                    temp_string = header.streamed_scripts[i].first;
+                    temp_string = opt_header->streamed_scripts[i].first;
                     std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
                     callback(fmt::format("#DEFINE_STREAM {} {}", temp_string, i));
                 }

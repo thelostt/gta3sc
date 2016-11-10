@@ -53,6 +53,7 @@ struct CompiledString
     };
 
     Type        type;
+    bool        preserve_case;
     std::string storage;
 };
 
@@ -931,7 +932,7 @@ private:
                 else if(auto opt_text = arg_node.maybe_annotation<const TextLabelAnnotation&>())
                 {
                     auto type = opt_text->is_varlen? CompiledString::Type::StringVar : CompiledString::Type::TextLabel8;
-                    return CompiledString{ type, opt_text->string };
+                    return CompiledString{ type, opt_text->preserve_case, opt_text->string };
                 }
                 else if(auto opt_umodel = arg_node.maybe_annotation<const ModelAnnotation&>())
                 {
@@ -952,9 +953,14 @@ private:
 
             case NodeType::String:
             {
-                if(auto opt_buffer = arg_node.maybe_annotation<const String128Annotation&>())
+                if(auto opt_text = arg_node.maybe_annotation<const TextLabelAnnotation&>())
                 {
-                    return CompiledString { CompiledString::Type::String128, opt_buffer->string };
+                    auto type = opt_text->is_varlen? CompiledString::Type::StringVar : CompiledString::Type::TextLabel8;
+                    return CompiledString{ type, opt_text->preserve_case, opt_text->string };
+                }
+                else if(auto opt_buffer = arg_node.maybe_annotation<const String128Annotation&>())
+                {
+                    return CompiledString { CompiledString::Type::String128, false, opt_buffer->string };
                 }
                 else
                 {

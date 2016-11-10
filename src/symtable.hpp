@@ -54,6 +54,9 @@ public:
         return nullptr;
     }
 
+    // TODO doc comment
+    void compute_scope_outputs(const SymTable& symbols, ProgramContext& program);
+
     /// Annnotates this script's syntax tree with informations to simplify the compilation step.
     /// For example, annotates whether a identifier is a variable, enum, label, etc.
     ///
@@ -115,8 +118,12 @@ public:
     /// List of unknown models referenced by this script.
     /// TODO explain further on which compilation step this value gets to be available.
     std::vector<std::pair<std::string, int32_t>> models;
+    
     /// The script names used in this script.
     std::set<std::string, iless> script_names;
+
+    /// All the scopes within this script.
+    std::vector<shared_ptr<Scope>> scopes;
 
 public:
     optional<int32_t> find_model(const string_view& name) const
@@ -177,12 +184,24 @@ struct Var
 
     /// \returns the byte offset (index*4) on which this variable ends in memory (i.e. where the next variable is).
     uint32_t end_offset() { return (index + space_taken()) * 4; }
+
+    /// \returns whether this is a TEXT_LABEL or TEXT_LABEL16 variable.
+    bool is_text_var() { return type == VarType::TextLabel || type == VarType::TextLabel16; }
 };
 
 /// Scope information.
 struct Scope
 {
-    std::map<std::string, shared_ptr<Var>, iless> vars;
+    using OutputType   = VarType; // Int, Float, TextLabel=String; TextLabel16 is unused.
+    using OutputVector = std::vector<std::pair<OutputType, weak_ptr<Var>>>;
+
+    weak_ptr<SyntaxTree>                            tree;
+    std::map<std::string, shared_ptr<Var>, iless>   vars;
+    optional<OutputVector>                          outputs;    // from CLEO_RETURN
+
+    explicit Scope(weak_ptr<SyntaxTree> tree) :
+        tree(std::move(tree))
+    {}
 
     shared_ptr<Var> var_at(size_t index) const
     {
@@ -195,6 +214,8 @@ struct Scope
         }
         return nullptr;
     }
+
+    static optional<OutputType> output_type_from_node(const SyntaxTree& node);
 };
 
 /// Label information.
@@ -274,9 +295,9 @@ struct SymTable
     void check_command_count(ProgramContext& program) const;
 
     /// Creates a new scope in this table.
-    shared_ptr<Scope> add_scope()
+    shared_ptr<Scope> add_scope(SyntaxTree& tree)
     {
-        return *local_scopes.emplace(local_scopes.end(), new Scope());
+        return *local_scopes.emplace(local_scopes.end(), new Scope(tree.shared_from_this()));
     }
 
     /// Returns the pointer to the highest global variable (based on index), or nullopt

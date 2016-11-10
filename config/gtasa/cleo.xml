@@ -1,0 +1,738 @@
+<?xml version='1.0' encoding='utf-8'?>
+<GTA3Script>
+  <Commands>
+    <Command ID="0xa8c" Name="WRITE_MEMORY"> <!-- Maybe WRITE_PROCESS_MEMORY -->
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xa8d" Name="READ_MEMORY"> <!-- Maybe READ_PROCESS_MEMORY -->
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa92" Name="STREAM_CUSTOM_SCRIPT">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="PARAM" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa93" Name="TERMINATE_THIS_CUSTOM_SCRIPT"/>
+    <Command ID="0xa94" Name="LOAD_AND_LAUNCH_CUSTOM_MISSION">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa95" Name="SAVE_THIS_CUSTOM_SCRIPT"/>
+    <Command ID="0xa96" Name="GET_PED_POINTER">
+      <Args>
+        <Arg Type="INT" Entity="CHAR"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa97" Name="GET_VEHICLE_POINTER">
+      <Args>
+        <Arg Type="INT" Entity="CAR"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa98" Name="GET_OBJECT_POINTER">
+      <Args>
+        <Arg Type="INT" Entity="OBJECT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa99" Name="SET_CURRENT_DIRECTORY">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa9a" Name="OPEN_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true" Entity="FILE"/>
+      </Args>
+    </Command>
+    <Command ID="0xa9b" Name="CLOSE_FILE">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+      </Args>
+    </Command>
+    <Command ID="0xa9c" Name="GET_FILE_SIZE">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa9d" Name="READ_FROM_FILE">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM" AllowTextLabel="true" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa9e" Name="WRITE_TO_FILE">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM" PreserveCase="true" AllowTextLabel="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xa9f" Name="GET_THIS_SCRIPT_STRUCT">
+      <Args>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa0" Name="GOSUB_IF_FALSE"> <!-- Renamed from ELSE_GOSUB -->
+      <Args>
+        <Arg Type="LABEL"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa1" Name="RETURN_IF_FALSE"/> <!-- Renamed from ELSE_RETURN -->
+    <Command ID="0xaa2" Name="LOAD_DYNAMIC_LIBRARY">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT" Out="true" Entity="DYNAMIC_LIBRARY"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa3" Name="FREE_DYNAMIC_LIBRARY">
+      <Args>
+        <Arg Type="INT" Entity="DYNAMIC_LIBRARY"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa4" Name="GET_DYNAMIC_LIBRARY_PROCEDURE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT" Entity="DYNAMIC_LIBRARY"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa5" Name="CALL_FUNCTION">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa6" Name="CALL_METHOD">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa7" Name="CALL_FUNCTION_RETURN">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Ref="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa8" Name="CALL_METHOD_RETURN">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Ref="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaa9" Name="IS_GAME_VERSION_ORIGINAL"/>
+    <Command ID="0xaaa" Name="GET_SCRIPT_STRUCT_NAMED">
+      <Args>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaab" Name="DOES_FILE_EXIST">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaac" Name="LOAD_AUDIO_STREAM">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT" Out="true" Entity="AUDIO_STREAM"/>
+      </Args>
+    </Command>
+    <Command ID="0xaad" Name="SET_AUDIO_STREAM_STATE">
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xaae" Name="REMOVE_AUDIO_STREAM"> <!-- Renamed from RELEASE_AUDIO_STREAM -->
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+      </Args>
+    </Command>
+    <Command ID="0xaaf" Name="GET_AUDIO_STREAM_LENGTH">
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xab0" Name="IS_KEY_PRESSED">
+      <Args>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xab1" Name="CLEO_CALL"> <!-- Renamed from CALL; Command name already taken in Stories with different semantics. -->
+      <Args>
+        <Arg Type="LABEL"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Ref="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xab2" Name="CLEO_RETURN"> <!-- Renamed from RET; See above -->
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xab3" Name="SET_CLEO_SHARED_VAR">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"/>
+      </Args>
+    </Command>
+    <Command ID="0xab4" Name="GET_CLEO_SHARED_VAR"> <!-- Renamed from GET_SHARED_CLEO_VAR -->
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xab5" Name="STORE_CLOSEST_ENTITIES">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true" Entity="CAR"/>
+        <Arg Type="INT" Out="true" Entity="CHAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xab6" Name="GET_TARGET_BLIP_COORDS"> <!-- Renamed from GET_TARGET_BLIP_COORDINATES -->
+      <Args>
+        <Arg Type="FLOAT" Out="true"/>
+        <Arg Type="FLOAT" Out="true"/>
+        <Arg Type="FLOAT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xab7" Name="GET_CAR_NUMBER_OF_GEARS">
+      <Args>
+        <Arg Type="INT" Entity="CAR"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xab8" Name="GET_CAR_CURRENT_GEAR">
+      <Args>
+        <Arg Type="INT" Entity="CAR"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xab9" Name="GET_AUDIO_STREAM_STATE">
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaba" Name="TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME">
+      <Args>
+        <Arg Type="TEXT_LABEL"/>
+      </Args>
+    </Command>
+    <Command ID="0xabb" Name="GET_AUDIO_STREAM_VOLUME">
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="FLOAT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xabc" Name="SET_AUDIO_STREAM_VOLUME">
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="FLOAT"/>
+      </Args>
+    </Command>
+    <Command ID="0xabd" Name="IS_CAR_SIREN_ON">
+      <Args>
+        <Arg Type="INT" Entity="CAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xabe" Name="IS_CAR_ENGINE_ON">
+      <Args>
+        <Arg Type="INT" Entity="CAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xabf" Name="CLEO_SET_CAR_ENGINE_ON"> <!-- Renamed from CLEO_SWITCH_CAR_ENGINE -->
+      <Args>
+        <Arg Type="INT" Entity="CAR"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xac0" Name="SET_AUDIO_STREAM_LOOPED">
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xac1" Name="LOAD_3D_AUDIO_STREAM">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT" Out="true" Entity="AUDIO_STREAM"/>
+      </Args>
+    </Command>
+    <Command ID="0xac2" Name="PLAY_3D_AUDIO_STREAM_AT_COORDS"> <!-- Renamed from SET_PLAY_3D_AUDIO_STREAM_AT_COORDINATES -->
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+      </Args>
+    </Command>
+    <Command ID="0xac3" Name="PLAY_3D_AUDIO_STREAM_AT_OBJECT"> <!-- Renamed from SET_ -->
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="INT" Entity="OBJECT"/>
+      </Args>
+    </Command>
+    <Command ID="0xac4" Name="PLAY_3D_AUDIO_STREAM_AT_CHAR"> <!-- Renamed from SET_ -->
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="INT" Entity="CHAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xac5" Name="PLAY_3D_AUDIO_STREAM_AT_CAR"> <!-- Renamed from SET_ -->
+      <Args>
+        <Arg Type="INT" Entity="AUDIO_STREAM"/>
+        <Arg Type="INT" Entity="CAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xac6" Name="GET_LABEL_POINTER">
+      <Args>
+        <Arg Type="LABEL"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xac7" Name="GET_VAR_POINTER">
+      <Args>
+        <Arg Type="PARAM" AllowTextLabel="true"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xac8" Name="ALLOCATE_MEMORY">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xac9" Name="FREE_MEMORY">
+      <Args>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xaca" Name="PRINT_HELP_STRING">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xacb" Name="PRINT_BIG_STRING">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xacc" Name="PRINT_STRING">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xacd" Name="PRINT_STRING_NOW">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xace" Name="PRINT_HELP_FORMATTED">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xacf" Name="PRINT_BIG_FORMATTED">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xad0" Name="PRINT_FORMATTED">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xad1" Name="PRINT_FORMATTED_NOW">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xad2" Name="GET_CHAR_PLAYER_IS_TARGETING">
+      <Args>
+        <Arg Type="INT" Entity="PLAYER"/>
+        <Arg Type="INT" Out="true" Entity="CHAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xad3" Name="STRING_FORMAT">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xad4" Name="SCAN_STRING">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT" Out="true"/>
+        <Arg Type="PARAM" AllowTextLabel="true" Out="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xad5" Name="FILE_SEEK">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xad6" Name="IS_END_OF_FILE_REACHED"> <!-- HAS_ ?? -->
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+      </Args>
+    </Command>
+    <Command ID="0xad7" Name="READ_STRING_FROM_FILE">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xad8" Name="WRITE_STRING_TO_FILE">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xad9" Name="WRITE_FORMATTED_STRING_TO_FILE">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="PARAM"  PreserveCase="true" AllowTextLabel="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xada" Name="SCAN_FILE">
+      <Args>
+        <Arg Type="INT" Entity="FILE"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT" Out="true"/>
+        <Arg Type="PARAM" AllowTextLabel="true" Out="true" Optional="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xadb" Name="GET_NAME_OF_VEHICLE_MODEL">
+      <Args>
+        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="TEXT_LABEL" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xadc" Name="TEST_CHEAT">
+      <Args>
+        <Arg Type="STRING" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xadd" Name="SPAWN_VEHICLE_BY_CHEATING">
+      <Args>
+        <Arg Type="INT" Enum="CARPEDMODEL"/>
+      </Args>
+    </Command>
+    <Command ID="0xade" Name="GET_TEXT_LABEL_STRING">
+      <Args>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="STRING" AllowPointer="true" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xadf" Name="ADD_TEXT_LABEL">
+      <Args>
+        <Arg Type="TEXT_LABEL"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xae0" Name="REMOVE_TEXT_LABEL">
+      <Args>
+        <Arg Type="TEXT_LABEL"/>
+      </Args>
+    </Command>
+    <Command ID="0xae1" Name="GET_RANDOM_CHAR_IN_SPHERE_NO_SAVE_RECURSIVE"> <!-- Renamed from FIND_ALL_RANDOM_CHARS_IN_SPHERE -->
+      <Args>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true" Entity="CHAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xae2" Name="GET_RANDOM_CAR_IN_SPHERE_NO_SAVE_RECURSIVE"> <!-- Renamed from FIND_ALL_RANDOM_VEHICLES_IN_SPHERE -->
+      <Args>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true" Entity="CAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xae3" Name="GET_RANDOM_OBJECT_IN_SPHERE_NO_SAVE_RECURSIVE"> <!-- Renamed from FIND_ALL_RANDOM_OBJECTS_IN_SPHERE -->
+      <Args>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true" Entity="OBJECT"/>
+      </Args>
+    </Command>
+    <Command ID="0xae4" Name="DOES_DIRECTORY_EXIST">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xae5" Name="CREATE_DIRECTORY">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xae6" Name="FIND_FIRST_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT" Out="true" Entity="FILE_FIND"/>
+        <Arg Type="STRING" AllowPointer="true" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xae7" Name="FIND_NEXT_FILE">
+      <Args>
+        <Arg Type="INT" Entity="FILE_FIND"/>
+        <Arg Type="STRING" AllowPointer="true" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xae8" Name="FIND_CLOSE">
+      <Args>
+        <Arg Type="INT" Entity="FILE_FIND"/>
+      </Args>
+    </Command>
+    <Command ID="0xae9" Name="POP_FLOAT">
+      <Args>
+        <Arg Type="FLOAT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaea" Name="GET_PED_REF"> <!-- Renamed from GET_CHAR_POINTER_HANDLE -->
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true" Entity="CHAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xaeb" Name="GET_VEHICLE_REF"> <!-- Renamed from GET_VEHICLE_POINTER_HANDLE -->
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true" Entity="CAR"/>
+      </Args>
+    </Command>
+    <Command ID="0xaec" Name="GET_OBJECT_REF"> <!-- Renamed from GET_OBJECT_POINTER_HANDLE -->
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true" Entity="OBJECT"/>
+      </Args>
+    </Command>
+    <Command ID="0xaed" Name="STRING_FLOAT_FORMAT">
+      <Args>
+        <Arg Type="FLOAT"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" AllowPointer="true" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaee" Name="POW"> <!-- Renamed from EXP, this is not EXP -->
+      <Args>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaef" Name="LOG">
+      <Args>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT"/>
+        <Arg Type="FLOAT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaf0" Name="READ_INT_FROM_INI_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaf1" Name="WRITE_INT_TO_INI_FILE">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaf2" Name="READ_FLOAT_FROM_INI_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="FLOAT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaf3" Name="WRITE_FLOAT_TO_INI_FILE">
+      <Args>
+        <Arg Type="FLOAT"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaf4" Name="READ_STRING_FROM_INI_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" AllowPointer="true" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xaf5" Name="WRITE_STRING_TO_INI_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb00" Name="DELETE_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb01" Name="DELETE_DIRECTORY">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xb02" Name="MOVE_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb03" Name="MOVE_DIRECTORY">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb04" Name="COPY_FILE">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb05" Name="COPY_DIRECTORY">
+      <Args>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+        <Arg Type="STRING" PreserveCase="true" AllowPointer="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb10" Name="BITWISE_AND">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb11" Name="BITWISE_OR">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb12" Name="BITWISE_XOR">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb13" Name="BITWISE_NOT">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb14" Name="MOD"> <!-- Renamed from MODULO -->
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb15" Name="BITWISE_SHR">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <Command ID="0xb16" Name="BITWISE_SHL">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+        <Arg Type="INT" Out="true"/>
+      </Args>
+    </Command>
+    <!--
+    <Command ID="0xb20" Name="READ_CLIPBOARD_DATA">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0xb21" Name="WRITE_CLIPBOARD_DATA">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    -->
+  </Commands>
+</GTA3Script>

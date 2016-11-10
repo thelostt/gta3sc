@@ -45,6 +45,9 @@ struct Command
         bool allow_constant : 1;    /// Allow literal values
         bool allow_global_var : 1;  /// Allow global variables
         bool allow_local_var : 1;   /// Allow local variables
+        bool allow_text_label : 1;  /// Allow text labels (and its variables) [valid for PARAM arguments only].
+        bool allow_pointer : 1;     /// Allow INT values in ANY_TEXT_LABEL arguments.
+        bool preserve_case : 1;     /// Preserves the case of a string literal.
         std::vector<shared_ptr<Enum>> enums;
         EntityType entity_type;     /// Entity type of this argument. Zero means none.
 
@@ -53,7 +56,8 @@ struct Command
 
         explicit Arg(ArgType type) :
             type(type), optional(false),
-            is_output(false), allow_constant(true), allow_global_var(true), allow_local_var(true)
+            is_output(false), allow_constant(true), allow_global_var(true), allow_local_var(true),
+            preserve_case(false), allow_pointer(false), allow_text_label(false)
         {
         }
 
@@ -184,7 +188,9 @@ protected:
     optional<const Command&> cmd_START_NEW_STREAMED_SCRIPT;
     optional<const Command&> cmd_TERMINATE_THIS_SCRIPT;
     optional<const Command&> cmd_SCRIPT_NAME;
-    optional<const Command&> cmd_RET;
+    optional<const Command&> cmd_CLEO_CALL;
+    optional<const Command&> cmd_CLEO_RETURN;
+    optional<const Command&> cmd_TERMINATE_THIS_CUSTOM_SCRIPT;
     optional<const Command&> cmd_GOTO;
     optional<const Command&> cmd_GOTO_IF_FALSE;
     optional<const Command&> cmd_ANDOR;
@@ -195,7 +201,6 @@ protected:
     optional<const Command&> cmd_SKIP_CUTSCENE_START_INTERNAL;
     optional<const Alternator&> alt_SET;
     optional<const Alternator&> alt_CSET;
-    optional<const Alternator&> alt_TERMINATE_THIS_CUSTOM_SCRIPT;
     optional<const Alternator&> alt_ADD_THING_TO_THING;
     optional<const Alternator&> alt_SUB_THING_FROM_THING;
     optional<const Alternator&> alt_MULT_THING_BY_THING;
@@ -441,9 +446,9 @@ public:
         return this->cmd_SCRIPT_NAME;
     }
 
-    optional<const Alternator&> terminate_this_custom_script() const // TODO not an alternator
+    optional<const Command&> terminate_this_custom_script() const // TODO not an alternator
     {
-        return this->alt_TERMINATE_THIS_CUSTOM_SCRIPT;
+        return this->cmd_TERMINATE_THIS_CUSTOM_SCRIPT;
     }
 
     optional<const Command&> return_() const    // can't be named purely return() because of the C keyword
@@ -451,9 +456,14 @@ public:
         return this->cmd_RETURN;
     }
 
-    optional<const Command&> ret() const
+    optional<const Command&> cleo_call() const
     {
-        return this->cmd_RET;
+        return this->cmd_CLEO_CALL;
+    }
+
+    optional<const Command&> cleo_return() const
+    {
+        return this->cmd_CLEO_RETURN;
     }
 
     optional<const Command&> goto_() const    // can't be named purely goto() because of the C keyword

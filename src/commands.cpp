@@ -41,7 +41,9 @@ Commands::Commands(std::multimap<std::string, Command, iless> commands_,
     this->cmd_TERMINATE_THIS_SCRIPT         = find_command("TERMINATE_THIS_SCRIPT");
     this->cmd_SCRIPT_NAME                   = find_command("SCRIPT_NAME");
     this->cmd_RETURN                        = find_command("RETURN");
-    this->cmd_RET                           = find_command("RET");
+    this->cmd_CLEO_CALL                     = find_command("CLEO_CALL");
+    this->cmd_CLEO_RETURN                   = find_command("CLEO_RETURN");
+    this->cmd_TERMINATE_THIS_CUSTOM_SCRIPT  = find_command("TERMINATE_THIS_CUSTOM_SCRIPT");
     this->cmd_GOTO                          = find_command("GOTO");
     this->cmd_GOTO_IF_FALSE                 = find_command("GOTO_IF_FALSE");
     this->cmd_ANDOR                         = find_command("ANDOR");
@@ -51,7 +53,6 @@ Commands::Commands(std::multimap<std::string, Command, iless> commands_,
     this->cmd_SKIP_CUTSCENE_START_INTERNAL  = find_command("SKIP_CUTSCENE_START_INTERNAL");
     this->alt_SET                           = find_alternator("SET");
     this->alt_CSET                          = find_alternator("CSET");
-    this->alt_TERMINATE_THIS_CUSTOM_SCRIPT  = find_alternator("TERMINATE_THIS_CUSTOM_SCRIPT");
     this->alt_ADD_THING_TO_THING            = find_alternator("ADD_THING_TO_THING");
     this->alt_SUB_THING_FROM_THING          = find_alternator("SUB_THING_FROM_THING");
     this->alt_MULT_THING_BY_THING           = find_alternator("MULT_THING_BY_THING");
@@ -147,6 +148,11 @@ static auto maybe_var_identifier(const string_view& ident, const Command::Arg& a
 {
     if(arginfo.type != ArgType::TextLabel && arginfo.type != ArgType::TextLabel16 && arginfo.type != ArgType::AnyTextLabel)
     {
+        if(arginfo.type == ArgType::Param && arginfo.allow_constant && arginfo.allow_text_label)
+        {
+            if(ident.size() && ident.front() == '$')
+                return std::make_pair(ident.substr(1), true);
+        }
         return std::make_pair(ident, false);
     }
     else // TextLabel
@@ -213,13 +219,20 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         switch(var->type)
         {
             case VarType::Int:
-                return (arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param);
+                return (arginfo.type == ArgType::Integer
+                     || arginfo.type == ArgType::Constant 
+                     || arginfo.type == ArgType::Param 
+                     || (arginfo.type == ArgType::AnyTextLabel && arginfo.allow_pointer));
             case VarType::Float:
                 return (arginfo.type == ArgType::Float || arginfo.type == ArgType::Param);
             case VarType::TextLabel:
-                return (arginfo.type == ArgType::TextLabel || arginfo.type == ArgType::AnyTextLabel);
+                return (arginfo.type == ArgType::TextLabel
+                    ||  arginfo.type == ArgType::AnyTextLabel
+                    || (arginfo.type == ArgType::Param && arginfo.allow_text_label));
             case VarType::TextLabel16:
-                return (arginfo.type == ArgType::TextLabel16 || arginfo.type == ArgType::AnyTextLabel);
+                return (arginfo.type == ArgType::TextLabel16
+                    ||  arginfo.type == ArgType::AnyTextLabel
+                    || (arginfo.type == ArgType::Param && arginfo.allow_text_label));
             default:
                 Unreachable();
         }
@@ -337,7 +350,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
             if(hint && hint->maybe_annotation<const StreamedFileAnnotation&>())
                 return &arginfo;
 
-            if(arginfo.allow_constant && arginfo.type != ArgType::Float)
+            if(arginfo.allow_constant && arginfo.type == ArgType::Integer)
             {
                 if(commands.find_constant_for_arg(text, arginfo))
                     return &arginfo;
@@ -347,6 +360,8 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
             if(exp_var || exp_var.error().reason != MatchFailure::NoSuchVar)
                 return exp_var;
             else if(arginfo.uses_enum(commands.get_models_enum())) // allow unknown models
+                return &arginfo;
+            else if(arginfo.type == ArgType::Param && arginfo.allow_constant && arginfo.allow_text_label)
                 return &arginfo;
             else
                 return make_unexpected(MatchFailure{ hint, MatchFailure::NoSuchVar });
@@ -371,7 +386,11 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         case NodeType::Text:
             return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr);
         case NodeType::String:
-            return make_unexpected(MatchFailure{ hint, MatchFailure::StringLiteralNotAllowed });
+            if(arginfo.type == ArgType::AnyTextLabel
+            || (arginfo.type == ArgType::Param && arginfo.allow_text_label))
+                return &arginfo;
+            else
+                return make_unexpected(MatchFailure{ hint, MatchFailure::StringLiteralNotAllowed });
         default:
             Unreachable();
     }
@@ -521,6 +540,32 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
         }
     };
 
+    auto annotate_string = [&](SyntaxTree& node, const Command::Arg& arginfo)
+    {
+        if(node.is_annotated())
+            Expects(node.maybe_annotation<const TextLabelAnnotation&>());
+        else
+        {
+            bool preserve_case = (node.type() == NodeType::String && arginfo.preserve_case);
+
+            size_t limit = arginfo.type == ArgType::TextLabel?    7 :
+                           arginfo.type == ArgType::TextLabel16?  15 :
+                           arginfo.type == ArgType::AnyTextLabel? 127 :
+                           arginfo.type == ArgType::Param? 127 : Unreachable();
+
+            if(node.text().size() <= limit)
+            {
+                auto string = node.type() == NodeType::String? remove_quotes(node.text()).to_string() : node.text().to_string();
+                node.set_annotation(TextLabelAnnotation{ arginfo.type != ArgType::TextLabel, preserve_case, std::move(string) });
+            }
+            else
+            {
+                auto type = (node.type() == NodeType::String? "string" : "identifier");
+                program.error(node, "{} is too long, maximum size is {}", type, limit);
+            }
+        }
+    };
+
     size_t i = 0;
     for(auto it = args.begin(); it != args.end(); ++it, ++i)
     {
@@ -552,7 +597,18 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
             case NodeType::String:
             {
-                // TODO, currently Unreachable() due to special handling of it.
+                if(arginfo.type == ArgType::AnyTextLabel || arginfo.type == ArgType::Param)
+                {
+                    if(!program.opt.cleo)
+                        program.error(node, "string literals on arguments are disallowed [-fcleo]");
+
+                    annotate_string(node, arginfo);
+                }
+                else
+                {
+                    // TODO, SAVE_STRING_TO_DEBUG_FILE currently Unreachable() due to special handling of it.
+                    Unreachable();
+                }
                 break;
             }
 
@@ -584,19 +640,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
                     if(arginfo.allow_constant)
                     {
-                        if(node.is_annotated())
-                            Expects(node.maybe_annotation<const TextLabelAnnotation&>());
-                        else
-                        {
-                            size_t limit = arginfo.type == ArgType::TextLabel?    7 :
-                                           arginfo.type == ArgType::TextLabel16?  15 :
-                                           arginfo.type == ArgType::AnyTextLabel? 127 : Unreachable();
-
-                            if(node.text().size() > limit)
-                                program.error(node, "identifier is too long, maximum size is {}", limit);
-                            else
-                                node.set_annotation(TextLabelAnnotation { arginfo.type != ArgType::TextLabel, node.text().to_string() });
-                        }
+                        annotate_string(node, arginfo);
                         break;
                     }
 
@@ -605,13 +649,16 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                 else if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Float
                      || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param)
                 {
-                    if(auto opt_const = this->find_constant_for_arg(node.text(), arginfo))
+                    if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant)
                     {
-                        if(node.is_annotated())
-                            Expects(node.maybe_annotation<const int32_t&>());
-                        else
-                            node.set_annotation(*opt_const);
-                        break;
+                        if(auto opt_const = this->find_constant_for_arg(node.text(), arginfo))
+                        {
+                            if(node.is_annotated())
+                                Expects(node.maybe_annotation<const int32_t&>());
+                            else
+                                node.set_annotation(*opt_const);
+                            break;
+                        }
                     }
 
                     bool is_model_enum = arginfo.uses_enum(this->get_models_enum());
@@ -619,10 +666,16 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
                     if(!is_model_enum || !program.is_model_from_ide(node.text()))
                     {
-                        if(auto opt_var = find_var(node.text()))
+                        if(auto opt_match = maybe_var_identifier(node.text(), arginfo))
                         {
-                            annotate_var(node, *opt_var);
-                            break;
+                            if(auto opt_var = find_var(opt_match->first))
+                            {
+                                if(!opt_var->base->is_text_var() || opt_match->second) // if text var, shall begin with $
+                                {
+                                    annotate_var(node, *opt_var);
+                                    break;
+                                }
+                            }
                         }
                     }
 
@@ -636,6 +689,12 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                             assert(index >= 0);
                             node.set_annotation(ModelAnnotation{ script.shared_from_this(), uint32_t(index) });
                         }
+                        break;
+                    }
+
+                    if(arginfo.type == ArgType::Param && arginfo.allow_text_label)
+                    {
+                        annotate_string(node, arginfo);
                         break;
                     }
                     
@@ -742,7 +801,9 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::TextLabel;
     else if(!strcmp(string, "TEXT_LABEL16"))
         return ArgType::TextLabel16;
-    else if(!strcmp(string, "ANY_TEXT_LABEL"))
+    else if(!strcmp(string, "ANY_TEXT_LABEL")) // TODO remove me?
+        return ArgType::AnyTextLabel;
+    else if(!strcmp(string, "STRING"))
         return ArgType::AnyTextLabel;
     else
         throw ConfigError("unexpected 'Type' attribute: {}", string);
@@ -829,6 +890,9 @@ static std::pair<std::string, Command>
             auto allow_const_attrib  = arg_node->first_attribute("AllowConst");
             auto allow_gvar_attrib   = arg_node->first_attribute("AllowGlobalVar");
             auto allow_lvar_attrib   = arg_node->first_attribute("AllowLocalVar");
+            auto allow_text_label_attrib = arg_node->first_attribute("AllowTextLabel");
+            auto allow_pointer_attrib= arg_node->first_attribute("AllowPointer");
+            auto preserve_case_attrib= arg_node->first_attribute("PreserveCase");
             auto entity_attrib       = arg_node->first_attribute("Entity");
             auto enum_attrib         = arg_node->first_attribute("Enum");
 
@@ -845,6 +909,9 @@ static std::pair<std::string, Command>
             arg.allow_constant = xml_to_bool(allow_const_attrib, arg.is_output? false : true);
             arg.allow_global_var= xml_to_bool(allow_gvar_attrib, true);
             arg.allow_local_var = xml_to_bool(allow_lvar_attrib, true);
+            arg.allow_text_label = xml_to_bool(allow_text_label_attrib, false);
+            arg.allow_pointer = xml_to_bool(allow_pointer_attrib, false);
+            arg.preserve_case = xml_to_bool(preserve_case_attrib, false);
             arg.entity_type = 0;
 
             if(enum_attrib)

@@ -5,6 +5,7 @@
 struct TextLabelAnnotation
 {
     bool        is_varlen;
+    bool        preserve_case;
     std::string string;
 };
 
