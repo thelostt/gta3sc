@@ -1,8 +1,9 @@
 #include <stdinc.h>
 #include "disassembler.hpp"
+#include "program.hpp"
 #include "cdimage.hpp"
 
-optional<size_t> Disassembler::get_dataindex(uint32_t local_offset) const
+optional<size_t> Disassembler::data_index(uint32_t local_offset) const
 {
     for(size_t i = 0; i < this->decompiled.size(); ++i)
     {
@@ -48,7 +49,7 @@ void Disassembler::explore(size_t offset)
     {
         bool not_flag = (*opt_cmdid & 0x8000) != 0;
         auto pureid = *opt_cmdid & 0x7FFF;
-        if(auto opt_cmd = this->commands.find_command(pureid))
+        if(auto opt_cmd = this->program.commands.find_command(pureid))
         {
             if(explore_opcode(offset, *opt_cmd, not_flag))
                 return;
@@ -67,8 +68,6 @@ void Disassembler::explore(size_t offset)
     this->to_explore.emplace(offset + 1);
 }
 
-// return is dummy, too lazy to remove all the return nullopt on the function by return false.
-// but check it as if it was a boolean.
 optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& command, bool not_flag)
 {
     // delay addition of offsets into `this->to_explore`, the opcode may be illformed while we're analyzing it.
@@ -77,11 +76,11 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
     size_t offset = op_offset + 2;
 
     bool stop_it = false;
-
-    bool is_switch_start     = this->commands.equal(command, this->commands.switch_start());
-    bool is_switch_continued = this->commands.equal(command, this->commands.switch_continued());
-
     size_t argument_id = 0;
+
+    auto& commands = this->program.commands;
+    bool is_switch_start     = commands.equal(command, commands.switch_start());
+    bool is_switch_continued = commands.equal(command, commands.switch_continued());
 
     auto check_for_imm32 = [&](auto value, const Command::Arg& arg)
     {
@@ -274,11 +273,11 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
         // add next instruction as the next thing to be explored, if this isn't a instruction that
         // terminates execution or jumps unconditionally to another offset.
         // TODO would be nice if this was actually configurable.
-        if(!this->commands.equal(command, this->commands.goto_())
-        && !this->commands.equal(command, this->commands.return_())
-        && !this->commands.equal(command, this->commands.cleo_return())
-        && !this->commands.equal(command, this->commands.terminate_this_script())
-        && !this->commands.equal(command, this->commands.terminate_this_custom_script()))
+        if(!commands.equal(command, commands.goto_())
+        && !commands.equal(command, commands.return_())
+        && !commands.equal(command, commands.cleo_return())
+        && !commands.equal(command, commands.terminate_this_script())
+        && !commands.equal(command, commands.terminate_this_custom_script()))
         // TODO more
         {
             if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)
@@ -307,7 +306,7 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
 {
     auto cmdid     = *bf.fetch_u16(offset);
     bool not_flag  = (cmdid & 0x8000) != 0;
-    const Command& command = *this->commands.find_command(cmdid & 0x7FFF);
+    const Command& command = *this->program.commands.find_command(cmdid & 0x7FFF);
 
     bool stop_it = false;
 
@@ -354,7 +353,7 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
             Expects(std::next(it, 3) != command.args.end() && std::next(it, 3)->type == ArgType::Buffer32);
             it += 3;
 
-            ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, true, std::move(*bf.fetch_chars(offset, 128)) });
+            ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*bf.fetch_chars(offset, 128)) });
             offset += 128;
 
             continue;
@@ -368,7 +367,7 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
             if(it->type == ArgType::TextLabel)
             {
                 offset = offset - 1; // there was no data type, remove one byte
-                ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, true, std::move(*bf.fetch_chars(offset, 8)) });
+                ccmd.args.emplace_back(DecompiledString { DecompiledString::Type::TextLabel8, std::move(*bf.fetch_chars(offset, 8)) });
                 offset += 8;
                 continue;
             }
@@ -470,19 +469,19 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
                 break;
 
             case 0x09: // Immediate 8-byte string (SA)
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, true, std::move(*bf.fetch_chars(offset, 8)) });
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel8, std::move(*bf.fetch_chars(offset, 8)) });
                 offset += 8;
                 break;
 
             case 0x0F: // Immediate 16-byte string (SA)
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel16, true, std::move(*bf.fetch_chars(offset, 16)) });
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::TextLabel16, std::move(*bf.fetch_chars(offset, 16)) });
                 offset += 16;
                 break;
 
             case 0x0E: // Immediate variable-length string (SA)
             {
                 auto count = *bf.fetch_u8(offset);
-                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::StringVar, true, std::move(*bf.fetch_chars(offset+1, count)) });
+                ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::StringVar, std::move(*bf.fetch_chars(offset+1, count)) });
                 offset += count + 1;
                 break;
             }
@@ -527,7 +526,7 @@ void Disassembler::disassembly(size_t from_offset)
                     break;
             }
 
-            output.emplace_back(begin_offset, std::vector<uint8_t>(bf.bytecode + begin_offset, bf.bytecode + offset));
+            output.emplace_back(begin_offset, std::vector<uint8_t>(bf.bytes + begin_offset, bf.bytes + offset));
         }
     }
 }
@@ -574,7 +573,7 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* byt
             mission_offsets.emplace_back(bf.fetch_u32(seg3_offset + 8 + 8 + 4 + incr + (4*i)).value());
         }
 
-        std::vector<std::pair<std::string, uint32_t>> streamed_scripts;
+        std::vector<StreamedScript> streamed_scripts;
         if(is_sa)
         {
             auto seg5_offset = bf.fetch_u32(seg4_offset + 3).value();
@@ -588,7 +587,7 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* byt
                 char buffer[24];
                 auto name = bf.fetch_chars(seg4_offset + 8 + 4 + 4 + (28 * i), 20, buffer).value();
                 auto size = bf.fetch_u32(seg4_offset + 8 + 4 + 4 + (28 * i) + 20 + 4).value();
-                streamed_scripts.emplace_back(std::make_pair(buffer, size));
+                streamed_scripts.emplace_back(StreamedScript { buffer, size });
             }
         }
 
@@ -657,7 +656,7 @@ auto streamed_scripts_fetcher(const void* img_bytes_, size_t img_size, const Dec
 
     for(auto& script_pair : header.streamed_scripts)
     {
-        auto filename = script_pair.first + ".scm";
+        auto filename = script_pair.name + ".scm";
 
         auto it = std::find_if(entries, entries_end, [&](const CdEntry& entry) {
             // TODO entry.filenames mayn't have a null terminator!
@@ -667,8 +666,8 @@ auto streamed_scripts_fetcher(const void* img_bytes_, size_t img_size, const Dec
         if(it != entries_end)
         {
             auto offset = size_t(it->offset) * 2048;
-            auto bsize  = size_t(it->streaming_size) * 2048; // this size contains useless 00s
-            auto size   = script_pair.second;                // this size doesn't
+            auto bsize  = size_t(it->streaming_size) * 2048; // <- this size contains useless 00s
+            auto size   = script_pair.size;                  // <- but this size doesn't
 
             if(offset + bsize > img_size)
                 program.error(nocontext, "entry for '{}' in img file is is sparse", filename);

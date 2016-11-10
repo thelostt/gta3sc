@@ -5,15 +5,6 @@
 
 // TODO fix circular references to shared_ptr<Script> on tree nodes. (e.g. on Label, which has a shared_ptr to Script)
 
-/// Declared type of a variable.
-enum class VarType : uint8_t
-{
-    Int,
-    Float,
-    TextLabel,
-    TextLabel16,
-};
-
 /// Type of a script file (*.sc).
 enum class ScriptType
 {

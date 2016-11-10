@@ -949,7 +949,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
             DecompiledScmHeader& header = *opt_header;
 
             auto it = std::find_if(header.streamed_scripts.begin(), header.streamed_scripts.end(), [](const auto& pair) {
-                return iequal_to()(pair.first, "AAA");
+                return iequal_to()(pair.name, "AAA");
             });
             if(it != header.streamed_scripts.end())
                 ignore_stream_id = (it - header.streamed_scripts.begin());
@@ -1067,7 +1067,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                 std::string temp_string;
                 for(size_t i = 0; i < opt_header->streamed_scripts.size(); ++i)
                 {
-                    temp_string = opt_header->streamed_scripts[i].first;
+                    temp_string = opt_header->streamed_scripts[i].name;
                     std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
                     callback(fmt::format("#DEFINE_STREAM {} {}", temp_string, i));
                 }

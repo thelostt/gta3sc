@@ -6,14 +6,7 @@
 ///
 #pragma once
 #include <stdinc.h>
-#include "commands.hpp"
-#include "compiler.hpp" // for Compiled* types
-#include "program.hpp"
-
-struct BinaryFetcher;
-struct Disassembler;
-
-//using EOAL = EOAL;
+#include "binary_fetcher.hpp"
 
 // contrasts to CompiledVar
 struct DecompiledVar
@@ -43,11 +36,22 @@ struct DecompiledVarArray
 };
 
 // contrasts to CompiledString
-using DecompiledString = CompiledString;
+struct DecompiledString
+{
+    enum class Type : uint8_t
+    {
+        TextLabel8,
+        TextLabel16,
+        String128,
+        StringVar,
+    };
+
+    Type        type;
+    std::string storage;
+};
 
 // contrasts to ArgVariant
-// TODO rename
-using ArgVariant2 = variant<EOAL, int8_t, int16_t, int32_t, float, /*LABEL,*/ DecompiledVar, DecompiledVarArray, DecompiledString>;
+using ArgVariant2 = variant<EOAL, int8_t, int16_t, int32_t, float, DecompiledVar, DecompiledVarArray, DecompiledString>;
 
 // contrasts to CompiledCommand
 struct DecompiledCommand
@@ -63,7 +67,10 @@ struct DecompiledLabelDef
 };
 
 // contrasts to CompiledHex
-using DecompiledHex = CompiledHex;
+struct DecompiledHex
+{
+    std::vector<uint8_t> data;
+};
 
 // contrasts to CompiledScmHeader
 struct DecompiledScmHeader
@@ -75,22 +82,19 @@ struct DecompiledScmHeader
         SanAndreas,
     };
 
-    Version                               version;
-    size_t                                code_offset;
-    uint32_t                              size_global_vars_space; // including the 8 bytes of GOTO at the top
-    std::vector<std::string>              models;
-    uint32_t                              main_size;
-    std::vector<uint32_t>                 mission_offsets;
-    std::vector<std::pair<std::string, uint32_t>> streamed_scripts;
-
-    explicit DecompiledScmHeader(Version version, size_t code_offset, uint32_t size_globals, std::vector<std::string> models,
-                                 uint32_t main_size, std::vector<uint32_t> mission_offsets,
-                                 std::vector<std::pair<std::string, uint32_t>> streamed_scripts) :
-        version(version), size_global_vars_space(size_globals), main_size(main_size),
-        models(std::move(models)), mission_offsets(std::move(mission_offsets)),
-        code_offset(code_offset), streamed_scripts(std::move(streamed_scripts))
+    struct StreamedScript
     {
-    }
+        std::string name;
+        uint32_t    size;
+    };
+
+    Version                     version;                //< Version of the header.
+    size_t                      code_offset;            //< Offset to after the SCM header.
+    uint32_t                    size_global_vars_space; //< (includes the 8 bytes of GOTO at the top)
+    std::vector<std::string>    models;                 //< Models header.
+    uint32_t                    main_size;              //< Size of the main code segment.
+    std::vector<uint32_t>       mission_offsets;        //< Mission header.
+    std::vector<StreamedScript> streamed_scripts;       //< Streamed scripts header.
 
     static optional<DecompiledScmHeader> from_bytecode(const void* bytecode, size_t bytecode_size, Version version);
 };
@@ -101,15 +105,15 @@ struct DecompiledData
     size_t                                                        offset;   //< Local offset of this piece of data
     variant<DecompiledLabelDef, DecompiledCommand, DecompiledHex> data;
 
-    DecompiledData(size_t offset, DecompiledCommand x)
+    explicit DecompiledData(size_t offset, DecompiledCommand x)
         : offset(offset), data(std::move(x))
     {}
 
-    DecompiledData(size_t offset, std::vector<uint8_t> x)
+    explicit DecompiledData(size_t offset, std::vector<uint8_t> x)
         : offset(offset), data(DecompiledHex{ std::move(x) })
     {}
 
-    DecompiledData(DecompiledLabelDef x)
+    explicit DecompiledData(DecompiledLabelDef x)
         : offset(x.offset), data(std::move(x))
     {}
 };
@@ -133,97 +137,8 @@ std::vector<BinaryFetcher> mission_scripts_fetcher(const void* bytecode, size_t 
 std::vector<BinaryFetcher> streamed_scripts_fetcher(const void* img_bytes, size_t img_size,
                                                     const DecompiledScmHeader& header, ProgramContext& program);
 
-/// Interface to fetch little-endian bytes from a sequence of bytes in a easy and safe way.
-// TODO move to a utility header?
-// TODO try doing a similar interface in codegen.hpp?
-struct BinaryFetcher
-{
-    const uint8_t* const bytecode;
-    const size_t         size;
-
-    explicit BinaryFetcher(const void* bytecode, size_t size) :
-        bytecode(reinterpret_cast<const uint8_t*>(bytecode)), size(size)
-    {}
-
-    optional<uint8_t> fetch_u8(size_t offset)
-    {
-        if(offset + 1 <= size)
-        {
-             return this->bytecode[offset];
-        }
-        return nullopt;
-    }
-
-    optional<uint16_t> fetch_u16(size_t offset)
-    {
-        if(offset + 2 <= size)
-        {
-            return uint16_t(this->bytecode[offset+0]) << 0
-                 | uint16_t(this->bytecode[offset+1]) << 8;
-        }
-        return nullopt;
-    }
-
-    optional<uint32_t> fetch_u32(size_t offset)
-    {
-        if(offset + 4 <= size)
-        {
-            return uint32_t(this->bytecode[offset+0]) << 0
-                 | uint32_t(this->bytecode[offset+1]) << 8
-                 | uint32_t(this->bytecode[offset+2]) << 16
-                 | uint32_t(this->bytecode[offset+3]) << 24;
-        }
-        return nullopt;
-    }
-
-    optional<int8_t> fetch_i8(size_t offset)
-    {
-        if(auto opt = fetch_u8(offset))
-        {
-            return reinterpret_cast<int8_t&>(*opt);
-        }
-        return nullopt;
-    }
-
-    optional<int16_t> fetch_i16(size_t offset)
-    {
-        if(auto opt = fetch_u16(offset))
-        {
-            return reinterpret_cast<int16_t&>(*opt);
-        }
-        return nullopt;
-    }
-
-    optional<int32_t> fetch_i32(size_t offset)
-    {
-        if(auto opt = fetch_u32(offset))
-        {
-            return reinterpret_cast<int32_t&>(*opt);
-        }
-        return nullopt;
-    }
-
-    optional<char*> fetch_chars(size_t offset, size_t count, char* output)
-    {
-        if(offset + count <= size)
-        {
-            std::strncpy(output, reinterpret_cast<const char*>(&this->bytecode[offset]), count);
-            return output;
-        }
-        return nullopt;
-    }
-
-    optional<std::string> fetch_chars(size_t offset, size_t count)
-    {
-        std::string str(count, '\0');
-        if(fetch_chars(offset, count, &str[0]))
-            return str;
-        return nullopt;
-    }
-};
-
 ///
-struct Disassembler
+class Disassembler
 {
 public:
     enum class Type
@@ -234,7 +149,6 @@ public:
 
 private:
     ProgramContext&     program;
-    const Commands&     commands;
 
     /// Bytecode being analyzed.
     BinaryFetcher       bf;
@@ -261,16 +175,16 @@ private:
     /// This reference may be pointing to *this.
     Disassembler&       main_asm;
 
-    /// The result of disassemblying
+    /// The result of disassemblying.
     std::vector<DecompiledData> decompiled;
 
 public:
     /// Constructs assuming `main_asm` to be the main code segment.
     ///
-    /// It's undefined what happens with the analyzer if data inside `fetcher.bytecode` is changed while
-    /// this Disassembler object is still alive.
+    /// \warning It's undefined what happens with the analyzer if data inside `fetcher.bytecode` is changed while
+    /// \warning this Disassembler object is still alive.
     Disassembler(ProgramContext& program, BinaryFetcher fetcher, Disassembler& main_asm, Type type) :
-        bf(std::move(fetcher)), program(program), commands(program.commands), main_asm(main_asm), type(type)
+        bf(std::move(fetcher)), program(program), main_asm(main_asm), type(type)
     {
         // This constructor **ALWAYS** run, put all common initialization here.
         this->offset_explored.resize(bf.size);
@@ -278,7 +192,7 @@ public:
 
     /// Constructs assuming `*this` to be the main code segment.
     ///
-    /// Also see the warning regarding modifying `fetcher.bytecode` on the other constructor.
+    /// \warning See the other constructor documentation.
     Disassembler(ProgramContext& program, BinaryFetcher fetcher, Type type) :
         Disassembler(program, std::move(fetcher), *this, type)
     {
@@ -291,10 +205,7 @@ public:
     Disassembler(Disassembler&&) = default;
 
     /// Is this Disassembler the main code segment?
-    bool is_main_segment() const
-    {
-        return this == &main_asm;
-    }
+    bool is_main_segment() const { return this == &main_asm; }
 
     /// Step 1. Analyze the code.
     void run_analyzer(size_t from_offset = 0);
@@ -307,14 +218,13 @@ public:
 
     /// After Step 3. the following is available also.
     /// Gets index on get_data() vector based on a local offset.
-    optional<size_t> get_dataindex(uint32_t local_offset) const;
+    optional<size_t> data_index(uint32_t local_offset) const;
 
 private:
 
     void analyze();
 
     void explore(size_t offset);
-
 
     /// Tries to explore the `offset` assuming it contains the specified `command`.
     ///
@@ -329,6 +239,8 @@ private:
     DecompiledData opcode_to_data(size_t& offset);
 };
 
+
+//////////////////////////////
 
 inline optional<int32_t> get_imm32(const EOAL&)
 {
@@ -367,7 +279,8 @@ inline optional<int32_t> get_imm32(const int32_t& i32)
 
 inline optional<int32_t> get_imm32(const float& flt)
 {
-    // TODO floating point format static assert
+    static_assert(std::numeric_limits<float>::is_iec559
+        && sizeof(float) == sizeof(uint32_t), "IEEE 754 floating point expected.");
     return reinterpret_cast<const int32_t&>(flt);
 }
 

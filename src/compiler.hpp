@@ -12,11 +12,6 @@
 #include "commands.hpp"
 #include "program.hpp"
 
-/// IR for end of argument list used in variadic argument commands.
-struct EOAL
-{
-};
-
 /// IR for variable / array.
 struct CompiledVar
 {

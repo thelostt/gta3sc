@@ -50,8 +50,7 @@ struct Var;
 struct Script;
 struct Scope;
 struct SymTable;
-struct CodeGenerator;
-struct CodeGeneratorBase;
+class CodeGenerator;
 
 using EntityType = uint16_t;
 
@@ -65,3 +64,18 @@ using transparent_multimap = std::multimap<Key, Value, std::less<>>;
 #   define __debugbreak()
 #endif
 
+//////// TODO move the following to a 'common' header
+
+/// IR for end of argument list used in variadic argument commands.
+struct EOAL
+{
+};
+
+/// Declared type of a variable.
+enum class VarType : uint8_t
+{
+    Int,
+    Float,
+    TextLabel,
+    TextLabel16,
+};
