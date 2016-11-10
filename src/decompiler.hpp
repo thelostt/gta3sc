@@ -1,6 +1,6 @@
 // TODO doc comments
 
-#include "stdinc.h"
+#include <stdinc.h>
 #include "disassembler.hpp"
 
 struct DecompilerGTA3Script;

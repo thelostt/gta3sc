@@ -7,7 +7,7 @@
 /// This representation will **later** on be used by the code generator (codegen.hpp/cpp) to build the SCM Bytecode.
 ///
 #pragma once
-#include "stdinc.h"
+#include <stdinc.h>
 #include "symtable.hpp"
 #include "commands.hpp"
 #include "program.hpp"

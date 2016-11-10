@@ -1,5 +1,5 @@
 #pragma once
-#include "stdinc.h"
+#include <stdinc.h>
 #include "annotation.hpp"
 #include "parser.hpp"
 

@@ -1,7 +1,7 @@
 // TODO doc comments
 // TODO conform to https://gist.github.com/thelink2012/a60a06a581ea78558bd7b8427103609d (specially strings)
 
-#include "stdinc.h"
+#include <stdinc.h>
 #include "disassembler.hpp"
 
 struct DecompilerIR2;

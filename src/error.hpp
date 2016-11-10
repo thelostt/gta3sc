@@ -1,5 +1,5 @@
 #pragma once
-#include "stdinc.h"
+#include <stdinc.h>
 #include "program.hpp"
 
 class ConfigError : public std::runtime_error

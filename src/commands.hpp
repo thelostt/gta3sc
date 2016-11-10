@@ -1,5 +1,5 @@
 #pragma once
-#include "stdinc.h"
+#include <stdinc.h>
 
 /// Fundamental type of a command argument.
 enum class ArgType : uint8_t

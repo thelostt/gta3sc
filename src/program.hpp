@@ -1,5 +1,5 @@
 #pragma once
-#include "stdinc.h"
+#include <stdinc.h>
 #include "parser.hpp"
 #include "symtable.hpp"
 #include "commands.hpp"

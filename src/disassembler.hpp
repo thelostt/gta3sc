@@ -5,7 +5,7 @@
 /// which can be easily parsed by our program.
 ///
 #pragma once
-#include "stdinc.h"
+#include <stdinc.h>
 #include "commands.hpp"
 #include "compiler.hpp" // for Compiled* types
 #include "program.hpp"

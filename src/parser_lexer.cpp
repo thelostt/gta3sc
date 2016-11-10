@@ -1,4 +1,4 @@
-#include "stdinc.h"
+#include <stdinc.h>
 #include "parser.hpp"
 #include "program.hpp"
 

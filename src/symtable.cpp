@@ -1,4 +1,4 @@
-#include "stdinc.h"
+#include <stdinc.h>
 #include "symtable.hpp"
 #include "commands.hpp"
 #include "program.hpp"

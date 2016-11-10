@@ -5,7 +5,7 @@
 /// (stored as a vector of pseudo-instructions) into the final bytecode (aka SCM/SCC/CS instructions).
 ///
 #pragma once
-#include "stdinc.h"
+#include <stdinc.h>
 #include "compiler.hpp"
 #include "program.hpp"
 

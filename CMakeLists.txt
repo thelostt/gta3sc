@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 2.8)
 project(gta3sc)
+include(deps/CMake/PrecompiledHeader.cmake)
 
 if(NOT CMAKE_COMPILER_IS_GNUXX AND CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(CMAKE_COMPILER_IS_GNUXX 1)
@@ -28,6 +29,7 @@ if(MSVC)
 endif(MSVC)
 
 include_directories(
+  src
   deps
   deps/rapidxml
   deps/cppformat
@@ -42,6 +44,8 @@ add_library(cppformat
 )
 
 set(GTA3SC_SRC_MAIN
+  src/stdinc.h
+  src/stdinc.cpp
   src/cdimage.hpp
   src/annotation.hpp
   src/codegen.hpp
@@ -59,7 +63,6 @@ set(GTA3SC_SRC_MAIN
   src/parser.hpp
   src/program.cpp
   src/program.hpp
-  src/stdinc.h
   src/symtable.cpp
   src/symtable.hpp
   src/system.cpp
@@ -83,6 +86,8 @@ set(GTA3SC_SRC_MISC
 add_executable(gta3sc ${GTA3SC_SRC_MISC} ${GTA3SC_SRC_MAIN})
 source_group("cpp" FILES ${GTA3SC_SRC_MISC})
 source_group("" FILES ${GTA3SC_SRC_MAIN})
+
+add_precompiled_header(gta3sc stdinc.h SOURCE_CXX src/stdinc.cpp)
 
 target_link_libraries(gta3sc cppformat)
 

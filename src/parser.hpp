@@ -1,5 +1,5 @@
 #pragma once
-#include "stdinc.h"
+#include <stdinc.h>
 
 struct ParserContext;
 
