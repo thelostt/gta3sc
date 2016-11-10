@@ -188,6 +188,7 @@ protected:
     optional<const Command&> cmd_START_NEW_STREAMED_SCRIPT;
     optional<const Command&> cmd_TERMINATE_THIS_SCRIPT;
     optional<const Command&> cmd_SCRIPT_NAME;
+    optional<const Command&> cmd_CLEO_CALL;
     optional<const Command&> cmd_CLEO_RETURN;
     optional<const Command&> cmd_TERMINATE_THIS_CUSTOM_SCRIPT;
     optional<const Command&> cmd_GOTO;
@@ -453,6 +454,11 @@ public:
     optional<const Command&> return_() const    // can't be named purely return() because of the C keyword
     {
         return this->cmd_RETURN;
+    }
+
+    optional<const Command&> cleo_call() const
+    {
+        return this->cmd_CLEO_CALL;
     }
 
     optional<const Command&> cleo_return() const

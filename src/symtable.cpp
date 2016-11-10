@@ -67,6 +67,20 @@ std::pair<bool, VarType> token_to_vartype(NodeType token_type)
     }
 }
 
+auto Scope::output_type_from_node(const SyntaxTree& node) -> optional<OutputType>
+{
+    if(auto opt_var = get_base_var_annotation(node))
+        return (*opt_var)->type;
+    else if(node.maybe_annotation<const int32_t&>())
+        return OutputType::Int;
+    else if(node.maybe_annotation<const float&>())
+        return OutputType::Float;
+    else if(node.maybe_annotation<const TextLabelAnnotation&>())
+        return OutputType::TextLabel;
+    else
+        return nullopt;
+}
+
 bool Label::may_branch_from(const Script& other_script, ProgramContext& program) const
 {
     if(this->script->type == ScriptType::Mission
@@ -120,13 +134,17 @@ auto Script::compute_unknown_models(const std::vector<shared_ptr<Script>>& scrip
 
 void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scripts, SymTable& symbols, ProgramContext& program)
 {
-    auto handle_script_input = [&program](const SyntaxTree& arg_node, const shared_ptr<Var>& lvar) -> bool
+    std::vector<std::pair<shared_ptr<const Scope>, size_t>> scope_num_inputs;
+    shared_ptr<const Scope> last_scope_entered;
+
+    auto handle_script_input = [&program](const SyntaxTree& arg_node, const shared_ptr<Var>& lvar, bool is_cleo_call) -> bool
     {
         if(auto opt_arg_var = get_base_var_annotation(arg_node))
         {
             auto& argvar = *opt_arg_var;
 
-            if(argvar->type != lvar->type)
+            if(argvar->type != lvar->type
+            && !(is_cleo_call && argvar->is_text_var() && lvar->type == VarType::Int))
             {
                 program.error(arg_node, "type mismatch in target label");
                 // TODO more info
@@ -153,7 +171,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
 
     auto send_input_vars = [&](const SyntaxTree::const_iterator& input_begin,
                                const SyntaxTree::const_iterator& input_end,
-                               shared_ptr<const Scope>& target_scope)
+                               shared_ptr<const Scope>& target_scope, bool is_cleo_call)
     {
         size_t target_var_index = 0;
         for(auto arginput = input_begin; arginput != input_end; ++arginput)
@@ -172,13 +190,15 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                     ++target_var_index;
                     if((**arginput).maybe_annotation<const int32_t&>())
                         break;
-                    handle_script_input(**arginput, lvar);
+                    if(is_cleo_call && (**arginput).maybe_annotation<const TextLabelAnnotation&>())
+                        break;
+                    handle_script_input(**arginput, lvar, is_cleo_call);
                     break;
                 case VarType::Float:
                     ++target_var_index;
                     if((**arginput).maybe_annotation<const float&>())
                         break;
-                    handle_script_input(**arginput, lvar);
+                    handle_script_input(**arginput, lvar, is_cleo_call);
                     break;
                 case VarType::TextLabel:
                     target_var_index += 2;
@@ -190,6 +210,47 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                     break;
                 default:
                     Unreachable();
+            }
+        }
+    };
+
+    auto recv_output_vars = [&](const SyntaxTree::const_iterator& output_begin,
+                                const SyntaxTree::const_iterator& output_end,
+                                shared_ptr<const Scope>& target_scope, bool is_cleo_call)
+    {
+        Expects(is_cleo_call == true);
+
+        size_t i = 0;
+        for(auto argoutput = output_begin; argoutput != output_end; ++argoutput)
+        {
+            if(auto opt_outvar = get_base_var_annotation(**argoutput))
+            {
+                auto& outvar       = *opt_outvar;
+                auto& scope_output = (*target_scope->outputs)[i];
+                auto output_type   = scope_output.first;
+                auto output_entity = scope_output.second.expired()? 0 : scope_output.second.lock()->entity;
+
+                Expects(output_type == Scope::OutputType::Int || output_type == Scope::OutputType::Float);
+
+                if(output_type != outvar->type)
+                {
+                    program.error(**argoutput, "type mismatch");
+                    // TODO more info
+                    continue;
+                }
+
+                if(outvar->entity && output_entity != outvar->entity)
+                {
+                    program.error(**argoutput, "entity type mismatch");
+                    // TODO more info
+                    continue;
+                }
+
+                outvar->entity = output_entity;
+            }
+            else
+            {
+                program.error(**argoutput, "expected a variable as output");
             }
         }
     };
@@ -217,7 +278,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
             return;
         }
 
-        send_input_vars(std::next(node.begin(), 2), node.end(), target_scope);
+        send_input_vars(std::next(node.begin(), 2), node.end(), target_scope, false);
     };
 
     auto handle_start_new_streamed_script = [&](const SyntaxTree& node, const Command& command)
@@ -267,15 +328,154 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
             }
         }
     };
+    
+    auto handle_cleo_call = [&](SyntaxTree& node, const Command& command)
+    {
+        if(node.child_count() < 3)
+            return;
 
-    // TODO this method may be entirely skipped if no entity tracking enabled?
+        auto& arglabel_node = node.child(1);
+        auto& argcount_node = node.child(2);
+
+        auto opt_target_label = arglabel_node.maybe_annotation<const shared_ptr<Label>&>();
+        if(!opt_target_label)
+        {
+            program.warning(arglabel_node, "target label is not a label identifier");
+            return;
+        }
+
+        auto& target_scope = (*opt_target_label)->scope;
+        if(!target_scope)
+        {
+            auto where = program.opt.scope_then_label? "after" : "before";
+            program.error(arglabel_node, "expected scope in target label");
+            program.note(arglabel_node, "add a '{{' {} the target label", where);
+            return;
+        }
+
+        if(!target_scope->outputs)
+        {
+            program.error(arglabel_node, "target scope does not have a CLEO_RETURN");
+            return;
+        }
+
+        if(argcount_node.maybe_annotation<int32_t>().value_or(99) != 0)
+            program.error(argcount_node, "this argument shall be set to 0");
+
+        auto& outputs     = *target_scope->outputs;
+        size_t num_args   = node.child_count() - 3;
+
+        if(num_args < outputs.size())
+        {
+            program.error(node, "too few arguments for this function call");
+            return;
+        }
+
+        size_t num_inputs  = num_args - outputs.size();
+
+        // TODO maybe store it in the scope object
+        auto it_num_input = std::find_if(scope_num_inputs.begin(), scope_num_inputs.end(), [&](const auto& v) {
+            return v.first == target_scope;
+        });
+        
+        if(it_num_input == scope_num_inputs.end())
+        {
+            scope_num_inputs.emplace_back(std::make_pair(target_scope, num_inputs));
+        }
+        else if(num_inputs < it_num_input->second)
+        {
+            program.error(node, "too few arguments for this function call");
+            return;
+        }
+        else if(num_inputs > it_num_input->second)
+        {
+            program.error(node, "too many arguments for this function call");
+            return;
+        }
+
+        send_input_vars(std::next(node.begin(), 3), std::next(node.begin(), 3+num_inputs), target_scope, true);
+        recv_output_vars(std::next(node.begin(), 3+num_inputs), node.end(), target_scope, true);
+
+        argcount_node.set_annotation(int32_t(num_inputs));
+    };
+
+    auto handle_cleo_return = [&](SyntaxTree& node, const Command& command)
+    {
+        if(node.child_count() < 2)
+            return;
+
+        auto& outputs = last_scope_entered->outputs.value();
+
+        size_t num_outputs = node.child_count() - 2;
+
+        auto& argcount_node = node.child(1);
+
+        if(argcount_node.maybe_annotation<int32_t>().value_or(99) != 0)
+            program.error(argcount_node, "this argument shall be set to 0");
+
+        argcount_node.set_annotation(int32_t(num_outputs));
+
+        if(num_outputs > outputs.size())
+        {
+            program.error(node, "too many return arguments");
+            return;
+        }
+        else if(num_outputs < outputs.size())
+        {
+            program.error(node, "too few return arguments");
+            return;
+        }
+
+        size_t i = 0;
+        for(auto it = std::next(node.begin(), 2); it != node.end(); ++it, ++i)
+        {
+            auto& output = outputs[i];
+            if(auto opt_type = Scope::output_type_from_node(**it))
+            {
+                if(*opt_type != output.first)
+                {
+                    program.error(**it, "type mismatch");
+                    // TODO more info
+                    continue;
+                }
+
+                if(auto opt_var = get_base_var_annotation(**it))
+                {
+                    if(!output.second.expired())
+                    {
+                        auto& output_var = output.second.lock();
+                        auto& return_var = *opt_var;
+
+                        if(output_var->entity != return_var->entity)
+                        {
+                            program.error(**it, "entity type mismatch");
+                            // TODO more info
+                            continue;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                program.error(node, "unrecognized output type");
+            }
+        }
+    };
 
     for(auto& script : scripts)
     {
-        script->tree->depth_first([&](const SyntaxTree& node)
+        script->tree->depth_first([&](SyntaxTree& node)
         {
             switch(node.type())
             {
+                case NodeType::Scope:
+                {
+                    // any scope checking already happened at this point,
+                    // so no need for handling entering/exiting, just handle scopes being reached
+                    last_scope_entered = node.annotation<shared_ptr<Scope>>();
+                    return true;
+                }
+
                 case NodeType::Command:
                 {
                     if(auto opt_command = node.maybe_annotation<std::reference_wrapper<const Command>>())
@@ -285,6 +485,10 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                             handle_start_new_script(node, command);
                         else if(program.commands.equal(command, program.commands.start_new_streamed_script()))
                             handle_start_new_streamed_script(node, command);
+                        else if(program.commands.equal(command, program.commands.cleo_call()))
+                            handle_cleo_call(node, command);
+                        else if(program.commands.equal(command, program.commands.cleo_return()))
+                            handle_cleo_return(node, command);
                         else
                             handle_entity_command(node, command);
                     }
@@ -321,6 +525,93 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                         }
                     }
 
+                    return false;
+                }
+
+                default:
+                    return true;
+            }
+        });
+    }
+}
+
+void Script::compute_scope_outputs(const SymTable& symbols, ProgramContext& program)
+{
+    if(!program.opt.cleo)
+        return;
+
+    for(auto& scope : this->scopes)
+    {
+        scope->tree.lock()->depth_first([&](const SyntaxTree& node)
+        {
+            if(scope->outputs) // already found
+                return false;
+
+            switch(node.type())
+            {
+                case NodeType::Command:
+                {
+                    // TODO use const Commands& instead of comparing strings
+                    if(node.child(0).text() == "CLEO_RETURN")
+                    {
+                        if(node.child_count() < 2)
+                        {
+                            program.error(node, "CLEO_RETURN must have at least one parameter, which is a 0 placeholder");
+                            return false;
+                        }
+
+                        scope->outputs.emplace();
+                        auto& outputs = *scope->outputs;
+
+                        for(auto it = std::next(node.begin(), 2); it != node.end(); ++it)
+                        {
+                            if((*it)->type() == NodeType::Text)
+                            {
+                                auto opt_match = Miss2Identifier::match((*it)->text());
+                                if(opt_match)
+                                {
+                                    string_view varname;
+                                    if(opt_match->identifier.front() == '$')
+                                        varname = opt_match->identifier.substr(1);
+                                    else
+                                        varname = opt_match->identifier;
+
+                                    if(auto opt_var = symbols.find_var(varname, scope))
+                                    {
+                                        if((*opt_var)->is_text_var() && opt_match->identifier.front() != '$')
+                                            outputs.emplace_back(Scope::OutputType::TextLabel, *opt_var);
+                                        else
+                                            outputs.emplace_back((*opt_var)->type, *opt_var);
+                                    }
+                                    else
+                                        outputs.emplace_back(Scope::OutputType::TextLabel, weak_ptr<Var>());
+
+                                    if(outputs.back().first == Scope::OutputType::TextLabel)
+                                        program.error(**it, "this output type is not supported");
+                                }
+                                else
+                                {
+                                    program.error(**it, ::to_string(opt_match.error()));
+                                }
+                            }
+                            else if((*it)->type() == NodeType::Integer)
+                            {
+                                outputs.emplace_back(Scope::OutputType::Int, weak_ptr<Var>());
+                            }
+                            else if((*it)->type() == NodeType::Float)
+                            {
+                                outputs.emplace_back(Scope::OutputType::Float, weak_ptr<Var>());
+                            }
+                            else if((*it)->type() == NodeType::String)
+                            {
+                                program.error(**it, "this output type is not supported");
+                            }
+                            else
+                            {
+                                program.error(**it, "unrecognized output type");
+                            }
+                        }
+                    }
                     return false;
                 }
 
@@ -654,9 +945,10 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 else
                 {
                     local_index = (script.type != ScriptType::Mission? 0 : program.opt.mission_var_begin);
-                    current_scope = table.add_scope();
+                    current_scope = table.add_scope(node);
                     current_scope->vars.emplace("TIMERA", std::make_shared<Var>(false, VarType::Int, program.opt.timer_index + 0, nullopt));
                     current_scope->vars.emplace("TIMERB", std::make_shared<Var>(false, VarType::Int, program.opt.timer_index + 1, nullopt));
+                    script.scopes.emplace_back(current_scope);
                 }
 
                 if(next_scoped_label)

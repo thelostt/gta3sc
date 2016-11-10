@@ -595,6 +595,11 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         for(auto& script : scripts)
         {
+            script->compute_scope_outputs(symbols, program);
+        }
+
+        for(auto& script : scripts)
+        {
             script->annotate_tree(symbols, program);
         }
 

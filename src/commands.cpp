@@ -41,6 +41,7 @@ Commands::Commands(std::multimap<std::string, Command, iless> commands_,
     this->cmd_TERMINATE_THIS_SCRIPT         = find_command("TERMINATE_THIS_SCRIPT");
     this->cmd_SCRIPT_NAME                   = find_command("SCRIPT_NAME");
     this->cmd_RETURN                        = find_command("RETURN");
+    this->cmd_CLEO_CALL                     = find_command("CLEO_CALL");
     this->cmd_CLEO_RETURN                   = find_command("CLEO_RETURN");
     this->cmd_TERMINATE_THIS_CUSTOM_SCRIPT  = find_command("TERMINATE_THIS_CUSTOM_SCRIPT");
     this->cmd_GOTO                          = find_command("GOTO");
