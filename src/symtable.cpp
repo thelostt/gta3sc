@@ -443,7 +443,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                 {
                     if(!output.second.expired())
                     {
-                        auto& output_var = output.second.lock();
+                        auto output_var = output.second.lock();
                         auto& return_var = *opt_var;
 
                         if(output_var->entity != return_var->entity)
@@ -1632,8 +1632,10 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             replace_arg0(node, symbols.count_mission_passed);
                         else if(commands.equal(command, commands.set_progress_total()))
                             replace_arg0(node, symbols.count_progress);
-                        else if(commands.equal(command, commands.terminate_this_script()) && program.opt.output_cleo)
+                        else if(commands.equal(command, commands.terminate_this_script()) && program.opt.output_cleo && !program.opt.mission_script)
                             program.error(node, "command not allowed in custom scripts, please use TERMINATE_THIS_CUSTOM_SCRIPT");
+                        else if(commands.equal(command, commands.terminate_this_custom_script()) && (!program.opt.output_cleo || program.opt.mission_script))
+                            program.error(node, "command not allowed in multifile scripts or custom missions, please use TERMINATE_THIS_SCRIPT");
                         else if(commands.equal(command, commands.skip_cutscene_start()))
                         {
                             if(!program.opt.skip_cutscene)

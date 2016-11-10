@@ -28,6 +28,8 @@ Options:
   --help                   Display this information.
   -o <file>                Place the output into <file>.
   --cs                     Outputs a CLEO script. This also sets -fcleo.
+  --cm                     Outputs a CLEO custom mission.
+                           This also sets -fcleo and -fmission-script.
   --config=<name>          Which compilation configurations to use (gta3,gtavc,
                            gtasa). This effectively reads the data files at
                            '/config/<name>/' and sets some appropriate flags.
@@ -78,6 +80,7 @@ Options:
                            linear-sweep instead of a recursive traversal.
   -frelax-not              Allows the use of NOT outside of conditions.
   -fcleo                   Enables the use of CLEO features.
+  -fmission-script         Compiling a mission script.
 )";
 
 enum class Action
@@ -299,8 +302,21 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.cleo.emplace(0);
                 options.output_cleo = true;
+                options.mission_script = false;
                 options.headerless = true;
                 options.use_local_offsets = true;
+            }
+            else if(optget(argv, nullptr, "--cm", 0))
+            {
+                options.cleo.emplace(0);
+                options.output_cleo = true;
+                options.mission_script = true;
+                options.headerless = true;
+                options.use_local_offsets = true;
+            }
+            else if(optflag(argv, "-fmission-script", nullptr))
+            {
+                options.mission_script = true;
             }
             else if(const char* name = optget(argv, "-D", nullptr, 1))
             {
@@ -490,7 +506,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         if(program.opt.emit_ir2)
             newext = ".ir2";
         else if(program.opt.output_cleo)
-            newext = ".cs";
+            newext = program.opt.mission_script? ".cm" : ".cs";
         else
             newext = ".scm";
 
@@ -506,7 +522,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         //const char* input = "test.sc";
         //const char* input = "gta3_src/main.sc";
 
-        auto main = Script::create(program, input, ScriptType::Main);
+        auto main = Script::create(program, input, program.opt.mission_script? ScriptType::Mission : ScriptType::Main);
 
         if(main == nullptr)
         {

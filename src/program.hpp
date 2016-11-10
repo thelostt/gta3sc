@@ -52,6 +52,7 @@ struct Options
     bool linear_sweep = false;
     bool relax_not = false;
     bool output_cleo = false;
+    bool mission_script = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;

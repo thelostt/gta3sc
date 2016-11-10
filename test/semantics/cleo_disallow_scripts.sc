@@ -1,4 +1,4 @@
-// RUN: %dis %gta3sc %s --config=gtasa --guesser --cs -fsyntax-only 2>&1 | 
+// RUN: %dis %gta3sc %s --config=gtasa --guesser --cs -fsyntax-only 2>&1 | %verify %s
 {
 START_NEW_SCRIPT script_label		// expected-error {{this command is not allowed in custom scripts}}
 LAUNCH_MISSION subscript.sc			// expected-error {{this command is not allowed in custom scripts}}
