@@ -5,7 +5,6 @@
 #include "commands.hpp"
 #include "compiler.hpp"
 #include "disassembler.hpp"
-#include "decompiler.hpp"
 #include "decompiler_ir2.hpp"
 #include "codegen.hpp"
 #include "program.hpp"
@@ -1025,31 +1024,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
             }
         }
 
-        if(lang == Options::Lang::GTA3Script)
-        {
-            {
-                callback("/***** Main Segment *****/");
-                DecompilerGTA3Script(program.commands, main_segment_asm.get_data(), 0).decompile(callback);
-            }
-
-            for(size_t i = 0; i < mission_segments_asm.size(); ++i)
-            {
-                auto& mission_asm = mission_segments_asm[i];
-                callback(fmt::format("/***** Mission Segment %d *****/", (int)(i)));
-                DecompilerGTA3Script(program.commands, mission_asm.get_data(), 1 + i).decompile(callback);
-            }
-
-            for(size_t i = 0; i < stream_segments_asm.size(); ++i)
-            {
-                if(i != ignore_stream_id)
-                {
-                    auto& stream_asm = stream_segments_asm[i];
-                    callback(fmt::format("/***** Streamed Segment %d *****/", (int)(i)));
-                    DecompilerGTA3Script(program.commands, stream_asm.get_data(), 1 + i).decompile(callback);
-                }
-            }
-        }
-        else if(lang == Options::Lang::IR2)
+        if(lang == Options::Lang::IR2)
         {
             if(!program.opt.headerless)
             {
