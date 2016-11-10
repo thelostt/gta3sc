@@ -998,6 +998,8 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     add_script(ScriptType::MainExtension, node);
                 else if(command_name == "REGISTER_STREAMED_SCRIPT")
                     add_script(ScriptType::StreamedScript, node);
+                else if(program.opt.output_cleo && command_name == "START_NEW_SCRIPT")
+                    program.error(node, "this command is not allowed in custom scripts");
                 else if(command_name == "CREATE_COLLECTABLE1")
                     ++table.count_collectable1;
                 else if(command_name == "REGISTER_MISSION_PASSED" || command_name == "REGISTER_ODDJOB_MISSION_PASSED")
