@@ -87,7 +87,9 @@ add_executable(gta3sc ${GTA3SC_SRC_MISC} ${GTA3SC_SRC_MAIN})
 source_group("cpp" FILES ${GTA3SC_SRC_MISC})
 source_group("" FILES ${GTA3SC_SRC_MAIN})
 
-add_precompiled_header(gta3sc stdinc.h SOURCE_CXX src/stdinc.cpp)
+if(MSVC) # idk how to setup this in GCC/Clang
+	add_precompiled_header(gta3sc stdinc.h SOURCE_CXX src/stdinc.cpp)
+endif(MSVC)
 
 target_link_libraries(gta3sc cppformat)
 
