@@ -1,6 +1,5 @@
 #include <stdinc.h>
 #include "program.hpp"
-#include "error.hpp"
 
 enum class Section
 {

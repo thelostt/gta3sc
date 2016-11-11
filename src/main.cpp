@@ -1,6 +1,5 @@
 #include <stdinc.h>
 #include "parser.hpp"
-#include "error.hpp"
 #include "symtable.hpp"
 #include "commands.hpp"
 #include "compiler.hpp"

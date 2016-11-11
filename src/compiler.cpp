@@ -23,9 +23,9 @@ void CompilerContext::compile()
     Expects(!script->top_label->local_offset);
     Expects(!script->start_label->local_offset);
 
-    program.supported_or_fatal(nocontext, commands.andor(), "ANDOR");
-    program.supported_or_fatal(nocontext, commands.goto_(), "GOTO");
-    program.supported_or_fatal(nocontext, commands.goto_if_false(), "GOTO_IF_FALSE");
+    program.supported_or_fatal(nocontext, commands.andor, "ANDOR");
+    program.supported_or_fatal(nocontext, commands.goto_, "GOTO");
+    program.supported_or_fatal(nocontext, commands.goto_if_false, "GOTO_IF_FALSE");
     
     compile_label(script->top_label);
     compile_label(script->start_label);
@@ -48,7 +48,7 @@ void CompilerContext::compile_label(shared_ptr<Label> label_ptr)
     this->compiled.emplace_back(std::move(label_ptr));
 }
 
-void CompilerContext::compile_command(const Command& command, std::vector<ArgVariant> args, bool not_flag)
+void CompilerContext::compile_command(const Command& command, ArgList args, bool not_flag)
 {
     uint16_t id = command.id | (not_flag? uint16_t(0x8000) : uint16_t(0x0000));
 
@@ -66,7 +66,7 @@ void CompilerContext::compile_command(const SyntaxTree& command_node, bool not_f
     if(command_node.maybe_annotation<CommandSkipCutsceneStartAnnotation>())
     {
         Expects(this->label_skip_cutscene_end == nullptr);
-        const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_start_internal(),
+        const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_start_internal,
                                                             "SKIP_CUTSCENE_START_INTERNAL");
         this->label_skip_cutscene_end = make_internal_label();
         compile_command(command, { this->label_skip_cutscene_end }, not_flag);
@@ -74,7 +74,7 @@ void CompilerContext::compile_command(const SyntaxTree& command_node, bool not_f
     else if(command_node.maybe_annotation<CommandSkipCutsceneEndAnnotation>())
     {
         Expects(this->label_skip_cutscene_end != nullptr);
-        const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_end(),
+        const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_end,
                                                             "SKIP_CUTSCENE_END");
         compile_label(this->label_skip_cutscene_end);
         compile_command(command, {}, not_flag);
@@ -193,7 +193,7 @@ void CompilerContext::compile_if(const SyntaxTree& if_node)
         auto end_ptr  = make_internal_label();
         compile_conditions(if_node.child(0), else_ptr);
         compile_statements(if_node.child(1));
-        compile_command(*this->commands.goto_(), { end_ptr });
+        compile_command(*this->commands.goto_, { end_ptr });
         compile_label(else_ptr);
         compile_statements(if_node.child(2));
         compile_label(end_ptr);
@@ -217,7 +217,7 @@ void CompilerContext::compile_while(const SyntaxTree& while_node)
     compile_label(beg_ptr);
     compile_conditions(while_node.child(0), end_ptr);
     compile_statements(while_node.child(1));
-    compile_command(*this->commands.goto_(), { beg_ptr });
+    compile_command(*this->commands.goto_, { beg_ptr });
     compile_label(end_ptr);
 
     loop_stack.pop_back();
@@ -241,7 +241,7 @@ void CompilerContext::compile_repeat(const SyntaxTree& repeat_node)
     compile_label(continue_ptr);
     compile_command(annotation.add_var_with_one, { get_arg(var), get_arg(annotation.number_one) });
     compile_command(annotation.is_var_geq_times, { get_arg(var), get_arg(times) });
-    compile_command(*this->commands.goto_if_false(), { loop_ptr });
+    compile_command(*this->commands.goto_if_false, { loop_ptr });
     compile_label(break_ptr);
 
     loop_stack.pop_back();
@@ -324,8 +324,8 @@ void CompilerContext::compile_switch(const SyntaxTree& switch_node)
         }
     }
 
-    auto opt_switch_start = commands.switch_start();
-    auto opt_switch_continued = commands.switch_continued();
+    auto opt_switch_start = commands.switch_start;
+    auto opt_switch_continued = commands.switch_continued;
 
     if(opt_switch_start && opt_switch_start->supported
     && opt_switch_continued && opt_switch_continued->supported)
@@ -347,8 +347,8 @@ void CompilerContext::compile_switch_withop(const SyntaxTree& swnode, std::vecto
     bool has_default = swnode.annotation<const SwitchAnnotation&>().has_default;
     const Case* case_default = nullptr;
 
-    const Command& switch_start     = this->commands.switch_start().value();
-    const Command& switch_continued = this->commands.switch_continued().value();
+    const Command& switch_start     = this->commands.switch_start.value();
+    const Command& switch_continued = this->commands.switch_continued.value();
 
     std::transform(cases.begin(), cases.end(), sorted_cases.begin(), std::addressof<Case>);
 
@@ -432,7 +432,7 @@ void CompilerContext::compile_switch_ifchain(const SyntaxTree& swnode, std::vect
         if(num_ifs > 8)
             program.error(swnode, "more than 8 cases with the same body not supported using if-chain");
         else if(num_ifs > 1)
-            compile_command(*commands.andor(), { conv_int(21 + num_ifs - 2) });
+            compile_command(*commands.andor, { conv_int(21 + num_ifs - 2) });
         else if(num_ifs == 0 && it->is_default())
         {
             default_case = std::addressof(*it);
@@ -446,7 +446,7 @@ void CompilerContext::compile_switch_ifchain(const SyntaxTree& swnode, std::vect
             else
                 default_case = std::addressof(*k);
         }
-        if(num_ifs) compile_command(*commands.goto_if_false(), { next_ptr });
+        if(num_ifs) compile_command(*commands.goto_if_false, { next_ptr });
 
         compile_label(body_ptr);
         std::for_each(it, next_it, [&](Case& c) { c.target = body_ptr; });
@@ -458,7 +458,7 @@ void CompilerContext::compile_switch_ifchain(const SyntaxTree& swnode, std::vect
     {
         if(default_case->target)
         {
-            compile_command(*commands.goto_(), { default_case->target });
+            compile_command(*commands.goto_, { default_case->target });
         }
         else 
         {
@@ -477,7 +477,7 @@ void CompilerContext::compile_break(const SyntaxTree& break_node)
     {
         if(it->break_label)
         {
-            compile_command(*commands.goto_(), { it->break_label });
+            compile_command(*commands.goto_, { it->break_label });
             return;
         }
     }
@@ -492,7 +492,7 @@ void CompilerContext::compile_continue(const SyntaxTree& continue_node)
     {
         if(it->continue_label)
         {
-            compile_command(*commands.goto_(), { it->continue_label });
+            compile_command(*commands.goto_, { it->continue_label });
             return;
         }
     }
@@ -589,7 +589,7 @@ void CompilerContext::compile_conditions(const SyntaxTree& conds_node, const sha
         if(conds_node.child_count() > 8)
             program.error(conds_node, "use of more than 8 conditions is not supported");
 
-        compile_command(*this->commands.andor(), { conv_int(op + conds_node.child_count() - 2) });
+        compile_command(*this->commands.andor, { conv_int(op + conds_node.child_count() - 2) });
         for(auto& cond : conds_node) compile_condition(*cond);
     };
 
@@ -604,7 +604,7 @@ void CompilerContext::compile_conditions(const SyntaxTree& conds_node, const sha
         case NodeType::Lesser:
         case NodeType::LesserEqual:
             if (!this->program.opt.skip_single_ifs)
-                compile_command(*this->commands.andor(), { conv_int(0) });
+                compile_command(*this->commands.andor, { conv_int(0) });
             compile_condition(conds_node);
             break;
         case NodeType::AND: // 1-8
@@ -617,14 +617,14 @@ void CompilerContext::compile_conditions(const SyntaxTree& conds_node, const sha
             Unreachable();
     }
 
-    compile_command(*this->commands.goto_if_false(), { else_ptr });
+    compile_command(*this->commands.goto_if_false, { else_ptr });
 }
 
-std::vector<ArgVariant> CompilerContext::get_args(const Command& command, const SyntaxTree& command_node)
+auto CompilerContext::get_args(const Command& command, const SyntaxTree& command_node) -> ArgList
 {
     Expects(command_node.child_count() >= 1); // command_name + [args...]
 
-    std::vector<ArgVariant> args;
+    ArgList args;
     args.reserve(command_node.child_count() - 1);
 
     for(auto it = std::next(command_node.begin()); it != command_node.end(); ++it)

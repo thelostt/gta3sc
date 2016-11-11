@@ -79,8 +79,8 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
     size_t argument_id = 0;
 
     auto& commands = this->program.commands;
-    bool is_switch_start     = commands.equal(command, commands.switch_start());
-    bool is_switch_continued = commands.equal(command, commands.switch_continued());
+    bool is_switch_start     = commands.equal(command, commands.switch_start);
+    bool is_switch_continued = commands.equal(command, commands.switch_continued);
 
     auto check_for_imm32 = [&](auto value, const Command::Arg& arg)
     {
@@ -273,11 +273,11 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
         // add next instruction as the next thing to be explored, if this isn't a instruction that
         // terminates execution or jumps unconditionally to another offset.
         // TODO would be nice if this was actually configurable.
-        if(!commands.equal(command, commands.goto_())
-        && !commands.equal(command, commands.return_())
-        && !commands.equal(command, commands.cleo_return())
-        && !commands.equal(command, commands.terminate_this_script())
-        && !commands.equal(command, commands.terminate_this_custom_script()))
+        if(!commands.equal(command, commands.goto_)
+        && !commands.equal(command, commands.return_)
+        && !commands.equal(command, commands.cleo_return)
+        && !commands.equal(command, commands.terminate_this_script)
+        && !commands.equal(command, commands.terminate_this_custom_script))
         // TODO more
         {
             if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)

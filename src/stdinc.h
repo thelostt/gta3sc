@@ -5,6 +5,8 @@
 #   define _SCL_SECURE_NO_WARNINGS
 #endif
 
+#include <cstdint>
+#include <climits>
 #include <cstdlib>
 #include <cstring>
 #include <stdexcept>
@@ -59,6 +61,9 @@ using transparent_map = std::map<Key, Value, std::less<>>;
 
 template<typename Key, typename Value>
 using transparent_multimap = std::multimap<Key, Value, std::less<>>;
+
+template<typename Key, typename Value>
+using insensitive_map = std::map<Key, Value, iless>;
 
 #ifndef _MSC_VER
 #   define __debugbreak()

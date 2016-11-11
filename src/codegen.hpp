@@ -6,14 +6,14 @@
 ///
 #pragma once
 #include <stdinc.h>
-#include "binary_writter.hpp"
+#include "binary_writer.hpp"
 
 /// Converts intermediate representation (given by `CompilerContext`) into SCM bytecode.
 class CodeGenerator
 {
 public:
     ProgramContext&                 program;
-    BinaryWritter                   bw;
+    BinaryWriter                   bw;
     const shared_ptr<const Script>  script;
 
 private:
@@ -53,7 +53,7 @@ class CodeGeneratorData
 {
 public:
     ProgramContext&   program;
-    BinaryWritter     bw;
+    BinaryWriter     bw;
 
 private:
     const CompiledScmHeader& compiled;

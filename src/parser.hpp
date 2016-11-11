@@ -1,3 +1,14 @@
+///
+/// Tokenizer and Parser
+///
+/// Tokenizer
+///     The tokenizer is responsible for transforming a stream of characters into a stream of tokens, which, then,
+///     may be easily parsed by the parser.
+///
+/// Parser
+///     The parser is responsible for transforming the stream of tokens into an abstract syntax tree. Such tree,
+///     can then be easily parsed by the semantic analyzer in the next compilation step.
+///
 #pragma once
 #include <stdinc.h>
 
@@ -72,7 +83,6 @@ enum class Token
     EqTimedMinus,
 };
 
-
 enum class NodeType
 {
     Block,
@@ -128,10 +138,14 @@ enum class NodeType
     TimedSub,
 };
 
+/// A Miss2 Identifier is anything that starts with A-Z or $.
+///
+/// An array access is in fact a single identifier (i.e. array[1]), as such
+/// this little structure is provided to help separating the two pieces.
+///
+/// This is supposed to be used in the semantic analyzer, the parser only works with full identifier.
 struct Miss2Identifier
 {
-    // beware of the lifetime of the views
-
     enum Error
     {
         InvalidIdentifier,
@@ -143,14 +157,33 @@ struct Miss2Identifier
     string_view                             identifier;
     optional<variant<size_t, string_view>>  index;
 
+    /// Matches a miss2 identifier.
+    ///
+    /// \warning the lifetime of the returned `Miss2Identifier` must be as long
+    /// \warning as the lifetime of the view `value`.
     static auto match(const string_view& value) -> expected<Miss2Identifier, Error>;
 
+    /// Checks whether a string is a miss2 identifier.
     static bool is_identifier(const string_view& value)
     {
         auto first_char = value.empty()? '\0' : value.front();
         return (first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z') || first_char == '$';
     }
 };
+
+inline const char* to_string(Miss2Identifier::Error e)
+{
+    switch(e)
+    {
+        case Miss2Identifier::InvalidIdentifier:return "invalid identifier";
+        case Miss2Identifier::NestingOfArrays:  return "nesting of arrays not allowed";
+        case Miss2Identifier::NegativeIndex:    return "index cannot be negative";
+        case Miss2Identifier::OutOfRange:       return "index out of range";
+        default:                                Unreachable();
+    }
+}
+
+///////////////////////////////
 
 class TokenStream : public std::enable_shared_from_this<TokenStream>
 {
@@ -190,7 +223,7 @@ public:
         string_view get_text(size_t begin, size_t end) const; 
     };
 
-    // Used for error messages
+    // Used for error messages.
     struct TokenInfo
     {
         const TextStream& stream;
@@ -199,22 +232,23 @@ public:
 
         explicit TokenInfo(const TextStream& stream, size_t begin, size_t end)
             : stream(stream), begin(begin), end(end)
-        {
-        }
+        {}
 
         explicit TokenInfo(const TextStream& stream, const TokenData& token)
             : TokenInfo(stream, token.begin, token.end)
-        {
-        }
+        {}
     };
 
-public:
-    const TextStream              text;
-    const std::vector<TokenData>  tokens;       //< Tokenized source file.
+    const TextStream              text;     //< Source file.
+    const std::vector<TokenData>  tokens;   //< Tokenized source file.
 
 public:
+    /// Tokenizes the specified file.
     static std::shared_ptr<TokenStream> tokenize(ProgramContext&, const fs::path&);
+
+    /// Tokenizes the specified data.
     static std::shared_ptr<TokenStream> tokenize(ProgramContext&, std::string data, const char* stream_name);
+
     TokenStream(TokenStream&&);
     TokenStream(const TokenStream&) = delete;
 
@@ -228,9 +262,12 @@ private:
     explicit TokenStream(ProgramContext&, TextStream stream, std::vector<TokenData>);
 };
 
+///////////////////////////////
+
 class SyntaxTree : public std::enable_shared_from_this<SyntaxTree>
 {
 public:
+    using iterator       = std::vector<std::shared_ptr<SyntaxTree>>::iterator;
     using const_iterator = std::vector<std::shared_ptr<SyntaxTree>>::const_iterator;
 
 public:
@@ -238,15 +275,6 @@ public:
     SyntaxTree(const SyntaxTree&) = delete;
     SyntaxTree(SyntaxTree&&);
     
-    /// Builds a temporary SyntaxTree which isn't dynamically allocated (for shared_ptr).
-    ///
-    /// \warning Be careful, `shared_from_this()` returns null for these.
-    template<typename T>
-    static SyntaxTree temporary(NodeType type, T udatax)
-    {
-        return SyntaxTree(type, any(std::move(udatax)));
-    }
-
     /// Gets the type of this node.
     NodeType type() const
     {
@@ -267,6 +295,18 @@ public:
         if(this->instream)
             return (this->token.begin != this->token.end);
         return false;
+    }
+
+    /// Iterator to childs (begin).
+    iterator begin()
+    {
+        return this->childs.begin();
+    }
+
+    /// Iterator to childs (end).
+    iterator end()
+    {
+        return this->childs.end();
     }
 
     /// Iterator to childs (begin).
@@ -318,10 +358,11 @@ public:
     // Steals the childs from the other tree.
     void take_childs(shared_ptr<SyntaxTree>& other)
     {
+        this->childs.reserve(this->childs.size() + other->childs.size());
         for(auto& child : other->childs)
         {
             child->parent_ = std::weak_ptr<SyntaxTree>(this->shared_from_this());
-            this->childs.emplace_back(child);
+            this->childs.emplace_back(std::move(child));
         }
 
         other->childs.clear();
@@ -335,10 +376,8 @@ public:
     {
         if(fun(*this))
         {
-            for(size_t i = 0, max = this->child_count(); i < max; ++i)
-            {
-                this->child(i).depth_first(std::ref(fun));
-            }
+            for(auto& child : *this)
+                child->depth_first(std::ref(fun));
         }
     }
 
@@ -354,7 +393,7 @@ public:
     /// Note: You can get a ref by using e.g. `<int&>` instead of `<int>`.
     ///
     /// \throws bad_any_cast if there's no annotation on this node.
-    template<typename T> // 
+    template<typename T>
     T annotation() const
     {
         return any_cast<T>(this->udata);
@@ -400,7 +439,6 @@ public:
     /// For debugging purposes.
     std::string to_string(size_t level = 0) const;
 
-
 protected:
     friend class TokenStream;
     friend struct ParserContext;
@@ -419,7 +457,6 @@ private:
     optional<std::weak_ptr<SyntaxTree>>         parent_;
     any                                         udata;
 
-
 public:
     explicit SyntaxTree(NodeType type, any udata)
         : type_(type), instream(nullptr), udata(udata)
@@ -436,17 +473,5 @@ public:
     {
     }
 
-    shared_ptr<SyntaxTree> clone();
+    shared_ptr<SyntaxTree> clone() const;
 };
-
-inline const char* to_string(Miss2Identifier::Error e)
-{
-    switch(e)
-    {
-        case Miss2Identifier::InvalidIdentifier:return "invalid identifier";
-        case Miss2Identifier::NestingOfArrays:  return "nesting of arrays not allowed";
-        case Miss2Identifier::NegativeIndex:    return "index cannot be negative";
-        case Miss2Identifier::OutOfRange:       return "index out of range";
-        default:                                Unreachable();
-    }
-}

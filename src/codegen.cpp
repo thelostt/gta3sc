@@ -41,7 +41,7 @@ uint32_t CodeGenerator::compute_labels()
 
 void CodeGenerator::generate()
 {
-    this->bw = BinaryWritter(this->script->size.value());
+    this->bw = BinaryWriter(this->script->size.value());
 
     for(auto& op : this->compiled)
     {
@@ -51,7 +51,7 @@ void CodeGenerator::generate()
 
 void CodeGeneratorData::generate()
 {
-    this->bw = BinaryWritter(compiled.compiled_size());
+    this->bw = BinaryWriter(compiled.compiled_size());
     generate_code(this->compiled, *this);
 }
 

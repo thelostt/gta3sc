@@ -2,7 +2,6 @@
 #include "symtable.hpp"
 #include "commands.hpp"
 #include "program.hpp"
-#include "error.hpp"
 
 // TODO check if vars, labels, etc aren't already constants and etc
 
@@ -481,13 +480,13 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                     if(auto opt_command = node.maybe_annotation<std::reference_wrapper<const Command>>())
                     {
                         auto& command = (*opt_command).get();
-                        if(program.commands.equal(command, program.commands.start_new_script()))
+                        if(program.commands.equal(command, program.commands.start_new_script))
                             handle_start_new_script(node, command);
-                        else if(program.commands.equal(command, program.commands.start_new_streamed_script()))
+                        else if(program.commands.equal(command, program.commands.start_new_streamed_script))
                             handle_start_new_streamed_script(node, command);
-                        else if(program.commands.equal(command, program.commands.cleo_call()))
+                        else if(program.commands.equal(command, program.commands.cleo_call))
                             handle_cleo_call(node, command);
-                        else if(program.commands.equal(command, program.commands.cleo_return()))
+                        else if(program.commands.equal(command, program.commands.cleo_return))
                             handle_cleo_return(node, command);
                         else
                             handle_entity_command(node, command);
@@ -504,7 +503,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                     if(!b.maybe_annotation<std::reference_wrapper<const Command>>())
                     {
                         auto& command = node.annotation<std::reference_wrapper<const Command>>().get();
-                        if(program.commands.equal(command, program.commands.set()))
+                        if(program.commands.is_alternator(command, program.commands.set))
                         {
                             auto opt_avar = get_base_var_annotation(a);
                             auto opt_bvar = get_base_var_annotation(b);
@@ -1193,29 +1192,29 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
         {
             case NodeType::Equal:
                 if(is_condition_block)
-                    return commands.is_thing_equal_to_thing();
+                    return commands.is_thing_equal_to_thing;
                 else
-                    return commands.set();
+                    return commands.set;
             case NodeType::Cast:
-                return commands.cset();
+                return commands.cset;
             case NodeType::Add:
-                return commands.add_thing_to_thing();
+                return commands.add_thing_to_thing;
             case NodeType::Sub:
-                return commands.sub_thing_from_thing();
+                return commands.sub_thing_from_thing;
             case NodeType::Times:
-                return commands.mult_thing_by_thing();
+                return commands.mult_thing_by_thing;
             case NodeType::Divide:
-                return commands.div_thing_by_thing();
+                return commands.div_thing_by_thing;
             case NodeType::TimedAdd:
-                return commands.add_thing_to_thing_timed();
+                return commands.add_thing_to_thing_timed;
             case NodeType::TimedSub:
-                return commands.sub_thing_from_thing_timed();
+                return commands.sub_thing_from_thing_timed;
             case NodeType::Greater:
             case NodeType::Lesser: // with arguments inverted
-                return commands.is_thing_greater_than_thing();
+                return commands.is_thing_greater_than_thing;
             case NodeType::GreaterEqual:
             case NodeType::LesserEqual: // with arguments inverted
-                return commands.is_thing_greater_or_equal_to_thing();
+                return commands.is_thing_greater_or_equal_to_thing;
             default:
                 return nullopt;
         }
@@ -1294,7 +1293,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 {
                     had_end = true;
 
-                    const Command& command = program.supported_or_fatal(node, commands.terminate_this_script(), "TERMINATE_THIS_SCRIPT");
+                    const Command& command = program.supported_or_fatal(node, commands.terminate_this_script, "TERMINATE_THIS_SCRIPT");
                     node.set_annotation(std::cref(command));
 
                     if(!had_start)
@@ -1359,10 +1358,10 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // the base matching throws BadAlternator.
                 node.child(2).depth_first(std::ref(walker));
 
-                auto& alt_set                                = program.supported_or_fatal(node, commands.set(), "SET");
-                auto& alt_add_thing_to_thing                 = program.supported_or_fatal(node, commands.add_thing_to_thing(),
+                auto& alt_set                                = program.supported_or_fatal(node, commands.set, "SET");
+                auto& alt_add_thing_to_thing                 = program.supported_or_fatal(node, commands.add_thing_to_thing,
                                                                                           "ADD_THING_TO_THING");
-                auto& alt_is_thing_greater_or_equal_to_thing = program.supported_or_fatal(node, commands.is_thing_greater_or_equal_to_thing(),
+                auto& alt_is_thing_greater_or_equal_to_thing = program.supported_or_fatal(node, commands.is_thing_greater_or_equal_to_thing,
                                                                                           "IS_THING_GREATER_OR_EQUAL_TO_THING");
 
                 auto exp_set_var_to_zero = commands.match(alt_set, node, { &var, number_zero }, symbols, current_scope);
@@ -1416,7 +1415,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                             auto& case_value = case_node->child(0);
 
-                            auto& alt_is_thing_equal_to_thing = program.supported_or_fatal(node, commands.is_thing_equal_to_thing(),
+                            auto& alt_is_thing_equal_to_thing = program.supported_or_fatal(node, commands.is_thing_equal_to_thing,
                                                                                             "IS_THING_EQUAL_TO_THING");
 
                             auto exp_is_var_eq_int  = commands.match(alt_is_thing_equal_to_thing, *case_node, { &var, &case_value }, symbols, current_scope);
@@ -1466,7 +1465,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             if(last_case)
                             {
                                 last_statement_was_break = true;
-                                body_node->set_annotation(SwitchCaseBreakAnnotation{});
                             }
                             else
                             {
@@ -1510,7 +1508,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 		        // TODO case sensitivity
                 if(command_name == "SAVE_STRING_TO_DEBUG_FILE")
                 {
-                    const Command& command = program.supported_or_fatal(node, commands.save_string_to_debug_file(),
+                    const Command& command = program.supported_or_fatal(node, commands.save_string_to_debug_file,
                                                                         "SAVE_STRING_TO_DEBUG_FILE");
                     if(node.child_count() < 2)
                     {
@@ -1542,7 +1540,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 }
                 else if(command_name == "LOAD_AND_LAUNCH_MISSION")
                 {
-                    const Command& command = program.supported_or_fatal(node, commands.load_and_launch_mission_internal(),
+                    const Command& command = program.supported_or_fatal(node, commands.load_and_launch_mission_internal,
                                                                         "LOAD_AND_LAUNCH_MISSION_INTERNAL");
                     shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
                     node.child(1).set_annotation(int32_t(script->mission_id.value()));
@@ -1550,7 +1548,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 }
                 else if(command_name == "LAUNCH_MISSION")
                 {
-                    const Command& command = program.supported_or_fatal(node, commands.launch_mission(),
+                    const Command& command = program.supported_or_fatal(node, commands.launch_mission,
                                                                         "LAUNCH_MISSION");
                     shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
                     node.child(1).set_annotation(script->start_label);
@@ -1558,7 +1556,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 }
                 else if(command_name == "GOSUB_FILE")
                 {
-                    const Command& command = program.supported_or_fatal(node, commands.gosub_file(),
+                    const Command& command = program.supported_or_fatal(node, commands.gosub_file,
                                                                         "GOSUB_FILE");
                     shared_ptr<Label>  label  = symbols.find_label(node.child(1).text()).value();
                     shared_ptr<Script> script = symbols.find_script(node.child(2).text()).value();
@@ -1568,7 +1566,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 }
                 else if(command_name == "REGISTER_STREAMED_SCRIPT")
                 {
-                    const Command& command = program.supported_or_fatal(node, commands.register_streamed_script_internal(),
+                    const Command& command = program.supported_or_fatal(node, commands.register_streamed_script_internal,
                                                                         "REGISTER_STREAMED_SCRIPT_INTERNAL");
                     shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
                     node.child(1).set_annotation(int32_t(script->streamed_id.value()));
@@ -1624,19 +1622,19 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));
 
-                        if(commands.equal(command, commands.script_name()))
+                        if(commands.equal(command, commands.script_name))
                             handle_script_name(node);
-                        else if(commands.equal(command, commands.set_collectable1_total()))
+                        else if(commands.equal(command, commands.set_collectable1_total))
                             replace_arg0(node, symbols.count_collectable1);
-                        else if(commands.equal(command, commands.set_total_number_of_missions()))
+                        else if(commands.equal(command, commands.set_total_number_of_missions))
                             replace_arg0(node, symbols.count_mission_passed);
-                        else if(commands.equal(command, commands.set_progress_total()))
+                        else if(commands.equal(command, commands.set_progress_total))
                             replace_arg0(node, symbols.count_progress);
-                        else if(commands.equal(command, commands.terminate_this_script()) && program.opt.output_cleo && !program.opt.mission_script)
+                        else if(commands.equal(command, commands.terminate_this_script) && program.opt.output_cleo && !program.opt.mission_script)
                             program.error(node, "command not allowed in custom scripts, please use TERMINATE_THIS_CUSTOM_SCRIPT");
-                        else if(commands.equal(command, commands.terminate_this_custom_script()) && (!program.opt.output_cleo || program.opt.mission_script))
+                        else if(commands.equal(command, commands.terminate_this_custom_script) && (!program.opt.output_cleo || program.opt.mission_script))
                             program.error(node, "command not allowed in multifile scripts or custom missions, please use TERMINATE_THIS_SCRIPT");
-                        else if(commands.equal(command, commands.skip_cutscene_start()))
+                        else if(commands.equal(command, commands.skip_cutscene_start))
                         {
                             if(!program.opt.skip_cutscene)
                                 program.error(node, "SKIP_CUTSCENE_START not supported [-fskip-cutscene]");
@@ -1646,7 +1644,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             else
                                 node.set_annotation(CommandSkipCutsceneStartAnnotation{});
                         }
-                        else if(commands.equal(command, commands.skip_cutscene_end()))
+                        else if(commands.equal(command, commands.skip_cutscene_end))
                         {
                             if(!program.opt.skip_cutscene)
                                 program.error(node, "SKIP_CUTSCENE_END not supported [-fskip-cutscene]");
@@ -1784,7 +1782,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             case NodeType::Decrement:
             {
                 const char* opkind     = node.type() == NodeType::Increment? "increment" : "decrement";
-                auto alternator_thing0  = node.type() == NodeType::Increment? commands.add_thing_to_thing() : commands.sub_thing_from_thing();
+                auto alternator_thing0  = node.type() == NodeType::Increment? commands.add_thing_to_thing : commands.sub_thing_from_thing;
 
                 auto& alternator_thing = program.supported_or_fatal(node, alternator_thing0, "<unknown>");
 

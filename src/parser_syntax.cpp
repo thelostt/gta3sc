@@ -8,7 +8,7 @@ using token_iterator = const TokenData*;
 enum class ParserStatus
 {
     GiveUp,     //< Could not understand a thing (e.g. SWITCH while trying to parse WHILE).
-    Error,
+    Error,      //< Other errors.
 };
 
 struct ParserContext
@@ -1225,7 +1225,7 @@ SyntaxTree::SyntaxTree(SyntaxTree&& rhs)
     rhs.parent_ = nullopt;
 }
 
-shared_ptr<SyntaxTree> SyntaxTree::clone()
+shared_ptr<SyntaxTree> SyntaxTree::clone() const
 {
     shared_ptr<SyntaxTree> tree(new SyntaxTree(this->type_));
     tree->token = this->token;

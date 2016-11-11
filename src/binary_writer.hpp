@@ -3,14 +3,14 @@
 #include <memory>
 
 /// Interface to write little-endian bytes.
-struct BinaryWritter
+struct BinaryWriter
 {
 public:
-    explicit BinaryWritter()
+    explicit BinaryWriter()
         : offset(0), max_offset(0)
     {}
 
-    explicit BinaryWritter(size_t size) :
+    explicit BinaryWriter(size_t size) :
         offset(0), max_offset(size), bytecode(new uint8_t[size])
     {}
 

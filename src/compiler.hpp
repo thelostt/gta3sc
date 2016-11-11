@@ -8,8 +8,6 @@
 ///
 #pragma once
 #include <stdinc.h>
-#include "symtable.hpp"
-#include "commands.hpp"
 #include "program.hpp"
 
 /// IR for variable / array.
@@ -189,6 +187,8 @@ public:
 
 private:
 
+    using ArgList = std::vector<ArgVariant>;
+
     struct Case;
     struct LoopInfo;
 
@@ -204,7 +204,7 @@ private:
 
     void compile_label(shared_ptr<Label> label_ptr);
 
-    void compile_command(const Command& command, std::vector<ArgVariant> args, bool not_flag = false);
+    void compile_command(const Command& command, ArgList args, bool not_flag = false);
 
     void compile_command(const SyntaxTree& command_node, bool not_flag = false);
 
@@ -240,7 +240,7 @@ private:
 
 private:
 
-    std::vector<ArgVariant> get_args(const Command& command, const SyntaxTree& command_node);
+    ArgList get_args(const Command& command, const SyntaxTree& command_node);
 
     ArgVariant get_arg(const Commands::MatchArgument& a);
 

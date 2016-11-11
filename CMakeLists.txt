@@ -48,10 +48,11 @@ set(GTA3SC_SRC_MAIN
   src/stdinc.cpp
   src/cdimage.hpp
   src/binary_fetcher.hpp
-  src/binary_writter.hpp
+  src/binary_writer.hpp
   src/annotation.hpp
   src/codegen.hpp
   src/codegen.cpp
+  src/config.cpp
   src/commands.cpp
   src/commands.hpp
   src/compiler.hpp
@@ -59,7 +60,6 @@ set(GTA3SC_SRC_MAIN
   src/decompiler_ir2.hpp
   src/disassembler.hpp
   src/disassembler.cpp
-  src/error.hpp
   src/main.cpp
   src/parser_lexer.cpp
   src/parser_syntax.cpp
