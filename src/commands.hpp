@@ -84,8 +84,9 @@ struct Command
         }
     };
 
-    bool                    supported;  //< Is this command supported by the script engine?
     uint16_t                id;         //< The opcode id.
+    bool                    supported;  //< Is this command supported by the script engine?
+    optional<uint32_t>      hash;       //< The command hash.
     small_vector<Arg, 12>   args;       //< The arguments of the command.
 
     /// Checks if there's any optional argument on this command.

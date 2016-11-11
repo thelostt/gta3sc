@@ -5,6 +5,23 @@
 #include <rapidxml.hpp>
 #include <rapidxml_utils.hpp>
 
+// Bob Jenkins one-at-a-time hash function
+// As described in http://www.burtleburtle.net/bob/hash/doobs.html
+static uint32_t one_at_a_time(const char *key)
+{
+    uint32_t hash;
+    for(hash=0; *key; ++key)
+    {
+        hash += *key;
+        hash += (hash << 10);
+        hash ^= (hash >> 6);
+    }
+    hash += (hash << 3);
+    hash ^= (hash >> 11);
+    hash += (hash << 15);
+    return hash;
+}
+
 static int xml_stoi(const char* string)
 {
     try
@@ -14,6 +31,18 @@ static int xml_stoi(const char* string)
     catch(const std::exception& e)
     {
         throw ConfigError("couldn't convert string to int: {}", e.what());
+    }
+}
+
+static unsigned int xml_stou(const char* string)
+{
+    try
+    {
+        return unsigned int { std::stoul(string, nullptr, 0) };
+    }
+    catch(const std::exception& e)
+    {
+        throw ConfigError("couldn't convert string to unsigned int: {}", e.what());
     }
 }
 
@@ -111,6 +140,7 @@ static std::pair<std::string, Command>
     using namespace rapidxml;
 
     xml_attribute<>* id_attrib   = cmd_node->first_attribute("ID");
+    xml_attribute<>* hash_attrib = cmd_node->first_attribute("Hash");
     xml_attribute<>* name_attrib = cmd_node->first_attribute("Name");
     xml_attribute<>* support_attrib = cmd_node->first_attribute("Supported");
     xml_node<>*      args_node   = cmd_node->first_node("Args");
@@ -182,11 +212,19 @@ static std::pair<std::string, Command>
         }
     }
 
+    optional<uint32_t> hash;
+    if(hash_attrib)
+    {
+        hash = xml_stou(hash_attrib->value());
+        assert(*hash == one_at_a_time(name_attrib->value()));
+    }
+
     return {
         name_attrib->value(),
         Command {
-            xml_to_bool(support_attrib, true),               // supported
             uint16_t(xml_stoi(id_attrib->value()) & 0x7FFF), // id
+            xml_to_bool(support_attrib, true),               // supported
+            std::move(hash),                                 // hash
             std::move(args),                                 // args
         }
     };

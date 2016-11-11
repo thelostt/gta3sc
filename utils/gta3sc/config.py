@@ -61,7 +61,8 @@ class Enum:
 class Command:
     def __init__(self):
         self.name = ""
-        self.id = 0
+        self.id = None
+        self.hash = None
         self.supported = False
         self.args = []
 
@@ -90,8 +91,11 @@ class Command:
     @staticmethod
     def from_node(node):
         init = Command()
+        cmdid = node.get("ID", None)
+        cmdhash = node.get("Hash", None)
         init.name = node.get("Name")
-        init.id = int(node.get("ID"), 16)
+        init.id = int(cmdid, 16) if cmdid is not None else None
+        init.hash = int(cmdhash, 16) if cmdhash is not None else None
         init.supported = _str2bool(node.get("Supported", "true"))
         init.args = []
         node_args = node.find("Args")
@@ -101,7 +105,12 @@ class Command:
         return init
 
     def to_node(self):
-        node = etree.Element("Command", Name=self.name, ID=hex(self.id))
+        node = etree.Element("Command")
+        if self.id is not None:
+            node.set("ID", hex(self.id))
+        node.set("Name", self.name)
+        if self.hash is not None:
+            node.set("Hash", "0x%.8x" % self.hash)
         if self.supported == False:
             node.set("Supported", _bool2str(self.supported))
         if len(self.args) > 0:
@@ -270,6 +279,17 @@ def _bool2str(x):
         return "false"
     print(type(x))
     assert False
+
+def one_at_a_time(key):
+    result = 0
+    for i in range(0, len(key)):
+        result += ord(key[i]);                 result &= 0xFFFFFFFF
+        result += (result << 10) & 0xFFFFFFFF; result &= 0xFFFFFFFF
+        result ^= (result >> 6) & 0xFFFFFFFF;  result &= 0xFFFFFFFF
+    result += (result << 3) & 0xFFFFFFFF; result &= 0xFFFFFFFF
+    result ^= (result >> 11) & 0xFFFFFFFF; result &= 0xFFFFFFFF
+    result += (result << 15) & 0xFFFFFFFF; result &= 0xFFFFFFFF
+    return result
 
 
 if __name__ == "__main__":
