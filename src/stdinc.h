@@ -46,15 +46,13 @@ using dynamic_bitset = std::vector<bool>;
 
 class SyntaxTree;
 class ProgramContext;
-struct Commands;
+class Commands;
+class CodeGenerator;
 struct Command;
 struct Var;
 struct Script;
 struct Scope;
 struct SymTable;
-class CodeGenerator;
-
-using EntityType = uint16_t;
 
 template<typename Key, typename Value>
 using transparent_map = std::map<Key, Value, std::less<>>;

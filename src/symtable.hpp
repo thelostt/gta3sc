@@ -20,7 +20,6 @@ enum class ScriptType
 std::pair<bool, VarType> token_to_vartype(NodeType token_type);
 
 struct SymTable;
-struct Commands;
 struct CompiledScmHeader;
 struct Label;
 

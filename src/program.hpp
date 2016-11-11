@@ -249,7 +249,7 @@ private:
 
 
 protected:
-    friend struct Commands;
+    friend class Commands;
     insensitive_map<std::string, uint32_t> default_models;
     insensitive_map<std::string, uint32_t> level_models;
 };

@@ -15,6 +15,9 @@ enum class ArgType : uint8_t
     Constant,
 };
 
+///
+using EntityType = uint16_t;
+
 /// Stores constant values associated with a identifiers.
 struct Enum
 {
@@ -117,7 +120,7 @@ struct Command
 };
 
 /// Stores the list of commands and alternators.
-struct Commands
+class Commands
 {
 public:
     using Alternator = std::vector<const Command*>;
