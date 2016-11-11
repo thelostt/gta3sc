@@ -214,7 +214,9 @@ public:
     void disassembly(size_t from_offset = 0);
 
     /// Step 3. Get reference to output.
-    const std::vector<DecompiledData>& get_data() const { return this->decompiled; }
+    const std::vector<DecompiledData>& get_data() const&    { return this->decompiled; }
+    std::vector<DecompiledData>& get_data() &               { return this->decompiled; }
+    std::vector<DecompiledData> get_data() &&               { return std::move(this->decompiled); }
 
     /// After Step 3. the following is available also.
     /// Gets index on get_data() vector based on a local offset.

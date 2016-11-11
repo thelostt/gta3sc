@@ -184,19 +184,19 @@ inline std::string decompile_data(const DecompiledString& str, DecompilerIR2&)
 
     switch(str.type)
     {
-        case CompiledString::Type::TextLabel8:
+        case DecompiledString::Type::TextLabel8:
             output += "'";
             quotes = '\'';
             break;
-        case CompiledString::Type::TextLabel16:
+        case DecompiledString::Type::TextLabel16:
             output += "v'";
             quotes = '\'';
             break;
-        case CompiledString::Type::StringVar:
+        case DecompiledString::Type::StringVar:
             output += "\"";
             quotes = '"';
             break;
-        case CompiledString::Type::String128:
+        case DecompiledString::Type::String128:
             output += "b\"";
             quotes = '"';
             break;

@@ -1821,6 +1821,16 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 return false;
             }
 
+            case NodeType::BREAK:
+                if(!program.opt.allow_break_continue)
+                    program.error(node, "BREAK only allowed at the end of a SWITCH CASE [-fbreak-continue]");
+                return false;
+
+            case NodeType::CONTINUE:
+                if(!program.opt.allow_break_continue)
+                    program.error(node, "CONTINUE is not supported [-fbreak-continue]");
+                return false;
+
             default:
                 // go into my childs to find a proper statement node
                 --num_statements;

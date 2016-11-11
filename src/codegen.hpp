@@ -26,7 +26,7 @@ public:
     }
 
     explicit CodeGenerator(CompilerContext&& context, ProgramContext& program) : // consumes the context
-        CodeGenerator(std::move(context.script), std::move(context.compiled), program)
+        CodeGenerator(std::move(context.script), std::move(context).get_data(), program)
     {}
 
     /// Finds the `Label::local_offsets` for all labels that are inside this script.
