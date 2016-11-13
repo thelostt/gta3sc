@@ -186,11 +186,20 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
 
     auto is_integer = [](const std::pair<const char*, size_t>& token)
     {
-        for(size_t i = 0; i < token.second; ++i)
+        bool is_hexa = (token.second > 2 && token.first[0] == '0'
+                            && (token.first[1] == 'x' || token.first[1] == 'X'));
+
+        for(size_t i = (is_hexa? 2 : 0); i < token.second; ++i)
         {
             if(token.first[i] < '0' || token.first[i] > '9')
             {
-                if(token.first[i] == '-')
+                if(is_hexa && ((token.first[i] >= 'A' && token.first[i] <= 'F') 
+                    || (token.first[i] >= 'a' && token.first[i] <= 'f')))
+                {
+                    // TODO emit error in pedantic
+                    continue;
+                }
+                else if(token.first[i] == '-')
                 {
                     if(i != 0)
                     {

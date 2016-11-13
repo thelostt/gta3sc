@@ -38,7 +38,7 @@ static unsigned int xml_stou(const char* string)
 {
     try
     {
-        return unsigned int { std::stoul(string, nullptr, 0) };
+        return (unsigned int)(std::stoul(string, nullptr, 0));
     }
     catch(const std::exception& e)
     {

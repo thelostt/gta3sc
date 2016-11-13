@@ -252,7 +252,9 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                 return (arginfo.type == ArgType::Integer
                      || arginfo.type == ArgType::Constant 
                      || arginfo.type == ArgType::Param 
-                     || (arginfo.type == ArgType::AnyTextLabel && arginfo.allow_pointer));
+                     || (arginfo.type == ArgType::AnyTextLabel && arginfo.allow_pointer)
+                     || (arginfo.type == ArgType::TextLabel && arginfo.allow_pointer)
+                     || (arginfo.type == ArgType::TextLabel16 && arginfo.allow_pointer));
             case VarType::Float:
                 return (arginfo.type == ArgType::Float || arginfo.type == ArgType::Param);
             case VarType::TextLabel:
