@@ -79,6 +79,10 @@ Options:
   -frelax-not              Allows the use of NOT outside of conditions.
   -fcleo                   Enables the use of CLEO features.
   -fmission-script         Compiling a mission script.
+  --error-format=<format>  The error formating for the compiler errors.
+                           May be `default` or `json`. Do note the JSON format
+                           may contain some pre-compilation messages in the default
+                           format (i.e. gta3sc: type:? message).
 )";
 
 enum class Action
@@ -189,6 +193,18 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(const char* name = optget(argv, nullptr, "--levelfile", 1))
             {
                 data.levelfile = name;
+            }
+            else if(const char* name = optget(argv, nullptr, "--error-format", 1))
+            {
+                if(!strcmp(name, "default"))
+                    options.error_format = Options::ErrorFormat::Default;
+                else if(!strcmp(name, "json"))
+                    options.error_format = Options::ErrorFormat::JSON;
+                else
+                {
+                    fprintf(stderr, "gta3sc: error: invalid error-format\n");
+                    return false;
+                }
             }
             else if(const char* ver = optget(argv, nullptr, "-mheader", 1))
             {

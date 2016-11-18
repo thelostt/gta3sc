@@ -85,3 +85,30 @@ inline string_view remove_quotes(const string_view& string)
     Expects(string.size() >= 2 && string.front() == '"' && string.back() == '"');
     return string_view(string.data() + 1, string.size() - 2);
 }
+
+// based off std::quoted
+inline std::string make_quoted(const string_view& string, char quotes = '"')
+{
+    std::string result;
+    result.reserve(string.size() + 2);
+
+    result.push_back(quotes);
+    for(auto& c : string)
+    {
+        switch(c)
+        {
+            case '"': result += R"(\")"; break;
+            case '\n': result += R"(\n)"; break;
+            case '\r': result += R"(\r)"; break;
+            case '\t': result += R"(\t)"; break;
+            default:
+                if(c == quotes)
+                    result.push_back('\\');
+                result.push_back(c);
+                break;
+        }
+    }
+    result.push_back(quotes);
+
+    return result;
+}

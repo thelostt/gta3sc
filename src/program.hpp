@@ -9,6 +9,8 @@
 #include "symtable.hpp"
 #include "commands.hpp"
 
+class Options;
+
 struct tag_nocontext_t {};
 constexpr tag_nocontext_t nocontext = {};
 
@@ -27,13 +29,13 @@ public:
 };
 
 template<typename... Args>
-inline std::string format_error(const char* type, tag_nocontext_t, const char* msg, Args&&... args);
+inline std::string format_error(const Options&, const char* type, tag_nocontext_t, const char* msg, Args&&... args);
 template<typename... Args>
-inline std::string format_error(const char* type, const Script& script, const char* msg, Args&&... args);
+inline std::string format_error(const Options&, const char* type, const Script& script, const char* msg, Args&&... args);
 template<typename... Args>
-inline std::string format_error(const char* type, const TokenStream::TokenInfo& context, const char* msg, Args&&... args);
+inline std::string format_error(const Options&, const char* type, const TokenStream::TokenInfo& context, const char* msg, Args&&... args);
 template<typename... Args>
-inline std::string format_error(const char* type, const SyntaxTree& context_, const char* msg, Args&&... args);
+inline std::string format_error(const Options&, const char* type, const SyntaxTree& context_, const char* msg, Args&&... args);
 
 /// \throws ConfigError on failure.
 extern void load_ide(const fs::path& filepath, bool is_default_ide, insensitive_map<std::string, uint32_t>& output);
@@ -60,6 +62,12 @@ public:
         GTA3,
         GTAVC,
         GTASA,
+    };
+
+    enum class ErrorFormat : uint8_t
+    {
+        Default,
+        JSON,
     };
 
     /// Boolean flags
@@ -89,6 +97,7 @@ public:
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;
+    ErrorFormat error_format = ErrorFormat::Default;
     optional<uint8_t> cleo;
 
     // 32 bit stuff
@@ -188,7 +197,7 @@ public:
     template<typename Context, typename... Args>
     void error(const Context& context, const char* msg, Args&&... args)
     {
-        if(logstream) this->puts(format_error("error", context, msg, std::forward<Args>(args)...));
+        if(logstream) this->puts(format_error(this->opt, "error", context, msg, std::forward<Args>(args)...));
 
         if(++error_count >= max_error)
             this->fatal_error(nocontext, "too many errors");
@@ -197,21 +206,21 @@ public:
     template<typename Context, typename... Args>
     void note(const Context& context, const char* msg, Args&&... args)
     {
-        if(logstream) this->puts(format_error("note", context, msg, std::forward<Args>(args)...));
+        if(logstream) this->puts(format_error(this->opt, "note", context, msg, std::forward<Args>(args)...));
     }
 
     template<typename Context, typename... Args>
     void warning(const Context& context, const char* msg, Args&&... args)
     {
         ++warn_count;
-        if(logstream) this->puts(format_error("warning", context, msg, std::forward<Args>(args)...));
+        if(logstream) this->puts(format_error(this->opt, "warning", context, msg, std::forward<Args>(args)...));
     }
 
     template<typename Context, typename... Args>
     void fatal_error [[noreturn]] (const Context& context, const char* msg, Args&&... args)
     {
         ++fatal_count;
-        if(logstream) this->puts(format_error("fatal error", context, msg, std::forward<Args>(args)...));
+        if(logstream) this->puts(format_error(this->opt, "fatal error", context, msg, std::forward<Args>(args)...));
         throw HaltJobException();
     }
 
@@ -258,88 +267,125 @@ protected:
 ////////////////////////////////////////////////////////////
 
 template<typename... Args>
-inline std::string format_error(const char* type,
+inline std::string format_error(const Options& options, 
+                                const char* type,
                                 optional<const TokenStream::TextStream&> stream,
-                                const char* filename, uint32_t lineno, uint32_t colno,
+                                const char* filename, uint32_t lineno, uint32_t colno, uint32_t length,
                                 const char* msg, Args&&... args)
 {
-    std::string message;
-    message.reserve(255);
+    auto make_helper = [&]() -> std::string {
+        Expects(stream && lineno);
+        return fmt::format(" {}\n {:>{}}", stream->get_line(lineno), "^", colno);
+    };
 
-    if(filename)
+    if(options.error_format == Options::ErrorFormat::Default)
     {
-        message += filename;
-        message.push_back(':');
+        std::string message;
+        message.reserve(255);
+
+        if(filename)
+        {
+            message += filename;
+            message.push_back(':');
+        }
+        else
+        {
+            message += "gta3sc:";
+        }
+
+        if(lineno)
+        {
+            message += std::to_string(lineno);
+            message.push_back(':');
+        }
+
+        if(lineno && colno)
+        {
+            message += std::to_string(colno);
+            message.push_back(':');
+        }
+
+        if(message.size())
+        {
+            message.push_back(' ');
+        }
+
+        if(type)
+        {
+            message += type;
+            message += ": ";
+        }
+
+        message += fmt::format(msg, std::forward<Args>(args)...);
+
+        if(stream && lineno)
+        {
+            message.push_back('\n');
+            message += make_helper();
+        }
+
+        return message;
+    }
+    else if(options.error_format == Options::ErrorFormat::JSON)
+    {
+        /*
+            This is the JSON object to be printed (in a single line!):
+            {
+                "file": string | null,
+                "type": string | null, // "error", "warning", "note" or "fatal error"
+                "line": integer,        // 0 means no line information
+                "column": integer,      // 0 means no column information
+                "length": integer,      // 0 means no length information
+                "message": string,
+                "helper": string | null,
+            }
+        */
+        return fmt::format(R"({{"file": {}, "type": {}, "line": {}, "column": {}, "length": {}, "message": {}, "helper": {}}})",
+                            filename? make_quoted(filename) : "null",
+                            type? make_quoted(type) : "null",
+                            lineno, colno, length,  // line, column, length
+                            make_quoted(fmt::format(msg, std::forward<Args>(args)...)),
+                            stream && lineno? make_quoted(make_helper()) : "null");
+
     }
     else
     {
-        message += "gta3sc:";
+        Unreachable();
     }
-
-    if(lineno)
-    {
-        message += std::to_string(lineno);
-        message.push_back(':');
-    }
-
-    if(lineno && colno)
-    {
-        message += std::to_string(colno);
-        message.push_back(':');
-    }
-
-    if(message.size())
-    {
-        message.push_back(' ');
-    }
-
-    if(type)
-    {
-        message += type;
-        message += ": ";
-    }
-
-    message += fmt::format(msg, std::forward<Args>(args)...);
-
-    if(stream && lineno)
-    {
-        message += fmt::format("\n {}\n {:>{}}", stream->get_line(lineno), "^", colno);
-    }
-
-    return message;
 }
 
 template<typename... Args>
-inline std::string format_error(const char* type, tag_nocontext_t, const char* msg, Args&&... args)
+inline std::string format_error(const Options& opt, const char* type, tag_nocontext_t, const char* msg, Args&&... args)
 {
-    return format_error(type, nullopt, nullptr, 0, 0, msg, std::forward<Args>(args)...);
+    return format_error(opt, type, nullopt, nullptr, 0, 0, 0, msg, std::forward<Args>(args)...);
 }
 
 template<typename... Args>
-inline std::string format_error(const char* type, const Script& script, const char* msg, Args&&... args)
+inline std::string format_error(const Options& opt, const char* type, const Script& script, const char* msg, Args&&... args)
 {
-    return format_error(type, nullopt, script.path.generic_u8string().c_str(), 0, 0, msg, std::forward<Args>(args)...);
+    return format_error(opt, type, nullopt, script.path.generic_u8string().c_str(), 0, 0, 0, msg, std::forward<Args>(args)...);
 }
 
 template<typename... Args>
-inline std::string format_error(const char* type, const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
+inline std::string format_error(const Options& opt, const char* type, const TokenStream::TokenInfo& context, const char* msg, Args&&... args)
 {
     if(context.begin == context.end)
     {
-        return format_error(type, nullopt, context.stream.stream_name.c_str(), 0, 0,
+        return format_error(opt, type, nullopt, context.stream.stream_name.c_str(), 0, 0, 0,
                             msg, std::forward<Args>(args)...);
     }
     else
     {
         size_t lineno, colno;
+        size_t length = context.end - context.begin;
         std::tie(lineno, colno) = context.stream.linecol_from_offset(context.begin);
-        return format_error(type, context.stream, context.stream.stream_name.c_str(), lineno, colno,
+        return format_error(opt, type, context.stream, context.stream.stream_name.c_str(), lineno, colno, length,
                             msg, std::forward<Args>(args)...);
     }
 }
 
 template<typename... Args>
-inline std::string format_error(const char* type, const SyntaxTree& context_, const char* msg, Args&&... args)
+inline std::string format_error(const Options& opt, const char* type, const SyntaxTree& context_, const char* msg, Args&&... args)
 {
     const SyntaxTree* context = &context_;
 
@@ -353,11 +399,11 @@ inline std::string format_error(const char* type, const SyntaxTree& context_, co
 
     if(context->token_stream().use_count() == 0)
     {
-        return format_error("internal_error", nocontext, "context->token_stream() == nullptr during format_error");
+        return format_error(opt, "fatal error", nocontext, "context->token_stream() == nullptr during format_error");
     }
     else
     {
         auto tstream = context->token_stream().lock();
-        return format_error(type, TokenStream::TokenInfo(tstream->text, context->get_token()), msg, std::forward<Args>(args)...);
+        return format_error(opt, type, TokenStream::TokenInfo(tstream->text, context->get_token()), msg, std::forward<Args>(args)...);
     }
 }
