@@ -185,6 +185,9 @@ public:
     /// Gets the MODEL enumeration.
     const shared_ptr<Enum>& get_models_enum() const { return this->enum_models; }
 
+    /// Gets the CARPEDMODEL enumeration.
+    const shared_ptr<Enum>& get_carpedmodel_enum() const { return this->enum_carpedmodels; }
+
     // Argument matching methods.
     expected<const Command*, MatchFailure> match(const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
     expected<const Command*, MatchFailure> match(const Command&, const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;

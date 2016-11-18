@@ -86,6 +86,8 @@ enum class Action
     None,
     Compile,
     Decompile,
+    QueryConfigPath,
+    QueryModels,
 };
 
 
@@ -368,6 +370,18 @@ int main(int argc, char** argv)
             ++argv;
             action = Action::Decompile;
         }
+        else if(!strcmp(*argv, "query-config-path"))
+        {
+            ++argv;
+            action = Action::QueryConfigPath;
+            fprintf(stdout, "%s", config_path().generic_u8string().c_str());
+            return EXIT_SUCCESS;
+        }
+        else if(!strcmp(*argv, "query-models"))
+        {
+            ++argv;
+            action = Action::QueryModels;
+        }
     }
 
     if(!parse_args(argv, input, output, data, conf, options))
@@ -405,22 +419,25 @@ int main(int argc, char** argv)
         }
     }
 
-    if(!options.guesser && options.fswitch)
+    if(action != Action::QueryModels)
     {
-        fprintf(stderr, "gta3sc: error: use of -fswitch only available in guesser mode [--guesser]\n");
-        return EXIT_FAILURE;
-    }
+        if(!options.guesser && options.fswitch)
+        {
+            fprintf(stderr, "gta3sc: error: use of -fswitch only available in guesser mode [--guesser]\n");
+            return EXIT_FAILURE;
+        }
 
-    if(!options.guesser && options.streamed_scripts)
-    {
-        fprintf(stderr, "gta3sc: error: use of -fstreamed_scripts only available in guesser mode [--guesser]\n");
-        return EXIT_FAILURE;
-    }
+        if(!options.guesser && options.streamed_scripts)
+        {
+            fprintf(stderr, "gta3sc: error: use of -fstreamed_scripts only available in guesser mode [--guesser]\n");
+            return EXIT_FAILURE;
+        }
 
-    if(!options.guesser && options.skip_cutscene)
-    {
-        fprintf(stderr, "gta3sc: error: use of -fskip-cutscene only available in guesser mode [--guesser]\n");
-        return EXIT_FAILURE;
+        if(!options.guesser && options.skip_cutscene)
+        {
+            fprintf(stderr, "gta3sc: error: use of -fskip-cutscene only available in guesser mode [--guesser]\n");
+            return EXIT_FAILURE;
+        }
     }
 
     if(!data.datadir.empty())
@@ -452,7 +469,7 @@ int main(int argc, char** argv)
             return EXIT_FAILURE;
         }
     }
-    
+
     try
     {
         std::vector<fs::path> config_files;
@@ -486,6 +503,26 @@ int main(int argc, char** argv)
             return compile(input, output, *program);
         case Action::Decompile:
             return decompile(input, output, *program);
+        case Action::QueryModels:
+        {
+            if(input == "default" || input == "all")
+            {
+                fprintf(stdout, "=DEFAULT\n");
+                for(auto& pair : program->commands.get_carpedmodel_enum()->values)
+                {
+                    fprintf(stdout, "%s %u\n", pair.first.c_str(), pair.second);
+                }
+            }
+            if(input == "level" || input == "all")
+            {
+                fprintf(stdout, "=LEVEL\n");
+                for(auto& pair : program->level_models)
+                {
+                    fprintf(stdout, "%s %u\n", pair.first.c_str(), pair.second);
+                }
+            }
+            return EXIT_SUCCESS;
+        }
         default:
             Unreachable();
     }

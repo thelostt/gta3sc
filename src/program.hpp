@@ -250,6 +250,7 @@ private:
 
 protected:
     friend class Commands;
+    friend int main(int argc, char** argv);
     insensitive_map<std::string, uint32_t> default_models;
     insensitive_map<std::string, uint32_t> level_models;
 };
