@@ -65,7 +65,13 @@ SA_VAR_ARRAYS = [
 def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None, no_index=False):
     if arg.is_number():
         if arg.is_float():
+            """
             output = "%.12f" % arg.value
+            output = output.rstrip("0")
+            if output.endswith("."):
+                output += "0"
+            """
+            output = "%.6f" % arg.value
             output = output.rstrip("0")
             if output.endswith("."):
                 output += "0"
@@ -81,7 +87,7 @@ def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None, no_ind
                     enum = enums.get(arginfo.enums[0])
                     if enum != None:
                         return enum.get(arg.value, str(arg.value))
-            elif enums != None and arginfo.desc.startswith("Boolean") and arg.value in (0,1):
+            elif enums != None and arginfo.desc.startswith("Bool") and arg.value in (0,1):
                 return ("FALSE", "TRUE")[arg.value]
             return str(arg.value)
     elif arg.is_label():

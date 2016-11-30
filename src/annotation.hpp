@@ -97,7 +97,7 @@ inline std::string make_quoted(const string_view& string, char quotes = '"')
     {
         switch(c)
         {
-            case '"': result += R"(\")"; break;
+            case '\\': result += R"(\\")"; break;
             case '\n': result += R"(\n)"; break;
             case '\r': result += R"(\r)"; break;
             case '\t': result += R"(\t)"; break;
