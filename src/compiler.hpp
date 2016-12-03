@@ -56,7 +56,8 @@ using ArgVariant = variant<EOAL, int8_t, int16_t, int32_t, float, shared_ptr<Lab
 /// IR for a single command plus its arguments.
 struct CompiledCommand
 {
-    uint16_t                 id;
+    bool                    not_flag;
+    const Command&          cmd;
     std::vector<ArgVariant> args;
 };
 

@@ -21,6 +21,7 @@ std::pair<bool, VarType> token_to_vartype(NodeType token_type);
 
 struct SymTable;
 struct CompiledScmHeader;
+class MultiFileHeaderList;
 struct Label;
 
 /// Represents a *.sc script file.
@@ -61,7 +62,7 @@ public:
     ///
     /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
     /// of the scripts in the `scripts` vector should be running while this method is executed.
-    static void compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, size_t header_size);
+    static void compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, const MultiFileHeaderList&);
 
     /// Calculates the model indices (for `models` field)  for all the scripts in the `scripts` vector.
     ///

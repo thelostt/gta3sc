@@ -50,15 +50,13 @@ void CompilerContext::compile_label(shared_ptr<Label> label_ptr)
 
 void CompilerContext::compile_command(const Command& command, ArgList args, bool not_flag)
 {
-    uint16_t id = command.id | (not_flag? uint16_t(0x8000) : uint16_t(0x0000));
-
     if(command.has_optional())
     {
         assert(args.size() == 0 || !is<EOAL>(args.back()));
         args.emplace_back(EOAL{});
     }
 
-    this->compiled.emplace_back(CompiledCommand{ id, std::move(args) });
+    this->compiled.emplace_back(CompiledCommand{ not_flag, command, std::move(args) });
 }
 
 void CompilerContext::compile_command(const SyntaxTree& command_node, bool not_flag)

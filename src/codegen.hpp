@@ -7,21 +7,25 @@
 #pragma once
 #include <stdinc.h>
 #include "binary_writer.hpp"
+#include "compiler.hpp"
+
+class CustomHeaderOATC;
 
 /// Converts intermediate representation (given by `CompilerContext`) into SCM bytecode.
 class CodeGenerator
 {
 public:
     ProgramContext&                 program;
-    BinaryWriter                   bw;
+    BinaryWriter                    bw;
     const shared_ptr<const Script>  script;
+    const CustomHeaderOATC*         oatc; // may be null for nullopt
 
 private:
     std::vector<CompiledData>       compiled;
 
 public:
     explicit CodeGenerator(shared_ptr<const Script> script_, std::vector<CompiledData>&& compiled, ProgramContext& program) :
-        program(program), script(std::move(script_)), compiled(std::move(compiled))
+        program(program), script(std::move(script_)), compiled(std::move(compiled)), oatc(nullptr)
     {
     }
 
@@ -38,6 +42,9 @@ public:
     ///
     uint32_t compute_labels();
 
+    // \warning This method is not thread-safe.
+    void set_oatc(const CustomHeaderOATC& oatc) { this->oatc = std::addressof(oatc); }
+
     /// Generates the code.
     void generate();
     
@@ -46,21 +53,28 @@ public:
 
     /// Gets the size of the resulting buffer of the generation.
     size_t buffer_size() const { return this->bw.buffer_size(); }
+
+    ///
+    const std::vector<CompiledData>& ir() const { return this->compiled; };
 };
 
 /// Converts intermediate of pure-data things (such as the SCM header) into a bytecode.
 class CodeGeneratorData
 {
 public:
-    ProgramContext&   program;
-    BinaryWriter     bw;
+    using Variant = variant<CompiledScmHeader, CustomHeaderOATC>;
+
+public:
+    ProgramContext&                 program;
+    BinaryWriter                    bw;
+    const shared_ptr<const Script>  script;
 
 private:
-    const CompiledScmHeader& compiled;
+    const Variant& compiled;
 
 public:
     /// \warning reference to header must be alive as long as this object.
-    explicit CodeGeneratorData(const CompiledScmHeader& compiled, ProgramContext& program) :
+    explicit CodeGeneratorData(const Variant& compiled, ProgramContext& program) :
         program(program), compiled(compiled)
     {}
 
@@ -72,4 +86,69 @@ public:
 
     /// Gets the size of the resulting buffer of the generation.
     size_t buffer_size() const { return this->bw.buffer_size(); }
+};
+
+
+
+class CustomHeaderOATC
+{
+public:
+    explicit CustomHeaderOATC(const std::vector<CodeGenerator*>& gens, ProgramContext& program);
+
+    /// If this header contains the specified command, returns its (ordinal_id + starting_opcode).
+    optional<uint16_t> find_opcode(const Command&) const;
+
+    size_t compiled_size() const;
+    void generate_code(CodeGeneratorData&) const;
+
+private:
+    uint16_t starting_opcode;
+    std::map<const Command*, uint16_t> ordinal_commands;
+};
+
+class CompiledHeaderList
+{
+public:
+    template<typename T>
+    const std::decay_t<T>& add_header(T&& obj)
+    {
+        this->headers.emplace_back(std::forward<T>(obj));
+        return get<std::decay_t<T>>(this->headers.back());
+    }
+
+    size_t compiled_size() const;
+
+    auto begin() const { return headers.begin(); }
+    auto end() const { return headers.end(); }
+
+private:
+    std::list<CodeGeneratorData::Variant> headers;
+};
+
+class MultiFileHeaderList
+{
+public:
+    template<typename T>
+    const std::decay_t<T>& add_header(const shared_ptr<const Script>& script, T&& obj)
+    {
+        return this->headers[script].add_header(std::forward<T>(obj));
+    }
+
+    optional<const CompiledHeaderList&> script_headers(const shared_ptr<const Script>& script) const
+    {
+        auto it = this->headers.find(script);
+        if(it != this->headers.end())
+            return it->second;
+        return nullopt;
+    }
+
+    size_t compiled_size(const shared_ptr<const Script>& script) const
+    {
+        if(auto opt = this->script_headers(script))
+            return opt->compiled_size();
+        return 0;
+    }
+
+private:
+    std::map<shared_ptr<const Script>, CompiledHeaderList> headers;
 };
