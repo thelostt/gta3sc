@@ -97,10 +97,11 @@ void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scrip
     size_t offset = 0;
     for(auto& script_ptr : scripts)
     {
-        Expects(script_ptr->offset == nullopt);
+        assert(script_ptr->base == nullopt && script_ptr->code_offset == nullopt);
+        script_ptr->base.emplace(offset);
         offset += headers.compiled_size(script_ptr);
-        script_ptr->offset.emplace(offset);
-        offset += script_ptr->size.value();
+        script_ptr->code_offset.emplace(offset);
+        offset += script_ptr->code_size.value();
     }
 }
 

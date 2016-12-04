@@ -20,8 +20,8 @@ static ArgVariant conv_int(T integral)
 void CompilerContext::compile()
 {
     Expects(compiled.empty());
-    Expects(!script->top_label->local_offset);
-    Expects(!script->start_label->local_offset);
+    Expects(script->top_label->code_position == nullopt);
+    Expects(script->start_label->code_position == nullopt);
 
     program.supported_or_fatal(nocontext, commands.andor, "ANDOR");
     program.supported_or_fatal(nocontext, commands.goto_, "GOTO");

@@ -84,8 +84,12 @@ optional<const Command&> Disassembler::command_from_opcode(uint16_t opcode) cons
     }
     else
     {
-        if(auto ptr = this->oatc_table[pureid - *this->oatc_start])
-            return *ptr;
+        size_t ordinal = pureid - *this->oatc_start;
+        if(ordinal < this->oatc_table.size())
+        {
+            if(auto ptr = this->oatc_table[ordinal])
+                return *ptr;
+        }
         return nullopt;
     }
 }

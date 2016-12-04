@@ -29,7 +29,7 @@ uint32_t CodeGenerator::compute_labels()
     {
         if(is<CompiledLabelDef>(op.data))
         {
-            get<CompiledLabelDef>(op.data).label->local_offset = offset;
+            get<CompiledLabelDef>(op.data).label->code_position = offset;
         }
         else
         {
@@ -41,7 +41,7 @@ uint32_t CodeGenerator::compute_labels()
 
 void CodeGenerator::generate()
 {
-    this->bw = BinaryWriter(this->script->size.value());
+    this->bw = BinaryWriter(this->script->code_size.value());
 
     for(auto& op : this->compiled)
     {
@@ -70,7 +70,10 @@ CustomHeaderOATC::CustomHeaderOATC(const std::vector<CodeGenerator*>& gens, Prog
                 auto& ccmd = get<CompiledCommand>(op.data);
                 if(ccmd.command.hash)
                 {
-                    this->ordinal_commands.emplace_back(&ccmd.command, (uint16_t) this->ordinal_commands.size());
+                    if(!this->find_opcode(ccmd.command))
+                    {
+                        this->ordinal_commands.emplace_back(&ccmd.command, (uint16_t) this->ordinal_commands.size());
+                    }
                 }
                 else if(ccmd.command.id && this->starting_opcode < *ccmd.command.id)
                 {
@@ -300,7 +303,7 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
     {
         assert(label_ptr->script == codegen.script); // enforced on compiler.hpp/cpp
 
-        int32_t local_offset = static_cast<int32_t>(label_ptr->local_offset.value());
+        int32_t local_offset = static_cast<int32_t>(label_ptr->distance_from_base());
         emplace_local_offset(local_offset);
     }
     else
@@ -447,7 +450,7 @@ inline void generate_code(const CompiledHex& hex, CodeGenerator& codegen)
 
 static void generate_skipper(CodeGeneratorData& codegen, int32_t skip_bytes, bool force_global_offset)//+8 +12
 {
-    int32_t target = skip_bytes + codegen.bw.current_offset();
+    int32_t target = skip_bytes + codegen.bw.current_offset() + codegen.script_offset;
 
     if(!force_global_offset)
     {
@@ -493,14 +496,13 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
 
     auto comp_largest_mission = [](const shared_ptr<const Script>& m1, const shared_ptr<const Script>& m2)
     {
-        return m1->size.value() < m2->size.value();
+        return m1->full_size() < m2->full_size();
     };
 
-    uint32_t head_size            = header.compiled_size();
-    uint32_t main_size            = head_size;
-    uint32_t multifile_size       = head_size;
+    uint32_t main_size            = 0;
+    uint32_t multifile_size       = 0;
     uint32_t largest_mission_size = 0;
-    uint32_t largest_streamed_size = 0 ;
+    uint32_t largest_streamed_size = 0;
 
     std::vector<shared_ptr<const Script>> missions;
     std::vector<shared_ptr<const Script>> streameds;
@@ -515,23 +517,24 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
 
     for(auto& sc : header.scripts)
     {
+        auto sc_full_size = sc->full_size();
         if(sc->type == ScriptType::Mission)
         {
             missions.emplace_back(sc);
-            multifile_size += sc->size.value();
-            if(largest_mission_size < sc->size.value())
-                largest_mission_size = *sc->size;
+            multifile_size += sc_full_size;
+            if(largest_mission_size < sc_full_size)
+                largest_mission_size = sc_full_size;
         }
         else if(sc->type == ScriptType::StreamedScript)
         {
             streameds.emplace_back(sc);
-            if(largest_streamed_size < sc->size.value())
-                largest_streamed_size = *sc->size;
+            if(largest_streamed_size < sc_full_size)
+                largest_streamed_size = sc_full_size;
         }
         else
         {
-            main_size += sc->size.value();
-            multifile_size += sc->size.value();
+            main_size += sc_full_size;;
+            multifile_size += sc_full_size;
         }
     }
 
@@ -566,7 +569,7 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
         }
 
         for(auto& script_ptr : missions)
-            codegen.bw.emplace_i32(script_ptr->offset.value());
+            codegen.bw.emplace_i32(script_ptr->base.value());
     }
 
     // Streamed scripts segment
@@ -584,8 +587,8 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
             auto name = script_ptr->path.stem().u8string();
             codegen.bw.emplace_chars(20, name.c_str(), true);
             codegen.bw.emplace_u32(virtual_offset);
-            codegen.bw.emplace_u32(*script_ptr->size);
-            virtual_offset += *script_ptr->size;
+            codegen.bw.emplace_u32(script_ptr->full_size());
+            virtual_offset += script_ptr->full_size();
         }
 
         // AAA script

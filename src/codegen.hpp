@@ -72,14 +72,15 @@ public:
     ProgramContext&                 program;
     BinaryWriter                    bw;
     const shared_ptr<const Script>  script;
+    const size_t                    script_offset; //< The offset (relative to script->base) this data is being generated at.
 
 private:
     const Variant& compiled;
 
 public:
     /// \warning reference to header must be alive as long as this object.
-    explicit CodeGeneratorData(shared_ptr<const Script> script, const Variant& compiled, ProgramContext& program) :
-        program(program), compiled(compiled), script(std::move(script))
+    explicit CodeGeneratorData(shared_ptr<const Script> script, size_t script_offset, const Variant& compiled, ProgramContext& program) :
+        program(program), compiled(compiled), script(std::move(script)), script_offset(script_offset)
     {}
 
     /// Generates the data.

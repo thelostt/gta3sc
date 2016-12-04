@@ -762,8 +762,8 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         Expects(gens.size() == scripts.size());
         for(size_t i = 0; i < gens.size(); ++i) // zip
         {
-            scripts[i]->size = gens[i].compute_labels();                    // <- maybe???! this is actually thread safe
-        }                                                                   //
+            scripts[i]->code_size = gens[i].compute_labels();              // <- maybe???! this is actually thread safe
+        }                                                                  //
         Script::compute_script_offsets(scripts, multi_headers);            // <- but this isn't
             
 
@@ -784,7 +784,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 {
                     for(auto& header : *opt)
                     {
-                        CodeGeneratorData hgen(script, header, program);
+                        CodeGeneratorData hgen(script, total_size, header, program);
                         hgen.generate();
                         write_file(output_file, hgen.buffer(), hgen.buffer_size());
                         total_size += hgen.buffer_size();
@@ -865,7 +865,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     auto& script = into.get().script;
                     temp_filename = script->path.stem().u8string();
                     temp_filename += ".scm";
-                    add_entry(temp_filename.c_str(), multi_headers.compiled_size(script) + script->size.value());
+                    add_entry(temp_filename.c_str(), script->full_size());
                 }
 
                 // TODO check return status of allocate_file_space
