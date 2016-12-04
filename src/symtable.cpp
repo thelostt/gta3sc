@@ -2,6 +2,7 @@
 #include "symtable.hpp"
 #include "commands.hpp"
 #include "program.hpp"
+#include "codegen.hpp"
 
 // TODO check if vars, labels, etc aren't already constants and etc
 
@@ -91,15 +92,16 @@ bool Label::may_branch_from(const Script& other_script, ProgramContext& program)
     return true;
 }
 
-void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, size_t header_size)
+void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, const MultiFileHeaderList& headers)
 {
-    size_t offset = header_size;
-
+    size_t offset = 0;
     for(auto& script_ptr : scripts)
     {
-        Expects(script_ptr->offset == nullopt);
-        script_ptr->offset.emplace(offset);
-        offset += script_ptr->size.value();
+        assert(script_ptr->base == nullopt && script_ptr->code_offset == nullopt);
+        script_ptr->base.emplace(offset);
+        offset += headers.compiled_size(script_ptr);
+        script_ptr->code_offset.emplace(offset);
+        offset += script_ptr->code_size.value();
     }
 }
 

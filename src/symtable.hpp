@@ -21,6 +21,7 @@ std::pair<bool, VarType> token_to_vartype(NodeType token_type);
 
 struct SymTable;
 struct CompiledScmHeader;
+class MultiFileHeaderList;
 struct Label;
 
 /// Represents a *.sc script file.
@@ -61,7 +62,7 @@ public:
     ///
     /// \warning This method is not thread-safe because it modifies states! No compilation step that makes use
     /// of the scripts in the `scripts` vector should be running while this method is executed.
-    static void compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, size_t header_size);
+    static void compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, const MultiFileHeaderList&);
 
     /// Calculates the model indices (for `models` field)  for all the scripts in the `scripts` vector.
     ///
@@ -91,11 +92,18 @@ public:
 
     /// The offset of this script, in bytes, in the fully compiled SCM.
     /// TODO explain further on which compilation step this value gets to be available.
-    optional<uint32_t>      offset;
+    /// \note This is the same as `offset` but including the script headers.
+    optional<uint32_t>     base;
+
+    /// The offset of this **script code**, in bytes, in the fully compiled SCM.
+    /// TODO explain further on which compilation step this value gets to be available.
+    /// \note This is the offset to the script code, not including the headers, use `base` to include headers.
+    optional<uint32_t>      code_offset;
 
     /// The full size, in bytes, of the script if already available.
     /// TODO explain further on which compilation step this value gets to be available.
-    optional<uint32_t>      size;
+    /// \note This is the size of the script **without** headers.
+    optional<uint32_t>      code_size;
 
     /// If `this->type == ScriptType::Mission`, contains the index of this mission.
     /// This value is made available just before the AST annotation step.
@@ -114,6 +122,18 @@ public:
 
     /// All the scopes within this script.
     std::vector<shared_ptr<Scope>> scopes;
+
+    /// \returns the size of the headers in this script.
+    uint32_t header_size() const
+    {
+        return (this->code_offset.value() - this->base.value());
+    }
+
+    /// \returns the size of this script including its headers.
+    uint32_t full_size() const
+    {
+        return this->code_size.value() + this->header_size();
+    }
 
 public:
     optional<int32_t> find_model(const string_view& name) const
@@ -214,20 +234,26 @@ struct Label
     shared_ptr<const Scope>   scope;
     shared_ptr<const Script>  script;
 
-    optional<uint32_t> local_offset;    // relative to `script` base
+    optional<uint32_t> code_position;    // relative to `script->code_offset`
 
     Label(shared_ptr<const Scope> scope, shared_ptr<const Script> script)
         : scope(std::move(scope)), script(std::move(script))
     {}
 
-    Label(shared_ptr<const Scope> scope, shared_ptr<const Script> script, uint32_t local_offset)
-        : scope(std::move(scope)), script(std::move(script)), local_offset(local_offset)
+    Label(shared_ptr<const Scope> scope, shared_ptr<const Script> script, uint32_t code_position)
+        : scope(std::move(scope)), script(std::move(script)), code_position(code_position)
     {}
 
     /// Returns the global offset for this label.
     uint32_t offset() const
     {
-        return script->offset.value() + this->local_offset.value();
+        return script->code_offset.value() + this->code_position.value();
+    }
+
+    /// Returns the local offset for this label relative to `script->base`.
+    uint32_t distance_from_base() const
+    {
+        return script->header_size() + this->code_position.value();
     }
 
     /// Can a GOTO in `other_script` branch into this label?

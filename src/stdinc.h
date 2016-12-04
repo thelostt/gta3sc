@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <list>
 #include <stack>
 #include <map>
 #include <set>

@@ -213,19 +213,22 @@ static std::pair<std::string, Command>
     }
 
     optional<uint32_t> hash;
+    string_view name = name_attrib->value();
+
     if(hash_attrib)
     {
         hash = xml_stou(hash_attrib->value());
         assert(*hash == one_at_a_time(name_attrib->value()));
     }
 
-    return {
-        name_attrib->value(),
+    return { // TODO maybe this should be a std::set
+        name.to_string(),
         Command {
             uint16_t(xml_stoi(id_attrib->value()) & 0x7FFF), // id
             xml_to_bool(support_attrib, true),               // supported
             std::move(hash),                                 // hash
             std::move(args),                                 // args
+            name.to_string(),                                // name
         }
     };
 }

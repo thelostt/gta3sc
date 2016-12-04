@@ -79,6 +79,7 @@ Options:
   -frelax-not              Allows the use of NOT outside of conditions.
   -fcleo                   Enables the use of CLEO features.
   -fmission-script         Compiling a mission script.
+  -moatc                   Uses the Custom Commands Header whenever possible.
   --error-format=<format>  The error formating for the compiler errors.
                            May be `default` or `json`. Do note the JSON format
                            may contain some pre-compilation messages in the default
@@ -223,6 +224,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optflag(argv, "-mno-header", nullptr))
             {
                 options.headerless = true;
+            }
+            else if(optflag(argv, "-moatc", &flag))
+            {
+                options.oatc = flag;
             }
             else if(optflag(argv, "-mq11.4", &flag))
             {
@@ -716,18 +721,50 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             global_vars_size = (*highest_var)->end_offset();
         }
 
-        CompiledScmHeader header(program.opt.get_header<CompiledScmHeader::Version>(),
-                                 symbols.size_global_vars(), models, scripts);
+        MultiFileHeaderList multi_headers;
+        optional<const CompiledScmHeader*> scmheader;
 
-        size_t header_size = program.opt.headerless? 0 : header.compiled_size();
+        std::vector<CodeGenerator*> main_gens;
+        for(auto& gen : gens)
+        {
+            if(gen.script == main // for the particular case of custom missions
+                || (gen.script->type != ScriptType::Mission && gen.script->type != ScriptType::StreamedScript))
+            {
+                main_gens.emplace_back(&gen);
+            }
+        }
+
+
+        if(!program.opt.headerless)
+        {
+            CompiledScmHeader hscm(program.opt.get_header<CompiledScmHeader::Version>(), symbols.size_global_vars(), models, scripts);
+            scmheader = &multi_headers.add_header(main, std::move(hscm));
+        }
+
+        if(program.opt.oatc)
+        {
+            {
+                auto& main_oatc = multi_headers.add_header(main, CustomHeaderOATC(main_gens, program));
+                for(auto& pgen : main_gens) { pgen->set_oatc(main_oatc); }
+            }
+
+            for(auto& gen : gens)
+            {
+                if(gen.script != main && (gen.script->type == ScriptType::Mission || gen.script->type == ScriptType::StreamedScript))
+                {
+                    auto& oatc = multi_headers.add_header(gen.script, CustomHeaderOATC({&gen}, program));
+                    gen.set_oatc(oatc);
+                }
+            }
+        }
 
         // not thread-safe
         Expects(gens.size() == scripts.size());
         for(size_t i = 0; i < gens.size(); ++i) // zip
         {
-            scripts[i]->size = gens[i].compute_labels();                    // <- maybe???! this is actually thread safe
-        }                                                                   //
-        Script::compute_script_offsets(scripts, header_size);               // <- but this isn't
+            scripts[i]->code_size = gens[i].compute_labels();              // <- maybe???! this is actually thread safe
+        }                                                                  //
+        Script::compute_script_offsets(scripts, multi_headers);            // <- but this isn't
             
 
 
@@ -740,19 +777,36 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             // TODO allocate_file_space(main_scm, ...)
 
-            if(!program.opt.headerless)
+            auto write_headers = [&](auto& output_file, optional<size_t> offset, const shared_ptr<const Script>& script) -> size_t
             {
-                CodeGeneratorData hgen(header, program);
-                hgen.generate();
-                write_file(main_scm, hgen.buffer(), hgen.buffer_size());
-            }
+                size_t total_size = 0;
+                if(auto opt = multi_headers.script_headers(script))
+                {
+                    for(auto& header : *opt)
+                    {
+                        CodeGeneratorData hgen(script, total_size, header, program);
+                        hgen.generate();
+                        if(offset)
+                            write_file(output_file, *offset, hgen.buffer(), hgen.buffer_size());
+                        else
+                            write_file(output_file, hgen.buffer(), hgen.buffer_size());
+                        total_size += hgen.buffer_size();
+                    }
+                }
+                return total_size;
+            };
 
             for(auto& gen : gens)
             {
                 if(gen.script->type != ScriptType::StreamedScript)
+                {
+                    write_headers(main_scm, nullopt, gen.script);
                     write_file(main_scm, gen.buffer(), gen.buffer_size());
+                }
                 else
+                {
                     into_script_img.emplace_back(std::cref(gen));
+                }
             }
 
             std::sort(into_script_img.begin(), into_script_img.end(), [](const auto& lhs, const auto& rhs) {
@@ -780,7 +834,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 };
 
                 AAAScript aaa_scm;
-                aaa_scm.size_global_space = header.size_global_vars_space - 8;
+                aaa_scm.size_global_space = (*scmheader)->size_global_vars_space - 8;
                 aaa_scm.num_streams_allocated = 62; // TODO
 
                 CdHeader cd_header { {'V','E','R','2'}, static_cast<uint32_t>(1 + into_script_img.size()) };
@@ -811,10 +865,10 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 add_entry("aaa.scm", 8);
                 for(auto& into : into_script_img)
                 {
-                    const Script& script = *into.get().script;
-                    temp_filename = script.path.stem().u8string();
+                    auto& script = into.get().script;
+                    temp_filename = script->path.stem().u8string();
                     temp_filename += ".scm";
-                    add_entry(temp_filename.c_str(), script.size.value());
+                    add_entry(temp_filename.c_str(), script->full_size());
                 }
 
                 // TODO check return status of allocate_file_space
@@ -835,7 +889,9 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 for(size_t i = 0; i < into_script_img.size(); ++i)
                 {
                     const CodeGenerator& gen = into_script_img[i].get();
-                    write_file(script_img, directory[1+i].offset * 2048, gen.buffer(), gen.buffer_size());
+                    size_t offset = directory[1+i].offset * 2048;
+                    offset += write_headers(script_img, offset, gen.script);
+                    write_file(script_img, offset, gen.buffer(), gen.buffer_size());
                 }
             }
         };
@@ -1006,6 +1062,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                 ignore_stream_id = (it - header.streamed_scripts.begin());
         }
 
+         
         BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, opt_header? opt_header->main_size : bytecode_size) };
         std::vector<BinaryFetcher> mission_segments;
         std::vector<BinaryFetcher> stream_segments;

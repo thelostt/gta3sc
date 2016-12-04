@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <cpp/string_view.hpp>
 #include <cpp/optional.hpp>
 
 /// Interface to fetch little-endian bytes from a sequence of bytes in a easy and safe way.
@@ -71,6 +72,16 @@ struct BinaryFetcher
         return nullopt;
     }
 
+    optional<void*> fetch_bytes(size_t offset, size_t count, void* output) const noexcept
+    {
+        if(offset + count <= size)
+        {
+            std::memcpy(output, &this->bytes[offset], count);
+            return output;
+        }
+        return nullopt;
+    }
+
     optional<char*> fetch_chars(size_t offset, size_t count, char* output) const noexcept
     {
         if(offset + count <= size)
@@ -86,6 +97,17 @@ struct BinaryFetcher
         std::string str(count, '\0');
         if(count == 0 || fetch_chars(offset, count, &str[0]))
             return str;
+        return nullopt;
+    }
+
+    optional<string_view> fetch_zstring(size_t offset) const noexcept
+    {
+        size_t curroff = offset;
+        while(auto opt_byte = fetch_u8(curroff++))
+        {
+            if(*opt_byte == 0)
+                return string_view(reinterpret_cast<const char*>(bytes+offset), curroff - offset - 1);
+        }
         return nullopt;
     }
 };

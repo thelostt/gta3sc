@@ -22,7 +22,8 @@ Commands::Commands(insensitive_map<std::string, Command>&& commands_,
 
     for(auto& pair : this->commands)
     {
-        this->commands_by_id.emplace(pair.second.id, &pair.second);
+        if(pair.second.id)
+            this->commands_by_id.emplace(*pair.second.id, &pair.second);
     }
 
     this->set_progress_total            = find_command("SET_PROGRESS_TOTAL");

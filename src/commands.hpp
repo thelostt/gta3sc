@@ -84,10 +84,11 @@ struct Command
         }
     };
 
-    uint16_t                id;         //< The opcode id.
+    optional<uint16_t>      id;         //< The opcode id.
     bool                    supported;  //< Is this command supported by the script engine?
     optional<uint32_t>      hash;       //< The command hash.
     small_vector<Arg, 12>   args;       //< The arguments of the command.
+    std::string             name;       //< The name of this command.
 
     /// Checks if there's any optional argument on this command.
     bool has_optional() const
@@ -227,6 +228,14 @@ public:
         return nullopt;
     }
 
+    /// Find a command based on its hash.
+    optional<const Command&> find_command(uint32_t hash, optional<string_view> name) const
+    {
+        if(name) return this->find_command(*name);
+        // TODO lookup by hash.
+        return nullopt;
+    }
+
     /// Finds a alternator based on its name.
     optional<const Alternator&> find_alternator(string_view name) const
     {
@@ -247,7 +256,9 @@ public:
 
     /// Finds a command name based on its opcode id.
     ///
-    /// When `never_fail` is specified, will return a placeholder `COMMAND_00ID` on failure. 
+    /// When `never_fail` is specified, will return a placeholder `COMMAND_00ID` on failure.
+    ///
+    /// \TODO remove me, command name is now embeded in the Command structure.
     optional<std::string> find_command_name(uint16_t id, bool never_fail = false) const;
 
 

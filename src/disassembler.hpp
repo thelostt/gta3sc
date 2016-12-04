@@ -56,8 +56,9 @@ using ArgVariant2 = variant<EOAL, int8_t, int16_t, int32_t, float, DecompiledVar
 // contrasts to CompiledCommand
 struct DecompiledCommand
 {
-    uint16_t                 id;
-    std::vector<ArgVariant2> args; 
+    bool                     not_flag;
+    const Command&           command;
+    std::vector<ArgVariant2> args;
 };
 
 // contrasts to CompiledLabelDef
@@ -178,6 +179,10 @@ private:
     /// The result of disassemblying.
     std::vector<DecompiledData> decompiled;
 
+    /// OATC header information
+    optional<uint16_t> oatc_start;          //< Starting opcode.
+    std::vector<const Command*> oatc_table; //< Commands associated with ordinal ids. May contain `nullptr` for unknown commmands.
+
 public:
     /// Constructs assuming `main_asm` to be the main code segment.
     ///
@@ -228,6 +233,14 @@ private:
 
     void explore(size_t offset);
 
+    /// Attempts to skip a custom header at `offset`.
+    /// \returns the offset after the header or `nullopt` if no custom header at `offset`.
+    optional<size_t> skip_custom_header(size_t offset) const;
+
+    /// Parses a custom header which the GOTO is at `offset`.
+    /// Expects the header at `offset` to exist.
+    void parse_custom_header(size_t offset, size_t end_offset);
+
     /// Tries to explore the `offset` assuming it contains the specified `command`.
     ///
     /// Returns the number of bytes explored (the size of the compiled command),
@@ -239,6 +252,9 @@ private:
     /// The `offset` **must** have been successfully explored previosly by `explore_opcode`.
     /// For this reason, this call never fails.
     DecompiledData opcode_to_data(size_t& offset);
+
+    /// Gets the command from the opcode id, either using the OATC table or the normal opcode lookup.
+    optional<const Command&> command_from_opcode(uint16_t opcode) const;
 };
 
 
