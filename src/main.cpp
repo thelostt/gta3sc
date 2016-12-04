@@ -572,6 +572,15 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
     try
     {
+        using RequiredFrom = std::vector<weak_ptr<const Script>>;
+        insensitive_map<std::string, RequiredFrom> require_chain;
+
+        auto identify_requires = [&](const shared_ptr<const Script>& script, const SymTable& symtable)
+        {
+            for(auto& rqname : symtable.required)
+                require_chain[rqname].emplace_back(script);
+        };
+
         std::vector<shared_ptr<Script>> scripts;
 
         //const char* input = "intro.sc";
@@ -589,6 +598,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         auto symbols = SymTable::from_script(*main, program);
         symbols.apply_offset_to_vars(2);
 
+        identify_requires(main, symbols);
         scripts.emplace_back(main);
 
         auto subdir = main->scan_subdir();
@@ -623,6 +633,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         // with the content from both main and main extensions
         for(auto& x : ext_scripts)
         {
+            identify_requires(x.first, x.second);
             symbols.merge(std::move(x.second), program);
             scripts.emplace_back(x.first); // maybe move
         }
@@ -637,6 +648,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         for(auto& x : sub_scripts)
         {
+            identify_requires(x.first, x.second);
             symbols.merge(std::move(x.second), program);
             scripts.emplace_back(x.first); // maybe move
         }
@@ -645,6 +657,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             size_t i = 0;
             for(auto& x : mission_scripts)
             {
+                identify_requires(x.first, x.second);
                 symbols.merge(std::move(x.second), program);
                 scripts.emplace_back(x.first); // maybe move
                 scripts.back()->mission_id = static_cast<uint16_t>(i++);
@@ -655,9 +668,43 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             size_t i = 0;
             for(auto& x : streamed_scripts)
             {
+                identify_requires(x.first, x.second);
                 symbols.merge(std::move(x.second), program);
                 scripts.emplace_back(x.first); // maybe move
                 scripts.back()->streamed_id = static_cast<uint16_t>(i++);
+            }
+        }
+
+        // resolve requires (not thread safe atm)
+        insensitive_map<std::string, std::pair<shared_ptr<Script>, SymTable>> req_scripts;
+        {
+            for(auto& vpair : require_chain)
+            {
+                if(auto opt = read_and_scan_symbols(subdir, vpair.first, ScriptType::MainExtension, program)) // TODO ScriptType::Required
+                    req_scripts.emplace(vpair.first, std::move(*opt));
+            }
+
+            for(auto& vpair : require_chain)
+            {
+                auto it_reqscript = req_scripts.find(vpair.first);
+                if(it_reqscript != req_scripts.end())
+                {
+                    shared_ptr<const Script> insert_after;
+
+                    auto& required_from = vpair.second;
+                    if(required_from.size() == 1)
+                        insert_after = required_from.front().lock();
+                    else
+                        insert_after = main;
+
+                    auto it_script = std::find(scripts.begin(), scripts.end(), insert_after);
+                    Ensures(it_script != scripts.end());
+
+                    auto& rqsc_pair = it_reqscript->second;
+                    symbols.merge(std::move(rqsc_pair.second), program);
+                    rqsc_pair.first->parent_script = *it_script;            // <----------- bad mutation?
+                    scripts.insert(std::next(it_script), rqsc_pair.first);
+                }
             }
         }
 

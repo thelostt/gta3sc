@@ -681,6 +681,27 @@ void Script::verify_script_names(const std::vector<shared_ptr<Script>>& scripts,
     }
 }
 
+/// Gets script type from filename.
+auto SymTable::script_type(const string_view& filename) const -> optional<ScriptType>
+{
+    auto searcher = [&](const std::string& other) {
+        return iequal_to()(other, filename);
+    };
+
+    if(std::any_of(this->extfiles.begin(), this->extfiles.end(), searcher))
+        return ScriptType::MainExtension;
+    else if(std::any_of(this->subscript.begin(), this->subscript.end(), searcher))
+        return ScriptType::Subscript;
+    else if(std::any_of(this->mission.begin(), this->mission.end(), searcher))
+        return ScriptType::Mission;
+    else if(std::any_of(this->streamed.begin(), this->streamed.end(), searcher))
+        return ScriptType::StreamedScript;
+    else if(std::any_of(this->required.begin(), this->required.end(), searcher))
+        return ScriptType::MainExtension; // TODO REQUIRE
+    else
+        return nullopt;
+}
+
 bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramContext& program)
 {
     if(command.child_count() <= 1)
@@ -697,48 +718,25 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
         size_t name_child_id = (command.child(0).text() == "GOSUB_FILE"? 2 : 1);
 
         auto script_name = command.child(name_child_id).text();
+        auto existing_type = this->script_type(script_name);
 
-        auto searcher = [&](const std::string& other) {
-            return iequal_to()(other, script_name);
-        };
-
-        bool found_extfile   = std::any_of(this->extfiles.begin(), this->extfiles.end(), searcher);
-        bool found_subscript = std::any_of(this->subscript.begin(), this->subscript.end(), searcher);
-        bool found_mission   = std::any_of(this->mission.begin(), this->mission.end(), searcher);
-        bool found_streamed  = std::any_of(this->streamed.begin(), this->streamed.end(), searcher);
-
-        if(found_extfile && type != ScriptType::MainExtension)
+        if(existing_type)
         {
-            program.error(command, "incompatible declaration, script was previously seen as a extension script");
-            return false;
-        }
-        else if(found_subscript && type != ScriptType::Subscript)
-        {
-            program.error(command, "incompatible declaration, script was previously seen as a subscript");
-            return false;
-        }
-        else if(found_mission && type != ScriptType::Mission)
-        {
-            program.error(command, "incompatible declaration, script was previously seen as a mission script");
-            return false;
-        }
-        else if(found_streamed && type != ScriptType::StreamedScript)
-        {
-            program.error(command, "incompatible declaration, script was previously seen as a streamed script");
-            return false;
+            if(type != *existing_type)
+            {
+                program.error(command, "incompatible declaration, script was previously seen as a {} script", to_string(*existing_type));
+                return false;
+            }
+            return true;
         }
         else 
         {
-            // still not added to its list?
-            if(!found_extfile && !found_subscript && !found_mission && !found_streamed)
-            {
-                auto refvector = (type == ScriptType::MainExtension? std::ref(this->extfiles) :
-                    type == ScriptType::Subscript? std::ref(this->subscript) :
-                    type == ScriptType::Mission? std::ref(this->mission) :
-                    type == ScriptType::StreamedScript? std::ref(this->streamed) : Unreachable());
+            auto refvector = (type == ScriptType::MainExtension? std::ref(this->extfiles) :
+                type == ScriptType::Subscript? std::ref(this->subscript) :
+                type == ScriptType::Mission? std::ref(this->mission) :
+                type == ScriptType::StreamedScript? std::ref(this->streamed) : Unreachable());
 
-                refvector.get().emplace_back(script_name);
-            }
+            refvector.get().emplace_back(script_name);
             return true;
         }
     }
@@ -827,6 +825,9 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
     t1.local_scopes.reserve(t1.local_scopes.size() + t2.local_scopes.size());
     std::move(t2.local_scopes.begin(), t2.local_scopes.end(), std::back_inserter(t1.local_scopes));
 
+    t1.required.reserve(t1.required.size() + t2.required.size());
+    std::move(t2.required.begin(), t2.required.end(), std::back_inserter(t1.required));
+
     t1.extfiles.reserve(t1.extfiles.size() + t2.extfiles.size());
     std::move(t2.extfiles.begin(), t2.extfiles.end(), std::back_inserter(t1.extfiles));
 
@@ -894,6 +895,27 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
         }
         else
             program.error(command, "scripts can only be required from main or extension scripts");
+    };
+
+    auto add_require = [&](const SyntaxTree& node, const string_view& filename)
+    {
+        // TODO R* compiler checks if parameter ends with .sc
+        // TODO join this with add_script
+
+        if(auto existing_type = this->script_type(filename))
+        {
+            if(ScriptType::MainExtension != *existing_type) // TODO ScriptType::Required
+            {
+                program.error(node, "incompatible declaration, script was previously seen as a {} script", to_string(*existing_type));
+                return false;
+            }
+            return true;
+        }
+        else
+        {
+            this->required.emplace_back(filename.to_string());
+            return true;
+        }
     };
 
     // the scanner
@@ -980,6 +1002,13 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                 // guard sets current_scope to previous value (probably nullptr)
 
+                return false;
+            }
+
+            case NodeType::REQUIRE:
+            {
+                // TODO check if on top of script
+                add_require(node, node.child(0).text());
                 return false;
             }
 

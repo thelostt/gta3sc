@@ -36,7 +36,7 @@ public:
             auto tree = SyntaxTree::compile(program, *tstream);
             if(tree)
             {
-                auto p = std::make_shared<Script>(program, type, std::move(path), std::move(tstream), std::move(tree), priv_ctor());
+                auto p = std::shared_ptr<Script>(new Script(program, type, std::move(path), std::move(tstream), std::move(tree), priv_ctor()));
                 p->start_label = std::make_shared<Label>(nullptr, p->shared_from_this());
                 p->top_label = std::make_shared<Label>(nullptr, p->shared_from_this());
                 return p;
@@ -89,6 +89,10 @@ public:
 
     shared_ptr<Label>       top_label;      // the label on the very very top of the script
     shared_ptr<Label>       start_label;    // the label to jump into when starting this script.
+
+    /// Which script this is a child of, i.e. sharing the same code space.
+    /// May be empty for a top script (i.e. main, mission, streamed).
+    weak_ptr<const Script>  parent_script;
 
     /// The offset of this script, in bytes, in the fully compiled SCM.
     /// TODO explain further on which compilation step this value gets to be available.
@@ -276,10 +280,11 @@ struct SymTable
     std::map<std::string, shared_ptr<Var>, iless>    global_vars;
     std::vector<std::shared_ptr<Scope>>              local_scopes;
 
-    std::vector<std::string>    extfiles;   /// GOSUB_FILE scripts
-    std::vector<std::string>    subscript;  /// LAUNCH_MISSION scripts
-    std::vector<std::string>    mission;    /// LOAD_AND_LAUNCH_MISSION scripts
-    std::vector<std::string>    streamed;   /// Streamed scripts
+    std::vector<std::string>    required;   //< REQUIRE scripts
+    std::vector<std::string>    extfiles;   //< GOSUB_FILE scripts
+    std::vector<std::string>    subscript;  //< LAUNCH_MISSION scripts
+    std::vector<std::string>    mission;    //< LOAD_AND_LAUNCH_MISSION scripts
+    std::vector<std::string>    streamed;   //< Streamed scripts
 
     int32_t count_collectable1 = 0;
     int32_t count_mission_passed = 0;
@@ -290,6 +295,8 @@ struct SymTable
 
     uint32_t offset_global_vars = 0;
 
+    /// Gets script type from filename.
+    optional<ScriptType> script_type(const string_view& filename) const;
 
     /// Construts a SymTable from the symbols in `script`.
     static SymTable from_script(Script& script, ProgramContext& program)

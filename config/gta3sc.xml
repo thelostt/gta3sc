@@ -1,11 +1,6 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <GTA3Script>
   <Commands>
-    <Command Name="REQUIRE" Hash="0x75ebc48c">
-      <Args>
-        <Arg Type="LABEL"/>
-      </Args>
-    </Command>
     <Command Name="DEFINE_INT" Hash="0x4ce823af">
       <Args>
         <Arg Type="ANY_TEXT_LABEL"/>

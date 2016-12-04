@@ -86,6 +86,9 @@ static const std::pair<string_view, Token> keycommands[] = {
     DEFINE_TOKEN(LVAR_TEXT_LABEL),
     DEFINE_TOKEN(VAR_TEXT_LABEL16),
     DEFINE_TOKEN(LVAR_TEXT_LABEL16),
+
+    // Extensions
+    DEFINE_TOKEN(REQUIRE),
 };
 
 static const std::pair<string_view, Token> expr_symbols[] = {
