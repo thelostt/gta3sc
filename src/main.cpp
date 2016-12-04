@@ -777,7 +777,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             // TODO allocate_file_space(main_scm, ...)
 
-            auto write_headers = [&](auto& output_file, const shared_ptr<const Script>& script) -> size_t
+            auto write_headers = [&](auto& output_file, optional<size_t> offset, const shared_ptr<const Script>& script) -> size_t
             {
                 size_t total_size = 0;
                 if(auto opt = multi_headers.script_headers(script))
@@ -786,7 +786,10 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     {
                         CodeGeneratorData hgen(script, total_size, header, program);
                         hgen.generate();
-                        write_file(output_file, hgen.buffer(), hgen.buffer_size());
+                        if(offset)
+                            write_file(output_file, *offset, hgen.buffer(), hgen.buffer_size());
+                        else
+                            write_file(output_file, hgen.buffer(), hgen.buffer_size());
                         total_size += hgen.buffer_size();
                     }
                 }
@@ -797,7 +800,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             {
                 if(gen.script->type != ScriptType::StreamedScript)
                 {
-                    write_headers(main_scm, gen.script);
+                    write_headers(main_scm, nullopt, gen.script);
                     write_file(main_scm, gen.buffer(), gen.buffer_size());
                 }
                 else
@@ -887,7 +890,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 {
                     const CodeGenerator& gen = into_script_img[i].get();
                     size_t offset = directory[1+i].offset * 2048;
-                    offset += write_headers(script_img, gen.script);
+                    offset += write_headers(script_img, offset, gen.script);
                     write_file(script_img, offset, gen.buffer(), gen.buffer_size());
                 }
             }
