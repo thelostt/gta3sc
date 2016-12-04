@@ -42,7 +42,11 @@ public:
     ///
     uint32_t compute_labels();
 
-    // \warning This method is not thread-safe.
+    /// Assigns an OATC lookup to this code generator.
+    ///
+    /// \warning reference to header must be alive as long as this object.
+    ///
+    /// \warning This method is not thread-safe.
     void set_oatc(const CustomHeaderOATC& oatc) { this->oatc = std::addressof(oatc); }
 
     /// Generates the code.
@@ -74,8 +78,8 @@ private:
 
 public:
     /// \warning reference to header must be alive as long as this object.
-    explicit CodeGeneratorData(const Variant& compiled, ProgramContext& program) :
-        program(program), compiled(compiled)
+    explicit CodeGeneratorData(shared_ptr<const Script> script, const Variant& compiled, ProgramContext& program) :
+        program(program), compiled(compiled), script(std::move(script))
     {}
 
     /// Generates the data.
@@ -89,10 +93,12 @@ public:
 };
 
 
-
+/// One-at-a-Time Commands Header
+/// See https://gist.github.com/thelink2012/66de0884e76d281baa08b1f878d1d08e
 class CustomHeaderOATC
 {
 public:
+    /// Builds an OATC header from all the commands used in the specified generators.
     explicit CustomHeaderOATC(const std::vector<CodeGenerator*>& gens, ProgramContext& program);
 
     /// If this header contains the specified command, returns its (ordinal_id + starting_opcode).
@@ -103,12 +109,16 @@ public:
 
 private:
     uint16_t starting_opcode;
-    std::map<const Command*, uint16_t> ordinal_commands;
+    std::vector<std::pair<const Command*, uint16_t>> ordinal_commands;
 };
 
+/// List of headers for a single script.
 class CompiledHeaderList
 {
 public:
+    auto begin() const  { return headers.begin(); }
+    auto end() const    { return headers.end(); }
+
     template<typename T>
     const std::decay_t<T>& add_header(T&& obj)
     {
@@ -118,13 +128,11 @@ public:
 
     size_t compiled_size() const;
 
-    auto begin() const { return headers.begin(); }
-    auto end() const { return headers.end(); }
-
 private:
     std::list<CodeGeneratorData::Variant> headers;
 };
 
+/// List of headers for a script with multiple files.
 class MultiFileHeaderList
 {
 public:

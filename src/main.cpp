@@ -784,7 +784,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 {
                     for(auto& header : *opt)
                     {
-                        CodeGeneratorData hgen(header, program);
+                        CodeGeneratorData hgen(script, header, program);
                         hgen.generate();
                         write_file(output_file, hgen.buffer(), hgen.buffer_size());
                         total_size += hgen.buffer_size();
@@ -1059,6 +1059,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                 ignore_stream_id = (it - header.streamed_scripts.begin());
         }
 
+         
         BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, opt_header? opt_header->main_size : bytecode_size) };
         std::vector<BinaryFetcher> mission_segments;
         std::vector<BinaryFetcher> stream_segments;

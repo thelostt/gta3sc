@@ -68,13 +68,13 @@ CustomHeaderOATC::CustomHeaderOATC(const std::vector<CodeGenerator*>& gens, Prog
             if(is<CompiledCommand>(op.data))
             {
                 auto& ccmd = get<CompiledCommand>(op.data);
-                if(ccmd.cmd.hash)
+                if(ccmd.command.hash)
                 {
-                    this->ordinal_commands.emplace(&ccmd.cmd, (uint16_t) this->ordinal_commands.size());
+                    this->ordinal_commands.emplace_back(&ccmd.command, (uint16_t) this->ordinal_commands.size());
                 }
-                else if(ccmd.cmd.id && this->starting_opcode < *ccmd.cmd.id)
+                else if(ccmd.command.id && this->starting_opcode < *ccmd.command.id)
                 {
-                    this->starting_opcode = *ccmd.cmd.id + 1;
+                    this->starting_opcode = *ccmd.command.id + 1;
                 }
             }
         }
@@ -87,11 +87,13 @@ CustomHeaderOATC::CustomHeaderOATC(const std::vector<CodeGenerator*>& gens, Prog
         program.fatal_error(nocontext, "too many custom commands in a single script");
 }
 
-optional<uint16_t> CustomHeaderOATC::find_opcode(const Command& cmd) const
+optional<uint16_t> CustomHeaderOATC::find_opcode(const Command& command) const
 {
-    if(cmd.hash)
+    if(command.hash)
     {
-        auto it = this->ordinal_commands.find(&cmd);
+        auto it = std::find_if(ordinal_commands.begin(), ordinal_commands.end(), [&](const auto& pair) {
+            return pair.first == &command;
+        });
         if(it != this->ordinal_commands.end())
             return it->second + this->starting_opcode;
     }
@@ -421,13 +423,13 @@ inline void generate_code(const CompiledCommand& ccmd, CodeGenerator& codegen)
     optional<uint16_t> opcode;
 
     if(codegen.oatc)
-        opcode = codegen.oatc->find_opcode(ccmd.cmd);
+        opcode = codegen.oatc->find_opcode(ccmd.command);
 
     if(opcode == nullopt)
-        opcode = ccmd.cmd.id;
+        opcode = ccmd.command.id;
 
     if(opcode == nullopt)
-        codegen.program.fatal_error(nocontext, "could not compile command {}, no id or no hash [-moatc]", ccmd.cmd.name);
+        codegen.program.fatal_error(nocontext, "could not compile command {}, no id or no hash [-moatc]", ccmd.command.name);
 
     codegen.bw.emplace_u16(*opcode | (ccmd.not_flag? 0x8000 : 0x0000));
     for(auto& arg : ccmd.args) ::generate_code(arg, codegen);

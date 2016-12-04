@@ -15,6 +15,12 @@ optional<size_t> Disassembler::data_index(uint32_t local_offset) const
 
 void Disassembler::run_analyzer(size_t from_offset)
 {
+    while(auto opt_next = this->skip_custom_header(from_offset))
+    {
+        this->parse_custom_header(from_offset, *opt_next);
+        from_offset = *opt_next;
+    }
+
     this->to_explore.emplace(from_offset);
     this->analyze();
 }
@@ -48,8 +54,9 @@ void Disassembler::explore(size_t offset)
     if(auto opt_cmdid = bf.fetch_u16(offset))
     {
         bool not_flag = (*opt_cmdid & 0x8000) != 0;
-        auto pureid = *opt_cmdid & 0x7FFF;
-        if(auto opt_cmd = this->program.commands.find_command(pureid))
+        uint16_t pureid = *opt_cmdid & 0x7FFF;
+
+        if(auto opt_cmd = this->command_from_opcode(*opt_cmdid))
         {
             if(explore_opcode(offset, *opt_cmd, not_flag))
                 return;
@@ -66,6 +73,79 @@ void Disassembler::explore(size_t offset)
 
     // Exploring this byte wasn't quite successful, try the next one.
     this->to_explore.emplace(offset + 1);
+}
+
+optional<const Command&> Disassembler::command_from_opcode(uint16_t opcode) const
+{
+    uint16_t pureid = opcode & 0x7FFF;
+    if(pureid < this->oatc_start.value_or(0xFFFF))
+    {
+        return this->program.commands.find_command(pureid);
+    }
+    else
+    {
+        if(auto ptr = this->oatc_table[pureid - *this->oatc_start])
+            return *ptr;
+        return nullopt;
+    }
+}
+
+optional<size_t> Disassembler::skip_custom_header(size_t offset) const
+{
+    uint8_t head[12+4];
+
+    if(!bf.fetch_bytes(offset, sizeof(head), head))
+        return nullopt;
+
+    // custom headers magic number
+    if(head[0] != 0x02 || head[1] != 0x00 || head[2] != 0x01 || head[7] != 0xFF
+        || head[8] != 0x7F || head[9] != 0xFE || head[10] != 0x00 || head[11] != 0x00)
+        return nullopt;
+
+    size_t end_offset = std::abs(bf.fetch_i32(offset + 3).value());
+    if(end_offset <= offset)
+        return nullopt;
+
+    return end_offset;
+}
+
+void Disassembler::parse_custom_header(size_t offset, size_t end_offset)
+{
+    char fourcc[5]; fourcc[4] = '\0';
+    bf.fetch_bytes(offset+12, 4, fourcc).value();
+
+    try
+    {
+        if(!std::memcmp(fourcc, "OATC", 4))
+        {
+            auto ordinal_begin = bf.fetch_u16(offset + 16).value();
+            auto num_ordinals = bf.fetch_u16(offset + 18).value();
+
+            std::vector<const Command*> oatc_table;
+            oatc_table.reserve(num_ordinals);
+
+            size_t table_end   = offset + 20 + 12 * num_ordinals;
+            for(size_t curroff = offset + 20; curroff < table_end; curroff += 12)
+            {
+                optional<string_view> cmdname;
+                auto hash = bf.fetch_u32(curroff+4).value();
+                auto offz = bf.fetch_u32(curroff+8).value();
+                if(offz) cmdname = bf.fetch_zstring(offz + offset + 12).value();
+
+                if(auto opt = this->program.commands.find_command(hash, cmdname))
+                    oatc_table.emplace_back(std::addressof(*opt));
+                else
+                    oatc_table.emplace_back(nullptr);
+            }
+
+            this->oatc_start = ordinal_begin;
+            this->oatc_table = std::move(oatc_table);
+        }
+    }
+    catch(const bad_optional_access&)
+    {
+        program.error(nocontext, "corrupted {} header", fourcc);
+    }
 }
 
 optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& command, bool not_flag)
@@ -304,14 +384,14 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
 // before it runs, `explore_opcode` ran, meaning everything is alright.
 DecompiledData Disassembler::opcode_to_data(size_t& offset)
 {
-    auto cmdid     = *bf.fetch_u16(offset);
-    bool not_flag  = (cmdid & 0x8000) != 0;
-    const Command& command = *this->program.commands.find_command(cmdid & 0x7FFF);
-
     bool stop_it = false;
 
-    DecompiledCommand ccmd;
-    ccmd.id = cmdid;
+    auto cmdid     = *bf.fetch_u16(offset);
+    bool not_flag  = (cmdid & 0x8000) != 0;
+
+    const Command& command = *this->command_from_opcode(cmdid);
+
+    DecompiledCommand ccmd { (cmdid & 0x8000) != 0, command };
 
     auto start_offset = offset;
     offset = offset + 2;
@@ -499,6 +579,9 @@ void Disassembler::disassembly(size_t from_offset)
     std::vector<DecompiledData>& output = this->decompiled;
 
     output.reserve(this->hint_num_ops + 16); // +16 for unknown/hex areas
+
+    while(auto opt_next = this->skip_custom_header(from_offset))
+        from_offset = *opt_next;
 
     for(size_t offset = from_offset; offset < bf.size; )
     {

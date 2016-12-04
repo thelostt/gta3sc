@@ -270,10 +270,10 @@ inline std::string decompile_data(const DecompiledCommand& ccmd, DecompilerIR2& 
     std::string output;
     size_t arg_id = 0;
     
-    optional<const Command&> opt_command = context.commands.find_command(ccmd.id & 0x7FFF);
+    optional<const Command&> opt_command = ccmd.command;
 
-    bool not_flag = (ccmd.id & 0x8000) != 0;
-    auto cmd_name = *context.commands.find_command_name(ccmd.id & 0x7FFF, true);
+    bool not_flag = ccmd.not_flag;
+    auto& cmd_name = ccmd.command.name;
     
     output.reserve(12 + cmd_name.size() + ccmd.args.size() * 6);
 
