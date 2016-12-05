@@ -98,7 +98,7 @@ struct CompiledScmHeader
     Version                               version;                  //< Version of the header.
     uint32_t                              size_global_vars_space;   //< (includes the 8 bytes of GOTO at the top)
     std::vector<std::string>              models;                   //< Models header.
-    std::vector<shared_ptr<const Script>> scripts;                  //< All scripts being compiled into the multifile/script.img.
+    std::vector<shared_ptr<const Script>> base_scripts;             //< All non-require scripts being compiled into the multifile/script.img.
     uint32_t                              num_missions;             //< Number of missions.
     uint32_t                              num_streamed;             //< Number of streamed scripts.
 
@@ -110,10 +110,14 @@ struct CompiledScmHeader
         models(std::move(models_)),
         num_missions(0), num_streamed(0)
     {
-        this->scripts.reserve(scripts.size());
+        this->base_scripts.reserve(scripts.size());
         for(auto& sc : scripts)
         {
-            this->scripts.emplace_back(sc);
+            assert(!sc->is_child_of_custom());
+            if(sc->type == ScriptType::Required)
+                continue;
+
+            this->base_scripts.emplace_back(sc);
 
             if(sc->type == ScriptType::Mission)
                 ++this->num_missions;

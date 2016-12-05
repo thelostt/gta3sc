@@ -683,9 +683,8 @@ ArgVariant CompilerContext::get_arg(const SyntaxTree& arg_node)
                 auto label = std::move(*opt_label);
                 if(!label->may_branch_from(*this->script, program))
                 {
-                    auto sckind_ = label->script->type == ScriptType::Mission? "mission " :
-                                    label->script->type == ScriptType::StreamedScript? "streamed " : "";
-                    program.error(arg_node, "reference to local label outside of its {}script", sckind_);
+                    auto sckind_ = to_string(label->script->type);
+                    program.error(arg_node, "reference to local label outside of its {} script", sckind_);
                     program.note(*label->script, "label belongs to this script");
                 }
                 return label;

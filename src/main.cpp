@@ -587,7 +587,15 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         //const char* input = "test.sc";
         //const char* input = "gta3_src/main.sc";
 
-        auto main = Script::create(program, input, program.opt.mission_script? ScriptType::Mission : ScriptType::Main);
+
+        auto main_type = [&] {
+            if(program.opt.output_cleo)
+                return program.opt.mission_script? ScriptType::CustomMission : ScriptType::CustomScript;
+            else
+                return program.opt.mission_script? ScriptType::Mission : ScriptType::Main;
+        }();
+
+        auto main = Script::create(program, input, main_type);
 
         if(main == nullptr)
         {
@@ -680,7 +688,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         {
             for(auto& vpair : require_chain)
             {
-                if(auto opt = read_and_scan_symbols(subdir, vpair.first, ScriptType::MainExtension, program)) // TODO ScriptType::Required
+                if(auto opt = read_and_scan_symbols(subdir, vpair.first, ScriptType::Required, program))
                     req_scripts.emplace(vpair.first, std::move(*opt));
             }
 
@@ -774,8 +782,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         std::vector<CodeGenerator*> main_gens;
         for(auto& gen : gens)
         {
-            if(gen.script == main // for the particular case of custom missions
-                || (gen.script->type != ScriptType::Mission && gen.script->type != ScriptType::StreamedScript))
+            if(gen.script->on_the_same_space_as(*main))
             {
                 main_gens.emplace_back(&gen);
             }
@@ -797,9 +804,9 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             for(auto& gen : gens)
             {
-                if(gen.script != main && (gen.script->type == ScriptType::Mission || gen.script->type == ScriptType::StreamedScript))
+                if(!gen.script->on_the_same_space_as(*main))
                 {
-                    auto& oatc = multi_headers.add_header(gen.script, CustomHeaderOATC({&gen}, program));
+                    auto& oatc = multi_headers.add_header(gen.script->root_script(), CustomHeaderOATC({&gen}, program));
                     gen.set_oatc(oatc);
                 }
             }
@@ -845,14 +852,15 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             for(auto& gen : gens)
             {
-                if(gen.script->type != ScriptType::StreamedScript)
+                if(!gen.script->is_child_of(ScriptType::StreamedScript))
                 {
                     write_headers(main_scm, nullopt, gen.script);
                     write_file(main_scm, gen.buffer(), gen.buffer_size());
                 }
                 else
                 {
-                    into_script_img.emplace_back(std::cref(gen));
+                    if(gen.script->type != ScriptType::Required)
+                        into_script_img.emplace_back(std::cref(gen));
                 }
             }
 

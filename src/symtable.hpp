@@ -8,11 +8,14 @@
 /// Type of a script file (*.sc).
 enum class ScriptType
 {
-    Main,           /// The script file with the main declarations.
-    MainExtension,  /// Imported using GOSUB_FILE
-    Subscript,      /// Imported using LAUNCH_MISSION
-    Mission,        /// Imported using LOAD_AND_LAUNCH_MISSION
-    StreamedScript, /// Imported using REGISTER_STREAMED_SCRIPT
+    Main,           //< The script file with the main declarations.
+    MainExtension,  //< Imported using GOSUB_FILE
+    Subscript,      //< Imported using LAUNCH_MISSION
+    Mission,        //< Imported using LOAD_AND_LAUNCH_MISSION
+    StreamedScript, //< Imported using REGISTER_STREAMED_SCRIPT
+    CustomScript,   //< Main custom script
+    CustomMission,  //< Main custom mission
+    Required,       //< Imported using REQUIRE
 };
 
 /// Converts VAR_INT, LVAR_FLOAT, etc tokens into the VarType enum.
@@ -82,6 +85,8 @@ public:
     /// of the scripts in the `scripts` vector should be running while this method is executed.
     static void verify_script_names(const std::vector<shared_ptr<Script>>& scripts, ProgramContext&);
 
+    // TODO make a bunch of this private or const!!!!!!!
+
     fs::path                path;
     ScriptType              type;
     shared_ptr<TokenStream> tstream;        // may be nullptr
@@ -138,6 +143,36 @@ public:
     {
         return this->code_size.value() + this->header_size();
     }
+
+    bool uses_local_offsets() const
+    {
+        switch(this->type)
+        {
+            case ScriptType::Main:
+            case ScriptType::MainExtension:
+            case ScriptType::Subscript:
+                return false;
+            case ScriptType::Mission:
+            case ScriptType::StreamedScript:
+            case ScriptType::CustomMission:
+            case ScriptType::CustomScript:
+                return true;
+            case ScriptType::Required:
+                return parent_script.lock()->uses_local_offsets();
+            default:
+                Unreachable();
+        }
+    }
+
+    bool on_the_same_space_as(const Script& other) const;
+
+    bool is_child_of(ScriptType type) const;
+
+    bool is_child_of_mission() const;
+
+    bool is_child_of_custom() const;
+
+    shared_ptr<const Script> root_script() const;
 
 public:
     optional<int32_t> find_model(const string_view& name) const
@@ -467,6 +502,9 @@ inline const char* to_string(ScriptType type)
         case ScriptType::Subscript:      return "subscript";
         case ScriptType::Mission:        return "mission";
         case ScriptType::StreamedScript: return "streamed";
+        case ScriptType::CustomMission:  return "custom mission";
+        case ScriptType::CustomScript:   return "custom script";
+        case ScriptType::Required:       return "required";
         default:                         Unreachable();
     }
 }

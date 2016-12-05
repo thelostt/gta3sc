@@ -83,13 +83,72 @@ auto Scope::output_type_from_node(const SyntaxTree& node) -> optional<OutputType
 
 bool Label::may_branch_from(const Script& other_script, ProgramContext& program) const
 {
-    if(this->script->type == ScriptType::Mission
-    || this->script->type == ScriptType::StreamedScript)
+    return this->script->on_the_same_space_as(other_script);
+}
+
+bool Script::on_the_same_space_as(const Script& other) const
+{
+    if(this == &other)
+        return true;
+
+    if(this->type == ScriptType::Required)
+        return this->root_script()->on_the_same_space_as(other);
+
+    if(other.type == ScriptType::Required)
+        return this->on_the_same_space_as(*other.root_script());
+
+    if(this->type == ScriptType::Main
+    || this->type == ScriptType::MainExtension
+    || this->type == ScriptType::Subscript)
     {
-        if(&other_script != this->script.get())
-            return false;
+        switch(other.type)
+        {
+            case ScriptType::Main:
+            case ScriptType::MainExtension:
+            case ScriptType::Subscript:
+                return true;
+            default:
+                return false;
+        }
     }
-    return true;
+    else if(this->type == ScriptType::Mission
+            || this->type == ScriptType::StreamedScript
+            || this->type == ScriptType::CustomScript
+            || this->type == ScriptType::CustomMission)
+    {
+        return this == &other;
+    }
+    else
+    {
+        Unreachable();
+    }
+}
+
+bool Script::is_child_of(ScriptType type) const
+{
+    Expects(type != ScriptType::Required);
+    if(this->type == ScriptType::Required)
+        return this->root_script()->is_child_of(type);
+    else
+        return this->type == type;
+}
+
+bool Script::is_child_of_mission() const
+{
+    return is_child_of(ScriptType::Mission) || is_child_of(ScriptType::CustomMission);
+}
+
+bool Script::is_child_of_custom() const
+{
+    return is_child_of(ScriptType::CustomScript) || is_child_of(ScriptType::CustomMission);
+}
+
+shared_ptr<const Script> Script::root_script() const
+{
+    if(this->type == ScriptType::Required)
+        return this->parent_script.lock()->root_script();
+    else
+        return this->shared_from_this();
 }
 
 void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, const MultiFileHeaderList& headers)
@@ -697,7 +756,7 @@ auto SymTable::script_type(const string_view& filename) const -> optional<Script
     else if(std::any_of(this->streamed.begin(), this->streamed.end(), searcher))
         return ScriptType::StreamedScript;
     else if(std::any_of(this->required.begin(), this->required.end(), searcher))
-        return ScriptType::MainExtension; // TODO REQUIRE
+        return ScriptType::Required;
     else
         return nullopt;
 }
@@ -887,14 +946,9 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
     auto add_script = [&](ScriptType type, const SyntaxTree& command)
     {
         if(script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
-        {
-            if(program.opt.output_cleo && type != ScriptType::MainExtension)
-                program.error(command, "this command is not allowed in custom scripts");
-            else
-                table.add_script(type, command, program);
-        }
+            table.add_script(type, command, program);
         else
-            program.error(command, "scripts can only be required from main or extension scripts");
+            program.error(command, "scripts can only be added from main or extension scripts");
     };
 
     auto add_require = [&](const SyntaxTree& node, const string_view& filename)
@@ -904,7 +958,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
         if(auto existing_type = this->script_type(filename))
         {
-            if(ScriptType::MainExtension != *existing_type) // TODO ScriptType::Required
+            if(ScriptType::Required != *existing_type)
             {
                 program.error(node, "incompatible declaration, script was previously seen as a {} script", to_string(*existing_type));
                 return false;
@@ -967,7 +1021,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 }
                 else
                 {
-                    local_index = (script.type != ScriptType::Mission? 0 : program.opt.mission_var_begin);
+                    local_index = (!script.is_child_of_mission()? 0 : program.opt.mission_var_begin);
                     current_scope = table.add_scope(node);
                     current_scope->vars.emplace("TIMERA", std::make_shared<Var>(false, VarType::Int, program.opt.timer_index + 0, nullopt));
                     current_scope->vars.emplace("TIMERB", std::make_shared<Var>(false, VarType::Int, program.opt.timer_index + 1, nullopt));
@@ -1082,7 +1136,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 
                 if(global)
                     max_index = (65536 / 4);
-                else if(script.type == ScriptType::Mission)
+                else if(script.is_child_of_mission())
                     max_index = program.opt.mission_var_limit.value_or(program.opt.local_var_limit);
                 else
                     max_index = program.opt.local_var_limit;
@@ -1870,7 +1924,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
     this->tree->depth_first(std::ref(walker));
 
-    if(this->type == ScriptType::Mission || this->type == ScriptType::Subscript)
+    if(this->type == ScriptType::Mission || this->type == ScriptType::CustomMission || this->type == ScriptType::Subscript)
     {
         if(!had_mission_start)
             program.error(*this, "{} script does not contain MISSION_START", to_string(this->type));

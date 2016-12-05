@@ -298,10 +298,10 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
         int32_t absolute_offset = static_cast<int32_t>(label_ptr->offset());
         emplace_local_offset(absolute_offset);
     }
-    else if(label_ptr->script->type == ScriptType::Mission
-         || label_ptr->script->type == ScriptType::StreamedScript)
+    else if(label_ptr->script->uses_local_offsets())
     {
-        assert(label_ptr->script == codegen.script); // enforced on compiler.hpp/cpp
+        // enforced on compiler.hpp/cpp
+        assert(label_ptr->script->on_the_same_space_as(*codegen.script));
 
         int32_t local_offset = static_cast<int32_t>(label_ptr->distance_from_base());
         emplace_local_offset(local_offset);
@@ -454,8 +454,7 @@ static void generate_skipper(CodeGeneratorData& codegen, int32_t skip_bytes, boo
 
     if(!force_global_offset)
     {
-        if(codegen.program.opt.use_local_offsets
-            || (codegen.script->type == ScriptType::Mission || codegen.script->type == ScriptType::StreamedScript))
+        if(codegen.program.opt.use_local_offsets || codegen.script->uses_local_offsets())
         {
             target = -target;
         }
@@ -515,8 +514,11 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
     missions.reserve(header.num_missions);
     streameds.reserve(header.num_streamed);
 
-    for(auto& sc : header.scripts)
+    for(auto& sc : header.base_scripts)
     {
+        assert(!sc->is_child_of_custom());
+        assert(sc->type != ScriptType::Required);
+
         auto sc_full_size = sc->full_size();
         if(sc->type == ScriptType::Mission)
         {
@@ -533,6 +535,7 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
         }
         else
         {
+            assert(sc->type == ScriptType::Main || sc->type == ScriptType::MainExtension || sc->type == ScriptType::Subscript);
             main_size += sc_full_size;;
             multifile_size += sc_full_size;
         }
