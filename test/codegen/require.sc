@@ -1,4 +1,3 @@
-// TODO -frequire
 // RUN: %gta3sc %s --config=gtasa --guesser -emit-ir2 -o - | %FileCheck %s
 
 REQUIRE req1_from_main.sc

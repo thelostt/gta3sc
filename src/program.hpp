@@ -95,6 +95,7 @@ public:
     bool output_cleo = false;
     bool mission_script = false;
     bool oatc = false;
+    bool require = true;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;

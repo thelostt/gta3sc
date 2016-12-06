@@ -83,6 +83,8 @@ auto Scope::output_type_from_node(const SyntaxTree& node) -> optional<OutputType
 
 bool Label::may_branch_from(const Script& other_script, ProgramContext& program) const
 {
+    if(!this->script->uses_local_offsets())
+        return true;
     return this->script->on_the_same_space_as(other_script);
 }
 
@@ -993,6 +995,9 @@ void SymTable::scan_for_includers(Script& script, ProgramContext& program)
         {
             case NodeType::REQUIRE:
             {
+                if(!program.opt.require)
+                    program.error(node, "REQUIRE is not enabled [-frequire]");
+
                 // TODO check if on top of script
                 add_require(node, node.child(0).text());
                 return false;
@@ -1304,6 +1309,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
     std::shared_ptr<Scope> current_scope = nullptr;
     bool is_condition_block = false;
     uint32_t num_statements = 0;
+    uint32_t num_directives = 0;
 
     auto replace_arg0 = [&](SyntaxTree& node, int32_t value)
     {
@@ -1413,9 +1419,21 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // already annotated in SymTable::scan_symbols
                 return false;
 
+            case NodeType::REQUIRE:
+            {
+                ++num_directives;
+
+                if(num_statements != num_directives)
+                    program.error(node, "REQUIRE must be at the very top of the script");
+
+                return false;
+            }
+
             case NodeType::MISSION_START:
             case NodeType::SCRIPT_START:
             {
+                ++num_directives;
+
                 bool& had_start = node.type() == NodeType::MISSION_START? std::ref(had_mission_start) : 
                                   node.type() == NodeType::SCRIPT_START? std::ref(had_script_start) : Unreachable();
                 auto dir_start  = node.type() == NodeType::MISSION_START? "MISSION_START" :
@@ -1437,6 +1455,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             case NodeType::MISSION_END:
             case NodeType::SCRIPT_END:
             {
+                ++num_directives;
+
                 bool& had_start = node.type() == NodeType::MISSION_END? std::ref(had_mission_start) :
                                   node.type() == NodeType::SCRIPT_END? std::ref(had_script_start) : Unreachable();
                 bool& had_end   = node.type() == NodeType::MISSION_END? std::ref(had_mission_end) :

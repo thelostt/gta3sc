@@ -84,6 +84,7 @@ Options:
                            May be `default` or `json`. Do note the JSON format
                            may contain some pre-compilation messages in the default
                            format (i.e. gta3sc: type:? message).
+  -frequire                Enables REQUIRE.
 )";
 
 enum class Action
@@ -338,6 +339,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optflag(argv, "-fmission-script", nullptr))
             {
                 options.mission_script = true;
+            }
+            else if(optflag(argv, "-frequire", &flag))
+            {
+                options.require = flag;
             }
             else if(const char* name = optget(argv, "-D", nullptr, 1))
             {
