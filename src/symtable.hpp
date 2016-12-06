@@ -331,6 +331,11 @@ struct SymTable
         return symbols;
     }
 
+    /// Scans all included scripts from `script` and adds them to this table.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
+    void scan_for_includers(Script& script, ProgramContext& program);
+
     /// Scans all symbols in `script` and adds them to this table.
     ///
     /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
@@ -454,21 +459,22 @@ auto read_script(const std::string& filename, const std::map<std::string, fs::pa
 
 
 inline
-auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
+auto read_and_scan_includers(const std::map<std::string, fs::path, iless>& subdir,
                            const std::string& filename, ScriptType type,
                            ProgramContext& program) -> optional<std::pair<shared_ptr<Script>, SymTable>>
 {
     if(auto opt_script = read_script(filename, subdir, type, program))
     {
         shared_ptr<Script> script = std::move(*opt_script);
-        SymTable symtable = SymTable::from_script(*script, program);
+        SymTable symtable;
+        symtable.scan_for_includers(*script, program);
         return std::make_pair(std::move(script), std::move(symtable));
     }
     return nullopt;
 }
 
 template<typename InputIt> inline
-auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
+auto read_and_scan_includers(const std::map<std::string, fs::path, iless>& subdir,
                            InputIt begin, InputIt end, ScriptType type,
                            ProgramContext& program) -> std::vector<std::pair<shared_ptr<Script>, SymTable>>
 {
@@ -476,7 +482,7 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
 
     for(auto it = begin; it != end; ++it)
     {
-        if(auto opt_pair = read_and_scan_symbols(subdir, *it, type, program))
+        if(auto opt_pair = read_and_scan_includers(subdir, *it, type, program))
             output.emplace_back(std::move(*opt_pair));
     }
 

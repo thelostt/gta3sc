@@ -610,7 +610,8 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             throw HaltJobException();
         }
 
-        auto symbols = SymTable::from_script(*main, program);
+        SymTable symbols;
+        symbols.scan_for_includers(*main, program);
         symbols.apply_offset_to_vars(2);
 
         identify_requires(main, symbols);
@@ -632,7 +633,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
                 if(!extfiles_readen.count(top))
                 {
-                    if(auto script_pair = read_and_scan_symbols(subdir, top, ScriptType::MainExtension, program))
+                    if(auto script_pair = read_and_scan_includers(subdir, top, ScriptType::MainExtension, program))
                     {
                         ext_scripts.emplace_back(std::move(*script_pair));
                         auto& script_syms = ext_scripts.back().second;
@@ -644,8 +645,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             }
         }
 
-        // merge symbols from extension scripts here, since we need symbols.subscripts/missions/streamed
-        // with the content from both main and main extensions
+        // includers symbol merging for main+extension scripts (not thread-safe)
         for(auto& x : ext_scripts)
         {
             identify_requires(x.first, x.second);
@@ -653,40 +653,42 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             scripts.emplace_back(x.first); // maybe move
         }
 
-        auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
-        auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
-        auto streamed_scripts = read_and_scan_symbols(subdir, symbols.streamed.begin(), symbols.streamed.end(), ScriptType::StreamedScript, program);
+        auto sub_scripts = read_and_scan_includers(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
+        auto mission_scripts = read_and_scan_includers(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
+        auto streamed_scripts = read_and_scan_includers(subdir, symbols.streamed.begin(), symbols.streamed.end(), ScriptType::StreamedScript, program);
 
-        // Following steps wants a fully working syntax tree, so check for parser/lexer errors.
         if(program.has_error())
             throw HaltJobException();
 
-        for(auto& x : sub_scripts)
+        // just includers symbols merging (not thread-safe)
         {
-            identify_requires(x.first, x.second);
-            symbols.merge(std::move(x.second), program);
-            scripts.emplace_back(x.first); // maybe move
-        }
-
-        {
-            size_t i = 0;
-            for(auto& x : mission_scripts)
+            for(auto& x : sub_scripts)
             {
                 identify_requires(x.first, x.second);
                 symbols.merge(std::move(x.second), program);
                 scripts.emplace_back(x.first); // maybe move
-                scripts.back()->mission_id = static_cast<uint16_t>(i++);
             }
-        }
 
-        {
-            size_t i = 0;
-            for(auto& x : streamed_scripts)
             {
-                identify_requires(x.first, x.second);
-                symbols.merge(std::move(x.second), program);
-                scripts.emplace_back(x.first); // maybe move
-                scripts.back()->streamed_id = static_cast<uint16_t>(i++);
+                size_t i = 0;
+                for(auto& x : mission_scripts)
+                {
+                    identify_requires(x.first, x.second);
+                    symbols.merge(std::move(x.second), program);
+                    scripts.emplace_back(x.first); // maybe move
+                    scripts.back()->mission_id = static_cast<uint16_t>(i++);
+                }
+            }
+
+            {
+                size_t i = 0;
+                for(auto& x : streamed_scripts)
+                {
+                    identify_requires(x.first, x.second);
+                    symbols.merge(std::move(x.second), program);
+                    scripts.emplace_back(x.first); // maybe move
+                    scripts.back()->streamed_id = static_cast<uint16_t>(i++);
+                }
             }
         }
 
@@ -696,7 +698,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             insensitive_map<std::string, std::pair<shared_ptr<Script>, SymTable>> req_scripts;
             for(auto& vpair : require_chain)
             {
-                if(auto opt = read_and_scan_symbols(subdir, vpair.first, ScriptType::Required, program))
+                if(auto opt = read_and_scan_includers(subdir, vpair.first, ScriptType::Required, program))
                     req_scripts.emplace(vpair.first, std::move(*opt));
             }
 
@@ -724,7 +726,31 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     scripts.insert(std::next(it_script), rqsc_pair.first);
                 }
             }
+
+            if(program.has_error())
+                throw HaltJobException();
         }
+
+        // effectively scan symbols now
+        {
+            // thread-safe
+            std::vector<SymTable> symbol_vector;
+            symbol_vector.reserve(scripts.size());
+            for(auto& script : scripts)
+            {
+                symbol_vector.emplace_back(SymTable::from_script(*script, program));
+            }
+
+            // not thread-safe
+            for(auto& symtbl : symbol_vector)
+            {
+                symbols.merge(std::move(symtbl), program);
+            }
+        }
+
+        // check if symbol table was built successfully
+        if(program.has_error())
+            throw HaltJobException();
 
         symbols.check_command_count(program);
 

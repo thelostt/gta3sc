@@ -952,6 +952,78 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
     t1.count_set_total_number_of_missions += t2.count_set_total_number_of_missions;
 }
 
+void SymTable::scan_for_includers(Script& script, ProgramContext& program)
+{
+    std::function<bool(SyntaxTree&)> walker;
+    SymTable& table = *this;
+
+    auto add_script = [&](ScriptType type, const SyntaxTree& command)
+    {
+        if(script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
+            table.add_script(type, command, program);
+        else
+            program.error(command, "scripts can only be added from main or extension scripts");
+    };
+
+    auto add_require = [&](const SyntaxTree& node, const string_view& filename)
+    {
+        // TODO R* compiler checks if parameter ends with .sc
+        // TODO join this with add_script
+
+        if(auto existing_type = this->script_type(filename))
+        {
+            if(ScriptType::Required != *existing_type)
+            {
+                program.error(node, "incompatible declaration, script was previously seen as a {} script", to_string(*existing_type));
+                return false;
+            }
+            return true;
+        }
+        else
+        {
+            this->required.emplace_back(filename.to_string());
+            return true;
+        }
+    };
+
+    // the scanner
+    walker = [&](SyntaxTree& node)
+    {
+        switch(node.type())
+        {
+            case NodeType::REQUIRE:
+            {
+                // TODO check if on top of script
+                add_require(node, node.child(0).text());
+                return false;
+            }
+
+            case NodeType::Command:
+            {
+                auto command_name = node.child(0).text();
+
+                // TODO use `const Commands&` to identify these?
+                // TODO case sensitivity
+                if(command_name == "LOAD_AND_LAUNCH_MISSION")
+                    add_script(ScriptType::Mission, node);
+                else if(command_name == "LAUNCH_MISSION")
+                    add_script(ScriptType::Subscript, node);
+                else if(command_name == "GOSUB_FILE")
+                    add_script(ScriptType::MainExtension, node);
+                else if(command_name == "REGISTER_STREAMED_SCRIPT")
+                    add_script(ScriptType::StreamedScript, node);
+
+                return false;
+            }
+
+            default:
+                return true;
+        }
+    };
+
+    script.tree->depth_first(std::ref(walker));
+}
+
 void SymTable::scan_symbols(Script& script, ProgramContext& program)
 {
     std::function<bool(SyntaxTree&)> walker;
@@ -984,35 +1056,6 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
             // TODO what's the error message for normal commands?
             program.error(node, "bad number of arguments");
             return 0;
-        }
-    };
-
-    auto add_script = [&](ScriptType type, const SyntaxTree& command)
-    {
-        if(script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
-            table.add_script(type, command, program);
-        else
-            program.error(command, "scripts can only be added from main or extension scripts");
-    };
-
-    auto add_require = [&](const SyntaxTree& node, const string_view& filename)
-    {
-        // TODO R* compiler checks if parameter ends with .sc
-        // TODO join this with add_script
-
-        if(auto existing_type = this->script_type(filename))
-        {
-            if(ScriptType::Required != *existing_type)
-            {
-                program.error(node, "incompatible declaration, script was previously seen as a {} script", to_string(*existing_type));
-                return false;
-            }
-            return true;
-        }
-        else
-        {
-            this->required.emplace_back(filename.to_string());
-            return true;
         }
     };
 
@@ -1103,13 +1146,6 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                 return false;
             }
 
-            case NodeType::REQUIRE:
-            {
-                // TODO check if on top of script
-                add_require(node, node.child(0).text());
-                return false;
-            }
-
             case NodeType::Command:
             {
                 auto command_name = node.child(0).text();
@@ -1118,15 +1154,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                 // TODO use `const Commands&` to identify these?
 		        // TODO case sensitivity
-                if(command_name == "LOAD_AND_LAUNCH_MISSION")
-                    add_script(ScriptType::Mission, node);
-                else if(command_name == "LAUNCH_MISSION")
-                    add_script(ScriptType::Subscript, node);
-                else if(command_name == "GOSUB_FILE")
-                    add_script(ScriptType::MainExtension, node);
-                else if(command_name == "REGISTER_STREAMED_SCRIPT")
-                    add_script(ScriptType::StreamedScript, node);
-                else if(program.opt.output_cleo && command_name == "START_NEW_SCRIPT")
+                if(program.opt.output_cleo && command_name == "START_NEW_SCRIPT")
                     program.error(node, "this command is not allowed in custom scripts");
                 else if(command_name == "CREATE_COLLECTABLE1")
                     ++table.count_collectable1;
