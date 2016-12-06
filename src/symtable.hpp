@@ -95,9 +95,8 @@ public:
     shared_ptr<Label>       top_label;      // the label on the very very top of the script
     shared_ptr<Label>       start_label;    // the label to jump into when starting this script.
 
-    /// Which script this is a child of, i.e. sharing the same code space.
-    /// May be empty for a top script (i.e. main, mission, streamed).
-    weak_ptr<const Script>  parent_script;
+    std::vector<weak_ptr<const Script>> children_scripts;
+    weak_ptr<const Script>              parent_script;
 
     /// The offset of this script, in bytes, in the fully compiled SCM.
     /// TODO explain further on which compilation step this value gets to be available.
@@ -138,31 +137,18 @@ public:
         return (this->code_offset.value() - this->base.value());
     }
 
-    /// \returns the size of this script including its headers.
+    /// \returns the size of this script including its headers and children scripts.
     uint32_t full_size() const
     {
-        return this->code_size.value() + this->header_size();
+        size_t size = this->code_size.value() + this->header_size();
+        for(auto& sc : children_scripts) size += sc.lock()->full_size();
+        return size;
     }
 
-    bool uses_local_offsets() const
-    {
-        switch(this->type)
-        {
-            case ScriptType::Main:
-            case ScriptType::MainExtension:
-            case ScriptType::Subscript:
-                return false;
-            case ScriptType::Mission:
-            case ScriptType::StreamedScript:
-            case ScriptType::CustomMission:
-            case ScriptType::CustomScript:
-                return true;
-            case ScriptType::Required:
-                return parent_script.lock()->uses_local_offsets();
-            default:
-                Unreachable();
-        }
-    }
+    // \warning not thread-safe.
+    void add_children(shared_ptr<Script> script);
+
+    bool uses_local_offsets() const;
 
     bool on_the_same_space_as(const Script& other) const;
 
@@ -173,6 +159,10 @@ public:
     bool is_child_of_custom() const;
 
     shared_ptr<const Script> root_script() const;
+    
+    bool is_root_script() const;
+
+    size_t distance_from_root() const;
 
 public:
     optional<int32_t> find_model(const string_view& name) const
@@ -289,10 +279,10 @@ struct Label
         return script->code_offset.value() + this->code_position.value();
     }
 
-    /// Returns the local offset for this label relative to `script->base`.
+    /// Returns the local offset for this label relative to `script->root_script()->base`.
     uint32_t distance_from_base() const
     {
-        return script->header_size() + this->code_position.value();
+        return script->root_script()->header_size() + script->distance_from_root() + this->code_position.value();
     }
 
     /// Can a GOTO in `other_script` branch into this label?

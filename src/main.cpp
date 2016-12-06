@@ -573,12 +573,19 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
     try
     {
         using RequiredFrom = std::vector<weak_ptr<const Script>>;
-        insensitive_map<std::string, RequiredFrom> require_chain;
+        std::vector<std::pair<std::string, RequiredFrom>> require_chain;
 
         auto identify_requires = [&](const shared_ptr<const Script>& script, const SymTable& symtable)
         {
             for(auto& rqname : symtable.required)
-                require_chain[rqname].emplace_back(script);
+            {
+                auto it = std::find_if(require_chain.begin(), require_chain.end(), [&](const auto& a) { return iequal_to()(a.first, rqname); });
+                if(it == require_chain.end())
+                {
+                    it = require_chain.emplace(require_chain.end(), std::pair<std::string, RequiredFrom>(rqname, {}));
+                }
+                it->second.emplace_back(script);
+            }
         };
 
         std::vector<shared_ptr<Script>> scripts;
@@ -683,17 +690,20 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             }
         }
 
-        // resolve requires (not thread safe atm)
-        insensitive_map<std::string, std::pair<shared_ptr<Script>, SymTable>> req_scripts;
+        // resolve requires
         {
+            // (would be thread safe)
+            insensitive_map<std::string, std::pair<shared_ptr<Script>, SymTable>> req_scripts;
             for(auto& vpair : require_chain)
             {
                 if(auto opt = read_and_scan_symbols(subdir, vpair.first, ScriptType::Required, program))
                     req_scripts.emplace(vpair.first, std::move(*opt));
             }
 
-            for(auto& vpair : require_chain)
+            // (not thread safe)
+            for(auto it = require_chain.rbegin(); it != require_chain.rend(); ++it)
             {
+                auto& vpair = *it;
                 auto it_reqscript = req_scripts.find(vpair.first);
                 if(it_reqscript != req_scripts.end())
                 {
@@ -710,7 +720,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
                     auto& rqsc_pair = it_reqscript->second;
                     symbols.merge(std::move(rqsc_pair.second), program);
-                    rqsc_pair.first->parent_script = *it_script;            // <----------- bad mutation?
+                    (*it_script)->add_children(rqsc_pair.first);
                     scripts.insert(std::next(it_script), rqsc_pair.first);
                 }
             }
@@ -947,6 +957,14 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     size_t offset = directory[1+i].offset * 2048;
                     offset += write_headers(script_img, offset, gen.script);
                     write_file(script_img, offset, gen.buffer(), gen.buffer_size());
+                    offset += gen.buffer_size();
+                    for(auto& weakp : gen.script->children_scripts)
+                    {
+                        auto required_script = weakp.lock();
+                        auto& required_gen = *std::find_if(gens.begin(), gens.end(), [&](const auto& g) { return g.script == required_script; });
+                        write_file(script_img, offset, required_gen.buffer(), required_gen.buffer_size());
+                        offset += required_gen.buffer_size();
+                    }
                 }
             }
         };

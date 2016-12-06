@@ -86,6 +86,36 @@ bool Label::may_branch_from(const Script& other_script, ProgramContext& program)
     return this->script->on_the_same_space_as(other_script);
 }
 
+void Script::add_children(shared_ptr<Script> script)
+{
+    Expects(script.get() != this);
+    Expects(script->type == ScriptType::Required);
+    Expects(script->parent_script.use_count() == 0);
+
+    this->children_scripts.emplace_back(script);
+    script->parent_script = this->shared_from_this();
+}
+
+bool Script::uses_local_offsets() const
+{
+    switch(this->type)
+    {
+        case ScriptType::Main:
+        case ScriptType::MainExtension:
+        case ScriptType::Subscript:
+            return false;
+        case ScriptType::Mission:
+        case ScriptType::StreamedScript:
+        case ScriptType::CustomMission:
+        case ScriptType::CustomScript:
+            return true;
+        case ScriptType::Required:
+            return this->root_script()->uses_local_offsets();
+        default:
+            Unreachable();
+    }
+}
+
 bool Script::on_the_same_space_as(const Script& other) const
 {
     if(this == &other)
@@ -145,10 +175,24 @@ bool Script::is_child_of_custom() const
 
 shared_ptr<const Script> Script::root_script() const
 {
-    if(this->type == ScriptType::Required)
+    if(!this->is_root_script())
         return this->parent_script.lock()->root_script();
     else
         return this->shared_from_this();
+}
+
+bool Script::is_root_script() const
+{
+    return !(this->type == ScriptType::Required);
+}
+
+size_t Script::distance_from_root() const
+{
+    if(this->is_root_script())
+        return 0;
+
+    auto parent = this->parent_script.lock();
+    return parent->code_size.value() + parent->distance_from_root();
 }
 
 void Script::compute_script_offsets(const std::vector<shared_ptr<Script>>& scripts, const MultiFileHeaderList& headers)

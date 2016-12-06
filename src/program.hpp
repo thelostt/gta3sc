@@ -90,7 +90,7 @@ public:
     bool skip_cutscene = false;
     bool fsyntax_only = false;
     bool emit_ir2 = false;
-    bool linear_sweep = false;
+    bool linear_sweep = true;
     bool relax_not = false;
     bool output_cleo = false;
     bool mission_script = false;
