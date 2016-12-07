@@ -1624,6 +1624,12 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));
 
+                        if(!command.supported)
+                            program.error(node, "unsupported command");
+
+                        if(command.internal)
+                            program.error(node, "unexpected use of internal command");
+
                         if(commands.equal(command, commands.script_name))
                             handle_script_name(node);
                         else if(commands.equal(command, commands.set_collectable1_total))

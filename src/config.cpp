@@ -141,6 +141,7 @@ static std::pair<std::string, Command>
     xml_attribute<>* hash_attrib = cmd_node->first_attribute("Hash");
     xml_attribute<>* name_attrib = cmd_node->first_attribute("Name");
     xml_attribute<>* support_attrib = cmd_node->first_attribute("Supported");
+    xml_attribute<>* internal_attrib = cmd_node->first_attribute("Internal");
     xml_node<>*      args_node   = cmd_node->first_node("Args");
 
     if(!id_attrib || !name_attrib)
@@ -222,8 +223,9 @@ static std::pair<std::string, Command>
     return { // TODO maybe this should be a std::set
         name.to_string(),
         Command {
-            uint16_t(xml_stoi(id_attrib->value()) & 0x7FFF), // id
             xml_to_bool(support_attrib, true),               // supported
+            xml_to_bool(internal_attrib, false),             // internal
+            uint16_t(xml_stoi(id_attrib->value()) & 0x7FFF), // id
             std::move(hash),                                 // hash
             std::move(args),                                 // args
             name.to_string(),                                // name

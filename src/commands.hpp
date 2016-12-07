@@ -84,8 +84,9 @@ struct Command
         }
     };
 
-    optional<uint16_t>      id;         //< The opcode id.
     bool                    supported;  //< Is this command supported by the script engine?
+    bool                    internal;   //< Is this a command handled solely by the compiler itself?
+    optional<uint16_t>      id;         //< The opcode id.
     optional<uint32_t>      hash;       //< The command hash.
     small_vector<Arg, 12>   args;       //< The arguments of the command.
     std::string             name;       //< The name of this command.

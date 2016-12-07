@@ -1156,6 +1156,62 @@
     <Command ID="0xc4" Name="DEBUG_OFF"/>
     <Command ID="0xc5" Name="RETURN_TRUE" Supported="false"/>
     <Command ID="0xc6" Name="RETURN_FALSE" Supported="false"/>
+    <Command ID="0xc7" Name="VAR_INT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" Optional="true" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xc8" Name="VAR_FLOAT" Internal="true">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="FLOAT" Optional="true" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xc9" Name="LVAR_INT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="INT" Optional="true" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xca" Name="LVAR_FLOAT" Internal="true">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="FLOAT" Optional="true" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xcb" Name="{" Internal="true"/>
+    <Command ID="0xcc" Name="}" Internal="true"/>
+    <Command ID="0xcd" Name="REPEAT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xce" Name="ENDREPEAT" Internal="true"/>
+    <Command ID="0xcf" Name="IF" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xd0" Name="IFNOT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xd1" Name="ELSE" Internal="true"/>
+    <Command ID="0xd2" Name="ENDIF" Internal="true"/>
+    <Command ID="0xd3" Name="WHILE" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xd4" Name="WHILENOT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xd5" Name="ENDWHILE" Internal="true"/>
     <Command ID="0xd6" Name="ANDOR">
       <Args>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
