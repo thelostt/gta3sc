@@ -6,11 +6,11 @@ enum class ArgType : uint8_t
 {
     Param,
     Label,
-    Buffer32,
     Integer,
     Float,
     TextLabel,
     TextLabel16,
+    TextLabel32,
     String,
     Constant,
 };

@@ -71,14 +71,14 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::Param;
     else if(!strcmp(string, "LABEL"))
         return ArgType::Label;
-    else if(!strcmp(string, "BUFFER32"))
-        return ArgType::Buffer32;
     else if(!strcmp(string, "CONST"))
         return ArgType::Constant;
     else if(!strcmp(string, "TEXT_LABEL"))
         return ArgType::TextLabel;
     else if(!strcmp(string, "TEXT_LABEL16"))
         return ArgType::TextLabel16;
+    else if(!strcmp(string, "TEXT_LABEL32"))
+        return ArgType::TextLabel32;
     else if(!strcmp(string, "STRING"))
         return ArgType::String;
     else

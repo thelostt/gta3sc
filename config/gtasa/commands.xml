@@ -8714,10 +8714,10 @@
     <Command ID="0x5b5" Name="APPLY_COLLISION_ON_OBJECT" Supported="false"/>
     <Command ID="0x5b6" Name="SAVE_STRING_TO_DEBUG_FILE">
       <Args>
-        <Arg Type="BUFFER32" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="BUFFER32" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="BUFFER32" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="BUFFER32" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL32" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL32" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL32" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL32" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x5b7" Name="TASK_PLAYER_ON_FOOT" Supported="false"/>
