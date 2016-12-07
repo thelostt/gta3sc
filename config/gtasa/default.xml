@@ -2,7 +2,7 @@
 <!--  This file is a fallback used only if the data directory of the game is not specified. -->
 <GTA3Script>
   <Constants>
-    <Enum Name="CARPEDMODEL">
+    <Enum Name="DEFAULTMODEL">
       <Constant Name="NULL" Value="0"/>
       <Constant Name="CSPLAY" Value="1"/>
       <Constant Name="MALE01" Value="7"/>

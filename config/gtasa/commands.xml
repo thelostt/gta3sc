@@ -922,7 +922,7 @@
     <Command ID="0x9a" Name="CREATE_CHAR">
       <Args>
         <Arg Type="INT" Enum="PEDTYPE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
@@ -1005,7 +1005,7 @@
     </Command>
     <Command ID="0xa5" Name="CREATE_CAR">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
@@ -1156,6 +1156,62 @@
     <Command ID="0xc4" Name="DEBUG_OFF" Supported="false"/>
     <Command ID="0xc5" Name="RETURN_TRUE" Supported="false"/>
     <Command ID="0xc6" Name="RETURN_FALSE" Supported="false"/>
+    <Command ID="0xc7" Name="VAR_INT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="INT" Optional="true" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xc8" Name="VAR_FLOAT" Internal="true">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
+        <Arg Type="FLOAT" Optional="true" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xc9" Name="LVAR_INT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="INT" Optional="true" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xca" Name="LVAR_FLOAT" Internal="true">
+      <Args>
+        <Arg Type="FLOAT" AllowConst="false" AllowGlobalVar="false"/>
+        <Arg Type="FLOAT" Optional="true" AllowConst="false" AllowGlobalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xcb" Name="{" Internal="true"/>
+    <Command ID="0xcc" Name="}" Internal="true"/>
+    <Command ID="0xcd" Name="REPEAT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xce" Name="ENDREPEAT" Internal="true"/>
+    <Command ID="0xcf" Name="IF" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xd0" Name="IFNOT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xd1" Name="ELSE" Internal="true"/>
+    <Command ID="0xd2" Name="ENDIF" Internal="true"/>
+    <Command ID="0xd3" Name="WHILE" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xd4" Name="WHILENOT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0xd5" Name="ENDWHILE" Internal="true"/>
     <Command ID="0xd6" Name="ANDOR">
       <Args>
         <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
@@ -1194,13 +1250,13 @@
     <Command ID="0xdd" Name="IS_CHAR_IN_MODEL">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0xde" Name="IS_PLAYER_IN_MODEL" Supported="false">
       <Args>
         <Arg Type="INT" Entity="PLAYER"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0xdf" Name="IS_CHAR_IN_ANY_CAR">
@@ -1799,7 +1855,7 @@
       <Args>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="INT" Enum="PEDTYPE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="CHAR"/>
       </Args>
     </Command>
@@ -1886,7 +1942,7 @@
     <Command ID="0x137" Name="IS_CAR_MODEL">
       <Args>
         <Arg Type="INT" Entity="CAR"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x138" Name="IS_CAR_REMAP" Supported="false">
@@ -1998,7 +2054,7 @@
     </Command>
     <Command ID="0x14a" Name="CREATE_GANG_CAR" Supported="false">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
@@ -2011,7 +2067,7 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Angle"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Enum="CARCOLOUR"/>
         <Arg Type="INT" Enum="CARCOLOUR"/>
         <Arg Type="INT" Desc="Bool"/>
@@ -2897,7 +2953,7 @@
       <Args>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="INT" Enum="PEDTYPE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Out="true" Entity="CHAR"/>
       </Args>
@@ -3196,10 +3252,10 @@
         <Arg Type="INT" Enum="WEAPONTYPE"/>
         <Arg Type="INT" Desc="Time"/>
         <Arg Type="INT"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Desc="Bool"/>
       </Args>
     </Command>
@@ -3605,14 +3661,14 @@
     <Command ID="0x235" Name="SET_GANG_PED_MODELS" Supported="false">
       <Args>
         <Arg Type="INT" Enum="GANG"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x236" Name="SET_GANG_CAR_MODEL" Supported="false">
       <Args>
         <Arg Type="INT" Enum="GANG"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x237" Name="SET_GANG_WEAPONS">
@@ -3707,7 +3763,7 @@
     <Command ID="0x245" Name="SET_ANIM_GROUP_FOR_CHAR">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x246" Name="SET_ANIM_GROUP_FOR_PLAYER" Supported="false">
@@ -4865,14 +4921,14 @@
     <Command ID="0x2f2" Name="IS_CHAR_MODEL">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x2f3" Name="LOAD_SPECIAL_MODEL" Supported="false"/>
     <Command ID="0x2f4" Name="CREATE_CUTSCENE_HEAD" Supported="false">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="OBJECT"/>
       </Args>
     </Command>
@@ -5229,14 +5285,14 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="CAR"/>
       </Args>
     </Command>
     <Command ID="0x328" Name="GET_RANDOM_CAR_OF_TYPE_IN_ZONE" Supported="false">
       <Args>
         <Arg Type="TEXT_LABEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="CAR"/>
       </Args>
     </Command>
@@ -5582,10 +5638,10 @@
         <Arg Type="INT" Enum="WEAPONTYPE"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Desc="Bool"/>
       </Args>
     </Command>
@@ -5839,7 +5895,7 @@
     <Command ID="0x38f" Name="LOAD_SPRITE">
       <Args>
         <Arg Type="INT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x390" Name="LOAD_TEXTURE_DICTIONARY">
@@ -5857,7 +5913,7 @@
     <Command ID="0x393" Name="SET_CHAR_ANIM_SPEED">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
@@ -6959,7 +7015,7 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Angle"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x46f" Name="GET_CURRENT_PLAYER_WEAPON" Supported="false">
@@ -7077,7 +7133,7 @@
     </Command>
     <Command ID="0x47d" Name="GET_NUMBER_OF_SEATS_IN_MODEL" Supported="false">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
@@ -7125,7 +7181,7 @@
     <Command ID="0x487" Name="IS_REPLAY_PLAYING" Supported="false"/>
     <Command ID="0x488" Name="IS_MODEL_AVAILABLE">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x489" Name="SHUT_CHAR_UP">
@@ -7725,17 +7781,17 @@
     <Command ID="0x4ec" Name="SET_ZONE_CIVILIAN_CAR_INFO" Supported="false"/>
     <Command ID="0x4ed" Name="REQUEST_ANIMATION">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x4ee" Name="HAS_ANIMATION_LOADED">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x4ef" Name="REMOVE_ANIMATION">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x4f0" Name="IS_CHAR_WAITING_FOR_WORLD_COLLISION">
@@ -7846,7 +7902,7 @@
       <Args>
         <Arg Type="INT" Entity="PLAYER"/>
         <Arg Type="INT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x501" Name="SET_PLAYER_CAN_DO_DRIVE_BY">
@@ -7883,7 +7939,7 @@
     </Command>
     <Command ID="0x506" Name="SET_CAR_MODEL_COMPONENTS">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
       </Args>
@@ -8178,7 +8234,7 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="CAR"/>
       </Args>
     </Command>
@@ -8714,10 +8770,10 @@
     <Command ID="0x5b5" Name="APPLY_COLLISION_ON_OBJECT" Supported="false"/>
     <Command ID="0x5b6" Name="SAVE_STRING_TO_DEBUG_FILE">
       <Args>
-        <Arg Type="BUFFER32" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="BUFFER32" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="BUFFER32" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="BUFFER32" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL32" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL32" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL32" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="TEXT_LABEL32" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x5b7" Name="TASK_PLAYER_ON_FOOT" Supported="false"/>
@@ -9200,8 +9256,8 @@
     <Command ID="0x605" Name="TASK_PLAY_ANIM">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Bool"/>
         <Arg Type="INT" Desc="Bool"/>
@@ -9258,27 +9314,27 @@
     <Command ID="0x611" Name="IS_CHAR_PLAYING_ANIM">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x612" Name="SET_CHAR_ANIM_PLAYING_FLAG">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Desc="Bool"/>
       </Args>
     </Command>
     <Command ID="0x613" Name="GET_CHAR_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT" Out="true"/>
       </Args>
     </Command>
     <Command ID="0x614" Name="SET_CHAR_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
@@ -9308,7 +9364,7 @@
     <Command ID="0x61a" Name="GET_CHAR_ANIM_TOTAL_TIME">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT" Out="true"/>
       </Args>
     </Command>
@@ -9339,7 +9395,7 @@
     <Command ID="0x621" Name="CREATE_CHAR_AT_ATTRACTOR">
       <Args>
         <Arg Type="INT" Enum="PEDTYPE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Entity="ATTRACTOR"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Out="true" Entity="CHAR"/>
@@ -9533,7 +9589,7 @@
     <Command ID="0x64a" Name="ADD_PEDMODEL_AS_ATTRACTOR_USER" Supported="false"/>
     <Command ID="0x64b" Name="CREATE_FX_SYSTEM">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
@@ -9619,46 +9675,46 @@
     <Command ID="0x65d" Name="VIEW_INTEGER_VARIABLE">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x65e" Name="VIEW_FLOAT_VARIABLE">
       <Args>
         <Arg Type="FLOAT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x65f" Name="WATCH_INTEGER_VARIABLE">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x660" Name="WATCH_FLOAT_VARIABLE">
       <Args>
         <Arg Type="FLOAT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x661" Name="BREAKPOINT">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x662" Name="WRITE_DEBUG">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x663" Name="WRITE_DEBUG_WITH_INT">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x664" Name="WRITE_DEBUG_WITH_FLOAT">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
@@ -9689,7 +9745,7 @@
     </Command>
     <Command ID="0x669" Name="CREATE_FX_SYSTEM_ON_CHAR">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="FLOAT" Desc="X Offset"/>
         <Arg Type="FLOAT" Desc="Y Offset"/>
@@ -9700,7 +9756,7 @@
     </Command>
     <Command ID="0x66a" Name="CREATE_FX_SYSTEM_ON_CHAR_WITH_DIRECTION">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="FLOAT" Desc="X Offset"/>
         <Arg Type="FLOAT" Desc="Y Offset"/>
@@ -9714,7 +9770,7 @@
     </Command>
     <Command ID="0x66b" Name="CREATE_FX_SYSTEM_ON_CAR">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="FLOAT" Desc="X Offset"/>
         <Arg Type="FLOAT" Desc="Y Offset"/>
@@ -9725,7 +9781,7 @@
     </Command>
     <Command ID="0x66c" Name="CREATE_FX_SYSTEM_ON_CAR_WITH_DIRECTION">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="FLOAT" Desc="X Offset"/>
         <Arg Type="FLOAT" Desc="Y Offset"/>
@@ -9739,7 +9795,7 @@
     </Command>
     <Command ID="0x66d" Name="CREATE_FX_SYSTEM_ON_OBJECT">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Entity="OBJECT"/>
         <Arg Type="FLOAT" Desc="X Offset"/>
         <Arg Type="FLOAT" Desc="Y Offset"/>
@@ -9750,7 +9806,7 @@
     </Command>
     <Command ID="0x66e" Name="CREATE_FX_SYSTEM_ON_OBJECT_WITH_DIRECTION">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Entity="OBJECT"/>
         <Arg Type="FLOAT" Desc="X Offset"/>
         <Arg Type="FLOAT" Desc="Y Offset"/>
@@ -9781,8 +9837,8 @@
     </Command>
     <Command ID="0x674" Name="CUSTOM_PLATE_FOR_NEXT_CAR">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x675" Name="CREATE_PED_GENERATOR_AT_ATTRACTOR" Supported="false"/>
@@ -10341,13 +10397,13 @@
     <Command ID="0x6d1" Name="SET_VAR_TEXT_LABEL16">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x6d2" Name="SET_LVAR_TEXT_LABEL16">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x6d5" Name="CREATE_CHECKPOINT">
@@ -10453,7 +10509,7 @@
     </Command>
     <Command ID="0x6e6" Name="GET_VEHICLE_MOD_TYPE">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
@@ -10574,7 +10630,7 @@
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x700" Name="SKIP_CUTSCENE_START" Supported="false"/>
+    <Command ID="0x700" Name="SKIP_CUTSCENE_START"/>
     <Command ID="0x701" Name="SKIP_CUTSCENE_END"/>
     <Command ID="0x702" Name="GET_PERCENTAGE_TAGGED_IN_AREA">
       <Args>
@@ -10647,8 +10703,8 @@
         <Arg Type="FLOAT" Desc="Z Offset"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Desc="Time"/>
       </Args>
     </Command>
@@ -10863,12 +10919,12 @@
     </Command>
     <Command ID="0x732" Name="SUPPRESS_CAR_MODEL">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x733" Name="DONT_SUPPRESS_CAR_MODEL">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x734" Name="DONT_SUPPRESS_ANY_CAR_MODELS"/>
@@ -11058,8 +11114,8 @@
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x756" Name="TASK_GO_ON_PATROL" Supported="false"/>
@@ -11069,8 +11125,8 @@
     <Command ID="0x75a" Name="PLAY_OBJECT_ANIM">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Bool"/>
         <Arg Type="INT" Desc="Bool"/>
@@ -11088,12 +11144,12 @@
     </Command>
     <Command ID="0x75d" Name="LOAD_PRICES">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x75e" Name="LOAD_SHOP">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x75f" Name="GET_NUMBER_OF_ITEMS_IN_SHOP">
@@ -11170,7 +11226,7 @@
     </Command>
     <Command ID="0x771" Name="CUSTOM_PLATE_DESIGN_FOR_NEXT_CAR">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
@@ -11187,17 +11243,17 @@
     <Command ID="0x775" Name="CREATE_OIL_PUDDLE" Supported="false"/>
     <Command ID="0x776" Name="REQUEST_IPL">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x777" Name="REMOVE_IPL">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x778" Name="REMOVE_IPL_DISCREETLY">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x779" Name="TASK_OPEN_PASSENGER_DOOR" Supported="false"/>
@@ -11857,8 +11913,8 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Angle"/>
         <Arg Type="FLOAT" Desc="Radius"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Bool"/>
         <Arg Type="INT" Desc="Bool"/>
@@ -11888,7 +11944,7 @@
     </Command>
     <Command ID="0x80b" Name="SAVE_TEXT_LABEL_TO_DEBUG_FILE">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x80c" Name="GET_CHAR_BREATH" Supported="false"/>
@@ -11922,8 +11978,8 @@
     <Command ID="0x812" Name="TASK_PLAY_ANIM_NON_INTERRUPTABLE">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Bool"/>
         <Arg Type="INT" Desc="Bool"/>
@@ -12009,17 +12065,17 @@
     </Command>
     <Command ID="0x81e" Name="IS_THIS_MODEL_A_BOAT">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x81f" Name="IS_THIS_MODEL_A_PLANE">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x820" Name="IS_THIS_MODEL_A_HELI">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x821" Name="IS_3D_COORD_IN_ZONE" Supported="false"/>
@@ -12061,8 +12117,8 @@
     <Command ID="0x829" Name="TASK_DIE_NAMED_ANIM">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Time"/>
       </Args>
@@ -12110,28 +12166,28 @@
     <Command ID="0x836" Name="SET_OBJECT_ANIM_SPEED">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
     <Command ID="0x837" Name="IS_OBJECT_PLAYING_ANIM">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x838" Name="SET_OBJECT_ANIM_PLAYING_FLAG" Supported="false"/>
     <Command ID="0x839" Name="GET_OBJECT_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT" Out="true"/>
       </Args>
     </Command>
     <Command ID="0x83a" Name="SET_OBJECT_ANIM_CURRENT_TIME">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
@@ -12212,11 +12268,19 @@
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x848" Name="SWITCH"/>
-    <Command ID="0x849" Name="ENDSWITCH"/>
-    <Command ID="0x84a" Name="CASE"/>
-    <Command ID="0x84b" Name="DEFAULT"/>
-    <Command ID="0x84c" Name="BREAK"/>
+    <Command ID="0x848" Name="SWITCH" Internal="true">
+      <Args>
+        <Arg Type="INT"/>
+      </Args>
+    </Command>
+    <Command ID="0x849" Name="ENDSWITCH" Internal="true"/>
+    <Command ID="0x84a" Name="CASE" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x84b" Name="DEFAULT" Internal="true"/>
+    <Command ID="0x84c" Name="BREAK" Internal="true"/>
     <Command ID="0x84d" Name="ACTIVATE_INTERIOR_PEDS">
       <Args>
         <Arg Type="INT" Desc="Bool"/>
@@ -12286,7 +12350,7 @@
     </Command>
     <Command ID="0x85a" Name="CREATE_EMERGENCY_SERVICES_CAR">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
@@ -12457,8 +12521,8 @@
     <Command ID="0x87b" Name="GIVE_PLAYER_CLOTHES_OUTSIDE_SHOP">
       <Args>
         <Arg Type="INT" Entity="PLAYER"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
@@ -12528,8 +12592,8 @@
     <Command ID="0x88a" Name="TASK_PLAY_ANIM_WITH_FLAGS">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Bool"/>
         <Arg Type="INT" Desc="Bool"/>
@@ -12633,7 +12697,7 @@
         <Arg Type="FLOAT" Desc="X Offset"/>
         <Arg Type="FLOAT" Desc="Y Offset"/>
         <Arg Type="FLOAT" Desc="Z Offset"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x8a1" Name="GET_CHAR_MAP_ATTRACTOR_STATUS" Supported="false"/>
@@ -13152,13 +13216,13 @@
     <Command ID="0x8f9" Name="IS_VAR_TEXT_LABEL16_EQUAL_TO_TEXT_LABEL">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x8fa" Name="IS_LVAR_TEXT_LABEL16_EQUAL_TO_TEXT_LABEL">
       <Args>
         <Arg Type="TEXT_LABEL16" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
       </Args>
     </Command>
     <Command ID="0x8fb" Name="SET_COORD_BLIP_APPEARANCE">
@@ -13313,7 +13377,7 @@
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Radius"/>
         <Arg Type="INT" Enum="MODEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Out="true" Entity="CHAR"/>
       </Args>
     </Command>
@@ -13897,15 +13961,15 @@
     </Command>
     <Command ID="0x98b" Name="STRING_CAT16">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="TEXT_LABEL16" Out="true"/>
       </Args>
     </Command>
     <Command ID="0x98c" Name="STRING_CAT8">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="TEXT_LABEL" Out="true"/>
       </Args>
     </Command>
@@ -14000,8 +14064,8 @@
         <Arg Type="FLOAT" Desc="Z Offset"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Desc="Time"/>
       </Args>
     </Command>
@@ -14050,7 +14114,7 @@
     </Command>
     <Command ID="0x9a9" Name="GET_HASH_KEY">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
@@ -14180,7 +14244,7 @@
     <Command ID="0x9be" Name="IS_MINIGAME_IN_PROGRESS"/>
     <Command ID="0x9bf" Name="SET_FORCE_RANDOM_CAR_MODEL">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x9c0" Name="GET_RANDOM_CAR_OF_TYPE_IN_ANGLED_AREA_NO_SAVE">
@@ -14225,7 +14289,7 @@
     <Command ID="0x9c7" Name="SET_PLAYER_MODEL">
       <Args>
         <Arg Type="INT" Entity="PLAYER"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x9c8" Name="ARE_SUBTITLES_SWITCHED_ON"/>
@@ -14350,7 +14414,7 @@
     </Command>
     <Command ID="0x9e1" Name="GET_CAR_MODEL_VALUE">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
@@ -14360,7 +14424,7 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Angle"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Enum="CARCOLOUR"/>
         <Arg Type="INT" Enum="CARCOLOUR"/>
         <Arg Type="INT" Desc="Bool"/>
@@ -14368,7 +14432,7 @@
         <Arg Type="INT"/>
         <Arg Type="INT" Desc="Time"/>
         <Arg Type="INT" Desc="Time"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT" Out="true" Entity="CAR_GENERATOR"/>
       </Args>
     </Command>
@@ -14439,7 +14503,7 @@
     </Command>
     <Command ID="0x9ef" Name="SET_VEHICLE_CAMERA_TWEAK">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
@@ -14515,7 +14579,7 @@
     <Command ID="0xa00" Name="IS_THIS_MODEL_A_BIKE" Supported="false"/>
     <Command ID="0xa01" Name="IS_THIS_MODEL_A_CAR">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0xa02" Name="SWITCH_ON_GROUND_SEARCHLIGHT">
@@ -14637,8 +14701,8 @@
     <Command ID="0xa1a" Name="TASK_PLAY_ANIM_SECONDARY">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Desc="Bool"/>
         <Arg Type="INT" Desc="Bool"/>

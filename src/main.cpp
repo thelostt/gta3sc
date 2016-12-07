@@ -529,7 +529,7 @@ int main(int argc, char** argv)
             if(input == "default" || input == "all")
             {
                 fprintf(stdout, "=DEFAULT\n");
-                for(auto& pair : program->commands.get_carpedmodel_enum()->values)
+                for(auto& pair : program->commands.get_defaultmodel_enum()->values)
                 {
                     fprintf(stdout, "%s %u\n", pair.first.c_str(), pair.second);
                 }

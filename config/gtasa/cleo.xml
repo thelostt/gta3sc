@@ -2,198 +2,197 @@
 <GTA3Script>
   <Constants>
     <Enum Name="WIN32_VK">
-      <Constant Name="VK_ABNT_C1" Value="0xC1"/>
-      <Constant Name="VK_ABNT_C2" Value="0xC2"/>
-      <Constant Name="VK_ADD" Value="0x6B"/>
-      <Constant Name="VK_ATTN" Value="0xF6"/>
-      <Constant Name="VK_BACK" Value="0x08"/>
-      <Constant Name="VK_CANCEL" Value="0x03"/>
-      <Constant Name="VK_CLEAR" Value="0x0C"/>
-      <Constant Name="VK_CRSEL" Value="0xF7"/>
-      <Constant Name="VK_DECIMAL" Value="0x6E"/>
-      <Constant Name="VK_DIVIDE" Value="0x6F"/>
-      <Constant Name="VK_EREOF" Value="0xF9"/>
-      <Constant Name="VK_ESCAPE" Value="0x1B"/>
-      <Constant Name="VK_EXECUTE" Value="0x2B"/>
-      <Constant Name="VK_EXSEL" Value="0xF8"/>
-      <Constant Name="VK_ICO_CLEAR" Value="0xE6"/>
-      <Constant Name="VK_ICO_HELP" Value="0xE3"/>
-      <Constant Name="VK_KEY_0" Value="0x30"/>
-      <Constant Name="VK_KEY_1" Value="0x31"/>
-      <Constant Name="VK_KEY_2" Value="0x32"/>
-      <Constant Name="VK_KEY_3" Value="0x33"/>
-      <Constant Name="VK_KEY_4" Value="0x34"/>
-      <Constant Name="VK_KEY_5" Value="0x35"/>
-      <Constant Name="VK_KEY_6" Value="0x36"/>
-      <Constant Name="VK_KEY_7" Value="0x37"/>
-      <Constant Name="VK_KEY_8" Value="0x38"/>
-      <Constant Name="VK_KEY_9" Value="0x39"/>
-      <Constant Name="VK_KEY_A" Value="0x41"/>
-      <Constant Name="VK_KEY_B" Value="0x42"/>
-      <Constant Name="VK_KEY_C" Value="0x43"/>
-      <Constant Name="VK_KEY_D" Value="0x44"/>
-      <Constant Name="VK_KEY_E" Value="0x45"/>
-      <Constant Name="VK_KEY_F" Value="0x46"/>
-      <Constant Name="VK_KEY_G" Value="0x47"/>
-      <Constant Name="VK_KEY_H" Value="0x48"/>
-      <Constant Name="VK_KEY_I" Value="0x49"/>
-      <Constant Name="VK_KEY_J" Value="0x4A"/>
-      <Constant Name="VK_KEY_K" Value="0x4B"/>
-      <Constant Name="VK_KEY_L" Value="0x4C"/>
-      <Constant Name="VK_KEY_M" Value="0x4D"/>
-      <Constant Name="VK_KEY_N" Value="0x4E"/>
-      <Constant Name="VK_KEY_O" Value="0x4F"/>
-      <Constant Name="VK_KEY_P" Value="0x50"/>
-      <Constant Name="VK_KEY_Q" Value="0x51"/>
-      <Constant Name="VK_KEY_R" Value="0x52"/>
-      <Constant Name="VK_KEY_S" Value="0x53"/>
-      <Constant Name="VK_KEY_T" Value="0x54"/>
-      <Constant Name="VK_KEY_U" Value="0x55"/>
-      <Constant Name="VK_KEY_V" Value="0x56"/>
-      <Constant Name="VK_KEY_W" Value="0x57"/>
-      <Constant Name="VK_KEY_X" Value="0x58"/>
-      <Constant Name="VK_KEY_Y" Value="0x59"/>
-      <Constant Name="VK_KEY_Z" Value="0x5A"/>
-      <Constant Name="VK_MULTIPLY" Value="0x6A"/>
-      <Constant Name="VK_NONAME" Value="0xFC"/>
-      <Constant Name="VK_NUMPAD0" Value="0x60"/>
-      <Constant Name="VK_NUMPAD1" Value="0x61"/>
-      <Constant Name="VK_NUMPAD2" Value="0x62"/>
-      <Constant Name="VK_NUMPAD3" Value="0x63"/>
-      <Constant Name="VK_NUMPAD4" Value="0x64"/>
-      <Constant Name="VK_NUMPAD5" Value="0x65"/>
-      <Constant Name="VK_NUMPAD6" Value="0x66"/>
-      <Constant Name="VK_NUMPAD7" Value="0x67"/>
-      <Constant Name="VK_NUMPAD8" Value="0x68"/>
-      <Constant Name="VK_NUMPAD9" Value="0x69"/>
-      <Constant Name="VK_OEM_1" Value="0xBA"/>
-      <Constant Name="VK_OEM_102" Value="0xE2"/>
-      <Constant Name="VK_OEM_2" Value="0xBF"/>
-      <Constant Name="VK_OEM_3" Value="0xC0"/>
-      <Constant Name="VK_OEM_4" Value="0xDB"/>
-      <Constant Name="VK_OEM_5" Value="0xDC"/>
-      <Constant Name="VK_OEM_6" Value="0xDD"/>
-      <Constant Name="VK_OEM_7" Value="0xDE"/>
-      <Constant Name="VK_OEM_8" Value="0xDF"/>
-      <Constant Name="VK_OEM_ATTN" Value="0xF0"/>
-      <Constant Name="VK_OEM_AUTO" Value="0xF3"/>
-      <Constant Name="VK_OEM_AX" Value="0xE1"/>
-      <Constant Name="VK_OEM_BACKTAB" Value="0xF5"/>
-      <Constant Name="VK_OEM_CLEAR" Value="0xFE"/>
-      <Constant Name="VK_OEM_COMMA" Value="0xBC"/>
-      <Constant Name="VK_OEM_COPY" Value="0xF2"/>
-      <Constant Name="VK_OEM_CUSEL" Value="0xEF"/>
-      <Constant Name="VK_OEM_ENLW" Value="0xF4"/>
-      <Constant Name="VK_OEM_FINISH" Value="0xF1"/>
-      <Constant Name="VK_OEM_FJ_LOYA" Value="0x95"/>
-      <Constant Name="VK_OEM_FJ_MASSHOU" Value="0x93"/>
-      <Constant Name="VK_OEM_FJ_ROYA" Value="0x96"/>
-      <Constant Name="VK_OEM_FJ_TOUROKU" Value="0x94"/>
-      <Constant Name="VK_OEM_JUMP" Value="0xEA"/>
-      <Constant Name="VK_OEM_MINUS" Value="0xBD"/>
-      <Constant Name="VK_OEM_PA1" Value="0xEB"/>
-      <Constant Name="VK_OEM_PA2" Value="0xEC"/>
-      <Constant Name="VK_OEM_PA3" Value="0xED"/>
-      <Constant Name="VK_OEM_PERIOD" Value="0xBE"/>
-      <Constant Name="VK_OEM_PLUS" Value="0xBB"/>
-      <Constant Name="VK_OEM_RESET" Value="0xE9"/>
-      <Constant Name="VK_OEM_WSCTRL" Value="0xEE"/>
-      <Constant Name="VK_PA1" Value="0xFD"/>
-      <Constant Name="VK_PACKET" Value="0xE7"/>
-      <Constant Name="VK_PLAY" Value="0xFA"/>
-      <Constant Name="VK_PROCESSKEY" Value="0xE5"/>
-      <Constant Name="VK_RETURN" Value="0x0D"/>
-      <Constant Name="VK_SELECT" Value="0x29"/>
-      <Constant Name="VK_SEPARATOR" Value="0x6C"/>
-      <Constant Name="VK_SPACE" Value="0x20"/>
-      <Constant Name="VK_SUBTRACT" Value="0x6D"/>
-      <Constant Name="VK_TAB" Value="0x09"/>
-      <Constant Name="VK_ZOOM" Value="0xFB"/>
-      <Constant Name="VK__none_" Value="0xFF"/>
-      <Constant Name="VK_ACCEPT" Value="0x1E"/>
-      <Constant Name="VK_APPS" Value="0x5D"/>
-      <Constant Name="VK_BROWSER_BACK" Value="0xA6"/>
-      <Constant Name="VK_BROWSER_FAVORITES" Value="0xAB"/>
-      <Constant Name="VK_BROWSER_FORWARD" Value="0xA7"/>
-      <Constant Name="VK_BROWSER_HOME" Value="0xAC"/>
-      <Constant Name="VK_BROWSER_REFRESH" Value="0xA8"/>
-      <Constant Name="VK_BROWSER_SEARCH" Value="0xAA"/>
-      <Constant Name="VK_BROWSER_STOP" Value="0xA9"/>
-      <Constant Name="VK_CAPITAL" Value="0x14"/>
-      <Constant Name="VK_CONVERT" Value="0x1C"/>
-      <Constant Name="VK_DELETE" Value="0x2E"/>
-      <Constant Name="VK_DOWN" Value="0x28"/>
-      <Constant Name="VK_END" Value="0x23"/>
-      <Constant Name="VK_F1" Value="0x70"/>
-      <Constant Name="VK_F10" Value="0x79"/>
-      <Constant Name="VK_F11" Value="0x7A"/>
-      <Constant Name="VK_F12" Value="0x7B"/>
-      <Constant Name="VK_F13" Value="0x7C"/>
-      <Constant Name="VK_F14" Value="0x7D"/>
-      <Constant Name="VK_F15" Value="0x7E"/>
-      <Constant Name="VK_F16" Value="0x7F"/>
-      <Constant Name="VK_F17" Value="0x80"/>
-      <Constant Name="VK_F18" Value="0x81"/>
-      <Constant Name="VK_F19" Value="0x82"/>
-      <Constant Name="VK_F2" Value="0x71"/>
-      <Constant Name="VK_F20" Value="0x83"/>
-      <Constant Name="VK_F21" Value="0x84"/>
-      <Constant Name="VK_F22" Value="0x85"/>
-      <Constant Name="VK_F23" Value="0x86"/>
-      <Constant Name="VK_F24" Value="0x87"/>
-      <Constant Name="VK_F3" Value="0x72"/>
-      <Constant Name="VK_F4" Value="0x73"/>
-      <Constant Name="VK_F5" Value="0x74"/>
-      <Constant Name="VK_F6" Value="0x75"/>
-      <Constant Name="VK_F7" Value="0x76"/>
-      <Constant Name="VK_F8" Value="0x77"/>
-      <Constant Name="VK_F9" Value="0x78"/>
-      <Constant Name="VK_FINAL" Value="0x18"/>
-      <Constant Name="VK_HELP" Value="0x2F"/>
-      <Constant Name="VK_HOME" Value="0x24"/>
-      <Constant Name="VK_ICO_00" Value="0xE4"/>
-      <Constant Name="VK_INSERT" Value="0x2D"/>
-      <Constant Name="VK_JUNJA" Value="0x17"/>
-      <Constant Name="VK_KANA" Value="0x15"/>
-      <Constant Name="VK_KANJI" Value="0x19"/>
-      <Constant Name="VK_LAUNCH_APP1" Value="0xB6"/>
-      <Constant Name="VK_LAUNCH_APP2" Value="0xB7"/>
-      <Constant Name="VK_LAUNCH_MAIL" Value="0xB4"/>
-      <Constant Name="VK_LAUNCH_MEDIA_SELECT" Value="0xB5"/>
-      <Constant Name="VK_LBUTTON" Value="0x01"/>
-      <Constant Name="VK_LCONTROL" Value="0xA2"/>
-      <Constant Name="VK_LEFT" Value="0x25"/>
-      <Constant Name="VK_LMENU" Value="0xA4"/>
-      <Constant Name="VK_LSHIFT" Value="0xA0"/>
-      <Constant Name="VK_LWIN" Value="0x5B"/>
-      <Constant Name="VK_MBUTTON" Value="0x04"/>
-      <Constant Name="VK_MEDIA_NEXT_TRACK" Value="0xB0"/>
-      <Constant Name="VK_MEDIA_PLAY_PAUSE" Value="0xB3"/>
-      <Constant Name="VK_MEDIA_PREV_TRACK" Value="0xB1"/>
-      <Constant Name="VK_MEDIA_STOP" Value="0xB2"/>
-      <Constant Name="VK_MODECHANGE" Value="0x1F"/>
-      <Constant Name="VK_NEXT" Value="0x22"/>
-      <Constant Name="VK_NONCONVERT" Value="0x1D"/>
-      <Constant Name="VK_NUMLOCK" Value="0x90"/>
-      <Constant Name="VK_OEM_FJ_JISHO" Value="0x92"/>
-      <Constant Name="VK_PAUSE" Value="0x13"/>
-      <Constant Name="VK_PRINT" Value="0x2A"/>
-      <Constant Name="VK_PRIOR" Value="0x21"/>
-      <Constant Name="VK_RBUTTON" Value="0x02"/>
-      <Constant Name="VK_RCONTROL" Value="0xA3"/>
-      <Constant Name="VK_RIGHT" Value="0x27"/>
-      <Constant Name="VK_RMENU" Value="0xA5"/>
-      <Constant Name="VK_RSHIFT" Value="0xA1"/>
-      <Constant Name="VK_RWIN" Value="0x5C"/>
-      <Constant Name="VK_SCROLL" Value="0x91"/>
-      <Constant Name="VK_SLEEP" Value="0x5F"/>
-      <Constant Name="VK_SNAPSHOT" Value="0x2C"/>
-      <Constant Name="VK_UP" Value="0x26"/>
-      <Constant Name="VK_VOLUME_DOWN" Value="0xAE"/>
-      <Constant Name="VK_VOLUME_MUTE" Value="0xAD"/>
-      <Constant Name="VK_VOLUME_UP" Value="0xAF"/>
-      <Constant Name="VK_XBUTTON1" Value="0x05"/>
-      <Constant Name="VK_XBUTTON2" Value="0x06"/>
+      <Constant Name="VK_LBUTTON" Value="1"/>
+      <Constant Name="VK_RBUTTON"/>
+      <Constant Name="VK_CANCEL"/>
+      <Constant Name="VK_MBUTTON"/>
+      <Constant Name="VK_XBUTTON1"/>
+      <Constant Name="VK_XBUTTON2"/>
+      <Constant Name="VK_BACK" Value="8"/>
+      <Constant Name="VK_TAB"/>
+      <Constant Name="VK_CLEAR" Value="12"/>
+      <Constant Name="VK_RETURN"/>
+      <Constant Name="VK_PAUSE" Value="19"/>
+      <Constant Name="VK_CAPITAL"/>
+      <Constant Name="VK_KANA"/>
+      <Constant Name="VK_JUNJA" Value="23"/>
+      <Constant Name="VK_FINAL"/>
+      <Constant Name="VK_KANJI"/>
+      <Constant Name="VK_ESCAPE" Value="27"/>
+      <Constant Name="VK_CONVERT"/>
+      <Constant Name="VK_NONCONVERT"/>
+      <Constant Name="VK_ACCEPT"/>
+      <Constant Name="VK_MODECHANGE"/>
+      <Constant Name="VK_SPACE"/>
+      <Constant Name="VK_PRIOR"/>
+      <Constant Name="VK_NEXT"/>
+      <Constant Name="VK_END"/>
+      <Constant Name="VK_HOME"/>
+      <Constant Name="VK_LEFT"/>
+      <Constant Name="VK_UP"/>
+      <Constant Name="VK_RIGHT"/>
+      <Constant Name="VK_DOWN"/>
+      <Constant Name="VK_SELECT"/>
+      <Constant Name="VK_PRINT"/>
+      <Constant Name="VK_EXECUTE"/>
+      <Constant Name="VK_SNAPSHOT"/>
+      <Constant Name="VK_INSERT"/>
+      <Constant Name="VK_DELETE"/>
+      <Constant Name="VK_HELP"/>
+      <Constant Name="VK_KEY_0"/>
+      <Constant Name="VK_KEY_1"/>
+      <Constant Name="VK_KEY_2"/>
+      <Constant Name="VK_KEY_3"/>
+      <Constant Name="VK_KEY_4"/>
+      <Constant Name="VK_KEY_5"/>
+      <Constant Name="VK_KEY_6"/>
+      <Constant Name="VK_KEY_7"/>
+      <Constant Name="VK_KEY_8"/>
+      <Constant Name="VK_KEY_9"/>
+      <Constant Name="VK_KEY_A" Value="65"/>
+      <Constant Name="VK_KEY_B"/>
+      <Constant Name="VK_KEY_C"/>
+      <Constant Name="VK_KEY_D"/>
+      <Constant Name="VK_KEY_E"/>
+      <Constant Name="VK_KEY_F"/>
+      <Constant Name="VK_KEY_G"/>
+      <Constant Name="VK_KEY_H"/>
+      <Constant Name="VK_KEY_I"/>
+      <Constant Name="VK_KEY_J"/>
+      <Constant Name="VK_KEY_K"/>
+      <Constant Name="VK_KEY_L"/>
+      <Constant Name="VK_KEY_M"/>
+      <Constant Name="VK_KEY_N"/>
+      <Constant Name="VK_KEY_O"/>
+      <Constant Name="VK_KEY_P"/>
+      <Constant Name="VK_KEY_Q"/>
+      <Constant Name="VK_KEY_R"/>
+      <Constant Name="VK_KEY_S"/>
+      <Constant Name="VK_KEY_T"/>
+      <Constant Name="VK_KEY_U"/>
+      <Constant Name="VK_KEY_V"/>
+      <Constant Name="VK_KEY_W"/>
+      <Constant Name="VK_KEY_X"/>
+      <Constant Name="VK_KEY_Y"/>
+      <Constant Name="VK_KEY_Z"/>
+      <Constant Name="VK_LWIN"/>
+      <Constant Name="VK_RWIN"/>
+      <Constant Name="VK_APPS"/>
+      <Constant Name="VK_SLEEP" Value="95"/>
+      <Constant Name="VK_NUMPAD0"/>
+      <Constant Name="VK_NUMPAD1"/>
+      <Constant Name="VK_NUMPAD2"/>
+      <Constant Name="VK_NUMPAD3"/>
+      <Constant Name="VK_NUMPAD4"/>
+      <Constant Name="VK_NUMPAD5"/>
+      <Constant Name="VK_NUMPAD6"/>
+      <Constant Name="VK_NUMPAD7"/>
+      <Constant Name="VK_NUMPAD8"/>
+      <Constant Name="VK_NUMPAD9"/>
+      <Constant Name="VK_MULTIPLY"/>
+      <Constant Name="VK_ADD"/>
+      <Constant Name="VK_SEPARATOR"/>
+      <Constant Name="VK_SUBTRACT"/>
+      <Constant Name="VK_DECIMAL"/>
+      <Constant Name="VK_DIVIDE"/>
+      <Constant Name="VK_F1"/>
+      <Constant Name="VK_F2"/>
+      <Constant Name="VK_F3"/>
+      <Constant Name="VK_F4"/>
+      <Constant Name="VK_F5"/>
+      <Constant Name="VK_F6"/>
+      <Constant Name="VK_F7"/>
+      <Constant Name="VK_F8"/>
+      <Constant Name="VK_F9"/>
+      <Constant Name="VK_F10"/>
+      <Constant Name="VK_F11"/>
+      <Constant Name="VK_F12"/>
+      <Constant Name="VK_F13"/>
+      <Constant Name="VK_F14"/>
+      <Constant Name="VK_F15"/>
+      <Constant Name="VK_F16"/>
+      <Constant Name="VK_F17"/>
+      <Constant Name="VK_F18"/>
+      <Constant Name="VK_F19"/>
+      <Constant Name="VK_F20"/>
+      <Constant Name="VK_F21"/>
+      <Constant Name="VK_F22"/>
+      <Constant Name="VK_F23"/>
+      <Constant Name="VK_F24"/>
+      <Constant Name="VK_NUMLOCK" Value="144"/>
+      <Constant Name="VK_SCROLL"/>
+      <Constant Name="VK_OEM_FJ_JISHO"/>
+      <Constant Name="VK_OEM_FJ_MASSHOU"/>
+      <Constant Name="VK_OEM_FJ_TOUROKU"/>
+      <Constant Name="VK_OEM_FJ_LOYA"/>
+      <Constant Name="VK_OEM_FJ_ROYA"/>
+      <Constant Name="VK_LSHIFT" Value="160"/>
+      <Constant Name="VK_RSHIFT"/>
+      <Constant Name="VK_LCONTROL"/>
+      <Constant Name="VK_RCONTROL"/>
+      <Constant Name="VK_LMENU"/>
+      <Constant Name="VK_RMENU"/>
+      <Constant Name="VK_BROWSER_BACK"/>
+      <Constant Name="VK_BROWSER_FORWARD"/>
+      <Constant Name="VK_BROWSER_REFRESH"/>
+      <Constant Name="VK_BROWSER_STOP"/>
+      <Constant Name="VK_BROWSER_SEARCH"/>
+      <Constant Name="VK_BROWSER_FAVORITES"/>
+      <Constant Name="VK_BROWSER_HOME"/>
+      <Constant Name="VK_VOLUME_MUTE"/>
+      <Constant Name="VK_VOLUME_DOWN"/>
+      <Constant Name="VK_VOLUME_UP"/>
+      <Constant Name="VK_MEDIA_NEXT_TRACK"/>
+      <Constant Name="VK_MEDIA_PREV_TRACK"/>
+      <Constant Name="VK_MEDIA_STOP"/>
+      <Constant Name="VK_MEDIA_PLAY_PAUSE"/>
+      <Constant Name="VK_LAUNCH_MAIL"/>
+      <Constant Name="VK_LAUNCH_MEDIA_SELECT"/>
+      <Constant Name="VK_LAUNCH_APP1"/>
+      <Constant Name="VK_LAUNCH_APP2"/>
+      <Constant Name="VK_OEM_1" Value="186"/>
+      <Constant Name="VK_OEM_PLUS"/>
+      <Constant Name="VK_OEM_COMMA"/>
+      <Constant Name="VK_OEM_MINUS"/>
+      <Constant Name="VK_OEM_PERIOD"/>
+      <Constant Name="VK_OEM_2"/>
+      <Constant Name="VK_OEM_3"/>
+      <Constant Name="VK_ABNT_C1"/>
+      <Constant Name="VK_ABNT_C2"/>
+      <Constant Name="VK_OEM_4" Value="219"/>
+      <Constant Name="VK_OEM_5"/>
+      <Constant Name="VK_OEM_6"/>
+      <Constant Name="VK_OEM_7"/>
+      <Constant Name="VK_OEM_8"/>
+      <Constant Name="VK_OEM_AX" Value="225"/>
+      <Constant Name="VK_OEM_102"/>
+      <Constant Name="VK_ICO_HELP"/>
+      <Constant Name="VK_ICO_00"/>
+      <Constant Name="VK_PROCESSKEY"/>
+      <Constant Name="VK_ICO_CLEAR"/>
+      <Constant Name="VK_PACKET"/>
+      <Constant Name="VK_OEM_RESET" Value="233"/>
+      <Constant Name="VK_OEM_JUMP"/>
+      <Constant Name="VK_OEM_PA1"/>
+      <Constant Name="VK_OEM_PA2"/>
+      <Constant Name="VK_OEM_PA3"/>
+      <Constant Name="VK_OEM_WSCTRL"/>
+      <Constant Name="VK_OEM_CUSEL"/>
+      <Constant Name="VK_OEM_ATTN"/>
+      <Constant Name="VK_OEM_FINISH"/>
+      <Constant Name="VK_OEM_COPY"/>
+      <Constant Name="VK_OEM_AUTO"/>
+      <Constant Name="VK_OEM_ENLW"/>
+      <Constant Name="VK_OEM_BACKTAB"/>
+      <Constant Name="VK_ATTN"/>
+      <Constant Name="VK_CRSEL"/>
+      <Constant Name="VK_EXSEL"/>
+      <Constant Name="VK_EREOF"/>
+      <Constant Name="VK_PLAY"/>
+      <Constant Name="VK_ZOOM"/>
+      <Constant Name="VK_NONAME"/>
+      <Constant Name="VK_PA1"/>
+      <Constant Name="VK_OEM_CLEAR"/>
     </Enum>
   </Constants>
   <Commands>
@@ -441,7 +440,7 @@
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
-    <Command ID="0xaba" Name="TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME" Hash="0x26d7351d">
+    <Command ID="0xaba" Name="TERMINATE_CUSTOM_SCRIPT_WITH_THIS_NAME" Hash="0xcc47f592">
       <Args>
         <Arg Type="TEXT_LABEL" AllowPointer="true"/>
       </Args>
@@ -486,7 +485,7 @@
         <Arg Type="INT" Out="true" Entity="AUDIO_STREAM"/>
       </Args>
     </Command>
-    <Command ID="0xac2" Name="PLAY_3D_AUDIO_STREAM_AT_COORDS" Hash="0xdce5755d">
+    <Command ID="0xac2" Name="SET_PLAY_3D_AUDIO_STREAM_AT_COORDS" Hash="0x0581e4db">
       <Args>
         <Arg Type="INT" Entity="AUDIO_STREAM"/>
         <Arg Type="FLOAT"/>
@@ -494,19 +493,19 @@
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0xac3" Name="PLAY_3D_AUDIO_STREAM_AT_OBJECT" Hash="0xc78cf6b0">
+    <Command ID="0xac3" Name="SET_PLAY_3D_AUDIO_STREAM_AT_OBJECT" Hash="0x173f8062">
       <Args>
         <Arg Type="INT" Entity="AUDIO_STREAM"/>
         <Arg Type="INT" Entity="OBJECT"/>
       </Args>
     </Command>
-    <Command ID="0xac4" Name="PLAY_3D_AUDIO_STREAM_AT_CHAR" Hash="0xb75aee27">
+    <Command ID="0xac4" Name="SET_PLAY_3D_AUDIO_STREAM_AT_CHAR" Hash="0x3af35994">
       <Args>
         <Arg Type="INT" Entity="AUDIO_STREAM"/>
         <Arg Type="INT" Entity="CHAR"/>
       </Args>
     </Command>
-    <Command ID="0xac5" Name="PLAY_3D_AUDIO_STREAM_AT_CAR" Hash="0x3d3bb92b">
+    <Command ID="0xac5" Name="SET_PLAY_3D_AUDIO_STREAM_AT_CAR" Hash="0x8b10af0b">
       <Args>
         <Arg Type="INT" Entity="AUDIO_STREAM"/>
         <Arg Type="INT" Entity="CAR"/>
@@ -595,7 +594,7 @@
     </Command>
     <Command ID="0xad3" Name="STRING_FORMAT" Hash="0xceb5b84c">
       <Args>
-        <Arg Type="STRING" AllowConst="false" Ref="true" AllowPointer="true" PreserveCase="true"/>
+        <Arg Type="STRING" Ref="true" AllowConst="false" AllowPointer="true" PreserveCase="true"/>
         <Arg Type="STRING" AllowPointer="true" PreserveCase="true"/>
         <Arg Type="PARAM" Optional="true" AllowTextLabel="true" PreserveCase="true"/>
       </Args>
@@ -623,7 +622,7 @@
     <Command ID="0xad7" Name="READ_STRING_FROM_FILE" Hash="0x8e6649ba">
       <Args>
         <Arg Type="INT" Entity="FILE"/>
-        <Arg Type="STRING" AllowConst="false" Ref="true" AllowPointer="true" PreserveCase="true"/>
+        <Arg Type="STRING" Ref="true" AllowConst="false" AllowPointer="true" PreserveCase="true"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
@@ -650,8 +649,8 @@
     </Command>
     <Command ID="0xadb" Name="GET_NAME_OF_VEHICLE_MODEL" Hash="0x13e5d1a0">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="TEXT_LABEL" AllowConst="false" AllowPointer="true" Out="true"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="TEXT_LABEL" Out="true" AllowPointer="true"/>
       </Args>
     </Command>
     <Command ID="0xadc" Name="TEST_CHEAT" Hash="0x04990785">
@@ -661,13 +660,13 @@
     </Command>
     <Command ID="0xadd" Name="SPAWN_VEHICLE_BY_CHEATING" Hash="0x67f919dd">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0xade" Name="GET_TEXT_LABEL_STRING" Hash="0x9b52718b">
       <Args>
         <Arg Type="TEXT_LABEL" AllowPointer="true"/>
-        <Arg Type="STRING" Out="true" AllowConst="false" AllowPointer="true"/>
+        <Arg Type="STRING" Out="true" AllowPointer="true"/>
       </Args>
     </Command>
     <Command ID="0xadf" Name="ADD_TEXT_LABEL" Hash="0xffc7b8cd">
@@ -727,13 +726,13 @@
       <Args>
         <Arg Type="STRING" AllowPointer="true" PreserveCase="true"/>
         <Arg Type="INT" Out="true" Entity="FILE_FIND"/>
-        <Arg Type="STRING" AllowConst="false" Out="true" AllowPointer="true"/>
+        <Arg Type="STRING" Out="true" AllowPointer="true"/>
       </Args>
     </Command>
     <Command ID="0xae7" Name="FIND_NEXT_FILE" Hash="0x7b5d1038">
       <Args>
         <Arg Type="INT" Entity="FILE_FIND"/>
-        <Arg Type="STRING" AllowConst="false" Out="true" AllowPointer="true"/>
+        <Arg Type="STRING" Out="true" AllowPointer="true"/>
       </Args>
     </Command>
     <Command ID="0xae8" Name="FIND_CLOSE" Hash="0xe9b900c2">
@@ -768,7 +767,7 @@
       <Args>
         <Arg Type="FLOAT"/>
         <Arg Type="STRING" AllowPointer="true" PreserveCase="true"/>
-        <Arg Type="STRING" AllowConst="false" Out="true" AllowPointer="true"/>
+        <Arg Type="STRING" Out="true" AllowPointer="true"/>
       </Args>
     </Command>
     <Command ID="0xaee" Name="POW" Hash="0xe7a3f707">
@@ -822,7 +821,7 @@
         <Arg Type="STRING" AllowPointer="true" PreserveCase="true"/>
         <Arg Type="STRING" AllowPointer="true" PreserveCase="true"/>
         <Arg Type="STRING" AllowPointer="true" PreserveCase="true"/>
-        <Arg Type="STRING" AllowConst="false" Out="true" AllowPointer="true"/>
+        <Arg Type="STRING" Out="true" AllowPointer="true"/>
       </Args>
     </Command>
     <Command ID="0xaf5" Name="WRITE_STRING_TO_INI_FILE" Hash="0x1fe9b38f">

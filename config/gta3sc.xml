@@ -6,17 +6,18 @@
         <Arg Type="LABEL"/>
       </Args>
     </Command>
-    <Command Name="DEFINE_INT" Hash="0x4ce823af">
+    <Command Name="DEFINE_INT" Hash="0x4ce823af" Internal="true">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command Name="DEFINE_FLOAT" Hash="0x2786fb5a">
+    <Command Name="DEFINE_FLOAT" Hash="0x2786fb5a" Internal="true">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
+    <Command Name="CONTINUE" Hash="0x89b07699" Internal="true"/>
   </Commands>
 </GTA3Script>

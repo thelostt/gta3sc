@@ -6,12 +6,12 @@ enum class ArgType : uint8_t
 {
     Param,
     Label,
-    Buffer32,
     Integer,
     Float,
     TextLabel,
     TextLabel16,
-    AnyTextLabel,
+    TextLabel32,
+    String,
     Constant,
 };
 
@@ -50,7 +50,7 @@ struct Command
         bool allow_global_var : 1;  //< Allow global variables
         bool allow_local_var : 1;   //< Allow local variables
         bool allow_text_label : 1;  //< Allow text labels (and its variables) [valid for PARAM arguments only].
-        bool allow_pointer : 1;     //< Allow INT values in ANY_TEXT_LABEL arguments.
+        bool allow_pointer : 1;     //< Allow INT values in STRING arguments.
         bool preserve_case : 1;     //< Preserves the case of a string literal.
         EntityType entity_type;     ///< Entity type of this argument. Zero means none.
         std::vector<shared_ptr<Enum>> enums;
@@ -84,8 +84,9 @@ struct Command
         }
     };
 
-    optional<uint16_t>      id;         //< The opcode id.
     bool                    supported;  //< Is this command supported by the script engine?
+    bool                    internal;   //< Is this a command handled solely by the compiler itself?
+    optional<uint16_t>      id;         //< The opcode id.
     optional<uint32_t>      hash;       //< The command hash.
     small_vector<Arg, 12>   args;       //< The arguments of the command.
     std::string             name;       //< The name of this command.
@@ -180,14 +181,14 @@ public:
     static Commands from_xml(const std::string& config_name, const std::vector<fs::path>& xml_list);
     // TODO ^ make the paths of xml_list absolute? i.e. move modifies to outside?
 
-    /// Adds the default models associated with the program context into the CARPEDMODEL enum.
+    /// Adds the default models associated with the program context into the DEFAULTMODEL enum.
     void add_default_models(const insensitive_map<std::string, uint32_t>&);
 
     /// Gets the MODEL enumeration.
     const shared_ptr<Enum>& get_models_enum() const { return this->enum_models; }
 
-    /// Gets the CARPEDMODEL enumeration.
-    const shared_ptr<Enum>& get_carpedmodel_enum() const { return this->enum_carpedmodels; }
+    /// Gets the DEFAULTMODEL enumeration.
+    const shared_ptr<Enum>& get_defaultmodel_enum() const { return this->enum_defaultmodels; }
 
     // Argument matching methods.
     expected<const Command*, MatchFailure> match(const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
@@ -298,7 +299,7 @@ private:
     transparent_map<std::string, EntityType> entities;
 
     shared_ptr<Enum> enum_models;
-    shared_ptr<Enum> enum_carpedmodels;
+    shared_ptr<Enum> enum_defaultmodels;
 
 public:
     optional<const Command&> set_progress_total;

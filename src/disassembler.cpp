@@ -203,7 +203,7 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
             !stop_it && it != command.args.end();
             (it->optional? it : ++it), ++argument_id)
         {
-            if(it->type == ArgType::Buffer32)
+            if(it->type == ArgType::TextLabel32)
             {
                 bf.fetch_chars(offset, 32).value();
                 offset += 32;
@@ -429,12 +429,12 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
         !stop_it && it != command.args.end();
         it->optional? it : ++it)
     {
-        if(it->type == ArgType::Buffer32)
+        if(it->type == ArgType::TextLabel32)
         {
             // TODO shouldn't expect such a thing? user could mess up definitions.
-            Expects(std::next(it, 1) != command.args.end() && std::next(it, 1)->type == ArgType::Buffer32);
-            Expects(std::next(it, 2) != command.args.end() && std::next(it, 2)->type == ArgType::Buffer32);
-            Expects(std::next(it, 3) != command.args.end() && std::next(it, 3)->type == ArgType::Buffer32);
+            Expects(std::next(it, 1) != command.args.end() && std::next(it, 1)->type == ArgType::TextLabel32);
+            Expects(std::next(it, 2) != command.args.end() && std::next(it, 2)->type == ArgType::TextLabel32);
+            Expects(std::next(it, 3) != command.args.end() && std::next(it, 3)->type == ArgType::TextLabel32);
             it += 3;
 
             ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*bf.fetch_chars(offset, 128)) });

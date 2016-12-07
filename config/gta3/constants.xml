@@ -233,7 +233,7 @@
       <Constant Name="CARCOLOUR_BLACK" Value="0"/>
       <Constant Name="CARCOLOUR_RED4" Value="13"/>
     </Enum>
-    <Enum Name="CARPEDMODEL">
+    <Enum Name="DEFAULTMODEL">
       <Constant Name="BOAT_GHOST" Value="150"/>
       <Constant Name="BOAT_PREDATOR" Value="120"/>
       <Constant Name="BOAT_REEFER" Value="143"/>

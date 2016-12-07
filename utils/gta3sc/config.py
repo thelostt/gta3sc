@@ -64,6 +64,7 @@ class Command:
         self.id = None
         self.hash = None
         self.supported = False
+        self.internal = False
         self.args = []
 
     def __eq__(self, other):
@@ -94,9 +95,10 @@ class Command:
         cmdid = node.get("ID", None)
         cmdhash = node.get("Hash", None)
         init.name = node.get("Name")
-        init.id = int(cmdid, 16) if cmdid is not None else None
-        init.hash = int(cmdhash, 16) if cmdhash is not None else None
+        init.id = int(cmdid, 0) if cmdid is not None else None
+        init.hash = int(cmdhash, 0) if cmdhash is not None else None
         init.supported = _str2bool(node.get("Supported", "true"))
+        init.internal = _str2bool(node.get("Internal", "false"))
         init.args = []
         node_args = node.find("Args")
         if node_args is not None:
@@ -113,6 +115,8 @@ class Command:
             node.set("Hash", "0x%.8x" % self.hash)
         if self.supported == False:
             node.set("Supported", _bool2str(self.supported))
+        if self.internal == True:
+            node.set("Internal", _bool2str(self.internal))
         if len(self.args) > 0:
             node_args = etree.SubElement(node, "Args")
             for a in self.args:
