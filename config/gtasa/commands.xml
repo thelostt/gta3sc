@@ -10630,7 +10630,7 @@
         <Arg Type="FLOAT" Desc="Radius"/>
       </Args>
     </Command>
-    <Command ID="0x700" Name="SKIP_CUTSCENE_START" Supported="false"/>
+    <Command ID="0x700" Name="SKIP_CUTSCENE_START"/>
     <Command ID="0x701" Name="SKIP_CUTSCENE_END"/>
     <Command ID="0x702" Name="GET_PERCENTAGE_TAGGED_IN_AREA">
       <Args>
