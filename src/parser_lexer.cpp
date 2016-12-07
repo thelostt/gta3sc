@@ -12,6 +12,7 @@ struct LexerContext
     std::vector<char> cpp_stack;
 
     bool any_error = false;                 //< True if any error happened during tokenization.
+    bool in_emit_mode = false;              //< True if inside a EMIT...ENDEMIT block.
     size_t comment_nest_level = 0;          //< Nest level of /* comments */
     std::vector<TokenData> tokens;          //< Output tokens.
     std::string            line_buffer;     //< Buffer used to parse a line, since we'll be mutating the line.
@@ -35,6 +36,11 @@ struct LexerContext
     void add_token(Token type, size_t begin_pos, size_t length)
     {
         this->tokens.emplace_back(TokenData{ type, begin_pos, begin_pos + length });
+    }
+
+    void hint_will_push_tokens(size_t count)
+    {
+        this->tokens.reserve(this->tokens.size() + count);
     }
 
     template<typename... Args>
@@ -88,6 +94,9 @@ static const std::pair<string_view, Token> keycommands[] = {
     DEFINE_TOKEN(LVAR_TEXT_LABEL16),
 
     // Extensions
+    DEFINE_TOKEN(REQUIRE),
+    DEFINE_TOKEN(EMIT),
+    DEFINE_TOKEN(ENDEMIT),
 };
 
 static const std::pair<string_view, Token> expr_symbols[] = {
@@ -127,6 +136,12 @@ static bool lex_iswhite(int c)
 static bool lex_isspace2(int c)
 {
     return c == ' ' || c == '\t';
+}
+
+/// Fast alternative to ::isxdigit
+static bool lex_isxdigit(int c)
+{
+    return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
 }
 
 /// Checks if `token` is equal `string` which has `length`.
@@ -349,6 +364,34 @@ static void lex_expr(LexerContext& lexer, const char* begin, const char* end, si
     }
 }
 
+/// Lexes a emit context.
+static void lex_emit(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos)
+{
+    auto it = begin;
+
+    lexer.hint_will_push_tokens(std::distance(begin, end) / 3);
+
+    while(auto next_token = lex_gettok(it, end))
+    {
+        size_t tok_begin = begin_pos + std::distance(begin, next_token->first);
+
+        if(next_token->second != 2)
+        {
+            lexer.error({tok_begin, tok_begin + next_token->second}, "hexadecimal token must have two digits");
+        }
+        else if(!lex_isxdigit(next_token->first[0]) || !lex_isxdigit(next_token->first[1]))
+        {
+            lexer.error({ tok_begin, tok_begin + next_token->second }, "invalid hexadecimal token");
+        }
+        else
+        {
+            lexer.add_token(Token::Hexadecimal, tok_begin, next_token->second);
+        }
+        
+        it = std::find_if_not(next_token->first + next_token->second, end, lex_iswhite);
+    }
+}
+
 /// Tranforms comments into whitespaces.
 static void lex_comments(LexerContext& lexer, char* begin, char* end, size_t begin_pos)
 {
@@ -508,11 +551,38 @@ static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_
         // TODO error if pedantic?
     }
 
+    if(lexer.in_emit_mode)
+    {
+        if(auto opt_first_token = lex_gettok(it, end))
+        {
+            if(!lex_istokeq(*opt_first_token, "ENDEMIT"))
+            {
+                lex_emit(lexer, it, end, begin_pos + std::distance(begin, it));
+                push_newline();
+                return;
+            }
+        }
+    }
+
     if(auto opt_first_token = lex_gettok(it, end))
     {
         if(opt_first_token->first[opt_first_token->second - 1] == ':')
         {
             it = push_token(*opt_first_token, Token::Label);
+        }
+    }
+
+    if(auto opt_first_token = lex_gettok(it, end))
+    {
+        if(lex_istokeq(*opt_first_token, "EMIT"))
+        {
+            // further token pushing happens in lex_command.
+            lexer.in_emit_mode = true;
+        }
+        else if(lex_istokeq(*opt_first_token, "ENDEMIT"))
+        {
+            // ditto.
+            lexer.in_emit_mode = false;
         }
     }
 

@@ -171,9 +171,19 @@ void CompilerContext::compile_statement(const SyntaxTree& node, bool not_flag)
         case NodeType::VAR_TEXT_LABEL16:
         case NodeType::LVAR_TEXT_LABEL16:
             break;
+        case NodeType::REQUIRE:
+            break;
+        case NodeType::EMIT:
+            compile_emit(node);
+            break;
         default:
             Unreachable();
     }
+}
+
+void CompilerContext::compile_emit(const SyntaxTree& node)
+{
+    this->compiled.emplace_back(node.annotation<EmitAnnotation>().bytes);
 }
 
 void CompilerContext::compile_scope(const SyntaxTree& scope_node)

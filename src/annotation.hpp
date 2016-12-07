@@ -2,6 +2,12 @@
 #include <stdinc.h>
 #include "commands.hpp"
 
+// assigned to the node during parse
+struct EmitAnnotation
+{
+    std::vector<uint8_t> bytes;
+};
+
 struct TextLabelAnnotation
 {
     bool        is_varlen;
