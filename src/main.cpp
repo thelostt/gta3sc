@@ -74,8 +74,8 @@ Options:
   -fswitch-case-limit=<n>  The limit on the number of CASE in a SWITCH.
   -farray-elem-limit=<n>   The limit of array elements in a single array.
   -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
-  --linear-sweep           Disassembler scans the code by the means of a
-                           linear-sweep instead of a recursive traversal.
+  --recursive-traversal    Disassembler scans the code by the means of a
+                           recursive traversal instead of linear-sweep.
   -frelax-not              Allows the use of NOT outside of conditions.
   -fcleo                   Enables the use of CLEO features.
   -fmission-script         Compiling a mission script.
@@ -145,9 +145,9 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.guesser = true;
             }
-            else if(optget(argv, nullptr, "--linear-sweep", 0))
+            else if(optget(argv, nullptr, "--recursive-traversal", 0))
             {
-                options.linear_sweep = true;
+                options.linear_sweep = false;
             }
             else if(const char* name = optget(argv, nullptr, "--config", 1))
             {
