@@ -96,6 +96,9 @@ public:
     bool mission_script = false;
     bool oatc = false;
 
+    // Warning flags
+    bool warn_conflict_text_label_var = true;
+
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;
     ErrorFormat error_format = ErrorFormat::Default;

@@ -84,6 +84,8 @@ Options:
                            May be `default` or `json`. Do note the JSON format
                            may contain some pre-compilation messages in the default
                            format (i.e. gta3sc: type:? message).
+ -Wconflict-text-label-var Warns whenever text labels conflicts with variable names.
+                           Enabled by default.
 )";
 
 enum class Action
@@ -338,6 +340,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optflag(argv, "-fmission-script", nullptr))
             {
                 options.mission_script = true;
+            }
+            else if(optflag(argv, "-Wconflict-text-label-var", &flag))
+            {
+                options.warn_conflict_text_label_var = flag;
             }
             else if(const char* name = optget(argv, "-D", nullptr, 1))
             {

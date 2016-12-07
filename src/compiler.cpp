@@ -690,6 +690,10 @@ ArgVariant CompilerContext::get_arg(const SyntaxTree& arg_node)
             }
             else if(auto opt_text = arg_node.maybe_annotation<const TextLabelAnnotation&>())
             {
+                // TODO FIXME this is not the correct place to put this check, but I'm too lazy atm to put in the analyzes phase.
+                if(program.opt.warn_conflict_text_label_var && symbols.find_var(opt_text->string, this->current_scope))
+                    program.warning(arg_node, "text label collides with some variable name");
+
                 auto type = opt_text->is_varlen? CompiledString::Type::StringVar : CompiledString::Type::TextLabel8;
                 return CompiledString{ type, opt_text->preserve_case, opt_text->string };
             }
