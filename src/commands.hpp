@@ -11,7 +11,7 @@ enum class ArgType : uint8_t
     Float,
     TextLabel,
     TextLabel16,
-    AnyTextLabel,
+    String,
     Constant,
 };
 
@@ -50,7 +50,7 @@ struct Command
         bool allow_global_var : 1;  //< Allow global variables
         bool allow_local_var : 1;   //< Allow local variables
         bool allow_text_label : 1;  //< Allow text labels (and its variables) [valid for PARAM arguments only].
-        bool allow_pointer : 1;     //< Allow INT values in ANY_TEXT_LABEL arguments.
+        bool allow_pointer : 1;     //< Allow INT values in STRING arguments.
         bool preserve_case : 1;     //< Preserves the case of a string literal.
         EntityType entity_type;     ///< Entity type of this argument. Zero means none.
         std::vector<shared_ptr<Enum>> enums;

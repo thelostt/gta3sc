@@ -79,10 +79,8 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::TextLabel;
     else if(!strcmp(string, "TEXT_LABEL16"))
         return ArgType::TextLabel16;
-    else if(!strcmp(string, "ANY_TEXT_LABEL")) // TODO remove me?
-        return ArgType::AnyTextLabel;
     else if(!strcmp(string, "STRING"))
-        return ArgType::AnyTextLabel;
+        return ArgType::String;
     else
         throw ConfigError("unexpected 'Type' attribute: {}", string);
 }

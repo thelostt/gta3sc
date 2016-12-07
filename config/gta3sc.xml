@@ -8,13 +8,13 @@
     </Command>
     <Command Name="DEFINE_INT" Hash="0x4ce823af">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
     <Command Name="DEFINE_FLOAT" Hash="0x2786fb5a">
       <Args>
-        <Arg Type="ANY_TEXT_LABEL"/>
+        <Arg Type="STRING"/>
         <Arg Type="FLOAT"/>
       </Args>
     </Command>

@@ -177,7 +177,7 @@ struct TagVar
 
 static auto maybe_var_identifier(const string_view& ident, const Command::Arg& arginfo) -> optional<std::pair<string_view, bool>>
 {
-    if(arginfo.type != ArgType::TextLabel && arginfo.type != ArgType::TextLabel16 && arginfo.type != ArgType::AnyTextLabel)
+    if(arginfo.type != ArgType::TextLabel && arginfo.type != ArgType::TextLabel16 && arginfo.type != ArgType::String)
     {
         if(arginfo.type == ArgType::Param && arginfo.allow_constant && arginfo.allow_text_label)
         {
@@ -253,18 +253,18 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                 return (arginfo.type == ArgType::Integer
                      || arginfo.type == ArgType::Constant 
                      || arginfo.type == ArgType::Param 
-                     || (arginfo.type == ArgType::AnyTextLabel && arginfo.allow_pointer)
+                     || (arginfo.type == ArgType::String && arginfo.allow_pointer)
                      || (arginfo.type == ArgType::TextLabel && arginfo.allow_pointer)
                      || (arginfo.type == ArgType::TextLabel16 && arginfo.allow_pointer));
             case VarType::Float:
                 return (arginfo.type == ArgType::Float || arginfo.type == ArgType::Param);
             case VarType::TextLabel:
                 return (arginfo.type == ArgType::TextLabel
-                    ||  arginfo.type == ArgType::AnyTextLabel
+                    ||  arginfo.type == ArgType::String
                     || (arginfo.type == ArgType::Param && arginfo.allow_text_label));
             case VarType::TextLabel16:
                 return (arginfo.type == ArgType::TextLabel16
-                    ||  arginfo.type == ArgType::AnyTextLabel
+                    ||  arginfo.type == ArgType::String
                     || (arginfo.type == ArgType::Param && arginfo.allow_text_label));
             default:
                 Unreachable();
@@ -362,14 +362,14 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
 
         case ArgType::TextLabel:
         case ArgType::TextLabel16:
-        case ArgType::AnyTextLabel:
+        case ArgType::String:
         {
             auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr);
             if(exp_var)
                 return exp_var;
             else if(exp_var.error().reason == MatchFailure::NoSuchVar && arginfo.allow_constant)
                 return &arginfo;
-            else if(exp_var.error().reason == MatchFailure::InvalidIdentifier && arginfo.type == ArgType::AnyTextLabel && arginfo.allow_constant)
+            else if(exp_var.error().reason == MatchFailure::InvalidIdentifier && arginfo.type == ArgType::String && arginfo.allow_constant)
                 return &arginfo;
             else
                 return exp_var; // error state
@@ -419,7 +419,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         case NodeType::Text:
             return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr);
         case NodeType::String:
-            if(arginfo.type == ArgType::AnyTextLabel
+            if(arginfo.type == ArgType::String
             || (arginfo.type == ArgType::Param && arginfo.allow_text_label))
                 return &arginfo;
             else
@@ -583,7 +583,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
             size_t limit = arginfo.type == ArgType::TextLabel?    7 :
                            arginfo.type == ArgType::TextLabel16?  15 :
-                           arginfo.type == ArgType::AnyTextLabel? 127 :
+                           arginfo.type == ArgType::String? 127 :
                            arginfo.type == ArgType::Param? 127 : Unreachable();
 
             if(node.text().size() <= limit)
@@ -630,7 +630,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
             case NodeType::String:
             {
-                if(arginfo.type == ArgType::AnyTextLabel || arginfo.type == ArgType::Param)
+                if(arginfo.type == ArgType::String || arginfo.type == ArgType::Param)
                 {
                     if(!program.opt.cleo)
                         program.error(node, "string literals on arguments are disallowed [-fcleo]");
@@ -660,7 +660,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                 }
                 else if(arginfo.type == ArgType::TextLabel
                      || arginfo.type == ArgType::TextLabel16
-                     || arginfo.type == ArgType::AnyTextLabel)
+                     || arginfo.type == ArgType::String)
                 {
                     if(auto opt_match = maybe_var_identifier(node.text(), arginfo))
                     {
