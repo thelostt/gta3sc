@@ -11,14 +11,14 @@ Commands::Commands(insensitive_map<std::string, Command>&& commands_,
     : commands(std::move(commands_)), alternators(std::move(alternators_)),
       enums(std::move(enums_)), entities(std::move(entities_))
 {
-    auto it_carpedmodel = this->enums.find("CARPEDMODEL");
+    auto it_defaultmodel = this->enums.find("DEFAULTMODEL");
     auto it_model       = this->enums.find("MODEL");
 
     assert(it_model != this->enums.end());
-    assert(it_carpedmodel != this->enums.end());
+    assert(it_defaultmodel != this->enums.end());
 
     this->enum_models = it_model->second;
-    this->enum_carpedmodels = it_carpedmodel->second;
+    this->enum_defaultmodels = it_defaultmodel->second;
 
     for(auto& pair : this->commands)
     {
@@ -101,7 +101,7 @@ void Commands::add_default_models(const insensitive_map<std::string, uint32_t>& 
 {
     for(auto& model_pair : default_models)
     {
-        this->enum_carpedmodels->values.emplace(model_pair);
+        this->enum_defaultmodels->values.emplace(model_pair);
     }
 }
 
@@ -122,13 +122,13 @@ optional<int32_t> Commands::find_constant(const string_view& value, bool context
 optional<int32_t> Commands::find_constant_all(const string_view& value) const
 {
     // See https://github.com/thelink2012/gta3sc/issues/60
-    if(auto opt = enum_carpedmodels->find(value))
+    if(auto opt = enum_defaultmodels->find(value))
         return opt;
 
     // TODO mayyybe speed up this? we didn't profile or anything.
     for(auto& enum_pair : enums)
     {
-        if(&enum_pair.second == &enum_carpedmodels)
+        if(&enum_pair.second == &enum_defaultmodels)
             continue;
         if(auto opt = enum_pair.second->find(value))
             return opt;
@@ -150,10 +150,10 @@ optional<int32_t> Commands::find_constant_for_arg(const string_view& value, cons
     }
 
     // If the enum that the argument accepts is MODEL, and the above didn't find a match,
-    // also try on the CARPEDMODEL enum.
+    // also try on the DEFAULTMODEL enum.
     if(arg.uses_enum(this->enum_models))
     {
-        if(auto opt_const = enum_carpedmodels->find(value))
+        if(auto opt_const = enum_defaultmodels->find(value))
             return opt_const;
     }
 

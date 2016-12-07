@@ -922,7 +922,7 @@
     <Command ID="0x9a" Name="CREATE_CHAR">
       <Args>
         <Arg Type="INT" Enum="PEDTYPE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
@@ -1005,7 +1005,7 @@
     </Command>
     <Command ID="0xa5" Name="CREATE_CAR">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
@@ -1194,13 +1194,13 @@
     <Command ID="0xdd" Name="IS_CHAR_IN_MODEL">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0xde" Name="IS_PLAYER_IN_MODEL">
       <Args>
         <Arg Type="INT" Entity="PLAYER"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0xdf" Name="IS_CHAR_IN_ANY_CAR">
@@ -1807,7 +1807,7 @@
       <Args>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="INT" Enum="PEDTYPE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="CHAR"/>
       </Args>
     </Command>
@@ -1894,7 +1894,7 @@
     <Command ID="0x137" Name="IS_CAR_MODEL">
       <Args>
         <Arg Type="INT" Entity="CAR"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x138" Name="IS_CAR_REMAP" Supported="false">
@@ -2006,7 +2006,7 @@
     </Command>
     <Command ID="0x14a" Name="CREATE_GANG_CAR" Supported="false">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
@@ -2019,7 +2019,7 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Angle"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Enum="CARCOLOUR"/>
         <Arg Type="INT" Enum="CARCOLOUR"/>
         <Arg Type="INT" Desc="Bool"/>
@@ -2956,7 +2956,7 @@
       <Args>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="INT" Enum="PEDTYPE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT" Out="true" Entity="CHAR"/>
       </Args>
@@ -3260,10 +3260,10 @@
         <Arg Type="INT" Enum="WEAPONTYPE"/>
         <Arg Type="INT" Desc="Time"/>
         <Arg Type="INT"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Desc="Bool"/>
       </Args>
     </Command>
@@ -3526,7 +3526,7 @@
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
         <Arg Type="INT" Enum="GARAGE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="GARAGE"/>
       </Args>
     </Command>
@@ -3700,14 +3700,14 @@
     <Command ID="0x235" Name="SET_GANG_PED_MODELS">
       <Args>
         <Arg Type="INT" Enum="GANG"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x236" Name="SET_GANG_CAR_MODEL">
       <Args>
         <Arg Type="INT" Enum="GANG"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x237" Name="SET_GANG_WEAPONS">
@@ -4356,7 +4356,7 @@
     <Command ID="0x297" Name="RESET_NUM_OF_MODELS_KILLED_BY_PLAYER"/>
     <Command ID="0x298" Name="GET_NUM_OF_MODELS_KILLED_BY_PLAYER">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
@@ -4915,7 +4915,7 @@
     </Command>
     <Command ID="0x2e5" Name="CREATE_CUTSCENE_OBJECT">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="OBJECT"/>
       </Args>
     </Command>
@@ -4983,19 +4983,19 @@
     <Command ID="0x2f2" Name="IS_CHAR_MODEL">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x2f3" Name="LOAD_SPECIAL_MODEL">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
     <Command ID="0x2f4" Name="CREATE_CUTSCENE_HEAD" Supported="false">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="OBJECT"/>
       </Args>
     </Command>
@@ -5358,14 +5358,14 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="CAR"/>
       </Args>
     </Command>
     <Command ID="0x328" Name="GET_RANDOM_CAR_OF_TYPE_IN_ZONE" Supported="false">
       <Args>
         <Arg Type="TEXT_LABEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="CAR"/>
       </Args>
     </Command>
@@ -5719,10 +5719,10 @@
         <Arg Type="INT" Enum="WEAPONTYPE"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Desc="Bool"/>
       </Args>
     </Command>
@@ -6199,7 +6199,7 @@
       <Args>
         <Arg Type="INT" Entity="GARAGE"/>
         <Arg Type="INT" Enum="GARAGE"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x3a6" Name="FIND_DRUG_PLANE_COORDINATES" Supported="false">
@@ -7295,7 +7295,7 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="Z Coord"/>
         <Arg Type="FLOAT" Desc="Angle"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x46f" Name="GET_CURRENT_PLAYER_WEAPON">
@@ -7413,7 +7413,7 @@
     </Command>
     <Command ID="0x47d" Name="GET_NUMBER_OF_SEATS_IN_MODEL" Supported="false">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
@@ -7469,7 +7469,7 @@
     <Command ID="0x487" Name="IS_REPLAY_PLAYING" Supported="false"/>
     <Command ID="0x488" Name="IS_MODEL_AVAILABLE">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x489" Name="SHUT_CHAR_UP">
@@ -8294,7 +8294,7 @@
     </Command>
     <Command ID="0x506" Name="SET_CAR_MODEL_COMPONENTS">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
       </Args>
@@ -8619,7 +8619,7 @@
         <Arg Type="FLOAT" Desc="Y Coord"/>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="INT" Out="true" Entity="CAR"/>
       </Args>
     </Command>
@@ -8674,8 +8674,8 @@
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0x549" Name="CLEAR_CHAR_FOLLOW_PATH">

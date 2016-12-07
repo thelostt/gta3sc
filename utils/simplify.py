@@ -32,7 +32,7 @@ AMBIGOUS_DESCRIPTION_ENTITY = {
 }
 
 AMBIGOUS_DESCRIPTION_ENUM = {
-    "Model ID": ("CARPEDMODEL", "MODEL"),
+    "Model ID": ("DEFAULTMODEL", "MODEL"),
 
     "Button ID": ("BUTTON"),
     "Weapon ID": ("WEAPONTYPE"),

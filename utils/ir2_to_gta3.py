@@ -82,7 +82,7 @@ def converted_arg(ir2, arg, arginfo, global_vars, local_vars, enums=None, no_ind
                     if arg.value < 0:
                         return ir2.get_model(-arg.value - 1) or str(arg.value)
                     else:
-                        return enums["CARPEDMODEL"].get(arg.value) or str(arg.value)
+                        return enums["DEFAULTMODEL"].get(arg.value) or str(arg.value)
                 else:
                     enum = enums.get(arginfo.enums[0])
                     if enum != None:
@@ -145,7 +145,7 @@ def find_constant_for_var(argvar, argconst, global_vars, local_vars, enums):
                     break
 
     if constant is None:
-        constant = enums["CARPEDMODEL"].get(argconst.value)
+        constant = enums["DEFAULTMODEL"].get(argconst.value)
 
     #assert constant != None
     if constant == None:

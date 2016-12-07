@@ -650,7 +650,7 @@
     </Command>
     <Command ID="0xadb" Name="GET_NAME_OF_VEHICLE_MODEL" Hash="0x13e5d1a0">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
         <Arg Type="TEXT_LABEL" AllowConst="false" AllowPointer="true" Out="true"/>
       </Args>
     </Command>
@@ -661,7 +661,7 @@
     </Command>
     <Command ID="0xadd" Name="SPAWN_VEHICLE_BY_CHEATING" Hash="0x67f919dd">
       <Args>
-        <Arg Type="INT" Enum="CARPEDMODEL"/>
+        <Arg Type="INT" Enum="DEFAULTMODEL"/>
       </Args>
     </Command>
     <Command ID="0xade" Name="GET_TEXT_LABEL_STRING" Hash="0x9b52718b">

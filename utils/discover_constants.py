@@ -28,7 +28,7 @@ CONST_COMMANDS = set([
     "CLEAR_LOCAL_VAR_BIT_CONST",
 ])
 
-SET_MODELS_ENUMS = set(["CARPEDMODEL", "MODEL"])
+SET_MODELS_ENUMS = set(["DEFAULTMODEL", "MODEL"])
 
 
 def main(ir2file, xmlfile):
@@ -53,7 +53,7 @@ def main(ir2file, xmlfile):
     unknown_values = set()          # Values without a matching enum
     commands_enum = set()           # Commands missing enum info
 
-    highest_default_id = max(enums["CARPEDMODEL"].iterkeys())
+    highest_default_id = max(enums["DEFAULTMODEL"].iterkeys())
 
     print("--------------------------")
 
@@ -109,7 +109,7 @@ def main(ir2file, xmlfile):
         
         if name == "MODEL":
             missing = sorted(v for v in values if v > highest_default_id)
-        elif name == "CARPEDMODEL":
+        elif name == "DEFAULTMODEL":
             enum = enums[name]
             missing = sorted(v for v in values if v >= 0 and v not in enum)
         else:

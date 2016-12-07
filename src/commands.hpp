@@ -180,14 +180,14 @@ public:
     static Commands from_xml(const std::string& config_name, const std::vector<fs::path>& xml_list);
     // TODO ^ make the paths of xml_list absolute? i.e. move modifies to outside?
 
-    /// Adds the default models associated with the program context into the CARPEDMODEL enum.
+    /// Adds the default models associated with the program context into the DEFAULTMODEL enum.
     void add_default_models(const insensitive_map<std::string, uint32_t>&);
 
     /// Gets the MODEL enumeration.
     const shared_ptr<Enum>& get_models_enum() const { return this->enum_models; }
 
-    /// Gets the CARPEDMODEL enumeration.
-    const shared_ptr<Enum>& get_carpedmodel_enum() const { return this->enum_carpedmodels; }
+    /// Gets the DEFAULTMODEL enumeration.
+    const shared_ptr<Enum>& get_defaultmodel_enum() const { return this->enum_defaultmodels; }
 
     // Argument matching methods.
     expected<const Command*, MatchFailure> match(const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
@@ -298,7 +298,7 @@ private:
     transparent_map<std::string, EntityType> entities;
 
     shared_ptr<Enum> enum_models;
-    shared_ptr<Enum> enum_carpedmodels;
+    shared_ptr<Enum> enum_defaultmodels;
 
 public:
     optional<const Command&> set_progress_total;
