@@ -171,8 +171,6 @@ void CompilerContext::compile_statement(const SyntaxTree& node, bool not_flag)
         case NodeType::VAR_TEXT_LABEL16:
         case NodeType::LVAR_TEXT_LABEL16:
             break;
-        case NodeType::REQUIRE:
-            break;
         case NodeType::DUMP:
             compile_dump(node);
             break;

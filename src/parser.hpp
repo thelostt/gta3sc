@@ -83,7 +83,6 @@ enum class Token
     EqTimedMinus,
 
     // Extensions
-    REQUIRE,
     Hexadecimal,
     DUMP,
     ENDDUMP,
@@ -144,7 +143,6 @@ enum class NodeType
     TimedSub,
 
     // Extensions
-    REQUIRE,
     DUMP,
 };
 

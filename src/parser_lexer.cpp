@@ -94,7 +94,6 @@ static const std::pair<string_view, Token> keycommands[] = {
     DEFINE_TOKEN(LVAR_TEXT_LABEL16),
 
     // Extensions
-    DEFINE_TOKEN(REQUIRE),
     DEFINE_TOKEN(DUMP),
     DEFINE_TOKEN(ENDDUMP),
 };
