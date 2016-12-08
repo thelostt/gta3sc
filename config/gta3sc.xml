@@ -19,7 +19,7 @@
       </Args>
     </Command>
     <Command Name="CONTINUE" Hash="0x89b07699" Internal="true"/>
-    <Command Name="EMIT" Hash="0xfe139e37" Internal="true"/>
-    <Command Name="ENDEMIT" Hash="0x2f1d8364" Internal="true"/>
+    <Command Name="DUMP" Hash="0x39c100dd" Internal="true"/>
+    <Command Name="ENDDUMP" Hash="0x5c84a58c" Internal="true"/>
   </Commands>
 </GTA3Script>

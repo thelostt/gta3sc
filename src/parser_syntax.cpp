@@ -146,7 +146,7 @@ static bool expect_endtoken(ParserState& state, token_iterator begin, token_iter
                            type == Token::ENDWHILE? "ENDWHILE" :
                            type == Token::ENDREPEAT? "ENDREPEAT" :
                            type == Token::ENDSWITCH? "ENDSWITCH" :
-                           type == Token::ENDEMIT? "ENDEMIT" :
+                           type == Token::ENDDUMP? "ENDDUMP" :
                            throw std::logic_error("Missing expect_endtoken implementation");
 
         add_error(state, make_error(ParserStatus::Error, begin, fmt::format("missing {} for this", what)));
@@ -1181,16 +1181,16 @@ static ParserResult parse_if_statement(ParserContext& parser, token_iterator beg
 }
 
 /*
-    scopeStatement
-        :	EMIT newLine
-                (HEXADECIMAL newLine?)*
-            ENDEMIT newLine
-        ->	^(EMIT)
+    dumpStatement
+        :	DUMP newLine
+                (HEXADECIMAL|newLine)*
+            ENDDUMP newLine
+        ->	^(DUMP)
         ;
 */
-static ParserResult parse_emit_statement(ParserContext& parser, token_iterator begin, token_iterator end)
+static ParserResult parse_dump_statement(ParserContext& parser, token_iterator begin, token_iterator end)
 {
-    if(begin != end && begin->type == Token::EMIT)
+    if(begin != end && begin->type == Token::DUMP)
     {
         ParserState state = ParserSuccess(nullptr);
         std::vector<uint8_t> bytes;
@@ -1200,7 +1200,7 @@ static ParserResult parse_emit_statement(ParserContext& parser, token_iterator b
         expect_newline(state, it, end);
         it = parser_aftertoken(it, end, Token::NewLine);
 
-        for(; it != end && it->type != Token::ENDEMIT; ++it)
+        for(; it != end && it->type != Token::ENDDUMP; ++it)
         {
             if(it->type == Token::Hexadecimal)
             {
@@ -1212,7 +1212,7 @@ static ParserResult parse_emit_statement(ParserContext& parser, token_iterator b
             }
         }
 
-        if(expect_endtoken(state, begin, end, it, Token::ENDEMIT))
+        if(expect_endtoken(state, begin, end, it, Token::ENDDUMP))
         {
             expect_newline(state, std::next(it), end);
             it = parser_aftertoken(std::next(it), end, Token::NewLine);
@@ -1220,8 +1220,8 @@ static ParserResult parse_emit_statement(ParserContext& parser, token_iterator b
 
         if(is<ParserSuccess>(state))
         {
-            shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::EMIT, parser.instream, *begin));
-            tree->set_annotation(EmitAnnotation { std::move(bytes) });
+            shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::DUMP, parser.instream, *begin));
+            tree->set_annotation(DumpAnnotation { std::move(bytes) });
             return std::make_pair(it, ParserSuccess(std::move(tree)));
         }
         else
@@ -1239,7 +1239,7 @@ static ParserResult parse_emit_statement(ParserContext& parser, token_iterator b
         | whileStatement
         | repeatStatement
         | switchStatement
-        | emitStatement
+        | dumpStatement
         | variableDeclaration
         | labelStatement
         | keycommandStatement
@@ -1254,7 +1254,7 @@ static ParserResult parse_statement(ParserContext& parser, token_iterator begin,
                               parse_while_statement,
                               parse_repeat_statement,
                               parse_switch_statement,
-                              parse_emit_statement,
+                              parse_dump_statement,
                               parse_variable_declaration,
                               parse_label_statement,
                               parse_keycommand_statement,

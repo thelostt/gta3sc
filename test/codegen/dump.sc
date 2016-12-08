@@ -1,6 +1,6 @@
 // RUN: %gta3sc %s --config=gta3 -emit-ir2 -o - | %FileCheck %s
 
-EMIT
+DUMP
    // CHECK-NEXT-L: WAIT 127i8
    01 00 04 7F
    // CHECK-NEXT-L: WAIT -1i8
@@ -9,7 +9,7 @@ EMIT
    01 00 04 92
    // CHECK-NEXT-L: SHAKE_CAM 0x0.000000p+0f
    03 00 06 00 00
-ENDEMIT
+ENDDUMP
 
 // CHECK-NEXT-L: TERMINATE_THIS_SCRIPT
 TERMINATE_THIS_SCRIPT

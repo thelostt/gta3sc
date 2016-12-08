@@ -2009,9 +2009,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     program.error(node, "CONTINUE is not supported [-fbreak-continue]");
                 return false;
 
-            case NodeType::EMIT:
+            case NodeType::DUMP:
                 if(program.opt.pedantic)
-                    program.error(node, "EMIT is a language extension [-pedantic]");
+                    program.error(node, "DUMP is a language extension [-pedantic]");
                 return false;
 
             default:

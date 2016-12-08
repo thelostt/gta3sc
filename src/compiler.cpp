@@ -173,17 +173,17 @@ void CompilerContext::compile_statement(const SyntaxTree& node, bool not_flag)
             break;
         case NodeType::REQUIRE:
             break;
-        case NodeType::EMIT:
-            compile_emit(node);
+        case NodeType::DUMP:
+            compile_dump(node);
             break;
         default:
             Unreachable();
     }
 }
 
-void CompilerContext::compile_emit(const SyntaxTree& node)
+void CompilerContext::compile_dump(const SyntaxTree& node)
 {
-    this->compiled.emplace_back(node.annotation<EmitAnnotation>().bytes);
+    this->compiled.emplace_back(node.annotation<DumpAnnotation>().bytes);
 }
 
 void CompilerContext::compile_scope(const SyntaxTree& scope_node)

@@ -85,8 +85,8 @@ enum class Token
     // Extensions
     REQUIRE,
     Hexadecimal,
-    EMIT,
-    ENDEMIT,
+    DUMP,
+    ENDDUMP,
 };
 
 enum class NodeType
@@ -145,7 +145,7 @@ enum class NodeType
 
     // Extensions
     REQUIRE,
-    EMIT,
+    DUMP,
 };
 
 /// A Miss2 Identifier is anything that starts with A-Z or $.

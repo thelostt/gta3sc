@@ -3,7 +3,7 @@
 #include "commands.hpp"
 
 // assigned to the node during parse
-struct EmitAnnotation
+struct DumpAnnotation
 {
     std::vector<uint8_t> bytes;
 };

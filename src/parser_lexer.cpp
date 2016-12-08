@@ -12,7 +12,7 @@ struct LexerContext
     std::vector<char> cpp_stack;
 
     bool any_error = false;                 //< True if any error happened during tokenization.
-    bool in_emit_mode = false;              //< True if inside a EMIT...ENDEMIT block.
+    bool in_dump_mode = false;              //< True if inside a DUMP...ENDDUMP block.
     size_t comment_nest_level = 0;          //< Nest level of /* comments */
     std::vector<TokenData> tokens;          //< Output tokens.
     std::string            line_buffer;     //< Buffer used to parse a line, since we'll be mutating the line.
@@ -95,8 +95,8 @@ static const std::pair<string_view, Token> keycommands[] = {
 
     // Extensions
     DEFINE_TOKEN(REQUIRE),
-    DEFINE_TOKEN(EMIT),
-    DEFINE_TOKEN(ENDEMIT),
+    DEFINE_TOKEN(DUMP),
+    DEFINE_TOKEN(ENDDUMP),
 };
 
 static const std::pair<string_view, Token> expr_symbols[] = {
@@ -364,8 +364,8 @@ static void lex_expr(LexerContext& lexer, const char* begin, const char* end, si
     }
 }
 
-/// Lexes a emit context.
-static void lex_emit(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos)
+/// Lexes a dump context.
+static void lex_dump(LexerContext& lexer, const char* begin, const char* end, size_t begin_pos)
 {
     auto it = begin;
 
@@ -551,13 +551,13 @@ static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_
         // TODO error if pedantic?
     }
 
-    if(lexer.in_emit_mode)
+    if(lexer.in_dump_mode)
     {
         if(auto opt_first_token = lex_gettok(it, end))
         {
-            if(!lex_istokeq(*opt_first_token, "ENDEMIT"))
+            if(!lex_istokeq(*opt_first_token, "ENDDUMP"))
             {
-                lex_emit(lexer, it, end, begin_pos + std::distance(begin, it));
+                lex_dump(lexer, it, end, begin_pos + std::distance(begin, it));
                 push_newline();
                 return;
             }
@@ -574,15 +574,15 @@ static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_
 
     if(auto opt_first_token = lex_gettok(it, end))
     {
-        if(lex_istokeq(*opt_first_token, "EMIT"))
+        if(lex_istokeq(*opt_first_token, "DUMP"))
         {
             // further token pushing happens in lex_command.
-            lexer.in_emit_mode = true;
+            lexer.in_dump_mode = true;
         }
-        else if(lex_istokeq(*opt_first_token, "ENDEMIT"))
+        else if(lex_istokeq(*opt_first_token, "ENDDUMP"))
         {
             // ditto.
-            lexer.in_emit_mode = false;
+            lexer.in_dump_mode = false;
         }
     }
 

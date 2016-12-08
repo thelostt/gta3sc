@@ -243,7 +243,7 @@ private:
 
     void compile_conditions(const SyntaxTree& conds_node, const shared_ptr<Label>& else_ptr);
 
-    void compile_emit(const SyntaxTree& node);
+    void compile_dump(const SyntaxTree& node);
 
 private:
 
