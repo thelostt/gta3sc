@@ -375,17 +375,28 @@ static void lex_dump(LexerContext& lexer, const char* begin, const char* end, si
     {
         size_t tok_begin = begin_pos + std::distance(begin, next_token->first);
 
-        if(next_token->second != 2)
+        if((next_token->second % 2) != 0)
         {
-            lexer.error({tok_begin, tok_begin + next_token->second}, "hexadecimal token must have two digits");
+            lexer.error({tok_begin, tok_begin + next_token->second}, "hexadecimal tokens must have pairs of two digits");
         }
-        else if(!lex_isxdigit(next_token->first[0]) || !lex_isxdigit(next_token->first[1]))
+        else if(!std::all_of(next_token->first, next_token->first + next_token->second, lex_isxdigit))
         {
             lexer.error({ tok_begin, tok_begin + next_token->second }, "invalid hexadecimal token");
         }
         else
         {
-            lexer.add_token(Token::Hexadecimal, tok_begin, next_token->second);
+            for(size_t xpos = 0; xpos < next_token->second; xpos += 2)
+            {
+                auto xpair = next_token->first + xpos;
+                if(!lex_isxdigit(xpair[0]) || !lex_isxdigit(xpair[1]))
+                {
+                    lexer.error({ tok_begin + xpos, tok_begin + xpos + 2 }, "invalid hexadecimal token");
+                }
+                else
+                {
+                    lexer.add_token(Token::Hexadecimal, tok_begin + xpos, 2);
+                }
+            }
         }
         
         it = std::find_if_not(next_token->first + next_token->second, end, lex_iswhite);
