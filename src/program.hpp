@@ -70,6 +70,10 @@ public:
         JSON,
     };
 
+    /// General
+    bool help = false;
+    bool version = false;
+
     /// Boolean flags
     bool headerless = false;
     bool pedantic = false;

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(gta3sc)
 include(deps/CMake/PrecompiledHeader.cmake)
+include(deps/CMake/GetGitRevisionDescription.cmake)
 
 if(NOT CMAKE_COMPILER_IS_GNUXX AND CMAKE_CXX_COMPILER_ID MATCHES "GNU")
   set(CMAKE_COMPILER_IS_GNUXX 1)
@@ -86,19 +87,30 @@ set(GTA3SC_SRC_MISC
   src/cpp/small_vector.hpp
 )
 
-add_executable(gta3sc ${GTA3SC_SRC_MISC} ${GTA3SC_SRC_MAIN})
+set(GTA3SC_SRC_GITSHA1 "${CMAKE_CURRENT_BINARY_DIR}/git-sha1.cpp")
+
+add_executable(gta3sc ${GTA3SC_SRC_GITSHA1} ${GTA3SC_SRC_MISC} ${GTA3SC_SRC_MAIN})
+source_group("autogen" FILES ${GTA3SC_SRC_GITSHA1})
 source_group("cpp" FILES ${GTA3SC_SRC_MISC})
 source_group("" FILES ${GTA3SC_SRC_MAIN})
-
-if(MSVC) # idk how to setup this in GCC/Clang
-	add_precompiled_header(gta3sc stdinc.h SOURCE_CXX src/stdinc.cpp)
-endif(MSVC)
 
 target_link_libraries(gta3sc cppformat)
 
 if(CMAKE_COMPILER_IS_GNUXX OR CMAKE_COMPILER_IS_CLANGXX)
   target_link_libraries(gta3sc stdc++fs)
 endif()
+
+if(MSVC) # idk how to setup this in GCC/Clang
+	add_precompiled_header(gta3sc stdinc.h SOURCE_CXX src/stdinc.cpp)
+endif(MSVC)
+
+target_compile_definitions(gta3sc PRIVATE USING_GIT_DESCRIBE)
+get_git_head_revision(GIT_REFSPEC GIT_SHA1)
+git_get_exact_tag(GIT_DESCRIBE_TAG)
+if(GIT_DESCRIBE_TAG MATCHES "NOTFOUND")
+	set(GIT_DESCRIBE_TAG "")
+endif()
+configure_file("${CMAKE_CURRENT_SOURCE_DIR}/git-sha1.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/git-sha1.cpp" @ONLY)
 
 add_custom_command(TARGET gta3sc POST_BUILD
                    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/config $<TARGET_FILE_DIR:gta3sc>/config)

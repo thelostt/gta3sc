@@ -20,10 +20,11 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                ProgramContext&, Options::Lang, OnOutput);
 
 
-const char* help_message =
+const char* GTA3SC_HELP_MESSAGE =
 R"(Usage: gta3sc [compile|decompile] --config=<name> file [options]
 Options:
   --help                   Display this information.
+  --version                Displays version information.
   -o <file>                Place the output into <file>.
   --cs                     Outputs a CLEO script. This also sets -fcleo.
   --cm                     Outputs a CLEO custom mission.
@@ -82,11 +83,19 @@ Options:
   -moatc                   Uses the Custom Commands Header whenever possible.
   --error-format=<format>  The error formating for the compiler errors.
                            May be `default` or `json`. Do note the JSON format
-                           may contain some pre-compilation messages in the default
-                           format (i.e. gta3sc: type:? message).
- -Wconflict-text-label-var Warns whenever text labels conflicts with variable names.
-                           Enabled by default.
+                           may contain some pre-compilation messages in the
+                           default format (i.e. gta3sc: type:? message).
+  -Wconflict-text-label-var Warns when text labels conflicts with variable
+                            names. Enabled by default.
 )";
+
+#ifdef USING_GIT_DESCRIBE
+extern const char* GTA3SC_GIT_SHA1;
+extern const char* GTA3SC_GIT_DESCRIBE_TAG;
+#else
+const char* GTA3SC_GIT_SHA1 = "";
+const char* GTA3SC_GIT_DESCRIBE_TAG = "";
+#endif
 
 enum class Action
 {
@@ -132,7 +141,12 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             }
             else if(optget(argv, "-h", "--help", 0))
             {
-                fprintf(stdout, "%s", help_message);
+                options.help = true;
+                return true;
+            }
+            else if(optget(argv, nullptr, "--version", 0))
+            {
+                options.version = true;
                 return true;
             }
             else if(const char* o = optget(argv, "-o", nullptr, 1))
@@ -383,8 +397,6 @@ int main(int argc, char** argv)
     std::map<std::string, uint32_t, iless> default_models;
     std::map<std::string, uint32_t, iless> level_models;
 
-    ++argv;
-
     if(*argv && **argv != '-')
     {
         if(!strcmp(*argv, "compile"))
@@ -413,6 +425,20 @@ int main(int argc, char** argv)
 
     if(!parse_args(argv, input, output, data, conf, options))
         return EXIT_FAILURE;
+
+    if(options.help)
+    {
+        fprintf(stdout, "%s", GTA3SC_HELP_MESSAGE);
+        return EXIT_SUCCESS;
+    }
+
+    if(options.version)
+    {
+        auto version = GTA3SC_GIT_DESCRIBE_TAG[0] != '\0'? GTA3SC_GIT_DESCRIBE_TAG :
+                       GTA3SC_GIT_SHA1[0] != '\0'? GTA3SC_GIT_SHA1 : "unknown-version";
+        fprintf(stdout, "%s %s", "gta3sc", version);
+        return EXIT_SUCCESS;
+    }
 
     if(input.empty())
     {
