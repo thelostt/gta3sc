@@ -530,11 +530,12 @@ int main(int argc, char** argv)
     try
     {
         std::vector<fs::path> config_files;
-        config_files.reserve(5 + conf.add_config_files.size());
+        config_files.reserve(6 + conf.add_config_files.size());
 
         config_files.emplace_back("alternators.xml");
         config_files.emplace_back("commands.xml");
         config_files.emplace_back("constants.xml");
+        config_files.emplace_back(config_path() / "gta3sc.xml");
         if(data.datadir.empty()) config_files.emplace_back("default.xml");
         if(options.cleo) config_files.emplace_back("cleo.xml");
         std::move(conf.add_config_files.begin(), conf.add_config_files.end(), std::back_inserter(config_files));
@@ -608,13 +609,37 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
     try
     {
+        using RequiredFrom = std::vector<weak_ptr<const Script>>;
+        std::vector<std::pair<std::string, RequiredFrom>> require_chain;
+
+        auto identify_requires = [&](const shared_ptr<const Script>& script, const SymTable& symtable)
+        {
+            for(auto& rqname : symtable.required)
+            {
+                auto it = std::find_if(require_chain.begin(), require_chain.end(), [&](const auto& a) { return iequal_to()(a.first, rqname); });
+                if(it == require_chain.end())
+                {
+                    it = require_chain.emplace(require_chain.end(), std::pair<std::string, RequiredFrom>(rqname, {}));
+                }
+                it->second.emplace_back(script);
+            }
+        };
+
         std::vector<shared_ptr<Script>> scripts;
 
         //const char* input = "intro.sc";
         //const char* input = "test.sc";
         //const char* input = "gta3_src/main.sc";
 
-        auto main = Script::create(program, input, program.opt.mission_script? ScriptType::Mission : ScriptType::Main);
+
+        auto main_type = [&] {
+            if(program.opt.output_cleo)
+                return program.opt.mission_script? ScriptType::CustomMission : ScriptType::CustomScript;
+            else
+                return program.opt.mission_script? ScriptType::Mission : ScriptType::Main;
+        }();
+
+        auto main = Script::create(program, input, main_type);
 
         if(main == nullptr)
         {
@@ -622,9 +647,11 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             throw HaltJobException();
         }
 
-        auto symbols = SymTable::from_script(*main, program);
+        SymTable symbols;
+        symbols.scan_for_includers(*main, program);
         symbols.apply_offset_to_vars(2);
 
+        identify_requires(main, symbols);
         scripts.emplace_back(main);
 
         auto subdir = main->scan_subdir();
@@ -643,7 +670,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
                 if(!extfiles_readen.count(top))
                 {
-                    if(auto script_pair = read_and_scan_symbols(subdir, top, ScriptType::MainExtension, program))
+                    if(auto script_pair = read_and_scan_includers(subdir, top, ScriptType::MainExtension, program))
                     {
                         ext_scripts.emplace_back(std::move(*script_pair));
                         auto& script_syms = ext_scripts.back().second;
@@ -655,47 +682,127 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             }
         }
 
-        // merge symbols from extension scripts here, since we need symbols.subscripts/missions/streamed
-        // with the content from both main and main extensions
+        // includers symbol merging for main+extension scripts (not thread-safe)
         for(auto& x : ext_scripts)
         {
+            identify_requires(x.first, x.second);
             symbols.merge(std::move(x.second), program);
             scripts.emplace_back(x.first); // maybe move
         }
 
-        auto sub_scripts = read_and_scan_symbols(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
-        auto mission_scripts = read_and_scan_symbols(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
-        auto streamed_scripts = read_and_scan_symbols(subdir, symbols.streamed.begin(), symbols.streamed.end(), ScriptType::StreamedScript, program);
+        auto sub_scripts = read_and_scan_includers(subdir, symbols.subscript.begin(), symbols.subscript.end(), ScriptType::Subscript, program);
+        auto mission_scripts = read_and_scan_includers(subdir, symbols.mission.begin(), symbols.mission.end(), ScriptType::Mission, program);
+        auto streamed_scripts = read_and_scan_includers(subdir, symbols.streamed.begin(), symbols.streamed.end(), ScriptType::StreamedScript, program);
 
-        // Following steps wants a fully working syntax tree, so check for parser/lexer errors.
         if(program.has_error())
             throw HaltJobException();
 
-        for(auto& x : sub_scripts)
+        // just includers symbols merging (not thread-safe)
         {
-            symbols.merge(std::move(x.second), program);
-            scripts.emplace_back(x.first); // maybe move
-        }
-
-        {
-            size_t i = 0;
-            for(auto& x : mission_scripts)
+            for(auto& x : sub_scripts)
             {
+                identify_requires(x.first, x.second);
                 symbols.merge(std::move(x.second), program);
                 scripts.emplace_back(x.first); // maybe move
-                scripts.back()->mission_id = static_cast<uint16_t>(i++);
+            }
+
+            {
+                size_t i = 0;
+                for(auto& x : mission_scripts)
+                {
+                    identify_requires(x.first, x.second);
+                    symbols.merge(std::move(x.second), program);
+                    scripts.emplace_back(x.first); // maybe move
+                    scripts.back()->mission_id = static_cast<uint16_t>(i++);
+                }
+            }
+
+            {
+                size_t i = 0;
+                for(auto& x : streamed_scripts)
+                {
+                    identify_requires(x.first, x.second);
+                    symbols.merge(std::move(x.second), program);
+                    scripts.emplace_back(x.first); // maybe move
+                    scripts.back()->streamed_id = static_cast<uint16_t>(i++);
+                }
             }
         }
 
+        // resolve requires
         {
-            size_t i = 0;
-            for(auto& x : streamed_scripts)
+            // (would be thread safe)
+            insensitive_map<std::string, std::pair<shared_ptr<Script>, SymTable>> req_scripts;
+            for(auto& vpair : require_chain)
             {
-                symbols.merge(std::move(x.second), program);
-                scripts.emplace_back(x.first); // maybe move
-                scripts.back()->streamed_id = static_cast<uint16_t>(i++);
+                if(auto opt = read_and_scan_includers(subdir, vpair.first, ScriptType::Required, program))
+                    req_scripts.emplace(vpair.first, std::move(*opt));
+            }
+
+            // (not thread safe)
+            for(auto it = require_chain.rbegin(); it != require_chain.rend(); ++it)
+            {
+                auto& vpair = *it;
+                auto it_reqscript = req_scripts.find(vpair.first);
+                if(it_reqscript != req_scripts.end())
+                {
+                    shared_ptr<const Script> insert_after;
+
+                    auto& rqsc_pair = it_reqscript->second;
+
+                    auto& required_from = vpair.second;
+                    if(required_from.size() == 1)
+                    {
+                        insert_after = required_from.front().lock();
+                    }
+                    else
+                    {
+                        size_t main_count = 0;
+                        for(auto& from : required_from)
+                        {
+                            if(from.lock()->on_the_same_space_as(*main))
+                                ++main_count;
+                        }
+
+                        if(main_count == 0)
+                            program.error(*rqsc_pair.first, "script was required from multiple mission/streamed scripts but never from the main block");
+
+                        insert_after = main;
+                    }
+
+                    auto it_script = std::find(scripts.begin(), scripts.end(), insert_after);
+                    Ensures(it_script != scripts.end());
+
+                    symbols.merge(std::move(rqsc_pair.second), program);
+                    (*it_script)->add_children(rqsc_pair.first);
+                    scripts.insert(std::next(it_script), rqsc_pair.first);
+                }
+            }
+
+            if(program.has_error())
+                throw HaltJobException();
+        }
+
+        // effectively scan symbols now
+        {
+            // thread-safe
+            std::vector<SymTable> symbol_vector;
+            symbol_vector.reserve(scripts.size());
+            for(auto& script : scripts)
+            {
+                symbol_vector.emplace_back(SymTable::from_script(*script, program));
+            }
+
+            // not thread-safe
+            for(auto& symtbl : symbol_vector)
+            {
+                symbols.merge(std::move(symtbl), program);
             }
         }
+
+        // check if symbol table was built successfully
+        if(program.has_error())
+            throw HaltJobException();
 
         symbols.check_command_count(program);
 
@@ -764,8 +871,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         std::vector<CodeGenerator*> main_gens;
         for(auto& gen : gens)
         {
-            if(gen.script == main // for the particular case of custom missions
-                || (gen.script->type != ScriptType::Mission && gen.script->type != ScriptType::StreamedScript))
+            if(gen.script->on_the_same_space_as(*main))
             {
                 main_gens.emplace_back(&gen);
             }
@@ -787,9 +893,9 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             for(auto& gen : gens)
             {
-                if(gen.script != main && (gen.script->type == ScriptType::Mission || gen.script->type == ScriptType::StreamedScript))
+                if(!gen.script->on_the_same_space_as(*main))
                 {
-                    auto& oatc = multi_headers.add_header(gen.script, CustomHeaderOATC({&gen}, program));
+                    auto& oatc = multi_headers.add_header(gen.script->root_script(), CustomHeaderOATC({&gen}, program));
                     gen.set_oatc(oatc);
                 }
             }
@@ -835,14 +941,15 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
             for(auto& gen : gens)
             {
-                if(gen.script->type != ScriptType::StreamedScript)
+                if(!gen.script->is_child_of(ScriptType::StreamedScript))
                 {
                     write_headers(main_scm, nullopt, gen.script);
                     write_file(main_scm, gen.buffer(), gen.buffer_size());
                 }
                 else
                 {
-                    into_script_img.emplace_back(std::cref(gen));
+                    if(gen.script->type != ScriptType::Required)
+                        into_script_img.emplace_back(std::cref(gen));
                 }
             }
 
@@ -929,6 +1036,14 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                     size_t offset = directory[1+i].offset * 2048;
                     offset += write_headers(script_img, offset, gen.script);
                     write_file(script_img, offset, gen.buffer(), gen.buffer_size());
+                    offset += gen.buffer_size();
+                    for(auto& weakp : gen.script->children_scripts)
+                    {
+                        auto required_script = weakp.lock();
+                        auto& required_gen = *std::find_if(gens.begin(), gens.end(), [&](const auto& g) { return g.script == required_script; });
+                        write_file(script_img, offset, required_gen.buffer(), required_gen.buffer_size());
+                        offset += required_gen.buffer_size();
+                    }
                 }
             }
         };

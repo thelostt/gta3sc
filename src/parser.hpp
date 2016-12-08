@@ -59,7 +59,7 @@ enum class Token
     CASE,
     DEFAULT,
     BREAK,
-    CONTINUE,
+    CONTINUE,  // Extension
 
     Decrement,
     Increment,
@@ -81,6 +81,8 @@ enum class Token
     EqDivide,
     EqTimedPlus,
     EqTimedMinus,
+
+    // Extensions
 };
 
 enum class NodeType
@@ -120,7 +122,7 @@ enum class NodeType
     CASE,
     DEFAULT,
     BREAK,
-    CONTINUE,
+    CONTINUE, // Extension
 
     Decrement,
     Increment,
@@ -136,6 +138,8 @@ enum class NodeType
     Divide,
     TimedAdd,
     TimedSub,
+
+    // Extensions
 };
 
 /// A Miss2 Identifier is anything that starts with A-Z or $.

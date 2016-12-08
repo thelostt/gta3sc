@@ -61,7 +61,11 @@ void CompilerContext::compile_command(const Command& command, ArgList args, bool
 
 void CompilerContext::compile_command(const SyntaxTree& command_node, bool not_flag)
 {
-    if(command_node.maybe_annotation<CommandSkipCutsceneStartAnnotation>())
+    if(command_node.maybe_annotation<DummyCommandAnnotation>())
+    {
+        // compile nothing
+    }
+    else if(command_node.maybe_annotation<CommandSkipCutsceneStartAnnotation>())
     {
         Expects(this->label_skip_cutscene_end == nullptr);
         const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_start_internal,
@@ -681,9 +685,8 @@ ArgVariant CompilerContext::get_arg(const SyntaxTree& arg_node)
                 auto label = std::move(*opt_label);
                 if(!label->may_branch_from(*this->script, program))
                 {
-                    auto sckind_ = label->script->type == ScriptType::Mission? "mission " :
-                                    label->script->type == ScriptType::StreamedScript? "streamed " : "";
-                    program.error(arg_node, "reference to local label outside of its {}script", sckind_);
+                    auto sckind_ = to_string(label->script->type);
+                    program.error(arg_node, "reference to local label outside of its {} script", sckind_);
                     program.note(*label->script, "label belongs to this script");
                 }
                 return label;

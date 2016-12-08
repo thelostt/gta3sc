@@ -8,11 +8,14 @@
 /// Type of a script file (*.sc).
 enum class ScriptType
 {
-    Main,           /// The script file with the main declarations.
-    MainExtension,  /// Imported using GOSUB_FILE
-    Subscript,      /// Imported using LAUNCH_MISSION
-    Mission,        /// Imported using LOAD_AND_LAUNCH_MISSION
-    StreamedScript, /// Imported using REGISTER_STREAMED_SCRIPT
+    Main,           //< The script file with the main declarations.
+    MainExtension,  //< Imported using GOSUB_FILE
+    Subscript,      //< Imported using LAUNCH_MISSION
+    Mission,        //< Imported using LOAD_AND_LAUNCH_MISSION
+    StreamedScript, //< Imported using REGISTER_STREAMED_SCRIPT
+    CustomScript,   //< Main custom script
+    CustomMission,  //< Main custom mission
+    Required,       //< Imported using REQUIRE
 };
 
 /// Converts VAR_INT, LVAR_FLOAT, etc tokens into the VarType enum.
@@ -36,7 +39,7 @@ public:
             auto tree = SyntaxTree::compile(program, *tstream);
             if(tree)
             {
-                auto p = std::make_shared<Script>(program, type, std::move(path), std::move(tstream), std::move(tree), priv_ctor());
+                auto p = std::shared_ptr<Script>(new Script(program, type, std::move(path), std::move(tstream), std::move(tree), priv_ctor()));
                 p->start_label = std::make_shared<Label>(nullptr, p->shared_from_this());
                 p->top_label = std::make_shared<Label>(nullptr, p->shared_from_this());
                 return p;
@@ -85,6 +88,8 @@ public:
     /// of the scripts in the `scripts` vector should be running while this method is executed.
     static void verify_script_names(const std::vector<shared_ptr<Script>>& scripts, ProgramContext&);
 
+    // TODO make a bunch of this private or const!!!!!!!
+
     fs::path                path;
     ScriptType              type;
     shared_ptr<TokenStream> tstream;        // may be nullptr
@@ -92,6 +97,9 @@ public:
 
     shared_ptr<Label>       top_label;      // the label on the very very top of the script
     shared_ptr<Label>       start_label;    // the label to jump into when starting this script.
+
+    std::vector<weak_ptr<const Script>> children_scripts;
+    weak_ptr<const Script>              parent_script;
 
     /// The offset of this script, in bytes, in the fully compiled SCM.
     /// TODO explain further on which compilation step this value gets to be available.
@@ -132,11 +140,32 @@ public:
         return (this->code_offset.value() - this->base.value());
     }
 
-    /// \returns the size of this script including its headers.
+    /// \returns the size of this script including its headers and children scripts.
     uint32_t full_size() const
     {
-        return this->code_size.value() + this->header_size();
+        size_t size = this->code_size.value() + this->header_size();
+        for(auto& sc : children_scripts) size += sc.lock()->full_size();
+        return size;
     }
+
+    // \warning not thread-safe.
+    void add_children(shared_ptr<Script> script);
+
+    bool uses_local_offsets() const;
+
+    bool on_the_same_space_as(const Script& other) const;
+
+    bool is_child_of(ScriptType type) const;
+
+    bool is_child_of_mission() const;
+
+    bool is_child_of_custom() const;
+
+    shared_ptr<const Script> root_script() const;
+    
+    bool is_root_script() const;
+
+    size_t distance_from_root() const;
 
 public:
     optional<int32_t> find_model(const string_view& name) const
@@ -255,10 +284,10 @@ struct Label
         return script->code_offset.value() + this->code_position.value();
     }
 
-    /// Returns the local offset for this label relative to `script->base`.
+    /// Returns the local offset for this label relative to `script->root_script()->base`.
     uint32_t distance_from_base() const
     {
-        return script->header_size() + this->code_position.value();
+        return script->root_script()->header_size() + script->distance_from_root() + this->code_position.value();
     }
 
     /// Can a GOTO in `other_script` branch into this label?
@@ -281,10 +310,11 @@ struct SymTable
     std::map<std::string, shared_ptr<Var>, iless>    global_vars;
     std::vector<std::shared_ptr<Scope>>              local_scopes;
 
-    std::vector<std::string>    extfiles;   /// GOSUB_FILE scripts
-    std::vector<std::string>    subscript;  /// LAUNCH_MISSION scripts
-    std::vector<std::string>    mission;    /// LOAD_AND_LAUNCH_MISSION scripts
-    std::vector<std::string>    streamed;   /// Streamed scripts
+    std::vector<std::string>    required;   //< REQUIRE scripts
+    std::vector<std::string>    extfiles;   //< GOSUB_FILE scripts
+    std::vector<std::string>    subscript;  //< LAUNCH_MISSION scripts
+    std::vector<std::string>    mission;    //< LOAD_AND_LAUNCH_MISSION scripts
+    std::vector<std::string>    streamed;   //< Streamed scripts
 
     int32_t count_collectable1 = 0;
     int32_t count_mission_passed = 0;
@@ -295,6 +325,8 @@ struct SymTable
 
     uint32_t offset_global_vars = 0;
 
+    /// Gets script type from filename.
+    optional<ScriptType> script_type(const string_view& filename) const;
 
     /// Construts a SymTable from the symbols in `script`.
     static SymTable from_script(Script& script, ProgramContext& program)
@@ -303,6 +335,11 @@ struct SymTable
         symbols.scan_symbols(script, program);
         return symbols;
     }
+
+    /// Scans all included scripts from `script` and adds them to this table.
+    ///
+    /// \warning This method is not thread-safe because it modifies states! BLA BLA BLA.
+    void scan_for_includers(Script& script, ProgramContext& program);
 
     /// Scans all symbols in `script` and adds them to this table.
     ///
@@ -427,21 +464,22 @@ auto read_script(const std::string& filename, const std::map<std::string, fs::pa
 
 
 inline
-auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
+auto read_and_scan_includers(const std::map<std::string, fs::path, iless>& subdir,
                            const std::string& filename, ScriptType type,
                            ProgramContext& program) -> optional<std::pair<shared_ptr<Script>, SymTable>>
 {
     if(auto opt_script = read_script(filename, subdir, type, program))
     {
         shared_ptr<Script> script = std::move(*opt_script);
-        SymTable symtable = SymTable::from_script(*script, program);
+        SymTable symtable;
+        symtable.scan_for_includers(*script, program);
         return std::make_pair(std::move(script), std::move(symtable));
     }
     return nullopt;
 }
 
 template<typename InputIt> inline
-auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
+auto read_and_scan_includers(const std::map<std::string, fs::path, iless>& subdir,
                            InputIt begin, InputIt end, ScriptType type,
                            ProgramContext& program) -> std::vector<std::pair<shared_ptr<Script>, SymTable>>
 {
@@ -449,7 +487,7 @@ auto read_and_scan_symbols(const std::map<std::string, fs::path, iless>& subdir,
 
     for(auto it = begin; it != end; ++it)
     {
-        if(auto opt_pair = read_and_scan_symbols(subdir, *it, type, program))
+        if(auto opt_pair = read_and_scan_includers(subdir, *it, type, program))
             output.emplace_back(std::move(*opt_pair));
     }
 
@@ -465,6 +503,9 @@ inline const char* to_string(ScriptType type)
         case ScriptType::Subscript:      return "subscript";
         case ScriptType::Mission:        return "mission";
         case ScriptType::StreamedScript: return "streamed";
+        case ScriptType::CustomMission:  return "custom mission";
+        case ScriptType::CustomScript:   return "custom script";
+        case ScriptType::Required:       return "required";
         default:                         Unreachable();
     }
 }
