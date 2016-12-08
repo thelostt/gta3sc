@@ -13,6 +13,8 @@
 #ifdef ABC
 #endif ABC // expected-error {{too many tokens}}
 
+#else ABC // expected-error {{too many tokens}}
+          // expected-error@-1 {{#else without #ifdef}}
 
 #something // expected-error {{unknown}}
 

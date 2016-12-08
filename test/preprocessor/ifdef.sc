@@ -27,5 +27,21 @@ WAIT 4
 #   endif
 #endif
 
+// CHECK-L: WAIT 12i8
+#ifdef UNDEFINED_SYMBOL
+	WAIT 11
+#else
+	WAIT 12
+#endif
+
+// CHECK-NOT-L: WAIT 13i8
+#ifndef TEST_SYMBOL
+	#ifdef TEST_SYMBOL
+		WAIT 13
+	#else
+		WAIT 13
+	#endif
+#endif
+
 // CHECK-L: TERMINATE_THIS_SCRIPT
 TERMINATE_THIS_SCRIPT

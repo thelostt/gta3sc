@@ -431,6 +431,22 @@ static bool lex_cpp(LexerContext& lexer, char* begin, char* end, size_t begin_po
                     lexer.cpp_stack.emplace_back((command[2] == 'n'? !isdef : isdef) && top);
                 }
             }
+            else if(command == "else")
+            {
+                if(tokens.size())
+                    lexer.error(line_pos, "too many tokens in preprocessor directive");
+
+                if(lexer.cpp_stack.size() > 1)
+                {
+                    auto topmost = lexer.cpp_stack[lexer.cpp_stack.size() - 2];
+                    if(topmost) // if the #if before the #if being checked is active
+                    {
+                        lexer.cpp_stack.back() = !(lexer.cpp_stack.back());
+                    }
+                }
+                else
+                    lexer.error(line_pos, "#else without #ifdef");
+            }
             else if(command == "endif")
             {
                 if(tokens.size())
