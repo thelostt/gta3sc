@@ -89,7 +89,7 @@ Options:
                             names. Enabled by default.
 )";
 
-#ifdef USING_GIT_DESCRIBE
+#ifdef GTA3SC_USING_GIT_DESCRIBE
 extern const char* GTA3SC_GIT_SHA1;
 extern const char* GTA3SC_GIT_BRANCH;
 extern const char* GTA3SC_GIT_DESCRIBE_TAG;
@@ -398,6 +398,8 @@ int main(int argc, char** argv)
     optional<ProgramContext> program; // delay construction of ProgramContext
     std::map<std::string, uint32_t, iless> default_models;
     std::map<std::string, uint32_t, iless> level_models;
+
+    ++argv;
 
     if(*argv && **argv != '-')
     {

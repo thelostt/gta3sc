@@ -104,7 +104,7 @@ if(MSVC) # idk how to setup this in GCC/Clang
 	add_precompiled_header(gta3sc stdinc.h SOURCE_CXX src/stdinc.cpp)
 endif(MSVC)
 
-target_compile_definitions(gta3sc PRIVATE USING_GIT_DESCRIBE)
+add_definitions(-DGTA3SC_USING_GIT_DESCRIBE)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 git_describe_long_exact(GIT_DESCRIBE_TAG)
 git_branch(GIT_BRANCH)
