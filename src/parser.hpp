@@ -83,6 +83,9 @@ enum class Token
     EqTimedMinus,
 
     // Extensions
+    Hexadecimal,
+    DUMP,
+    ENDDUMP,
 };
 
 enum class NodeType
@@ -140,6 +143,7 @@ enum class NodeType
     TimedSub,
 
     // Extensions
+    DUMP,
 };
 
 /// A Miss2 Identifier is anything that starts with A-Z or $.
@@ -463,7 +467,7 @@ private:
 
 public:
     explicit SyntaxTree(NodeType type, any udata)
-        : type_(type), instream(nullptr), udata(udata)
+        : type_(type), instream(nullptr), udata(std::move(udata))
     {
     }
 

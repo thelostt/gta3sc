@@ -2009,6 +2009,11 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     program.error(node, "CONTINUE is not supported [-fbreak-continue]");
                 return false;
 
+            case NodeType::DUMP:
+                if(program.opt.pedantic)
+                    program.error(node, "DUMP is a language extension [-pedantic]");
+                return false;
+
             default:
                 // go into my childs to find a proper statement node
                 --num_statements;

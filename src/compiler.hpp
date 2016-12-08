@@ -243,6 +243,8 @@ private:
 
     void compile_conditions(const SyntaxTree& conds_node, const shared_ptr<Label>& else_ptr);
 
+    void compile_dump(const SyntaxTree& node);
+
 private:
 
     ArgList get_args(const Command& command, const SyntaxTree& command_node);
