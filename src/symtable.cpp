@@ -988,7 +988,12 @@ void SymTable::scan_for_includers(Script& script, ProgramContext& program)
                 else if(command_name == "REGISTER_STREAMED_SCRIPT")
                     add_script(ScriptType::StreamedScript, node);
                 else if(command_name == "REQUIRE")
+                {
+                    if(program.opt.pedantic)
+                        program.error(node, "REQUIRE is a language extension [-pedantic]");
+
                     add_script(ScriptType::Required, node);
+                }
 
                 return false;
             }

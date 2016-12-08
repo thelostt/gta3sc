@@ -84,7 +84,6 @@ Options:
                            May be `default` or `json`. Do note the JSON format
                            may contain some pre-compilation messages in the default
                            format (i.e. gta3sc: type:? message).
-  -frequire                Enables REQUIRE.
 )";
 
 enum class Action
@@ -339,10 +338,6 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optflag(argv, "-fmission-script", nullptr))
             {
                 options.mission_script = true;
-            }
-            else if(optflag(argv, "-frequire", &flag))
-            {
-                options.require = flag;
             }
             else if(const char* name = optget(argv, "-D", nullptr, 1))
             {
@@ -717,16 +712,31 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 {
                     shared_ptr<const Script> insert_after;
 
+                    auto& rqsc_pair = it_reqscript->second;
+
                     auto& required_from = vpair.second;
                     if(required_from.size() == 1)
+                    {
                         insert_after = required_from.front().lock();
+                    }
                     else
+                    {
+                        size_t main_count = 0;
+                        for(auto& from : required_from)
+                        {
+                            if(from.lock()->on_the_same_space_as(*main))
+                                ++main_count;
+                        }
+
+                        if(main_count == 0)
+                            program.error(*rqsc_pair.first, "script was required from multiple mission/streamed scripts but never from the main block");
+
                         insert_after = main;
+                    }
 
                     auto it_script = std::find(scripts.begin(), scripts.end(), insert_after);
                     Ensures(it_script != scripts.end());
 
-                    auto& rqsc_pair = it_reqscript->second;
                     symbols.merge(std::move(rqsc_pair.second), program);
                     (*it_script)->add_children(rqsc_pair.first);
                     scripts.insert(std::next(it_script), rqsc_pair.first);
