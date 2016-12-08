@@ -281,9 +281,19 @@ inline std::string format_error(const Options& options,
                                 const char* filename, uint32_t lineno, uint32_t colno, uint32_t length,
                                 const char* msg, Args&&... args)
 {
-    auto make_helper = [&]() -> std::string {
-        Expects(stream && lineno);
-        return fmt::format(" {}\n {:>{}}", stream->get_line(lineno), "^", colno);
+    auto make_helper = [&]() -> std::string
+    {
+        Expects(stream && lineno && colno);
+
+        std::string arrow_line;
+        std::string line = stream->get_line(lineno);
+        arrow_line.reserve(colno);
+
+        for(size_t i = 0; i < colno; ++i)
+            arrow_line.push_back(line[i] != '\t'? ' ' : '\t');
+        arrow_line.back() = '^';
+
+        return fmt::format(" {}\n {}", line, arrow_line);
     };
 
     if(options.error_format == Options::ErrorFormat::Default)
