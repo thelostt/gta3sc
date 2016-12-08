@@ -287,11 +287,14 @@ inline std::string format_error(const Options& options,
 
         std::string arrow_line;
         std::string line = stream->get_line(lineno);
-        arrow_line.reserve(colno);
+        arrow_line.reserve(colno + length);
 
         for(size_t i = 0; i < colno; ++i)
             arrow_line.push_back(line[i] != '\t'? ' ' : '\t');
         arrow_line.back() = '^';
+
+        for(size_t i = 1; i < length; ++i)
+            arrow_line.push_back('~');
 
         return fmt::format(" {}\n {}", line, arrow_line);
     };
