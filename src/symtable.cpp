@@ -839,7 +839,8 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
             auto refvector = (type == ScriptType::MainExtension? std::ref(this->extfiles) :
                 type == ScriptType::Subscript? std::ref(this->subscript) :
                 type == ScriptType::Mission? std::ref(this->mission) :
-                type == ScriptType::StreamedScript? std::ref(this->streamed) : Unreachable());
+                type == ScriptType::StreamedScript? std::ref(this->streamed) :
+                type == ScriptType::Required? std::ref(this->required) : Unreachable());
 
             refvector.get().emplace_back(script_name);
             return true;
@@ -961,31 +962,10 @@ void SymTable::scan_for_includers(Script& script, ProgramContext& program)
 
     auto add_script = [&](ScriptType type, const SyntaxTree& command)
     {
-        if(script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
+        if(type == ScriptType::Required || script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
             table.add_script(type, command, program);
         else
             program.error(command, "scripts can only be added from main or extension scripts");
-    };
-
-    auto add_require = [&](const SyntaxTree& node, const string_view& filename)
-    {
-        // TODO R* compiler checks if parameter ends with .sc
-        // TODO join this with add_script
-
-        if(auto existing_type = this->script_type(filename))
-        {
-            if(ScriptType::Required != *existing_type)
-            {
-                program.error(node, "incompatible declaration, script was previously seen as a {} script", to_string(*existing_type));
-                return false;
-            }
-            return true;
-        }
-        else
-        {
-            this->required.emplace_back(filename.to_string());
-            return true;
-        }
     };
 
     // the scanner
@@ -993,16 +973,6 @@ void SymTable::scan_for_includers(Script& script, ProgramContext& program)
     {
         switch(node.type())
         {
-            case NodeType::REQUIRE:
-            {
-                if(!program.opt.require)
-                    program.error(node, "REQUIRE is not enabled [-frequire]");
-
-                // TODO check if on top of script
-                add_require(node, node.child(0).text());
-                return false;
-            }
-
             case NodeType::Command:
             {
                 auto command_name = node.child(0).text();
@@ -1017,6 +987,8 @@ void SymTable::scan_for_includers(Script& script, ProgramContext& program)
                     add_script(ScriptType::MainExtension, node);
                 else if(command_name == "REGISTER_STREAMED_SCRIPT")
                     add_script(ScriptType::StreamedScript, node);
+                else if(command_name == "REQUIRE")
+                    add_script(ScriptType::Required, node);
 
                 return false;
             }
@@ -1419,16 +1391,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 // already annotated in SymTable::scan_symbols
                 return false;
 
-            case NodeType::REQUIRE:
-            {
-                ++num_directives;
-
-                if(num_statements != num_directives)
-                    program.error(node, "REQUIRE must be at the very top of the script");
-
-                return false;
-            }
-
             case NodeType::MISSION_START:
             case NodeType::SCRIPT_START:
             {
@@ -1748,6 +1710,13 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
                     node.child(1).set_annotation(int32_t(script->streamed_id.value()));
                     node.set_annotation(std::cref(command));
+                }
+                else if(command_name == "REQUIRE")
+                {
+                    const Command& command = program.supported_or_fatal(node, commands.require, "REQUIRE");
+                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
+                    node.child(1).set_annotation(script->top_label);
+                    node.set_annotation(DummyCommandAnnotation{});
                 }
                 else
                 {

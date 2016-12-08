@@ -83,7 +83,6 @@ enum class Token
     EqTimedMinus,
 
     // Extensions
-    REQUIRE,
 };
 
 enum class NodeType
@@ -141,7 +140,6 @@ enum class NodeType
     TimedSub,
 
     // Extensions
-    REQUIRE,
 };
 
 /// A Miss2 Identifier is anything that starts with A-Z or $.

@@ -77,6 +77,11 @@ struct CommandSkipCutsceneEndAnnotation
 {
 };
 
+// Instead of a const Command&, annotate this on commands that do not compile to anything.
+struct DummyCommandAnnotation
+{
+};
+
 
 // TODO move those functions to somewhere else?
 

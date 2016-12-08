@@ -145,8 +145,8 @@ static std::pair<std::string, Command>
     xml_attribute<>* support_attrib = cmd_node->first_attribute("Supported");
     xml_node<>*      args_node   = cmd_node->first_node("Args");
 
-    if(!id_attrib || !name_attrib)
-        throw ConfigError("missing 'ID' or 'Name' attribute on '<Command>' node");
+    if(!name_attrib || !(id_attrib || hash_attrib))
+        throw ConfigError("missing 'Name' or 'ID'/'Hash' attribute on '<Command>' node");
 
     decltype(Command::args) args;
 
@@ -212,6 +212,7 @@ static std::pair<std::string, Command>
         }
     }
 
+    optional<uint16_t> id;
     optional<uint32_t> hash;
     string_view name = name_attrib->value();
 
@@ -221,10 +222,15 @@ static std::pair<std::string, Command>
         assert(*hash == one_at_a_time(name_attrib->value()));
     }
 
+    if(id_attrib)
+    {
+        id = uint16_t(xml_stoi(id_attrib->value()) & 0x7FFF);
+    }
+
     return { // TODO maybe this should be a std::set
         name.to_string(),
         Command {
-            uint16_t(xml_stoi(id_attrib->value()) & 0x7FFF), // id
+            std::move(id),                                   // id
             xml_to_bool(support_attrib, true),               // supported
             std::move(hash),                                 // hash
             std::move(args),                                 // args

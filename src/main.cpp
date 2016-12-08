@@ -499,11 +499,12 @@ int main(int argc, char** argv)
     try
     {
         std::vector<fs::path> config_files;
-        config_files.reserve(5 + conf.add_config_files.size());
+        config_files.reserve(6 + conf.add_config_files.size());
 
         config_files.emplace_back("alternators.xml");
         config_files.emplace_back("commands.xml");
         config_files.emplace_back("constants.xml");
+        config_files.emplace_back(config_path() / "gta3sc.xml");
         if(data.datadir.empty()) config_files.emplace_back("default.xml");
         if(options.cleo) config_files.emplace_back("cleo.xml");
         std::move(conf.add_config_files.begin(), conf.add_config_files.end(), std::back_inserter(config_files));

@@ -61,6 +61,7 @@ Commands::Commands(insensitive_map<std::string, Command>&& commands_,
     this->is_thing_greater_than_thing   = find_alternator("IS_THING_GREATER_THAN_THING");
     this->is_thing_greater_or_equal_to_thing = find_alternator("IS_THING_GREATER_OR_EQUAL_TO_THING");
     this->register_streamed_script_internal = find_command("REGISTER_STREAMED_SCRIPT_INTERNAL");
+    this->require                       = find_command("REQUIRE");
 }
 
 optional<std::string> Commands::find_command_name(uint16_t id, bool never_fail) const

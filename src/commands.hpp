@@ -325,6 +325,7 @@ public:
     optional<const Command&> skip_cutscene_start;
     optional<const Command&> skip_cutscene_end;
     optional<const Command&> skip_cutscene_start_internal;
+    optional<const Command&> require;
     optional<const Alternator&> set;
     optional<const Alternator&> cset;
     optional<const Alternator&> add_thing_to_thing;

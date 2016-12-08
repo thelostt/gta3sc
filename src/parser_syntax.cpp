@@ -263,20 +263,6 @@ static ParserResult parse_identifier(ParserContext& parser, token_iterator begin
 }
 
 /*
-    filename
-        :	TEXT -> TEXT
-        ;
-*/
-static ParserResult parse_filename(ParserContext& parser, token_iterator begin, token_iterator end)
-{
-    if(begin != end && begin->type == Token::Text)
-    {
-        return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Text, parser.instream, *begin)));
-    }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
-}
-
-/*
     scopeStatement
         :	'{' newLine
                 statementList
@@ -750,39 +736,6 @@ static ParserResult parse_keycommand_statement(ParserContext& parser, token_iter
 }
 
 /*
-    keycommandStatement
-        :	REQUIRE filename newLine -> ^(REQUIRE filename)
-        ;
-*/
-static ParserResult parse_require_statement(ParserContext& parser, token_iterator begin, token_iterator end)
-{
-    if(begin != end && begin->type == Token::REQUIRE)
-    {
-        ParserState state = ParserSuccess(nullptr);
-        ParserState filename;
-
-        auto it = std::next(begin);
-        std::tie(it, filename) = parse_filename(parser, it, end);
-        add_error(state, giveup_to_expected(filename, "filename"));
-
-        expect_newline(state, it, end);
-        it = parser_aftertoken(it, end, Token::NewLine);
-
-        if(is<ParserSuccess>(state))
-        {
-            shared_ptr<SyntaxTree> tree(new SyntaxTree(NodeType::REQUIRE, parser.instream, *begin));
-            tree->add_child(get<ParserSuccess>(filename).tree);
-            return std::make_pair(it, ParserSuccess(std::move(tree)));
-        }
-        else
-        {
-            return std::make_pair(it, std::move(state));
-        }
-    }
-    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
-}
-
-/*
     labelStatement
         :	LABEL newLine? -> LABEL
         ;
@@ -1236,7 +1189,6 @@ static ParserResult parse_if_statement(ParserContext& parser, token_iterator beg
         | variableDeclaration
         | labelStatement
         | keycommandStatement
-        | requireStatement
         | commandStatement
         ;
 */
@@ -1251,7 +1203,6 @@ static ParserResult parse_statement(ParserContext& parser, token_iterator begin,
                               parse_variable_declaration,
                               parse_label_statement,
                               parse_keycommand_statement,
-                              parse_require_statement,
                               parse_command_statement);
 
     if(parser_isgiveup(result.second))

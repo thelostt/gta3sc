@@ -61,7 +61,11 @@ void CompilerContext::compile_command(const Command& command, ArgList args, bool
 
 void CompilerContext::compile_command(const SyntaxTree& command_node, bool not_flag)
 {
-    if(command_node.maybe_annotation<CommandSkipCutsceneStartAnnotation>())
+    if(command_node.maybe_annotation<DummyCommandAnnotation>())
+    {
+        // compile nothing
+    }
+    else if(command_node.maybe_annotation<CommandSkipCutsceneStartAnnotation>())
     {
         Expects(this->label_skip_cutscene_end == nullptr);
         const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_start_internal,
@@ -166,8 +170,6 @@ void CompilerContext::compile_statement(const SyntaxTree& node, bool not_flag)
         case NodeType::LVAR_TEXT_LABEL:
         case NodeType::VAR_TEXT_LABEL16:
         case NodeType::LVAR_TEXT_LABEL16:
-            break;
-        case NodeType::REQUIRE:
             break;
         default:
             Unreachable();
