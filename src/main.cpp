@@ -91,9 +91,11 @@ Options:
 
 #ifdef USING_GIT_DESCRIBE
 extern const char* GTA3SC_GIT_SHA1;
+extern const char* GTA3SC_GIT_BRANCH;
 extern const char* GTA3SC_GIT_DESCRIBE_TAG;
 #else
 const char* GTA3SC_GIT_SHA1 = "";
+const char* GTA3SC_GIT_BRANCH = "";
 const char* GTA3SC_GIT_DESCRIBE_TAG = "";
 #endif
 
@@ -431,12 +433,12 @@ int main(int argc, char** argv)
         fprintf(stdout, "%s", GTA3SC_HELP_MESSAGE);
         return EXIT_SUCCESS;
     }
-
+    
     if(options.version)
     {
-        auto version = GTA3SC_GIT_DESCRIBE_TAG[0] != '\0'? GTA3SC_GIT_DESCRIBE_TAG :
-                       GTA3SC_GIT_SHA1[0] != '\0'? GTA3SC_GIT_SHA1 : "unknown-version";
-        fprintf(stdout, "%s %s", "gta3sc", version);
+        auto version = GTA3SC_GIT_DESCRIBE_TAG[0] != '\0'? std::string(GTA3SC_GIT_DESCRIBE_TAG) :
+                       GTA3SC_GIT_SHA1[0] != '\0'? std::string(GTA3SC_GIT_BRANCH) + '-' + GTA3SC_GIT_SHA1 : "unknown-version";
+        fprintf(stdout, "%s %s", "gta3sc", version.c_str());
         return EXIT_SUCCESS;
     }
 
