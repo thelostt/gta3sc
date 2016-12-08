@@ -730,7 +730,7 @@ void Script::compute_scope_outputs(const SymTable& symbols, ProgramContext& prog
 
 void Script::fix_call_scope_variables(ProgramContext& program)
 {
-    if(program.opt.mission_var_begin == 0 || this->type != ScriptType::Mission)
+    if(program.opt.mission_var_begin == 0 || !this->is_child_of_mission())
         return;
 
     for(auto& scope : this->scopes)

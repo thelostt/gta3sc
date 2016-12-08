@@ -293,9 +293,7 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
         codegen.bw.emplace_i32(-offset);
     };
 
-    if(codegen.script->type == ScriptType::Main ||
-       codegen.script->type == ScriptType::MainExtension ||
-       codegen.script->type == ScriptType::Subscript)
+    if(!codegen.script->uses_local_offsets())
     {
         if(codegen.program.opt.use_local_offsets)
         {
@@ -307,17 +305,13 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
             codegen.bw.emplace_i32(label_ptr->offset());
         }
     }
-    else if(label_ptr->script->uses_local_offsets())
+    else
     {
         // enforced on compiler.hpp/cpp
         assert(label_ptr->script->on_the_same_space_as(*codegen.script));
 
         int32_t local_offset = static_cast<int32_t>(label_ptr->distance_from_base());
         emplace_local_offset(local_offset);
-    }
-    else
-    {
-        Unreachable();
     }
 }
 
