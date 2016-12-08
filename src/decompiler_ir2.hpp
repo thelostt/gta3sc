@@ -98,7 +98,6 @@ public:
                     return output;
                 }
             }
-            __debugbreak(); // TODO REMOVE
             return nullopt;
         };
 

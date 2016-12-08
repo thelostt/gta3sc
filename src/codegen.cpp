@@ -293,10 +293,19 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
         codegen.bw.emplace_i32(-offset);
     };
 
-    if(codegen.program.opt.use_local_offsets)
+    if(codegen.script->type == ScriptType::Main ||
+       codegen.script->type == ScriptType::MainExtension ||
+       codegen.script->type == ScriptType::Subscript)
     {
-        int32_t absolute_offset = static_cast<int32_t>(label_ptr->offset());
-        emplace_local_offset(absolute_offset);
+        if(codegen.program.opt.use_local_offsets)
+        {
+            int32_t absolute_offset = static_cast<int32_t>(label_ptr->offset());
+            emplace_local_offset(absolute_offset);
+        }
+        else
+        {
+            codegen.bw.emplace_i32(label_ptr->offset());
+        }
     }
     else if(label_ptr->script->type == ScriptType::Mission
          || label_ptr->script->type == ScriptType::StreamedScript)
@@ -308,7 +317,7 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
     }
     else
     {
-        codegen.bw.emplace_i32(label_ptr->offset());
+        Unreachable();
     }
 }
 
