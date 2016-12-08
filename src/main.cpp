@@ -704,6 +704,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         for(auto& script : scripts)
         {
             script->compute_scope_outputs(symbols, program);
+            script->fix_call_scope_variables(program);
         }
 
         for(auto& script : scripts)

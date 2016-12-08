@@ -354,7 +354,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
             return;
         }
 
-        if(!target_scope->outputs)
+        if(!target_scope->is_call_scope())
         {
             program.error(arglabel_node, "target scope does not have a CLEO_RETURN");
             return;
@@ -620,6 +620,29 @@ void Script::compute_scope_outputs(const SymTable& symbols, ProgramContext& prog
                     return true;
             }
         });
+    }
+}
+
+void Script::fix_call_scope_variables(ProgramContext& program)
+{
+    if(program.opt.mission_var_begin == 0 || this->type != ScriptType::Mission)
+        return;
+
+    for(auto& scope : this->scopes)
+    {
+        if(scope->is_call_scope())
+        {
+            for(auto& var : scope->vars)
+            {
+                auto& var_index = var.second->index;
+
+                if(var_index >= uint32_t(program.opt.timer_index) && var_index <= uint32_t(program.opt.timer_index+1))
+                    continue;
+
+                Expects(var_index >= program.opt.mission_var_begin);
+                var_index -= program.opt.mission_var_begin;
+            }
+        }
     }
 }
 

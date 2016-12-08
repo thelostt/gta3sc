@@ -48,6 +48,9 @@ public:
     // TODO doc comment
     void compute_scope_outputs(const SymTable& symbols, ProgramContext& program);
 
+    // TODO doc comment
+    void fix_call_scope_variables(ProgramContext& program);
+
     /// Annnotates this script's syntax tree with informations to simplify the compilation step.
     /// For example, annotates whether a identifier is a variable, enum, label, etc.
     ///
@@ -226,6 +229,8 @@ struct Scope
     }
 
     static optional<OutputType> output_type_from_node(const SyntaxTree& node);
+
+    bool is_call_scope() const { return this->outputs != nullopt; }
 };
 
 /// Label information.
