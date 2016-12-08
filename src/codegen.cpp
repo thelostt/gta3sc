@@ -305,13 +305,21 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
             codegen.bw.emplace_i32(label_ptr->offset());
         }
     }
-    else
+    else // current script is mission/stream
     {
-        // enforced on compiler.hpp/cpp
-        assert(label_ptr->script->on_the_same_space_as(*codegen.script));
+        if(label_ptr->script->uses_local_offsets())
+        {
+            assert(label_ptr->script->on_the_same_space_as(*codegen.script));
+            int32_t local_offset = static_cast<int32_t>(label_ptr->distance_from_base());
+            emplace_local_offset(local_offset);
+        }
+        else // label is within main block
+        {
+            if(codegen.program.opt.use_local_offsets)
+                codegen.program.error(*codegen.script, "cannot branch from this script into main block using local offsets [-mlocal-offsets]");
 
-        int32_t local_offset = static_cast<int32_t>(label_ptr->distance_from_base());
-        emplace_local_offset(local_offset);
+            codegen.bw.emplace_i32(label_ptr->offset());
+        }
     }
 }
 
