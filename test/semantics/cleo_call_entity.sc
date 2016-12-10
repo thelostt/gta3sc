@@ -1,4 +1,5 @@
 // RUN: %dis %gta3sc %s --config=gtasa --guesser --cs -fsyntax-only 2>&1 | %verify %s
+SCRIPT_START
 {
 LVAR_INT car char car2 null1 null2 null3 null4 
 
@@ -40,3 +41,4 @@ TERMINATE_THIS_CUSTOM_SCRIPT
 	CREATE_CHAR 0 0 .0 .0 .0 char
 	CLEO_RETURN 0 char // fine
 }
+SCRIPT_END

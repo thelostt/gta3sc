@@ -1,4 +1,5 @@
 // RUN: %gta3sc %s --config=gtasa --guesser --cs -emit-ir2 -o - | %FileCheck %s
+SCRIPT_START
 {
 LVAR_INT i r
 LVAR_FLOAT f
@@ -19,3 +20,4 @@ CALL_FUNCTION_RETURN 0 1 1 "Test Case" r
 
 TERMINATE_THIS_CUSTOM_SCRIPT
 }
+SCRIPT_END

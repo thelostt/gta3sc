@@ -1,4 +1,5 @@
 // RUN: %gta3sc %s --config=gtasa --guesser --cs -emit-ir2 -o - | %FileCheck %s
+SCRIPT_START
 {
 LVAR_INT ptr1 ptr2
 LVAR_TEXT_LABEL16 text16
@@ -12,3 +13,4 @@ COPY_FILE "Preserve Case" $text16
 
 TERMINATE_THIS_CUSTOM_SCRIPT
 }
+SCRIPT_END

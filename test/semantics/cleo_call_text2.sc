@@ -1,4 +1,5 @@
 // RUN: %dis %gta3sc %s --config=gtasa --guesser --cs -fsyntax-only 2>&1 | %verify %s
+SCRIPT_START
 {
 LVAR_TEXT_LABEL textvar
 
@@ -22,3 +23,4 @@ TERMINATE_THIS_CUSTOM_SCRIPT
 	LVAR_INT text_ptr
 	CLEO_RETURN 0
 }
+SCRIPT_END

@@ -1476,8 +1476,16 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 {
                     had_end = true;
 
-                    const Command& command = program.supported_or_fatal(node, commands.terminate_this_script, "TERMINATE_THIS_SCRIPT");
-                    node.set_annotation(std::cref(command));
+                    if(this->is_child_of(ScriptType::CustomScript))
+                    {
+                        const Command& command = program.supported_or_fatal(node, commands.terminate_this_custom_script, "TERMINATE_THIS_CUSTOM_SCRIPT");
+                        node.set_annotation(std::cref(command));
+                    }
+                    else
+                    {
+                        const Command& command = program.supported_or_fatal(node, commands.terminate_this_script, "TERMINATE_THIS_SCRIPT");
+                        node.set_annotation(std::cref(command));
+                    }
 
                     if(!had_start)
                         program.error(node, "{} without a {}", dir_end, dir_start);
@@ -2048,12 +2056,12 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
         else if(!had_mission_end)
             program.error(*this, "{} script does not contain MISSION_END", to_string(this->type));
     }
-    else if(this->type == ScriptType::StreamedScript)
+    else if(this->type == ScriptType::CustomScript || this->type == ScriptType::StreamedScript)
     {
         if(!had_script_start)
-            program.error(*this, "streamed script does not contain SCRIPT_START");
+            program.error(*this, "{} script does not contain SCRIPT_START", to_string(this->type));
         else if(!had_script_end)
-            program.error(*this, "streamed script does not contain SCRIPT_END");
+            program.error(*this, "{} script does not contain SCRIPT_END", to_string(this->type));
     }
     else if(had_mission_start || had_script_start)
     {

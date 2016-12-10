@@ -8,9 +8,12 @@
 //
 // # Check the binary representation
 // RUN: mkdir "%/T/cheader_oatc" || echo _
-// RUN: %gta3sc %s --config=gtasa --guesser -o "%/T/cheader_oatc/c1.cs" --cs -moatc
-// RUN: %checksum "%/T/cheader_oatc/c1.cs" 9945525d2120aaa67238fce5e54b85e3
+// RUN: %gta3sc %s --config=gtasa --guesser -o "%/T/cheader_oatc/c1.cs" --cs -D CS -moatc
+// RUN: %checksum "%/T/cheader_oatc/c1.cs" 7e42cec2b9d51489e8c87ad4987759ed
 //
+#ifdef CS
+SCRIPT_START
+#endif
 #ifdef CM
 MISSION_START
 #endif
@@ -44,4 +47,7 @@ GOTO loop2
 }
 #ifdef CM
 MISSION_END
+#endif
+#ifdef CS
+SCRIPT_END
 #endif

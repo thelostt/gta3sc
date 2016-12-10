@@ -504,7 +504,7 @@ inline const char* to_string(ScriptType type)
         case ScriptType::Mission:        return "mission";
         case ScriptType::StreamedScript: return "streamed";
         case ScriptType::CustomMission:  return "custom mission";
-        case ScriptType::CustomScript:   return "custom script";
+        case ScriptType::CustomScript:   return "custom";
         case ScriptType::Required:       return "required";
         default:                         Unreachable();
     }

@@ -1,4 +1,5 @@
 // RUN: %dis %gta3sc %s --config=gtasa --guesser --cs -fsyntax-only 2>&1 | %verify %s
+SCRIPT_START
 {
 LVAR_INT i j k
 LVAR_FLOAT x y z
@@ -32,3 +33,4 @@ TERMINATE_THIS_CUSTOM_SCRIPT
 	CLEO_RETURN 1 c		// expected-error {{this argument shall be set to 0}}
 	CLEO_RETURN 0 x		// expected-error {{type mismatch}}
 }
+SCRIPT_END

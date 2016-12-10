@@ -1,4 +1,5 @@
 // RUN: %gta3sc %s --config=gtasa --guesser --cs -emit-ir2 -o - | %FileCheck %s
+SCRIPT_START
 {
 LVAR_INT a
 LVAR_TEXT_LABEL text
@@ -22,3 +23,4 @@ TERMINATE_THIS_CUSTOM_SCRIPT
 	// CHECK-L: CLEO_RETURN 1i8 2@
 	CLEO_RETURN 0 c
 }
+SCRIPT_END
