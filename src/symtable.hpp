@@ -104,17 +104,17 @@ public:
     weak_ptr<const Script>              parent_script;
 
     /// The offset of this script, in bytes, in the fully compiled SCM.
-    /// TODO explain further on which compilation step this value gets to be available.
+    /// This value is made available before/during the code generation step.
     /// \note This is the same as `offset` but including the script headers.
     optional<uint32_t>     base;
 
     /// The offset of this **script code**, in bytes, in the fully compiled SCM.
-    /// TODO explain further on which compilation step this value gets to be available.
+    /// This value is made available before/during the code generation step.
     /// \note This is the offset to the script code, not including the headers, use `base` to include headers.
     optional<uint32_t>      code_offset;
 
     /// The full size, in bytes, of the script if already available.
-    /// TODO explain further on which compilation step this value gets to be available.
+    /// This value is made available before/during the code generation step.
     /// \note This is the size of the script **without** headers.
     optional<uint32_t>      code_size;
 
@@ -127,7 +127,7 @@ public:
     optional<uint16_t>      streamed_id;
 
     /// List of unknown models referenced by this script.
-    /// TODO explain further on which compilation step this value gets to be available.
+    /// This value is made available after the AST annotation step.
     std::vector<std::pair<std::string, int32_t>> models;
     
     /// The script names used in this script.
@@ -306,15 +306,14 @@ struct Label
 struct SymTable
 {
     // TODO check conflicts of label names and global names!?! (on merge too)
-    // TODO keep using iless or use another solution?
 
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
     // IMPORTANT! Make sure whenever you add any new field to this object, to update merge() accordingly !!!!!!!!//
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
 
-    std::map<std::string, shared_ptr<Script>, iless> scripts;
-    std::map<std::string, shared_ptr<Label>, iless>  labels;
-    std::map<std::string, shared_ptr<Var>, iless>    global_vars;
+    insensitive_map<std::string, shared_ptr<Script>> scripts;
+    insensitive_map<std::string, shared_ptr<Label>>  labels;
+    insensitive_map<std::string, shared_ptr<Var>>    global_vars;
     std::vector<std::shared_ptr<Scope>>              local_scopes;
 
     std::vector<std::string>    required;   //< REQUIRE scripts

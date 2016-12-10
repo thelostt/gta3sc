@@ -631,7 +631,7 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
         goto_rel(4 + 1 + 1 + 2);
         codegen.bw.emplace_u8(nextseg_id());
         codegen.bw.emplace_u32(size_globals - 8);
-        codegen.bw.emplace_u8(62);  // TODO Number of allocated externals (with 07D3, 0884, 0928 or 0929) 
+        codegen.bw.emplace_u8(62); // Unknown / Unused
         codegen.bw.emplace_u8(2);  // Unknown / Unused
         codegen.bw.emplace_u16(0); // Unknown / Unused
     }

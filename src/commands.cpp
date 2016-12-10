@@ -3,7 +3,7 @@
 #include "program.hpp"
 #include "symtable.hpp"
 
-Commands::Commands(insensitive_map<std::string, Command>&& commands_,
+Commands::Commands(transparent_set<Command>&& commands_,
                    insensitive_map<std::string, std::vector<const Command*>>&& alternators_,
                    transparent_map<std::string, EntityType>&& entities_,
                    transparent_map<std::string, shared_ptr<Enum>>&& enums_)
@@ -23,10 +23,10 @@ Commands::Commands(insensitive_map<std::string, Command>&& commands_,
     this->enum_defaultmodels = it_defaultmodel->second;
     this->enum_scriptstream = it_scriptstream->second;
 
-    for(auto& pair : this->commands)
+    for(auto& cmd : this->commands)
     {
-        if(pair.second.id)
-            this->commands_by_id.emplace(*pair.second.id, &pair.second);
+        if(cmd.id)
+            this->commands_by_id.emplace(*cmd.id, std::addressof(cmd));
     }
 
     this->set_progress_total            = find_command("SET_PROGRESS_TOTAL");
@@ -67,26 +67,6 @@ Commands::Commands(insensitive_map<std::string, Command>&& commands_,
     this->require                       = find_command("REQUIRE");
 }
 
-optional<std::string> Commands::find_command_name(uint16_t id, bool never_fail) const
-{
-    // TODO speed up this search
-
-    for(auto& pair : this->commands)
-    {
-        if(pair.second.id == id)
-            return pair.first;
-    }
-
-    if(never_fail)
-    {
-        char buffer[sizeof("COMMAND_")-1 + 4 + 1];
-        snprintf(buffer, sizeof(buffer), "COMMAND_%.4X", id);
-        return std::string(std::begin(buffer), std::end(buffer) - 1);
-    }
-
-    return nullopt;
-}
-
 optional<std::string> Commands::find_entity_name(EntityType type) const
 {
     if(type == 0)
@@ -111,7 +91,6 @@ void Commands::add_default_models(const insensitive_map<std::string, uint32_t>& 
 
 optional<int32_t> Commands::find_constant(const string_view& value, bool context_free_only) const
 {
-    // TODO mayyybe speed up this? we didn't profile or anything.
     for(auto& enum_pair : enums)
     {
         if(enum_pair.second->is_global == context_free_only)
@@ -129,7 +108,6 @@ optional<int32_t> Commands::find_constant_all(const string_view& value) const
     if(auto opt = enum_defaultmodels->find(value))
         return opt;
 
-    // TODO mayyybe speed up this? we didn't profile or anything.
     for(auto& enum_pair : enums)
     {
         if(&enum_pair.second == &enum_defaultmodels)
@@ -306,7 +284,12 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                     if((*opt_varidx)->count)
                         return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexIsArray });
                 }
-                else if(commands.find_constant_all(index) == nullopt) // TODO -pedantic error
+                else if(commands.find_constant_all(index) != nullopt)
+                {
+                    if(options.pedantic)
+                        return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexIsConstant });
+                }
+                else
                 {
                     return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexNotVar });
                 }
@@ -786,6 +769,7 @@ std::string Commands::MatchFailure::to_string()
         case VariableIndexNotInt:       return "variable in index is not of INT type";
         case VariableIndexNotVar:       return "identifier between brackets is not a variable";
         case VariableIndexIsArray:      return "variable in index is of array type";
+        case VariableIndexIsConstant:   return "array index cannot be a string constant [-pedantic]";
         case VariableKindNotAllowed:    return "variable kind (global/local) not allowed for this argument";
         case VariableTypeMismatch:      return "variable type does not match argument type";
         case StringLiteralNotAllowed:   return "STRING literal not allowed here";

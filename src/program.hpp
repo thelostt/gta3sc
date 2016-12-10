@@ -14,8 +14,7 @@ class Options;
 struct tag_nocontext_t {};
 constexpr tag_nocontext_t nocontext = {};
 
-// TODO better name?
-class HaltJobException : public std::exception
+class ProgramFailure : public std::exception
 {
 };
 
@@ -230,7 +229,7 @@ public:
     {
         ++fatal_count;
         if(logstream) this->puts(format_error(this->opt, "fatal error", context, msg, std::forward<Args>(args)...));
-        throw HaltJobException();
+        throw ProgramFailure();
     }
 
     /// Either the command `opt` (named `name`) is supported, or a fatal error is given.

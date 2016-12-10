@@ -324,10 +324,16 @@ inline optional<std::string> get_immstr(const DecompiledVarArray&)
 
 inline optional<std::string> get_immstr(const DecompiledString& s)
 {
-    // TODO unescape storage
-    // TODO for varlen strings don't search for \0, just unescape
-    auto nul_it = std::find(s.storage.begin(), s.storage.end(), '\0');
-    return std::string(s.storage.begin(), nul_it);
+    if(s.type == DecompiledString::Type::StringVar)
+    {
+        // don't stop on '\0'
+        return s.storage;
+    }
+    else
+    {
+        auto null_it = std::find(s.storage.begin(), s.storage.end(), '\0');
+        return std::string(s.storage.begin(), null_it);
+    }
 }
 
 inline optional<std::string> get_immstr(const int8_t&)

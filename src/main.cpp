@@ -655,7 +655,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         if(main == nullptr)
         {
             Expects(program.has_error());
-            throw HaltJobException();
+            throw ProgramFailure();
         }
 
         SymTable symbols;
@@ -706,7 +706,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         auto streamed_scripts = read_and_scan_includers(subdir, symbols.streamed.begin(), symbols.streamed.end(), ScriptType::StreamedScript, program);
 
         if(program.has_error())
-            throw HaltJobException();
+            throw ProgramFailure();
 
         // just includers symbols merging (not thread-safe)
         {
@@ -791,7 +791,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
             }
 
             if(program.has_error())
-                throw HaltJobException();
+                throw ProgramFailure();
         }
 
         // effectively scan symbols now
@@ -813,7 +813,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         // check if symbol table was built successfully
         if(program.has_error())
-            throw HaltJobException();
+            throw ProgramFailure();
 
         symbols.check_command_count(program);
 
@@ -831,7 +831,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         }
 
         if(program.has_error())
-            throw HaltJobException();
+            throw ProgramFailure();
 
         // not thread-safe
         std::vector<std::string> models = Script::compute_unknown_models(scripts);
@@ -851,7 +851,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         // CompilerContext wants an annotated ASTs, if we have any error, it's possible that
         // the AST is not correctly annotated.
         if(program.has_error())
-            throw HaltJobException();
+            throw ProgramFailure();
 
         std::vector<CodeGenerator> gens;
         gens.reserve(scripts.size());
@@ -864,7 +864,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         // Codegen expects a successful compilation.
         if(program.has_error())
-            throw HaltJobException();
+            throw ProgramFailure();
 
         // Do not perform code gen if checking only syntax
         if(program.opt.fsyntax_only)
@@ -978,7 +978,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 struct alignas(4) AAAScript
                 {
                     uint32_t size_global_space;
-                    uint8_t num_streams_allocated;
+                    uint8_t unknown0 = 62;
                     uint8_t unknown1  = 2;
                     uint16_t unknown2 = 0;
                 };
@@ -990,7 +990,6 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
                 AAAScript aaa_scm;
                 aaa_scm.size_global_space = (*scmheader)->size_global_vars_space - 8;
-                aaa_scm.num_streams_allocated = 62; // TODO
 
                 CdHeader cd_header { {'V','E','R','2'}, static_cast<uint32_t>(1 + into_script_img.size()) };
                 std::vector<CdEntry> directory;
@@ -1098,7 +1097,7 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                                     script_img.data(), script_img.size(), program,
                                     Options::Lang::IR2, print_ir2_line);
             if(!status)
-                throw HaltJobException();
+                throw ProgramFailure();
 
             //fputc('<', outstream);
         }
@@ -1127,11 +1126,11 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
         
 
         if(program.has_error())
-            throw HaltJobException();
+            throw ProgramFailure();
 
         return 0;
     }
-    catch(const HaltJobException&)
+    catch(const ProgramFailure&)
     {
         fprintf(stderr, "gta3sc: compilation failed\n");
         return EXIT_FAILURE;
@@ -1183,11 +1182,11 @@ int decompile(fs::path input, fs::path output, ProgramContext& program)
 
         auto println = [&](const std::string line) { fprintf(outstream, "%s\n", line.c_str()); }; 
         if(!decompile(opt_bytecode->data(), opt_bytecode->size(), script_img.data(), script_img.size(), program, lang, println))
-            throw HaltJobException();
+            throw ProgramFailure();
 
         return 0;
     }
-    catch(const HaltJobException&)
+    catch(const ProgramFailure&)
     {
         fprintf(stderr, "gta3sc: decompilation failed\n");
         return EXIT_FAILURE;
@@ -1243,7 +1242,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
 
         // TODO add more has error in here?
         if(program.has_error())
-            throw HaltJobException();
+            throw ProgramFailure();
 
         Disassembler main_segment_asm(program, main_segment, scan_type);
         std::vector<Disassembler> mission_segments_asm;
@@ -1346,11 +1345,11 @@ bool decompile(const void* bytecode, size_t bytecode_size,
         }
 
         if(program.has_error())
-            throw HaltJobException();
+            throw ProgramFailure();
 
         return true;
     }
-    catch(const HaltJobException&)
+    catch(const ProgramFailure&)
     {
         return false;
     }

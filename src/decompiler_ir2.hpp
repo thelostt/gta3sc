@@ -1,8 +1,11 @@
-// TODO doc comments
-// TODO conform to https://gist.github.com/thelink2012/a60a06a581ea78558bd7b8427103609d (specially strings)
-
+/// This transforms data given by the disassembler (vector of pseudo-instructions) into a IR2 script.
+///
+/// IR2 is defined by https://gist.github.com/thelink2012/a60a06a581ea78558bd7b8427103609d
+///
 #include <stdinc.h>
 #include "disassembler.hpp"
+
+// TODO conform to IR2 spec (specially strings)
 
 struct DecompilerIR2;
 

@@ -200,10 +200,14 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
     if(begin == end)
         return end;
 
-    auto is_integer = [](const std::pair<const char*, size_t>& token)
+    auto have_hexadecimal_prefix = [](const std::pair<const char*, size_t>& token)
     {
-        bool is_hexa = (token.second > 2 && token.first[0] == '0'
-                            && (token.first[1] == 'x' || token.first[1] == 'X'));
+        return (token.second > 2 && token.first[0] == '0' && (token.first[1] == 'x' || token.first[1] == 'X'));
+    };
+
+    auto is_integer = [&have_hexadecimal_prefix](const std::pair<const char*, size_t>& token)
+    {
+        bool is_hexa = have_hexadecimal_prefix(token);
 
         for(size_t i = (is_hexa? 2 : 0); i < token.second; ++i)
         {
@@ -212,15 +216,11 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
                 if(is_hexa && ((token.first[i] >= 'A' && token.first[i] <= 'F') 
                     || (token.first[i] >= 'a' && token.first[i] <= 'f')))
                 {
-                    // TODO emit error in pedantic
                     continue;
                 }
                 else if(token.first[i] == '-')
                 {
-                    if(i != 0)
-                    {
-                        // TODO emit warning
-                    }
+                    // valid even if i != 0
                     continue;
                 }
                 return false;
@@ -240,10 +240,7 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
 
                 if(token.first[i] == 'f' || token.first[i] == 'F')
                 {
-                    if(i+1 != token.second)
-                    {
-                        // TODO emit warning
-                    }
+                    // valid even if not in the end of the token
                     continue;
                 }
 
@@ -271,6 +268,9 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
 
         if(is_integer(token))
         {
+            if(lexer.program.opt.pedantic && have_hexadecimal_prefix(token))
+                lexer.error({begin_pos, token.second}, "hexadecimal integer literals are a language extension [-pedantic]");
+
             lexer.add_token(Token::Integer, begin_pos, token.second);
             return token.first + token.second;
         }
@@ -454,7 +454,6 @@ static void lex_comments(LexerContext& lexer, char* begin, char* end, size_t beg
 /// Returns true in case we can keep reading this line, false otherwise.
 static bool lex_cpp(LexerContext& lexer, char* begin, char* end, size_t begin_pos)
 {
-    // TODO tokens must be identifiers
     auto next_char_it = std::find_if_not(begin, end, lex_isspace2);
     if(next_char_it != end && *next_char_it == '#')
     {
@@ -556,9 +555,9 @@ static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_
     if(std::distance(it, end) == 0)
         return;
 
-    if(lexer.line_buffer.size() > 255)
+    if(lexer.program.opt.pedantic && lexer.line_buffer.size() > 255)
     {
-        // TODO error if pedantic?
+        lexer.error(begin_pos, "line is too long, miss2 only allows 255 characters [-pedantic]");
     }
 
     if(lexer.in_dump_mode)

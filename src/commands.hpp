@@ -120,7 +120,25 @@ struct Command
             return this->args.size() - 1;
         return this->args.size();
     }
+
+    friend bool operator<(const Command& lhs, const Command& rhs)
+    {
+        return iless()(lhs.name, rhs.name);
+    }
+
+    template<typename StringView>
+    friend bool operator<(const Command& lhs, const StringView& rhs)
+    {
+        return iless()(lhs.name, rhs);
+    }
+
+    template<typename StringView>
+    friend bool operator<(const StringView& lhs, const Command& rhs)
+    {
+        return iless()(lhs, rhs.name);
+    }
 };
+
 
 /// Stores the list of commands and alternators.
 class Commands
@@ -150,6 +168,7 @@ public:
             VariableIndexNotInt,
             VariableIndexNotVar,
             VariableIndexIsArray,
+            VariableIndexIsConstant,
             VariableKindNotAllowed,
             VariableTypeMismatch,
             StringLiteralNotAllowed,
@@ -170,7 +189,7 @@ public:
     using AnnotateArgumentList = small_vector<AnnotateArgument, 16>;
 
 public:
-    explicit Commands(insensitive_map<std::string, Command>&& commands,
+    explicit Commands(transparent_set<Command>&& commands,
                       insensitive_map<std::string, std::vector<const Command*>>&& alternators,
                       transparent_map<std::string, EntityType>&& entities,
                       transparent_map<std::string, shared_ptr<Enum>>&& enums);
@@ -228,7 +247,7 @@ public:
     {
         auto it = this->commands.find(name);
         if(it != this->commands.end())
-            return it->second;
+            return *it;
         return nullopt;
     }
 
@@ -257,14 +276,6 @@ public:
             return *it->second;
         return nullopt;
     }
-
-    /// Finds a command name based on its opcode id.
-    ///
-    /// When `never_fail` is specified, will return a placeholder `COMMAND_00ID` on failure.
-    ///
-    /// \TODO remove me, command name is now embeded in the Command structure.
-    optional<std::string> find_command_name(uint16_t id, bool never_fail = false) const;
-
 
     //
     // Commands equality check.
@@ -295,7 +306,7 @@ public:
     }
 
 private:
-    insensitive_map<std::string, Command> commands;
+    transparent_set<Command> commands;
     insensitive_map<std::string, std::vector<const Command*>> alternators;
     std::multimap<uint16_t, const Command*> commands_by_id;
     transparent_map<std::string, shared_ptr<Enum>> enums;

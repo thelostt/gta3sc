@@ -129,7 +129,7 @@ static void parse_enum_node(transparent_map<std::string, shared_ptr<Enum>>& enum
     }
 }
 
-static std::pair<std::string, Command>
+static Command
   parse_command_node(
       const rapidxml::xml_node<>* cmd_node,
       transparent_map<std::string, EntityType>& entities,
@@ -226,23 +226,20 @@ static std::pair<std::string, Command>
         id = uint16_t(xml_stoi(id_attrib->value()) & 0x7FFF);
     }
 
-    return { // TODO maybe this should be a std::set
-        name.to_string(),
-        Command {
-            xml_to_bool(support_attrib, true),               // supported
-            xml_to_bool(internal_attrib, false),             // internal
-            std::move(id),                                   // id
-            std::move(hash),                                 // hash
-            std::move(args),                                 // args
-            name.to_string(),                                // name
-        }
+    return Command {
+        xml_to_bool(support_attrib, true),               // supported
+        xml_to_bool(internal_attrib, false),             // internal
+        std::move(id),                                   // id
+        std::move(hash),                                 // hash
+        std::move(args),                                 // args
+        name.to_string(),                                // name
     };
 }
 
 static std::pair<std::string, std::vector<const Command*>>
   parse_alternator_node(
       const rapidxml::xml_node<>* alt_node,
-      const insensitive_map<std::string, Command>& commands)
+      const transparent_set<Command>& commands)
 {
     using namespace rapidxml;
 
@@ -262,7 +259,7 @@ static std::pair<std::string, std::vector<const Command*>>
 
         auto it = commands.find(attrib->value());
         if(it != commands.end())
-            alternatives.emplace_back(std::addressof(it->second));
+            alternatives.emplace_back(std::addressof(*it));
     }
 
     return { name_attrib->value(), std::move(alternatives) };
@@ -286,7 +283,7 @@ Commands Commands::from_xml(const std::string& config_name, const std::vector<fs
     std::vector<XmlData> xml_vector;
     std::vector<std::pair<int, xml_node<>*>> xml_sections;
 
-    insensitive_map<std::string, Command>                       commands;
+    transparent_set<Command>                                    commands;
     insensitive_map<std::string, std::vector<const Command*>>   alternators;
     transparent_map<std::string, EntityType>                    entities;
     transparent_map<std::string, shared_ptr<Enum>>              enums;

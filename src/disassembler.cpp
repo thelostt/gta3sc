@@ -628,8 +628,6 @@ optional<DecompiledScmHeader> DecompiledScmHeader::from_bytecode(const void* byt
 
     try
     {
-        // TODO check if start of segs is 02 00 01
-
         BinaryFetcher bf { bytecode, bytecode_size };
 
         auto seg1_offset = 0u;
@@ -726,7 +724,6 @@ auto mission_scripts_fetcher(const void* bytecode_, size_t bytecode_size, const 
 auto streamed_scripts_fetcher(const void* img_bytes_, size_t img_size, const DecompiledScmHeader& header, ProgramContext& program)
     -> std::vector<BinaryFetcher>
 {
-    // TODO endian independent
     const uint8_t* img_bytes = reinterpret_cast<const uint8_t*>(img_bytes_);
 
     std::vector<BinaryFetcher> scripts;

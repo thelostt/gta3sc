@@ -92,19 +92,12 @@ struct ReplacedCommandAnnotation
 
 // TODO move those functions to somewhere else?
 
-inline string_view remove_quotes(const string_view& string)
-{
-    Expects(string.size() >= 2 && string.front() == '"' && string.back() == '"');
-    return string_view(string.data() + 1, string.size() - 2);
-}
-
-// based off std::quoted
-inline std::string make_quoted(const string_view& string, char quotes = '"')
+inline std::string escape_string(const string_view& string, char quotes, bool push_quotes)
 {
     std::string result;
-    result.reserve(string.size() + 2);
+    result.reserve(string.size() + (push_quotes? 2 : 0));
 
-    result.push_back(quotes);
+    if(push_quotes) result.push_back(quotes);
     for(auto& c : string)
     {
         switch(c)
@@ -120,7 +113,19 @@ inline std::string make_quoted(const string_view& string, char quotes = '"')
                 break;
         }
     }
-    result.push_back(quotes);
+    if(push_quotes) result.push_back(quotes);
 
     return result;
+}
+
+inline string_view remove_quotes(const string_view& string)
+{
+    Expects(string.size() >= 2 && string.front() == '"' && string.back() == '"');
+    return string_view(string.data() + 1, string.size() - 2);
+}
+
+// based off std::quoted
+inline std::string make_quoted(const string_view& string, char quotes = '"')
+{
+    return escape_string(string, quotes, true);
 }

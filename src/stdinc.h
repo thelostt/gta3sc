@@ -38,9 +38,6 @@
 #include "cpp/expected.hpp"
 #pragma warning(pop)
 
-// TODO make all maps and such be transparently comparable
-// TODO transform lots of structs into class; make members private;
-
 using std::shared_ptr;
 using std::weak_ptr;
 using dynamic_bitset = std::vector<bool>;
@@ -56,6 +53,9 @@ struct Script;
 struct Scope;
 struct SymTable;
 
+template<typename Value>
+using transparent_set = std::set<Value, std::less<>>;
+
 template<typename Key, typename Value>
 using transparent_map = std::map<Key, Value, std::less<>>;
 
@@ -64,6 +64,9 @@ using transparent_multimap = std::multimap<Key, Value, std::less<>>;
 
 template<typename Key, typename Value>
 using insensitive_map = std::map<Key, Value, iless>;
+
+template<typename Key, typename Value>
+using insensitive_set = std::set<Key, Value, iless>;
 
 #ifndef _MSC_VER
 #   define __debugbreak()

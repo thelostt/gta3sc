@@ -90,8 +90,8 @@ bool Label::may_branch_from(const Script& other_script, ProgramContext& program)
 
 auto Script::find_maximum_locals() const -> std::pair<uint32_t, uint32_t>
 {
-    size_t highest_offset_genl = 0;
-    size_t highest_offset_call = 0;
+    uint32_t highest_offset_genl = 0;
+    uint32_t highest_offset_call = 0;
 
     for(auto& scope : this->scopes)
     {
