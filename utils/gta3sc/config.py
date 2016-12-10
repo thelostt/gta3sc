@@ -160,8 +160,8 @@ class Argument:
         init.ref  = _str2bool(node.get("Ref", "false"))
         init.optional = _str2bool(node.get("Optional", "false"))
         init.allow_const = _str2bool(node.get("AllowConst", "false" if init.out else "true"))
-        init.allow_gvar = _str2bool(node.get("AllowGlobalVar", "true"))
-        init.allow_lvar = _str2bool(node.get("AllowLocalVar", "true"))
+        init.allow_gvar = _str2bool(node.get("AllowGlobalVar", "true" if init.type != "LABEL" else "false"))
+        init.allow_lvar = _str2bool(node.get("AllowLocalVar", "true" if init.type != "LABEL" else "false"))
         init.allow_text_label = _str2bool(node.get("AllowTextLabel", "false"))
         init.allow_pointer = _str2bool(node.get("AllowPointer", "false"))
         init.preserve_case = _str2bool(node.get("PreserveCase", "false"))
@@ -171,6 +171,7 @@ class Argument:
         return init
         
     def to_node(self):
+        default_allow_var = True if self.type != "LABEL" else False
         node = etree.Element("Arg", Type=self.type)
         if self.desc.strip() != "":
             node.set("Desc", self.desc)
@@ -182,9 +183,9 @@ class Argument:
             node.set("Optional", _bool2str(self.optional))
         if self.allow_const == False and self.out == False:
             node.set("AllowConst", _bool2str(self.allow_const))
-        if self.allow_gvar != True:
+        if self.allow_gvar != default_allow_var:
             node.set("AllowGlobalVar", _bool2str(self.allow_gvar))
-        if self.allow_lvar != True:
+        if self.allow_lvar != default_allow_var:
             node.set("AllowLocalVar", _bool2str(self.allow_lvar))
         if self.allow_text_label == True:
             node.set("AllowTextLabel", _bool2str(self.allow_text_label))

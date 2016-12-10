@@ -9,7 +9,7 @@
     </Command>
     <Command ID="0x2" Name="GOTO">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x3" Name="SHAKE_CAM">
@@ -451,24 +451,24 @@
     </Command>
     <Command ID="0x4c" Name="GOTO_IF_TRUE" Supported="false">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x4d" Name="GOTO_IF_FALSE">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x4e" Name="TERMINATE_THIS_SCRIPT"/>
     <Command ID="0x4f" Name="START_NEW_SCRIPT">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="PARAM" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0x50" Name="GOSUB">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x51" Name="RETURN"/>
@@ -1219,7 +1219,7 @@
     </Command>
     <Command ID="0xd7" Name="LAUNCH_MISSION">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0xd8" Name="MISSION_HAS_FINISHED"/>
@@ -4701,8 +4701,8 @@
     </Command>
     <Command ID="0x2cd" Name="GOSUB_FILE" Supported="false">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x2ce" Name="GET_GROUND_Z_FOR_3D_COORD">
@@ -6565,7 +6565,7 @@
     <Command ID="0x415" Name="IS_CAR_DOOR_CLOSED" Supported="false"/>
     <Command ID="0x416" Name="LOAD_AND_LAUNCH_MISSION">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x417" Name="LOAD_AND_LAUNCH_MISSION_INTERNAL">
@@ -10676,7 +10676,7 @@
     </Command>
     <Command ID="0x707" Name="SKIP_CUTSCENE_START_INTERNAL">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x708" Name="CLEAR_CHAR_DECISION_MAKER_EVENT_RESPONSE">
@@ -11666,7 +11666,7 @@
     <Command ID="0x7d2" Name="ACTIVATE_INTERIORS" Supported="false"/>
     <Command ID="0x7d3" Name="REGISTER_SCRIPT_BRAIN_FOR_CODE_USE">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
@@ -12441,43 +12441,43 @@
         <Arg Type="INT"/>
         <Arg Type="INT"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x872" Name="SWITCH_CONTINUED">
       <Args>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="INT"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x873" Name="REMOVE_CAR_RECORDING">
@@ -12566,7 +12566,7 @@
     </Command>
     <Command ID="0x884" Name="REGISTER_ATTRACTOR_SCRIPT_BRAIN_FOR_CODE_USE">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
@@ -12749,13 +12749,13 @@
     </Command>
     <Command ID="0x8a9" Name="STREAM_SCRIPT">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
       </Args>
     </Command>
     <Command ID="0x8aa" Name="STREAM_SCRIPT_INTERNAL" Supported="false"/>
     <Command ID="0x8ab" Name="HAS_STREAMED_SCRIPT_LOADED">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
       </Args>
     </Command>
     <Command ID="0x8ac" Name="SET_GANG_WARS_TRAINING_MISSION">
@@ -13316,18 +13316,18 @@
     </Command>
     <Command ID="0x90f" Name="MARK_STREAMED_SCRIPT_AS_NO_LONGER_NEEDED">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
       </Args>
     </Command>
     <Command ID="0x910" Name="REMOVE_STREAMED_SCRIPT">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
       </Args>
     </Command>
     <Command ID="0x911" Name="REGISTER_STREAMED_SCRIPT">
       <Args>
         <Arg Type="STRING"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x912" Name="SET_MESSAGE_FORMATTING">
@@ -13339,7 +13339,7 @@
     </Command>
     <Command ID="0x913" Name="START_NEW_STREAMED_SCRIPT">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
         <Arg Type="PARAM" Optional="true"/>
       </Args>
     </Command>
@@ -13451,21 +13451,21 @@
     <Command ID="0x925" Name="CAMERA_RESET_NEW_SCRIPTABLES"/>
     <Command ID="0x926" Name="GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
     <Command ID="0x927" Name="ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR" Supported="false"/>
     <Command ID="0x928" Name="ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
         <Arg Type="INT" Enum="MODEL"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
     <Command ID="0x929" Name="ALLOCATE_STREAMED_SCRIPT_TO_OBJECT">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
         <Arg Type="INT" Enum="MODEL"/>
         <Arg Type="INT"/>
         <Arg Type="FLOAT" Desc="Radius"/>
@@ -14947,7 +14947,7 @@
     </Command>
     <Command ID="0xa46" Name="SWITCH_OBJECT_BRAINS">
       <Args>
-        <Arg Type="INT" Enum="SCRIPTSTREAM" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false" Enum="SCRIPTSTREAM"/>
         <Arg Type="INT" Desc="Bool"/>
       </Args>
     </Command>

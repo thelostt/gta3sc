@@ -9,7 +9,7 @@
     </Command>
     <Command ID="0x2" Name="GOTO">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x3" Name="SHAKE_CAM">
@@ -451,24 +451,24 @@
     </Command>
     <Command ID="0x4c" Name="GOTO_IF_TRUE">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x4d" Name="GOTO_IF_FALSE">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x4e" Name="TERMINATE_THIS_SCRIPT"/>
     <Command ID="0x4f" Name="START_NEW_SCRIPT">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
         <Arg Type="PARAM" Optional="true"/>
       </Args>
     </Command>
     <Command ID="0x50" Name="GOSUB">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x51" Name="RETURN"/>
@@ -1217,7 +1217,7 @@
     </Command>
     <Command ID="0xd7" Name="LAUNCH_MISSION">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0xd8" Name="MISSION_HAS_FINISHED"/>
@@ -4813,8 +4813,8 @@
     </Command>
     <Command ID="0x2cd" Name="GOSUB_FILE">
       <Args>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
-        <Arg Type="LABEL" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="LABEL"/>
+        <Arg Type="LABEL"/>
       </Args>
     </Command>
     <Command ID="0x2ce" Name="GET_GROUND_Z_FOR_3D_COORD">

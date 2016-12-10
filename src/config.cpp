@@ -184,8 +184,8 @@ static std::pair<std::string, Command>
             arg.is_output = xml_to_bool(out_attrib, false);
             arg.is_ref = xml_to_bool(ref_attrib, false);
             arg.allow_constant = xml_to_bool(allow_const_attrib, arg.is_output? false : true);
-            arg.allow_global_var= xml_to_bool(allow_gvar_attrib, true);
-            arg.allow_local_var = xml_to_bool(allow_lvar_attrib, true);
+            arg.allow_global_var= xml_to_bool(allow_gvar_attrib, arg.type != ArgType::Label? true : false);
+            arg.allow_local_var = xml_to_bool(allow_lvar_attrib, arg.type != ArgType::Label? true : false);
             arg.allow_text_label = xml_to_bool(allow_text_label_attrib, false);
             arg.allow_pointer = xml_to_bool(allow_pointer_attrib, false);
             arg.preserve_case = xml_to_bool(preserve_case_attrib, false);
