@@ -1,4 +1,4 @@
-// RUN: %gta3sc %s --config=gta3 -mskip-if -emit-ir2 -o - | %FileCheck %s
+// RUN: %gta3sc %s --config=gta3 -moptimize-andor -emit-ir2 -o - | %FileCheck %s
 
 VAR_INT x
 

@@ -2,7 +2,7 @@
 -mheader=gtavc
 -mno-q11.4
 -mno-typed-text-label
--mno-skip-if
+-mno-optimize-andor
 -fno-switch
 -fno-arrays
 -fscope-then-label

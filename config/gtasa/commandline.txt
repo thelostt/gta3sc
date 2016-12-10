@@ -3,7 +3,7 @@
 -mheader=gtasa
 -mno-q11.4
 -mtyped-text-label
--mno-skip-if
+-mno-optimize-andor
 -fswitch
 -farrays
 -fscope-then-label

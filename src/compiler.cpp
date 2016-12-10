@@ -613,7 +613,7 @@ void CompilerContext::compile_conditions(const SyntaxTree& conds_node, const sha
         case NodeType::GreaterEqual:
         case NodeType::Lesser:
         case NodeType::LesserEqual:
-            if (!this->program.opt.skip_single_ifs)
+            if (!this->program.opt.optimize_andor)
                 compile_command(*this->commands.andor, { conv_int(0) });
             compile_condition(conds_node);
             break;

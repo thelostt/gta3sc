@@ -2,7 +2,7 @@
 -mheader=gta3
 -mq11.4
 -mno-typed-text-label
--mno-skip-if
+-mno-optimize-andor
 -fno-switch
 -fno-arrays
 -fno-scope-then-label

@@ -65,8 +65,9 @@ Options:
                            to the offset 0 of the compiled script.
   -mq11.4                  Codegen uses GTA III half-float format.
   -mtyped-text-label       Codegen uses GTA SA text label data type.
-  -mskip-if                Omits compiling ANDOR on single condition statements.
+  -moptimize-andor         Omits compiling ANDOR on single condition statements.
   -moptimize-zero          Compiles 0.0 as 0, using a 8 bit data type.
+  -O                       Enables optimizations.
   -flocal-var-limit=<n>    The index limit of local variables.
   -fmission-var-limit=<n>  The index limit of mission local variables. Defaults
                            to -flocal-var-limit if not set. Use -1 to unset.
@@ -255,13 +256,18 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.has_text_label_prefix = flag;
             }
-            else if(optflag(argv, "-mskip-if", &flag))
+            else if(optflag(argv, "-moptimize-andor", &flag))
             {
-                options.skip_single_ifs = flag;
+                options.optimize_andor = flag;
             }
             else if(optflag(argv, "-moptimize-zero", &flag))
             {
                 options.optimize_zero_floats = flag;
+            }
+            else if(optget(argv, nullptr, "-O", 0))
+            {
+                options.optimize_andor = true;
+                options.optimize_zero_floats = true;
             }
             else if(optflag(argv, "-fentity-tracking", &flag))
             {
