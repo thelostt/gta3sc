@@ -986,9 +986,21 @@ void SymTable::scan_for_includers(Script& script, ProgramContext& program)
     auto add_script = [&](ScriptType type, const SyntaxTree& command)
     {
         if(type == ScriptType::Required || script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
+        {
             table.add_script(type, command, program);
+        }
+        else if(script.is_child_of_custom())
+        {
+            program.error(command, "this command is not allowed in custom scripts");
+        }
         else
-            program.error(command, "scripts can only be added from main or extension scripts");
+        {
+            auto bad_message = "use of this command outside main or extension files is not well-defined";
+            if(type == ScriptType::Mission || type == ScriptType::StreamedScript)
+                program.error(command, bad_message);
+            else
+                program.warning(command, bad_message);
+        }
     };
 
     // the scanner
@@ -1670,6 +1682,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             case NodeType::Command:
             {
                 auto command_name = node.child(0).text();
+                auto use_filenames = (this->type == ScriptType::Main || this->type == ScriptType::MainExtension);
+
 
                 // TODO use `const Commands&` to identify these?
 		        // TODO case sensitivity
@@ -1705,7 +1719,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         node.set_annotation(std::cref(command));
                     }
                 }
-                else if(command_name == "LOAD_AND_LAUNCH_MISSION")
+                else if(use_filenames && command_name == "LOAD_AND_LAUNCH_MISSION")
                 {
                     const Command& command = program.supported_or_fatal(node, commands.load_and_launch_mission_internal,
                                                                         "LOAD_AND_LAUNCH_MISSION_INTERNAL");
@@ -1713,7 +1727,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     node.child(1).set_annotation(int32_t(script->mission_id.value()));
                     node.set_annotation(std::cref(command));
                 }
-                else if(command_name == "LAUNCH_MISSION")
+                else if(use_filenames && command_name == "LAUNCH_MISSION")
                 {
                     const Command& command = program.supported_or_fatal(node, commands.launch_mission,
                                                                         "LAUNCH_MISSION");
@@ -1721,7 +1735,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     node.child(1).set_annotation(script->start_label);
                     node.set_annotation(std::cref(command));
                 }
-                else if(command_name == "GOSUB_FILE")
+                else if(use_filenames && command_name == "GOSUB_FILE")
                 {
                     const Command& command = program.supported_or_fatal(node, commands.gosub_file,
                                                                         "GOSUB_FILE");
@@ -1730,7 +1744,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     node.child(2).set_annotation(label);
                     node.set_annotation(std::cref(command));
                 }
-                else if(command_name == "REGISTER_STREAMED_SCRIPT")
+                else if(use_filenames && command_name == "REGISTER_STREAMED_SCRIPT")
                 {
                     const Command& command = program.supported_or_fatal(node, commands.register_streamed_script_internal,
                                                                         "REGISTER_STREAMED_SCRIPT_INTERNAL");

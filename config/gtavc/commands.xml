@@ -6832,7 +6832,11 @@
         <Arg Type="INT" Enum="DOOR"/>
       </Args>
     </Command>
-    <Command ID="0x416" Name="LOAD_AND_LAUNCH_MISSION"/>
+    <Command ID="0x416" Name="LOAD_AND_LAUNCH_MISSION">
+      <Args>
+        <Arg Type="LABEL"/>
+      </Args>
+    </Command>
     <Command ID="0x417" Name="LOAD_AND_LAUNCH_MISSION_INTERNAL">
       <Args>
         <Arg Type="INT"/>

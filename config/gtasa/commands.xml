@@ -6563,7 +6563,11 @@
       </Args>
     </Command>
     <Command ID="0x415" Name="IS_CAR_DOOR_CLOSED" Supported="false"/>
-    <Command ID="0x416" Name="LOAD_AND_LAUNCH_MISSION"/>
+    <Command ID="0x416" Name="LOAD_AND_LAUNCH_MISSION">
+      <Args>
+        <Arg Type="LABEL"/>
+      </Args>
+    </Command>
     <Command ID="0x417" Name="LOAD_AND_LAUNCH_MISSION_INTERNAL">
       <Args>
         <Arg Type="INT"/>
@@ -13320,7 +13324,11 @@
         <Arg Type="INT" Desc="Streamed Script"/>
       </Args>
     </Command>
-    <Command ID="0x911" Name="REGISTER_STREAMED_SCRIPT" Supported="false"/>
+    <Command ID="0x911" Name="REGISTER_STREAMED_SCRIPT">
+      <Args>
+        <Arg Type="LABEL"/>
+      </Args>
+    </Command>
     <Command ID="0x912" Name="SET_MESSAGE_FORMATTING">
       <Args>
         <Arg Type="INT" Desc="Bool"/>
