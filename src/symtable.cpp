@@ -1726,9 +1726,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     const Command& command = program.supported_or_fatal(node, commands.gosub_file,
                                                                         "GOSUB_FILE");
                     shared_ptr<Label>  label  = symbols.find_label(node.child(1).text()).value();
-                    shared_ptr<Script> script = symbols.find_script(node.child(2).text()).value();
                     node.child(1).set_annotation(label);
-                    node.child(2).set_annotation(script->top_label);
+                    node.child(2).set_annotation(label);
                     node.set_annotation(std::cref(command));
                 }
                 else if(command_name == "REGISTER_STREAMED_SCRIPT")
