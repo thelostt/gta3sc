@@ -513,6 +513,7 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
     uint32_t multifile_size       = 0;
     uint32_t largest_mission_size = 0;
     uint32_t largest_streamed_size = 0;
+    uint32_t maximum_mission_local = 0;
 
     std::vector<shared_ptr<const Script>> missions;
     std::vector<shared_ptr<const Script>> streameds;
@@ -537,6 +538,9 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
             multifile_size += sc_full_size;
             if(largest_mission_size < sc_full_size)
                 largest_mission_size = sc_full_size;
+
+            auto pair = sc->find_maximum_locals();
+            maximum_mission_local = std::max({maximum_mission_local, pair.first, pair.second});
         }
         else if(sc->type == ScriptType::StreamedScript)
         {
@@ -579,7 +583,7 @@ inline void generate_code(const CompiledScmHeader& header, CodeGeneratorData& co
 
         if(header.version == CompiledScmHeader::Version::SanAndreas)
         {
-            codegen.bw.emplace_u32(0); // TODO Highest number of locals used in mission
+            codegen.bw.emplace_u32(maximum_mission_local);
         }
 
         for(auto& script_ptr : missions)

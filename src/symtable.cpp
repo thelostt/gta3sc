@@ -88,6 +88,30 @@ bool Label::may_branch_from(const Script& other_script, ProgramContext& program)
     return this->script->on_the_same_space_as(other_script);
 }
 
+auto Script::find_maximum_locals() const -> std::pair<uint32_t, uint32_t>
+{
+    size_t highest_offset_genl = 0;
+    size_t highest_offset_call = 0;
+
+    for(auto& scope : this->scopes)
+    {
+        auto highest_offset = scope->is_call_scope()? std::ref(highest_offset_call) : std::ref(highest_offset_genl);
+        for(auto& var : scope->vars)
+        {
+            highest_offset.get() = std::max(highest_offset.get(), var.second->end_offset());
+        }
+    }
+
+    for(auto& child : this->children_scripts)
+    {
+        auto pair = child.lock()->find_maximum_locals();
+        highest_offset_genl = std::max(highest_offset_genl, pair.first * 4);
+        highest_offset_call = std::max(highest_offset_call, pair.second * 4);
+    }
+
+    return { highest_offset_genl / 4, highest_offset_call / 4 };
+}
+
 void Script::add_children(shared_ptr<Script> script)
 {
     Expects(script.get() != this);

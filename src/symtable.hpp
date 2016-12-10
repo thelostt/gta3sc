@@ -88,6 +88,8 @@ public:
     /// of the scripts in the `scripts` vector should be running while this method is executed.
     static void verify_script_names(const std::vector<shared_ptr<Script>>& scripts, ProgramContext&);
 
+
+
     // TODO make a bunch of this private or const!!!!!!!
 
     fs::path                path;
@@ -166,6 +168,11 @@ public:
     bool is_root_script() const;
 
     size_t distance_from_root() const;
+
+    /// Finds the highest local variable indices used by general scopes (.first) and call scopes (.second).
+    /// Also searches in children scripts.
+    /// \note If the last local index used was e.g. 0+, then this returns 1+. If no local was used, returns 0.
+    std::pair<uint32_t, uint32_t> find_maximum_locals() const;
 
 public:
     optional<int32_t> find_model(const string_view& name) const
