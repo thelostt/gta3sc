@@ -370,8 +370,13 @@ Commands Commands::from_xml(const std::string& config_name, const std::vector<fs
             {
                 if(!strcmp(cmd_node->name(), "Command"))
                 {
-                    auto cmd_pair = parse_command_node(cmd_node, entities, enums);
-                    commands.emplace(std::move(cmd_pair));
+                    auto command = parse_command_node(cmd_node, entities, enums);
+                    auto insert_pair = commands.insert(std::move(command));
+                    if(!insert_pair.second)
+                    {
+                        commands.erase(insert_pair.first);
+                        insert_pair = commands.insert(std::move(command));
+                    }
                 }
             }
         }

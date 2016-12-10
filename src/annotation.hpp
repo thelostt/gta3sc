@@ -2,12 +2,6 @@
 #include <stdinc.h>
 #include "commands.hpp"
 
-// assigned to the node during parse
-struct DumpAnnotation
-{
-    std::vector<uint8_t> bytes;
-};
-
 struct TextLabelAnnotation
 {
     bool        is_varlen;
@@ -29,7 +23,7 @@ struct VarAnnotation
 
 struct ArrayAnnotation
 {
-    shared_ptr<Var>                  base;
+    shared_ptr<Var>                   base;
     variant<int32_t, shared_ptr<Var>> index;    // int32_t index is 0-based
 };
 
@@ -57,8 +51,7 @@ struct SwitchAnnotation
 
 struct SwitchCaseAnnotation
 {
-    const Command* is_var_eq_int; // always a valid pointer
-    // (cannot use const Command& because of std::any requiring a copy ctor for stack allocated objects)
+    const Command* is_var_eq_int; // may be `nullptr` for SWITCH_START/CONTINUED instead.
 };
 
 struct IncDecAnnotation
@@ -67,65 +60,20 @@ struct IncDecAnnotation
     Commands::MatchArgument number_one;
 };
 
-// Instead of a const Command&, annotate this
-struct CommandSkipCutsceneStartAnnotation
-{
-};
-
-// Instead of a const Command&, annotate this
-struct CommandSkipCutsceneEndAnnotation
-{
-};
-
 // Instead of a const Command&, annotate this on commands that do not compile to anything.
 struct DummyCommandAnnotation
 {
 };
 
-// When a command is replaced by a incompatible command (different argument count etc)
+// When a command is replaced by another command.
 struct ReplacedCommandAnnotation
 {
     const Command& command;
     std::vector<any> params;
 };
 
-
-// TODO move those functions to somewhere else?
-
-inline std::string escape_string(const string_view& string, char quotes, bool push_quotes)
+// Assigned to the node during parse.
+struct DumpAnnotation
 {
-    std::string result;
-    result.reserve(string.size() + (push_quotes? 2 : 0));
-
-    if(push_quotes) result.push_back(quotes);
-    for(auto& c : string)
-    {
-        switch(c)
-        {
-            case '\\': result += R"(\\")"; break;
-            case '\n': result += R"(\n)"; break;
-            case '\r': result += R"(\r)"; break;
-            case '\t': result += R"(\t)"; break;
-            default:
-                if(c == quotes)
-                    result.push_back('\\');
-                result.push_back(c);
-                break;
-        }
-    }
-    if(push_quotes) result.push_back(quotes);
-
-    return result;
-}
-
-inline string_view remove_quotes(const string_view& string)
-{
-    Expects(string.size() >= 2 && string.front() == '"' && string.back() == '"');
-    return string_view(string.data() + 1, string.size() - 2);
-}
-
-// based off std::quoted
-inline std::string make_quoted(const string_view& string, char quotes = '"')
-{
-    return escape_string(string, quotes, true);
-}
+    std::vector<uint8_t> bytes;
+};

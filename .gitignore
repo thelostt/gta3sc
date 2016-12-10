@@ -64,7 +64,7 @@ Makefile
 *.sln.docstates
 
 # User-specific folders
-*.sln.ide/
+#*.sln.ide/
 
 # Build results
 /[Dd]ebug/
@@ -79,7 +79,7 @@ Makefile
 /[Oo]bj/
 
 # Roslyn cache directories
-*.ide/
+#*.ide/
 
 # MSTest test Results
 [Tt]est[Rr]esult*/

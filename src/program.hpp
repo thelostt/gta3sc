@@ -35,13 +35,16 @@ template<typename... Args>
 inline std::string format_error(const Options&, const char* type, const TokenStream::TokenInfo& context, const char* msg, Args&&... args);
 template<typename... Args>
 inline std::string format_error(const Options&, const char* type, const SyntaxTree& context_, const char* msg, Args&&... args);
+template<typename T, typename... Args>
+inline std::string format_error(const Options&, const char* type, const weak_ptr<T>& context_, const char* msg, Args&&... args);
+template<typename T, typename... Args>
+inline std::string format_error(const Options&, const char* type, const shared_ptr<T>& context_, const char* msg, Args&&... args);
 
 /// \throws ConfigError on failure.
 extern void load_ide(const fs::path& filepath, bool is_default_ide, insensitive_map<std::string, uint32_t>& output);
 
 /// \throws ConfigError on failure.
 extern auto load_dat(const fs::path& filepath, bool is_default_dat) -> insensitive_map<std::string, uint32_t>;
-
 
 /////////////////////////
 
@@ -274,6 +277,18 @@ protected:
 
 ////////////////////////////////////////////////////////////
 
+// from main_compile.cpp and main_decompile.cpp
+
+extern int compile(fs::path input, fs::path output, ProgramContext&);
+extern int decompile(fs::path input, fs::path output, ProgramContext&);
+
+extern bool decompile(const void* bytecode, size_t bytecode_size,
+                      const void* script_img, size_t script_img_size,
+                      ProgramContext& program, Options::Lang lang,
+                      std::function<void(const std::string&)> callback);
+
+////////////////////////////////////////////////////////////
+
 template<typename... Args>
 inline std::string format_error(const Options& options, 
                                 const char* type,
@@ -427,4 +442,22 @@ inline std::string format_error(const Options& opt, const char* type, const Synt
         auto tstream = context->token_stream().lock();
         return format_error(opt, type, TokenStream::TokenInfo(tstream->text, context->get_token()), msg, std::forward<Args>(args)...);
     }
+}
+
+template<typename T, typename... Args>
+inline std::string format_error(const Options& opt, const char* type, const shared_ptr<T>& context_, const char* msg, Args&&... args)
+{
+    if(context_)
+        return format_error(opt, type, *context_, msg, std::forward<Args>(args)...);
+    else
+        return format_error(opt, type, nocontext, msg, std::forward<Args>(args)...);
+}
+
+template<typename T, typename... Args>
+inline std::string format_error(const Options& opt, const char* type, const weak_ptr<T>& context_, const char* msg, Args&&... args)
+{
+    if(!context_.expired())
+        return format_error(opt, type, context_.lock(), msg, std::forward<Args>(args)...);
+    else
+        return format_error(opt, type, nocontext, msg, std::forward<Args>(args)...);
 }

@@ -4,6 +4,8 @@
 #include "commands.hpp"
 #include "program.hpp"
 
+// TODO move as much errors as possible out of here, and perhaps then move fsyntax-only check more up in main.
+
 template<typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
 static ArgVariant conv_int(T integral)
 {
@@ -65,30 +67,27 @@ void CompilerContext::compile_command(const SyntaxTree& command_node, bool not_f
     {
         // compile nothing
     }
-    else if(command_node.maybe_annotation<CommandSkipCutsceneStartAnnotation>())
-    {
-        Expects(this->label_skip_cutscene_end == nullptr);
-        const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_start_internal,
-                                                            "SKIP_CUTSCENE_START_INTERNAL");
-        this->label_skip_cutscene_end = make_internal_label();
-        compile_command(command, { this->label_skip_cutscene_end }, not_flag);
-    }
-    else if(command_node.maybe_annotation<CommandSkipCutsceneEndAnnotation>())
-    {
-        Expects(this->label_skip_cutscene_end != nullptr);
-        const Command& command = program.supported_or_fatal(nocontext, commands.skip_cutscene_end,
-                                                            "SKIP_CUTSCENE_END");
-        compile_label(this->label_skip_cutscene_end);
-        compile_command(command, {}, not_flag);
-        this->label_skip_cutscene_end = nullptr;
-    }
     else if(auto opt_annot = command_node.maybe_annotation<const ReplacedCommandAnnotation&>())
     {
-        compile_command(opt_annot->command, get_args(opt_annot->command, opt_annot->params));
+        const Command& command = opt_annot->command;
+
+        if(commands.equal(command, commands.skip_cutscene_start_internal))
+        {
+            this->label_skip_cutscene_end = any_cast<shared_ptr<Label>>(opt_annot->params[0]);
+        }
+
+        compile_command(command, get_args(opt_annot->command, opt_annot->params));
     }
     else
     {
         const Command& command = command_node.annotation<std::reference_wrapper<const Command>>();
+
+        if(commands.equal(command, commands.skip_cutscene_end) && this->label_skip_cutscene_end)
+        {
+            compile_label(this->label_skip_cutscene_end);
+            this->label_skip_cutscene_end = nullptr;
+        }
+
         compile_command(command, get_args(command, command_node), not_flag);
     }
 }
@@ -280,7 +279,7 @@ void CompilerContext::compile_switch(const SyntaxTree& switch_node)
             case NodeType::CASE:
             {
                 auto value  = node.child(0).annotation<int32_t>();
-                auto& isveq = *node.annotation<const SwitchCaseAnnotation&>().is_var_eq_int;
+                auto& isveq = node.annotation<const SwitchCaseAnnotation&>().is_var_eq_int;
                 cases.emplace_back(value, isveq);
                 break;
             }
@@ -456,7 +455,12 @@ void CompilerContext::compile_switch_ifchain(const SyntaxTree& swnode, std::vect
         for(auto k = it; k != next_it; ++k)
         {
             if(!k->is_default())
-                compile_command(*k->is_var_eq_int, { get_arg(swnode.child(0)), conv_int(*k->value) });
+            {
+                if(k->is_var_eq_int == nullopt)
+                    program.fatal_error(nocontext, "unexpected failure at {}", __func__);
+
+                compile_command(**k->is_var_eq_int, { get_arg(swnode.child(0)), conv_int(*k->value) });
+            }
             else
                 default_case = std::addressof(*k);
         }
@@ -495,9 +499,7 @@ void CompilerContext::compile_break(const SyntaxTree& break_node)
             return;
         }
     }
-
-    // TODO move this error to semantic analyzes time
-    program.error(break_node, "BREAK not in a loop or SWITCH statement");
+    Unreachable();
 }
 
 void CompilerContext::compile_continue(const SyntaxTree& continue_node)
@@ -510,9 +512,7 @@ void CompilerContext::compile_continue(const SyntaxTree& continue_node)
             return;
         }
     }
-
-    // TODO move this error to semantic analyzes time
-    program.error(continue_node, "CONTINUE not in a loop or SWITCH statement");
+    Unreachable();
 }
 
 void CompilerContext::compile_expr(const SyntaxTree& eq_node, bool not_flag)
@@ -674,6 +674,8 @@ ArgVariant CompilerContext::get_arg(const any& param)
         return conv_int(*opt);
     else if(auto opt = any_cast<float>(&param))
         return *opt;
+    else if(auto opt = any_cast<shared_ptr<Label>>(&param))
+        return std::move(*opt);
     else
         Unreachable(); // implement more on necessity
 }
@@ -718,9 +720,9 @@ ArgVariant CompilerContext::get_arg(const SyntaxTree& arg_node)
                 auto label = std::move(*opt_label);
                 if(!label->may_branch_from(*this->script, program))
                 {
-                    auto sckind_ = to_string(label->script->type);
+                    auto sckind_ = to_string(label->script.lock()->type);
                     program.error(arg_node, "reference to local label outside of its {} script", sckind_);
-                    program.note(*label->script, "label belongs to this script");
+                    program.note(*label->script.lock(), "label belongs to this script");
                 }
                 return label;
             }

@@ -49,9 +49,12 @@ class Commands;
 class CodeGenerator;
 struct Command;
 struct Var;
-struct Script;
-struct Scope;
-struct SymTable;
+class Script;
+class Scope;
+class SymTable;
+struct CompiledScmHeader;
+class MultiFileHeaderList;
+struct Label;
 
 template<typename Value>
 using transparent_set = std::set<Value, std::less<>>;
@@ -65,8 +68,8 @@ using transparent_multimap = std::multimap<Key, Value, std::less<>>;
 template<typename Key, typename Value>
 using insensitive_map = std::map<Key, Value, iless>;
 
-template<typename Key, typename Value>
-using insensitive_set = std::set<Key, Value, iless>;
+template<typename Key>
+using insensitive_set = std::set<Key, iless>;
 
 #ifndef _MSC_VER
 #   define __debugbreak()
@@ -87,3 +90,49 @@ enum class VarType : uint8_t
     TextLabel,
     TextLabel16,
 };
+
+// for future parallelism
+template<typename IndexType, typename Functor>
+inline void for_loop(IndexType begin, IndexType end, Functor functor)
+{
+    for(auto i = begin; i != end; ++i)
+        functor(i);
+}
+
+inline std::string escape_string(const string_view& string, char quotes, bool push_quotes)
+{
+    std::string result;
+    result.reserve(string.size() + (push_quotes? 2 : 0));
+
+    if(push_quotes) result.push_back(quotes);
+    for(auto& c : string)
+    {
+        switch(c)
+        {
+            case '\\': result += R"(\\")"; break;
+            case '\n': result += R"(\n)"; break;
+            case '\r': result += R"(\r)"; break;
+            case '\t': result += R"(\t)"; break;
+            default:
+                if(c == quotes)
+                    result.push_back('\\');
+                result.push_back(c);
+                break;
+        }
+    }
+    if(push_quotes) result.push_back(quotes);
+
+    return result;
+}
+
+inline string_view remove_quotes(const string_view& string)
+{
+    Expects(string.size() >= 2 && string.front() == '"' && string.back() == '"');
+    return string_view(string.data() + 1, string.size() - 2);
+}
+
+// based off std::quoted
+inline std::string make_quoted(const string_view& string, char quotes = '"')
+{
+    return escape_string(string, quotes, true);
+}

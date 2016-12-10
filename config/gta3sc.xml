@@ -1,6 +1,19 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <GTA3Script>
   <Commands>
+    <Command Name="SWITCH" Hash="0x5e2a0fdb" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowConst="false"/>
+      </Args>
+    </Command>
+    <Command Name="ENDSWITCH" Hash="0x0d9e3304" Internal="true"/>
+    <Command Name="CASE" Hash="0x64fa4694" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command Name="DEFAULT" Hash="0xdfe2da74" Internal="true"/>
+    <Command Name="BREAK" Hash="0x5358d142" Internal="true"/>
     <Command Name="REQUIRE" Hash="0x75ebc48c">
       <Args>
         <Arg Type="LABEL"/>

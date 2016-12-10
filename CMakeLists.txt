@@ -62,6 +62,8 @@ set(GTA3SC_SRC_MAIN
   src/disassembler.hpp
   src/disassembler.cpp
   src/main.cpp
+  src/main_compile.cpp
+  src/main_decompile.cpp
   src/parser_lexer.cpp
   src/parser_syntax.cpp
   src/parser.hpp
@@ -69,6 +71,8 @@ set(GTA3SC_SRC_MAIN
   src/program.hpp
   src/symtable.cpp
   src/symtable.hpp
+  src/script.hpp
+  src/script.cpp
   src/system.cpp
   src/system.hpp
 )

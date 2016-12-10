@@ -50,17 +50,15 @@ static bool nextline(const char*& line, char* output, size_t output_size)
                 break;
         }
 
-        return (*line != 0);
+
     }
+
+    if(output != output_beg)
+        return true;
     else if(*line == 0)
-    {
         return false;
-    }
-    else
-    {
-        // this line is empty and its not EOF, try the next
+    else // empty line but not EOF, try next line then
         return nextline(line, output, output_size);
-    }
 }
 
 void load_ide(const fs::path& filepath, bool is_default_ide, std::map<std::string, uint32_t, iless>& output)

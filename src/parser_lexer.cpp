@@ -54,7 +54,7 @@ struct LexerContext
     template<typename... Args>
     void error(size_t pos, Args&&... args)
     {
-        return error(std::make_pair(pos, pos + 1), std::forward<Args>(args)...);
+        return error(std::make_pair(pos, 1), std::forward<Args>(args)...);
     }
 };
 
@@ -860,7 +860,7 @@ auto Miss2Identifier::match(const string_view& value, const Options& options) ->
         }
         else if(begin_index != std::string::npos)
         {
-            if(value[i] < '0' || value[i] > '9')
+            if(!((value[i] >= '0' && value[i] <= '9') || (value[i] == '-')))
                 is_number_index = false;
         }
     }

@@ -205,9 +205,19 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
         {
             if(it->type == ArgType::TextLabel32)
             {
-                bf.fetch_chars(offset, 32).value();
-                offset += 32;
-                continue;
+                if(std::next(it, 1) != command.args.end() && std::next(it, 1)->type == it->type
+                && std::next(it, 2) != command.args.end() && std::next(it, 2)->type == it->type
+                && std::next(it, 3) != command.args.end() && std::next(it, 3)->type == it->type)
+                {
+                    bf.fetch_chars(offset, 128).value();
+                    offset += 128;
+                    it += 3;
+                    continue;
+                }
+                else
+                {
+                    return nullopt;
+                }
             }
 
             optional<uint8_t> opt_argtype = bf.fetch_u8(offset++);
@@ -362,7 +372,6 @@ optional<size_t> Disassembler::explore_opcode(size_t op_offset, const Command& c
         && !commands.equal(command, commands.cleo_return)
         && !commands.equal(command, commands.terminate_this_script)
         && !commands.equal(command, commands.terminate_this_custom_script))
-        // TODO more
         {
             if((is_switch_start || is_switch_continued) && this->switch_cases_left == 0)
             {
@@ -431,15 +440,12 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
     {
         if(it->type == ArgType::TextLabel32)
         {
-            // TODO shouldn't expect such a thing? user could mess up definitions.
-            Expects(std::next(it, 1) != command.args.end() && std::next(it, 1)->type == ArgType::TextLabel32);
-            Expects(std::next(it, 2) != command.args.end() && std::next(it, 2)->type == ArgType::TextLabel32);
-            Expects(std::next(it, 3) != command.args.end() && std::next(it, 3)->type == ArgType::TextLabel32);
+            Expects(std::next(it,1)->type == it->type);
+            Expects(std::next(it,2)->type == it->type);
+            Expects(std::next(it,3)->type == it->type);
             it += 3;
-
             ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*bf.fetch_chars(offset, 128)) });
             offset += 128;
-
             continue;
         }
 

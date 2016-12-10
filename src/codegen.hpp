@@ -127,6 +127,17 @@ public:
         return get<std::decay_t<T>>(this->headers.back());
     }
 
+    template<typename T>
+    optional<const T&> find_header() const
+    {
+        for(auto& head : *this)
+        {
+            if(is<T>(head))
+                return get<T>(head);
+        }
+        return nullopt;
+    }
+
     size_t compiled_size() const;
 
 private:
@@ -141,6 +152,14 @@ public:
     const std::decay_t<T>& add_header(const shared_ptr<const Script>& script, T&& obj)
     {
         return this->headers[script].add_header(std::forward<T>(obj));
+    }
+
+    template<typename T>
+    optional<const T&> find_header(const shared_ptr<const Script>& script) const
+    {
+        if(auto list = this->script_headers(script))
+            return list->find_header<T>();
+        return nullopt;
     }
 
     optional<const CompiledHeaderList&> script_headers(const shared_ptr<const Script>& script) const

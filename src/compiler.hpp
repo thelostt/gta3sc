@@ -176,10 +176,17 @@ public:
     const SymTable&                 symbols;
 
 public:
-    CompilerContext(shared_ptr<const Script> script, const SymTable& symbols, ProgramContext& program)
+    explicit CompilerContext(shared_ptr<const Script> script, const SymTable& symbols, ProgramContext& program)
         : script(std::move(script)), symbols(symbols), commands(program.commands), program(program)
     {
         this->loop_stack.reserve(16);
+    }
+
+    static auto compile(shared_ptr<const Script> script, const SymTable& symbols, ProgramContext& program) -> CompilerContext
+    {
+        CompilerContext c(std::move(script), symbols, program);
+        c.compile();
+        return c;
     }
 
     /// Compiles everything on the Syntax Tree of the script.
@@ -265,11 +272,11 @@ private:
     {
         optional<int32_t>            value;
         shared_ptr<Label>            target;
-        optional<const Command&>     is_var_eq_int;
+        optional<const Command*>     is_var_eq_int;
         size_t                       first_statement_id = SIZE_MAX;
         size_t                       last_statement_id = SIZE_MAX;
 
-        explicit Case(optional<int32_t> value, optional<const Command&> veqi) :
+        explicit Case(optional<int32_t> value, optional<const Command*> veqi) :
             value(std::move(value)), is_var_eq_int(std::move(veqi))
         {}
 

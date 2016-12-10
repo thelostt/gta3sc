@@ -12274,7 +12274,7 @@
     </Command>
     <Command ID="0x848" Name="SWITCH" Internal="true">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowConst="false"/>
       </Args>
     </Command>
     <Command ID="0x849" Name="ENDSWITCH" Internal="true"/>
@@ -13326,7 +13326,7 @@
     </Command>
     <Command ID="0x911" Name="REGISTER_STREAMED_SCRIPT">
       <Args>
-        <Arg Type="STRING"/>
+        <Arg Type="INT"/>
         <Arg Type="LABEL"/>
       </Args>
     </Command>

@@ -1,0 +1,45 @@
+// Commands Matching Errors
+// RUN: %dis %gta3sc %s --config=gtasa --guesser -fsyntax-only 2>&1 | %verify %s
+{
+VAR_INT car
+VAR_INT i j k a[10] b[10]
+VAR_FLOAT x y z
+LVAR_INT lvar
+
+QWERTY 1 2 3 			// expected-error {{unknown command}}
+SET 1 i 				// expected-error {{could not match alternative}}
+
+CREATE_CAR 0 .0 .0 .0 car car // expected-error {{too many arguments}}
+CREATE_CAR 0 .0 .0 .0         // expected-error {{too few arguments}}
+
+// TODO FIXME those errors
+WAIT 0.0 					// expected-error {{expected float}}
+SET_TIME_SCALE 0 			// expected-error {{expected integer}}
+SAVE_STRING_TO_DEBUG_FILE q // expected-error {{expected string literal}}
+
+GOTO dummy 			// expected-error {{no label with this name}}
+WAIT dummy 			// expected-error {{no variable with this name}}
+PRINT_HELP $dummy 	// expected-error {{expected variable}}
+WAIT !dummy         // expected-error {{invalid identifier}}
+IS_INT_VAR_EQUAL_TO_CONSTANT i DUMMY // expected-error {{no string constant with this name}}
+
+WAIT x              // expected-error {{variable type does not match argument type}}
+SET_VAR_INT lvar 0  // expected-error {{variable kind (global/local) not allowed for this argument}}
+SET_VAR_INT i j     // expected-error {{variable not allowed for this argument}}
+
+WAIT a       // expected-error {{use of array variable without a index}}
+WAIT a[b]    // expected-error {{variable in index is of array type}}
+WAIT a[dummy]// expected-error {{identifier between brackets is not a variable}}
+WAIT a[b[0]] // expected-error {{nesting of arrays not allowed}}
+WAIT a[-1]   // expected-error {{index cannot be negative}}
+WAIT a[10]   // expected-error {{index out of range}}
+WAIT a[x]    // expected-error {{variable in index is not of INT type}}
+WAIT a[i]    // fine
+WAIT a[MISSION_NONE] // extension (gives error on -pedantic)
+WAIT i[3]     // expected-error {{variable is not array}}
+
+PRINT_HELP "bad"		// expected-error {{string literal not allowed here}}
+REQUEST_ANIMATION "bad" // expected-error {{string literals on arguments are disallowed [-fcleo]}}
+
+}
+TERMINATE_THIS_SCRIPT

@@ -206,7 +206,7 @@ inline std::string decompile_data(const DecompiledString& str, DecompilerIR2&)
             Unreachable();
     }
 
-    // TODO parse to escape sequences
+    // TODO parse to escape sequences (see IR2 spec)
     for(size_t i = 0; i < str.storage.size(); ++i)
     {
         if(str.storage[i] == '\0') break;

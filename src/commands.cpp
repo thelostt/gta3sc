@@ -32,6 +32,13 @@ Commands::Commands(transparent_set<Command>&& commands_,
     this->set_progress_total            = find_command("SET_PROGRESS_TOTAL");
     this->set_total_number_of_missions  = find_command("SET_TOTAL_NUMBER_OF_MISSIONS");
     this->set_collectable1_total        = find_command("SET_COLLECTABLE1_TOTAL");
+    this->register_mission_passed       = find_command("REGISTER_MISSION_PASSED");
+    this->register_oddjob_mission_passed= find_command("REGISTER_ODDJOB_MISSION_PASSED");
+    this->create_collectable1           = find_command("CREATE_COLLECTABLE1");
+    this->player_made_progress          = find_command("PLAYER_MADE_PROGRESS");
+    this->repeat                        = find_command("REPEAT");
+    this->switch_                       = find_command("SWITCH");
+    this->case_                         = find_command("CASE");
     this->switch_start                  = find_command("SWITCH_START");
     this->switch_continued              = find_command("SWITCH_CONTINUED");
     this->gosub_file                    = find_command("GOSUB_FILE");
@@ -209,6 +216,8 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                       int32_t arg, const Command::Arg& arginfo, const SymTable& symtable,
                       const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
 {
+    if(!arginfo.allow_constant)
+        return make_unexpected(MatchFailure{ hint, MatchFailure::LiteralValueDisallowed });
     if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param)
         return &arginfo;
     return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedInt });
@@ -218,6 +227,8 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                       float arg, const Command::Arg& arginfo, const SymTable& symtable,
                       const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
 {
+    if(!arginfo.allow_constant)
+        return make_unexpected(MatchFailure{ hint, MatchFailure::LiteralValueDisallowed });
     if(arginfo.type == ArgType::Float || arginfo.type == ArgType::Param)
         return &arginfo;
     return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedFloat });
@@ -274,6 +285,12 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         auto& token = *opt_token;
         if(auto opt_var = symtable.find_var(token.identifier, scope_ptr))
         {
+            optional<size_t> indexing;
+
+            if(token.index != nullopt && is<size_t>(*token.index))
+            {
+                indexing = get<size_t>(*token.index);
+            }
             if(token.index != nullopt && !is<size_t>(*token.index))
             {
                 auto& index = get<string_view>(*token.index);
@@ -284,8 +301,9 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                     if((*opt_varidx)->count)
                         return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexIsArray });
                 }
-                else if(commands.find_constant_all(index) != nullopt)
+                else if(auto opt_const = commands.find_constant_all(index))
                 {
+                    indexing = *opt_const;
                     if(options.pedantic)
                         return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexIsConstant });
                 }
@@ -302,11 +320,21 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
             auto& var = *opt_var;
             if(!(arginfo.allow_global_var && var->global) && !(arginfo.allow_local_var && !var->global))
             {
-                return make_unexpected(MatchFailure{ hint, MatchFailure::VariableKindNotAllowed });
+                auto failure = arginfo.allow_global_var || arginfo.allow_local_var? MatchFailure::VariableKindNotAllowed :
+                                                                                    MatchFailure::VariableNotAllowed;
+                return make_unexpected(MatchFailure{ hint, failure });
             }
 
             if(!var_matches(var, arginfo))
                 return make_unexpected(MatchFailure{ hint, MatchFailure::VariableTypeMismatch });
+
+            if(indexing)
+            {
+                if(var->count == nullopt)
+                    return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIsNotArray });
+                else if(*indexing >= *var->count)
+                    return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexOutOfRange });
+            }
 
             return &arginfo;
         }
@@ -362,6 +390,9 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                 return exp_var; // error state
         }
 
+        case ArgType::TextLabel32:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedStringLiteral });
+
         case ArgType::Integer:
         case ArgType::Float:
         case ArgType::Param:
@@ -404,7 +435,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         case NodeType::Text:
             return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr, options);
         case NodeType::String:
-            if(arginfo.type == ArgType::String
+            if(arginfo.type == ArgType::String || arginfo.type == ArgType::TextLabel32
             || (arginfo.type == ArgType::Param && arginfo.allow_text_label))
                 return &arginfo;
             else
@@ -467,6 +498,23 @@ auto Commands::match(const Command& command, optional<const SyntaxTree&> cmdnode
     {
         if(auto arginfo = command.arg(i))
         {
+            if(arginfo->type == ArgType::TextLabel32)
+            {
+                auto arginfo2 = command.arg(i+1);
+                auto arginfo3 = command.arg(i+2);
+                auto arginfo4 = command.arg(i+3);
+                if(arginfo2 && arginfo2->type == arginfo->type
+                || arginfo3 && arginfo3->type == arginfo->type
+                || arginfo4 && arginfo4->type == arginfo->type)
+                {
+                    i += 3;
+                }
+                else
+                {
+                    return make_unexpected(MatchFailure { hint_from(cmdnode, *it), MatchFailure::UnexpectedFailure });
+                }
+            }
+
             if(is<int32_t>(*it))
                 exp_arg = match_arg(*this, hint_from(cmdnode, *it), 0, *arginfo, symtable, scope_ptr, options);
             else if(is<float>(*it))
@@ -540,8 +588,6 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
         return nullopt;
     };
 
-    // TODO maybe start using VarAnnotation directly instead of converting to shared_ptr<Var>
-    // Think of implications of this, such as the `any` type stack size.
     auto annotate_var = [](SyntaxTree& node, const VarAnnotation& annotation)
     {
         Expects(annotation.base != nullptr);
@@ -564,7 +610,10 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
     auto annotate_string = [&](SyntaxTree& node, const Command::Arg& arginfo)
     {
         if(node.is_annotated())
-            Expects(node.maybe_annotation<const TextLabelAnnotation&>());
+        {
+            Expects(node.maybe_annotation<const TextLabelAnnotation&>()
+                 || node.maybe_annotation<const String128Annotation&>());
+        }
         else
         {
             bool preserve_case = (node.type() == NodeType::String && arginfo.preserve_case);
@@ -572,12 +621,16 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
             size_t limit = arginfo.type == ArgType::TextLabel?    7 :
                            arginfo.type == ArgType::TextLabel16?  15 :
                            arginfo.type == ArgType::String? 127 :
+                           arginfo.type == ArgType::TextLabel32? 127 :
                            arginfo.type == ArgType::Param? 127 : Unreachable();
 
             if(node.text().size() <= limit)
             {
                 auto string = node.type() == NodeType::String? remove_quotes(node.text()).to_string() : node.text().to_string();
-                node.set_annotation(TextLabelAnnotation{ arginfo.type != ArgType::TextLabel, preserve_case, std::move(string) });
+                if(arginfo.type != ArgType::TextLabel32)
+                    node.set_annotation(TextLabelAnnotation{ arginfo.type != ArgType::TextLabel, preserve_case, std::move(string) });
+                else
+                    node.set_annotation(String128Annotation { std::move(string) });
             }
             else
             {
@@ -625,9 +678,13 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
                     annotate_string(node, arginfo);
                 }
+                else if(arginfo.type == ArgType::TextLabel32)
+                {
+                    i += 3;
+                    annotate_string(node, arginfo);
+                }
                 else
                 {
-                    // TODO, SAVE_STRING_TO_DEBUG_FILE currently Unreachable() due to special handling of it.
                     Unreachable();
                 }
                 break;
@@ -751,6 +808,7 @@ std::string Commands::MatchFailure::to_string()
 {
     switch(this->reason)
     {
+        case UnexpectedFailure:         return "unexpected failure";
         case NoCommandMatch:            return "unknown command";
         case NoAlternativeMatch:        return "could not match alternative";
         case TooManyArgs:               return "too many arguments";
@@ -758,8 +816,9 @@ std::string Commands::MatchFailure::to_string()
         case BadArgument:               return "bad argument";
         case ExpectedInt:               return "expected integer";
         case ExpectedFloat:             return "expected float";
+        case ExpectedStringLiteral:     return "expected string literal";
         case NoSuchLabel:               return "no label with this name";
-        case NoSuchConstant:            return "no string constant with this value";
+        case NoSuchConstant:            return "no string constant with this name";
         case NoSuchVar:                 return "no variable with this name";
         case ExpectedVar:               return "expected variable";
         case InvalidIdentifier:         return ::to_string(Miss2Identifier::InvalidIdentifier);
@@ -770,10 +829,14 @@ std::string Commands::MatchFailure::to_string()
         case VariableIndexNotVar:       return "identifier between brackets is not a variable";
         case VariableIndexIsArray:      return "variable in index is of array type";
         case VariableIndexIsConstant:   return "array index cannot be a string constant [-pedantic]";
+        case VariableIndexOutOfRange:   return ::to_string(Miss2Identifier::OutOfRange);
         case VariableKindNotAllowed:    return "variable kind (global/local) not allowed for this argument";
+        case VariableNotAllowed:        return "variable not allowed for this argument";
         case VariableTypeMismatch:      return "variable type does not match argument type";
-        case StringLiteralNotAllowed:   return "STRING literal not allowed here";
+        case VariableIsNotArray:        return "variable is not array";
+        case StringLiteralNotAllowed:   return "string literal not allowed here";
         case ExpectedVarIndex:          return "use of array variable without a index";
+        case LiteralValueDisallowed:    return "constant values are disallowed for this argument";
         default:                        Unreachable();
     }
 }

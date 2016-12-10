@@ -2,22 +2,27 @@
 
 VAR_INT x
 
-// WHILE x = 0
+// SAVE_STRING_TO_DEBUG_FILE "no error expected
 
-WHILE x = 0    // expected-error {{ENDWHILE}}
+SAVE_STRING_TO_DEBUG_FILE "// expected-error {{terminating}}
 /*
-    WHILE x = 0
+    SAVE_STRING_TO_DEBUG_FILE "no error expected
     /*
-        WHILE x = 0
+        SAVE_STRING_TO_DEBUG_FILE "no error expected
         /*
-            WHILE x = 0
+            SAVE_STRING_TO_DEBUG_FILE "no error expected
         */
-        WHILE x = 0
+        SAVE_STRING_TO_DEBUG_FILE "no error expected
     */
-    WHILE x = 0
+    SAVE_STRING_TO_DEBUG_FILE "no error expected
 */
 
 /* 0 */ x = /* ?? */ 0 /* + ?? */
 x = 0 // + ??
 
 TERMINATE_THIS_SCRIPT
+
+*/ // expected-error {{no comment to close}}
+
+/*
+// expected-error@comments.sc:0 {{unterminated /* comment}}

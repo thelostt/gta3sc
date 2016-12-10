@@ -307,9 +307,9 @@ inline void generate_code(const shared_ptr<Label>& label_ptr, CodeGenerator& cod
     }
     else // current script is mission/stream
     {
-        if(label_ptr->script->uses_local_offsets())
+        if(label_ptr->script.lock()->uses_local_offsets())
         {
-            assert(label_ptr->script->on_the_same_space_as(*codegen.script));
+            assert(label_ptr->script.lock()->on_the_same_space_as(*codegen.script));
             int32_t local_offset = static_cast<int32_t>(label_ptr->distance_from_base());
             emplace_local_offset(local_offset);
         }

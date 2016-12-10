@@ -1,4 +1,4 @@
-// RUN: %dis %gta3sc %s --config=gtasa --guesser --cs -fsyntax-only 2>&1 | %verify %s
+// RUN: %dis %gta3sc %s --config=gtasa --guesser --cs -emit-ir2 -o - 2>&1 | %verify %s
 SCRIPT_START
 {
 LVAR_INT x

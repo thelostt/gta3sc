@@ -89,7 +89,7 @@ struct Command
     optional<uint16_t>      id;         //< The opcode id.
     optional<uint32_t>      hash;       //< The command hash.
     small_vector<Arg, 12>   args;       //< The arguments of the command.
-    std::string             name;       //< The name of this command.
+    const std::string       name;       //< The name of this command.
 
     /// Checks if there's any optional argument on this command.
     bool has_optional() const
@@ -150,6 +150,7 @@ public:
     {
         enum Reason
         {
+            UnexpectedFailure,
             NoCommandMatch,
             NoAlternativeMatch,
             TooManyArgs,
@@ -157,6 +158,7 @@ public:
             BadArgument,
             ExpectedInt,
             ExpectedFloat,
+            ExpectedStringLiteral,
             NoSuchLabel,
             NoSuchConstant,
             ExpectedVar,
@@ -169,10 +171,14 @@ public:
             VariableIndexNotVar,
             VariableIndexIsArray,
             VariableIndexIsConstant,
+            VariableIndexOutOfRange,
             VariableKindNotAllowed,
+            VariableNotAllowed,
             VariableTypeMismatch,
+            VariableIsNotArray,
             StringLiteralNotAllowed,
             ExpectedVarIndex,
+            LiteralValueDisallowed,
         };
 
         shared_ptr<const SyntaxTree>  context;
@@ -320,6 +326,13 @@ public:
     optional<const Command&> set_progress_total;
     optional<const Command&> set_total_number_of_missions;
     optional<const Command&> set_collectable1_total;
+    optional<const Command&> register_mission_passed;
+    optional<const Command&> register_oddjob_mission_passed;
+    optional<const Command&> create_collectable1;
+    optional<const Command&> player_made_progress;
+    optional<const Command&> repeat;
+    optional<const Command&> switch_;
+    optional<const Command&> case_;
     optional<const Command&> switch_start;
     optional<const Command&> switch_continued;
     optional<const Command&> gosub_file;
