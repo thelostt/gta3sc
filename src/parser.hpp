@@ -425,6 +425,12 @@ public:
         return !this->udata.empty();
     }
 
+    /// Returns an `any` object associated with the annotation.
+    const any& annotation_any() const
+    {
+        return this->udata;
+    }
+
     /// Filename of the input stream associated with this SyntaxTree, or empty if none.
     std::string filename() const
     {

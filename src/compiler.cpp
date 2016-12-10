@@ -82,6 +82,10 @@ void CompilerContext::compile_command(const SyntaxTree& command_node, bool not_f
         compile_command(command, {}, not_flag);
         this->label_skip_cutscene_end = nullptr;
     }
+    else if(auto opt_annot = command_node.maybe_annotation<const ReplacedCommandAnnotation&>())
+    {
+        compile_command(opt_annot->command, get_args(opt_annot->command, opt_annot->params));
+    }
     else
     {
         const Command& command = command_node.annotation<std::reference_wrapper<const Command>>();
@@ -630,6 +634,17 @@ void CompilerContext::compile_conditions(const SyntaxTree& conds_node, const sha
     compile_command(*this->commands.goto_if_false, { else_ptr });
 }
 
+auto CompilerContext::get_args(const Command& command, const std::vector<any>& params) -> ArgList
+{
+    ArgList args;
+    args.reserve(params.size());
+
+    for(auto& p : params)
+        args.emplace_back(get_arg(p));
+
+    return args;
+}
+
 auto CompilerContext::get_args(const Command& command, const SyntaxTree& command_node) -> ArgList
 {
     Expects(command_node.child_count() >= 1); // command_name + [args...]
@@ -651,6 +666,16 @@ ArgVariant CompilerContext::get_arg(const Commands::MatchArgument& a)
         return get<float>(a);
     else
         return get_arg(*get<const SyntaxTree*>(a));
+}
+
+ArgVariant CompilerContext::get_arg(const any& param)
+{
+    if(auto opt = any_cast<int32_t>(&param))
+        return conv_int(*opt);
+    else if(auto opt = any_cast<float>(&param))
+        return *opt;
+    else
+        Unreachable(); // implement more on necessity
 }
 
 ArgVariant CompilerContext::get_arg(const SyntaxTree& arg_node)
@@ -713,10 +738,6 @@ ArgVariant CompilerContext::get_arg(const SyntaxTree& arg_node)
                 assert(opt_umodel->where.expired() == false);
                 int32_t i32 = opt_umodel->where.lock()->find_model_at(opt_umodel->id);
                 return conv_int(i32);
-            }
-            else if(auto opt_streamed = arg_node.maybe_annotation<const StreamedFileAnnotation&>())
-            {
-                return conv_int(opt_streamed->id);
             }
             else
             {

@@ -190,6 +190,9 @@ public:
     /// Gets the DEFAULTMODEL enumeration.
     const shared_ptr<Enum>& get_defaultmodel_enum() const { return this->enum_defaultmodels; }
 
+    /// Gets the SCRIPTSTREAM enumeration.
+    const shared_ptr<Enum>& get_scriptstream_enum() const { return this->enum_scriptstream; }
+
     // Argument matching methods.
     expected<const Command*, MatchFailure> match(const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
     expected<const Command*, MatchFailure> match(const Command&, const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
@@ -300,6 +303,7 @@ private:
 
     shared_ptr<Enum> enum_models;
     shared_ptr<Enum> enum_defaultmodels;
+    shared_ptr<Enum> enum_scriptstream;
 
 public:
     optional<const Command&> set_progress_total;

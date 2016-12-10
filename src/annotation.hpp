@@ -67,12 +67,6 @@ struct IncDecAnnotation
     Commands::MatchArgument number_one;
 };
 
-// Hack
-struct StreamedFileAnnotation
-{
-    int32_t id;
-};
-
 // Instead of a const Command&, annotate this
 struct CommandSkipCutsceneStartAnnotation
 {
@@ -86,6 +80,13 @@ struct CommandSkipCutsceneEndAnnotation
 // Instead of a const Command&, annotate this on commands that do not compile to anything.
 struct DummyCommandAnnotation
 {
+};
+
+// When a command is replaced by a incompatible command (different argument count etc)
+struct ReplacedCommandAnnotation
+{
+    const Command& command;
+    std::vector<any> params;
 };
 
 

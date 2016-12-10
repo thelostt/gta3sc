@@ -832,7 +832,10 @@ auto SymTable::script_type(const string_view& filename) const -> optional<Script
 
 bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramContext& program)
 {
-    if(command.child_count() <= 1)
+    size_t num_required_args = (type == ScriptType::MainExtension? 2 :
+                                type == ScriptType::StreamedScript? 2 : 1);
+
+    if(command.child_count() != 1+num_required_args)
     {
         // TODO what's the error message for normal commands?
         program.error(command, "bad number of arguments");
@@ -843,7 +846,7 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
         // TODO R* compiler checks if parameter ends with .sc
         // TODO check command.child_count() is ok with name_child_id 
 
-        size_t name_child_id = (command.child(0).text() == "GOSUB_FILE"? 2 : 1);
+        size_t name_child_id = num_required_args;
 
         auto script_name = command.child(name_child_id).text();
         auto existing_type = this->script_type(script_name);
@@ -864,6 +867,11 @@ bool SymTable::add_script(ScriptType type, const SyntaxTree& command, ProgramCon
                 type == ScriptType::Mission? std::ref(this->mission) :
                 type == ScriptType::StreamedScript? std::ref(this->streamed) :
                 type == ScriptType::Required? std::ref(this->required) : Unreachable());
+
+            if(type == ScriptType::StreamedScript)
+            {
+                this->streamed_names.emplace_back(command.child(1).text());
+            }
 
             refvector.get().emplace_back(script_name);
             return true;
@@ -968,6 +976,9 @@ void SymTable::merge(SymTable t2, ProgramContext& program)
 
     t1.streamed.reserve(t1.streamed.size() + t2.streamed.size());
     std::move(t2.streamed.begin(), t2.streamed.end(), std::back_inserter(t1.streamed));
+
+    t1.streamed_names.reserve(t1.streamed_names.size() + t2.streamed_names.size());
+    std::move(t2.streamed_names.begin(), t2.streamed_names.end(), std::back_inserter(t1.streamed_names));
 
     t1.count_progress += t2.count_progress;
     t1.count_collectable1 += t2.count_collectable1;
@@ -1736,8 +1747,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     const Command& command = program.supported_or_fatal(node, commands.load_and_launch_mission_internal,
                                                                         "LOAD_AND_LAUNCH_MISSION_INTERNAL");
                     shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
-                    node.child(1).set_annotation(int32_t(script->mission_id.value()));
-                    node.set_annotation(std::cref(command));
+                    //node.child(1).set_annotation(int32_t(script->mission_id.value()));
+                    //node.set_annotation(std::cref(command));
+                    node.set_annotation(ReplacedCommandAnnotation { std::cref(command), { int32_t(script->mission_id.value()) } });
                 }
                 else if(use_filenames && command_name == "LAUNCH_MISSION")
                 {
@@ -1760,9 +1772,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 {
                     const Command& command = program.supported_or_fatal(node, commands.register_streamed_script_internal,
                                                                         "REGISTER_STREAMED_SCRIPT_INTERNAL");
-                    shared_ptr<Script> script = symbols.find_script(node.child(1).text()).value();
-                    node.child(1).set_annotation(int32_t(script->streamed_id.value()));
-                    node.set_annotation(std::cref(command));
+                    auto streamed_id = symbols.find_streamed_id(node.child(1).text()).value();
+                    //node.child(1).set_annotation(int32_t(streamed_id));
+                    node.set_annotation(ReplacedCommandAnnotation { std::cref(command), { int32_t(streamed_id) } });
                 }
                 else if(command_name == "REQUIRE")
                 {
@@ -1773,46 +1785,6 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 }
                 else
                 {
-                    // Hack to give integer-based streamed script arguments a filename based argument. Not sure if this
-                    // is according to R* semantics, after all streamed scripts are all guessed. TODO rethink?
-                    if(command_name == "REGISTER_SCRIPT_BRAIN_FOR_CODE_USE"
-                    || command_name == "REGISTER_ATTRACTOR_SCRIPT_BRAIN_FOR_CODE_USE"
-                    || command_name == "STREAM_SCRIPT"
-                    || command_name == "HAS_STREAMED_SCRIPT_LOADED"
-                    || command_name == "MARK_STREAMED_SCRIPT_AS_NO_LONGER_NEEDED"
-                    || command_name == "REMOVE_STREAMED_SCRIPT"
-                    || command_name == "REGISTER_STREAMED_SCRIPT"
-                    || command_name == "START_NEW_STREAMED_SCRIPT"
-                    || command_name == "GET_NUMBER_OF_INSTANCES_OF_STREAMED_SCRIPT"
-                    || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_RANDOM_PED"
-                    || command_name == "ALLOCATE_STREAMED_SCRIPT_TO_OBJECT"
-                    || command_name == "SWITCH_OBJECT_BRAINS")
-                    {
-                        //|| command_name == "REGISTER_OBJECT_SCRIPT_BRAIN_FOR_CODE_USE" -- unsupported
-                        //|| command_name == "ALLOCATE_STREAMED_SCRIPT_TO_PED_GENERATOR" -- unsupported
-                        if(node.child_count() >= 2)
-                        {
-                            if(auto opt_script = symbols.find_script(node.child(1).text()))
-                            {
-                                if((*opt_script)->type == ScriptType::StreamedScript)
-                                {
-                                    auto annotation = StreamedFileAnnotation { (*opt_script)->streamed_id.value() };
-                                    node.child(1).set_annotation(annotation);
-                                }
-                                else
-                                {
-                                    program.error(node.child(1), "script is not a streamed script declared with REGISTER_STREAMED_SCRIPT");
-                                    node.child(1).set_annotation(StreamedFileAnnotation{-1});
-                                }
-                            }
-                            else
-                            {
-                                program.error(node.child(1), "script was never declared with REGISTER_STREAMED_SCRIPT");
-                                node.child(1).set_annotation(StreamedFileAnnotation{-1});
-                            }
-                        }
-                    }
-
                     auto exp_command = commands.match(node, symbols, current_scope);
                     if(exp_command)
                     {

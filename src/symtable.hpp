@@ -316,6 +316,8 @@ struct SymTable
     std::vector<std::string>    mission;    //< LOAD_AND_LAUNCH_MISSION scripts
     std::vector<std::string>    streamed;   //< Streamed scripts
 
+    std::vector<std::string>    streamed_names;//< Constant names associated with streamed scripts.
+
     int32_t count_collectable1 = 0;
     int32_t count_mission_passed = 0;
     int32_t count_progress = 0;
@@ -443,6 +445,16 @@ struct SymTable
         auto it = this->scripts.find(filename);
         if(it != this->scripts.end())
             return it->second;
+        return nullopt;
+    }
+
+    optional<uint16_t> find_streamed_id(const string_view& stream_constant) const
+    {
+        auto it = std::find_if(this->streamed_names.begin(), this->streamed_names.end(), [&](const auto& constant) {
+            return iequal_to()(constant, stream_constant);
+        });
+        if(it != this->streamed_names.end())
+            return uint16_t(it - this->streamed_names.begin());
         return nullopt;
     }
 

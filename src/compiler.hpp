@@ -249,9 +249,13 @@ private:
 
     ArgList get_args(const Command& command, const SyntaxTree& command_node);
 
+    ArgList get_args(const Command& command, const std::vector<any>& params);
+
     ArgVariant get_arg(const Commands::MatchArgument& a);
 
     ArgVariant get_arg(const SyntaxTree& arg_node);
+
+    ArgVariant get_arg(const any& param);
 
     bool is_same_var(const ArgVariant& lhs, const ArgVariant& rhs);
 

@@ -294,6 +294,7 @@ Commands Commands::from_xml(const std::string& config_name, const std::vector<fs
     // fundamental enums
     enums.emplace("MODEL", std::make_shared<Enum>(Enum { {}, false, }));
     enums.emplace("DEFAULTMODEL", std::make_shared<Enum>(Enum { {}, false, }));
+    enums.emplace("SCRIPTSTREAM", std::make_shared<Enum>(Enum { {}, false, }));
 
     auto xml_parse = [](const fs::path& path) -> XmlData
     {

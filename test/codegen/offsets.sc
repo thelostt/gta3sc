@@ -26,7 +26,7 @@ main_invoke:
     // TODO GOSUB_FILE gosub1 gosub1.sc
     LAUNCH_MISSION subscript1.sc
     LOAD_AND_LAUNCH_MISSION mission1.sc
-    REGISTER_STREAMED_SCRIPT stream1.sc
+    REGISTER_STREAMED_SCRIPT stream1 stream1.sc
     RETURN
 }
 

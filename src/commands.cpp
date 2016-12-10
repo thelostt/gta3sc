@@ -13,12 +13,15 @@ Commands::Commands(insensitive_map<std::string, Command>&& commands_,
 {
     auto it_defaultmodel = this->enums.find("DEFAULTMODEL");
     auto it_model       = this->enums.find("MODEL");
+    auto it_scriptstream= this->enums.find("SCRIPTSTREAM");
 
     assert(it_model != this->enums.end());
     assert(it_defaultmodel != this->enums.end());
+    assert(it_scriptstream != this->enums.end());
 
     this->enum_models = it_model->second;
     this->enum_defaultmodels = it_defaultmodel->second;
+    this->enum_scriptstream = it_scriptstream->second;
 
     for(auto& pair : this->commands)
     {
@@ -380,10 +383,6 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         case ArgType::Float:
         case ArgType::Param:
         {
-            // HACK HACK HACK
-            if(hint && hint->maybe_annotation<const StreamedFileAnnotation&>())
-                return &arginfo;
-
             if(arginfo.allow_constant && arginfo.type == ArgType::Integer)
             {
                 if(commands.find_constant_for_arg(text, arginfo))
@@ -393,6 +392,8 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
             auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr);
             if(exp_var || exp_var.error().reason != MatchFailure::NoSuchVar)
                 return exp_var;
+            else if(arginfo.uses_enum(commands.get_scriptstream_enum()) && symtable.find_streamed_id(text))
+                return &arginfo;
             else if(arginfo.uses_enum(commands.get_models_enum())) // allow unknown models
                 return &arginfo;
             else if(arginfo.type == ArgType::Param && arginfo.allow_constant && arginfo.allow_text_label)
@@ -648,11 +649,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
             case NodeType::Text:
             {
-                if(node.maybe_annotation<const StreamedFileAnnotation&>())
-                {
-                    // hack for streamed script filenames instead of int value, do nothing
-                }
-                else if(arginfo.type == ArgType::Label)
+                if(arginfo.type == ArgType::Label)
                 {
                     if(node.is_annotated())
                         Expects(node.maybe_annotation<const shared_ptr<Label>&>());
@@ -693,6 +690,12 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                                 node.set_annotation(*opt_const);
                             break;
                         }
+                    }
+
+                    if(arginfo.uses_enum(this->get_scriptstream_enum()))
+                    {
+                        node.set_annotation(int32_t { symtable.find_streamed_id(node.text()).value() });
+                        break;
                     }
 
                     bool is_model_enum = arginfo.uses_enum(this->get_models_enum());
