@@ -985,7 +985,11 @@ void SymTable::scan_for_includers(Script& script, ProgramContext& program)
 
     auto add_script = [&](ScriptType type, const SyntaxTree& command)
     {
-        if(type == ScriptType::Required || script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
+        if(type == ScriptType::Required && script.type == ScriptType::Required)
+        {
+            program.error(command, "using REQUIRE inside a required file is forbidden");
+        }
+        else if(type == ScriptType::Required || script.type == ScriptType::Main || script.type == ScriptType::MainExtension)
         {
             table.add_script(type, command, program);
         }
