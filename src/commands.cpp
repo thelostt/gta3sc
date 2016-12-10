@@ -228,8 +228,8 @@ static auto hint_from(optional<const SyntaxTree&> cmdnode, const Commands::Match
 }
 
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
-                      int32_t arg, const Command::Arg& arginfo,
-                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+                      int32_t arg, const Command::Arg& arginfo, const SymTable& symtable,
+                      const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
 {
     if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param)
         return &arginfo;
@@ -237,8 +237,8 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
 }
 
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
-                      float arg, const Command::Arg& arginfo,
-                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+                      float arg, const Command::Arg& arginfo, const SymTable& symtable,
+                      const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
 {
     if(arginfo.type == ArgType::Float || arginfo.type == ArgType::Param)
         return &arginfo;
@@ -246,8 +246,8 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
 }
 
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
-                      const TagVar& arg, const Command::Arg& arginfo,
-                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+                      const TagVar& arg, const Command::Arg& arginfo, const SymTable& symtable,
+                      const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
 {
     auto var_matches = [](const shared_ptr<Var>& var, const Command::Arg& arginfo) -> bool
     {
@@ -275,12 +275,12 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         }
     };
 
-    if(!Miss2Identifier::is_identifier(arg.ident))
+    if(!Miss2Identifier::is_identifier(arg.ident, options))
         return make_unexpected(MatchFailure{ hint, MatchFailure::InvalidIdentifier });
 
     if(auto var_ident = maybe_var_identifier(arg.ident, arginfo))
     {
-        auto opt_token = Miss2Identifier::match(var_ident->first);
+        auto opt_token = Miss2Identifier::match(var_ident->first, options);
         if(!opt_token)
         {
             switch(opt_token.error())
@@ -337,13 +337,13 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
 }
 
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
-                      string_view text, const Command::Arg& arginfo,
-                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+                      string_view text, const Command::Arg& arginfo, const SymTable& symtable,
+                      const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
 {
     switch(arginfo.type)
     {
         case ArgType::Label:
-            if(Miss2Identifier::is_identifier(text))
+            if(Miss2Identifier::is_identifier(text, options))
             {
                 if(symtable.find_label(text))
                     return &arginfo;
@@ -354,7 +354,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                 return make_unexpected(MatchFailure{ hint, MatchFailure::InvalidIdentifier });
 
         case ArgType::Constant:
-            if(Miss2Identifier::is_identifier(text))
+            if(Miss2Identifier::is_identifier(text, options))
             {
                 if(commands.find_constant_all(text))
                     return &arginfo;
@@ -368,7 +368,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         case ArgType::TextLabel16:
         case ArgType::String:
         {
-            auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr);
+            auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr, options);
             if(exp_var)
                 return exp_var;
             else if(exp_var.error().reason == MatchFailure::NoSuchVar && arginfo.allow_constant)
@@ -389,7 +389,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                     return &arginfo;
             }
 
-            auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr);
+            auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr, options);
             if(exp_var || exp_var.error().reason != MatchFailure::NoSuchVar)
                 return exp_var;
             else if(arginfo.uses_enum(commands.get_scriptstream_enum()) && symtable.find_streamed_id(text))
@@ -408,18 +408,18 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
 }
 
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
-                      const SyntaxTree& arg, const Command::Arg& arginfo,
-                      const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) -> expected<const Command::Arg*, MatchFailure>
+                      const SyntaxTree& arg, const Command::Arg& arginfo, const SymTable& symtable,
+                      const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
 {
     // TODO FIXME this matcher gives wrong error messages
     switch(arg.type())
     {
         case NodeType::Integer:
-            return match_arg(commands, hint, 0, arginfo, symtable, scope_ptr);
+            return match_arg(commands, hint, 0, arginfo, symtable, scope_ptr, options);
         case NodeType::Float:
-            return match_arg(commands, hint, 0.0f, arginfo, symtable, scope_ptr);
+            return match_arg(commands, hint, 0.0f, arginfo, symtable, scope_ptr, options);
         case NodeType::Text:
-            return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr);
+            return match_arg(commands, hint, arg.text(), arginfo, symtable, scope_ptr, options);
         case NodeType::String:
             if(arginfo.type == ArgType::String
             || (arginfo.type == ArgType::Param && arginfo.allow_text_label))
@@ -431,17 +431,18 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
     }
 }
 
-auto Commands::match(const SyntaxTree& cmdnode, const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+auto Commands::match(const SyntaxTree& cmdnode, const SymTable& symtable,
+                     const shared_ptr<Scope>& scope_ptr, const Options& options) const -> expected<const Command*, MatchFailure>
 {
     auto command_name = cmdnode.child(0).text();
 
     if(auto opt_alternator = this->find_alternator(command_name))
     {
-        return this->match(*opt_alternator, cmdnode, symtable, scope_ptr);
+        return this->match(*opt_alternator, cmdnode, symtable, scope_ptr, options);
     }
     else if(auto opt_command = this->find_command(command_name))
     {
-        return this->match(*opt_command, cmdnode, symtable, scope_ptr);
+        return this->match(*opt_command, cmdnode, symtable, scope_ptr, options);
     }
     else
     {
@@ -449,31 +450,33 @@ auto Commands::match(const SyntaxTree& cmdnode, const SymTable& symtable, const 
     }
 }
 
-auto Commands::match(const Alternator& alternator, const SyntaxTree& cmdnode,
-                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+auto Commands::match(const Alternator& alternator, const SyntaxTree& cmdnode, const SymTable& symtable,
+                     const shared_ptr<Scope>& scope_ptr, const Options& options) const -> expected<const Command*, MatchFailure>
 {
-    return this->match(alternator, cmdnode, args_from_tree<MatchArgumentList>(cmdnode), symtable, scope_ptr);
+    return this->match(alternator, cmdnode, args_from_tree<MatchArgumentList>(cmdnode), symtable, scope_ptr, options);
 }
 
-auto Commands::match(const Command& command, const SyntaxTree& cmdnode,
-                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+auto Commands::match(const Command& command, const SyntaxTree& cmdnode, const SymTable& symtable,
+                     const shared_ptr<Scope>& scope_ptr, const Options& options) const -> expected<const Command*, MatchFailure>
 {
-    return this->match(command, cmdnode, args_from_tree<MatchArgumentList>(cmdnode), symtable, scope_ptr);
+    return this->match(command, cmdnode, args_from_tree<MatchArgumentList>(cmdnode), symtable, scope_ptr, options);
 }
 
 auto Commands::match(const Alternator& alternator, optional<const SyntaxTree&> cmdnode, const MatchArgumentList& args,
-                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr, const Options& options) const
+                                                                                                -> expected<const Command*, MatchFailure>
 {
     for(auto& cmd : alternator)
     {
-        if(auto opt_command = this->match(*cmd, cmdnode, args, symtable, scope_ptr))
+        if(auto opt_command = this->match(*cmd, cmdnode, args, symtable, scope_ptr, options))
             return opt_command;
     }
     return make_unexpected(MatchFailure { hint_from(cmdnode), MatchFailure::NoAlternativeMatch });
 }
 
 auto Commands::match(const Command& command, optional<const SyntaxTree&> cmdnode, const MatchArgumentList& args,
-                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr) const -> expected<const Command*, MatchFailure>
+                     const SymTable& symtable, const shared_ptr<Scope>& scope_ptr, const Options& options) const
+                                                                                               -> expected<const Command*, MatchFailure>
 {
     size_t i = 0;
     expected<const Command::Arg*, MatchFailure> exp_arg;
@@ -482,11 +485,11 @@ auto Commands::match(const Command& command, optional<const SyntaxTree&> cmdnode
         if(auto arginfo = command.arg(i))
         {
             if(is<int32_t>(*it))
-                exp_arg = match_arg(*this, hint_from(cmdnode, *it), 0, *arginfo, symtable, scope_ptr);
+                exp_arg = match_arg(*this, hint_from(cmdnode, *it), 0, *arginfo, symtable, scope_ptr, options);
             else if(is<float>(*it))
-                exp_arg = match_arg(*this, hint_from(cmdnode, *it), 0.0f, *arginfo, symtable, scope_ptr);
+                exp_arg = match_arg(*this, hint_from(cmdnode, *it), 0.0f, *arginfo, symtable, scope_ptr, options);
             else // is<const SyntaxTree*>
-                exp_arg = match_arg(*this, hint_from(cmdnode, *it), *get<const SyntaxTree*>(*it), *arginfo, symtable, scope_ptr);
+                exp_arg = match_arg(*this, hint_from(cmdnode, *it), *get<const SyntaxTree*>(*it), *arginfo, symtable, scope_ptr, options);
 
             if(!exp_arg)
             {
@@ -520,7 +523,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
     auto find_var = [&](const string_view& value) -> optional<VarAnnotation>
     {
-        auto opt_token = Miss2Identifier::match(value);
+        auto opt_token = Miss2Identifier::match(value, program.opt);
         if(!opt_token)
             return nullopt;
 

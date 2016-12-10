@@ -819,12 +819,12 @@ std::string TokenStream::to_string() const
     return output;
 }
 
-auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifier, Error>
+auto Miss2Identifier::match(const string_view& value, const Options& options) -> expected<Miss2Identifier, Error>
 {
     size_t begin_index = std::string::npos;
     bool is_number_index = true;
 
-    if(!Miss2Identifier::is_identifier(value))
+    if(!Miss2Identifier::is_identifier(value, options))
         return make_unexpected(Miss2Identifier::InvalidIdentifier);
 
     for(size_t i = 0; i < value.size(); ++i)
@@ -867,4 +867,17 @@ auto Miss2Identifier::match(const string_view& value) -> expected<Miss2Identifie
     }
 
     return Miss2Identifier{ value, nullopt };
+}
+
+bool Miss2Identifier::is_identifier(const string_view& value, const Options& options)
+{
+    auto first_char = value.empty()? '\0' : value.front();
+    auto last_char = value.empty()? '\0' : value.back();
+
+    if(last_char == ':')
+        return false;
+    else if(options.allow_underscore_identifiers && first_char == '_')
+        return true;
+    else
+        return (first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z') || first_char == '$';
 }

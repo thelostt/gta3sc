@@ -55,6 +55,7 @@ Options:
   -fscope-then-label       When combined with -pedantic, outputs a error message
                            whenever a label is used before a curly bracket
                            instead of after.
+  -funderscore-idents      Allows identifiers to begin with a underscore.
   -fswitch                 Enables the SWITCH statement.
   -farrays                 Enables the use of arrays.
   -ftext-label-vars        Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
@@ -292,6 +293,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optflag(argv, "-fscope-then-label", &flag))
             {
                 options.scope_then_label = flag;
+            }
+            else if(optflag(argv, "-funderscore-idents", &flag))
+            {
+                options.allow_underscore_identifiers = flag;
             }
             else if(optflag(argv, "-farrays", &flag))
             {

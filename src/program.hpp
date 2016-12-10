@@ -99,6 +99,7 @@ public:
     bool output_cleo = false;
     bool mission_script = false;
     bool oatc = false;
+    bool allow_underscore_identifiers = false;
 
     // Warning flags
     bool warn_conflict_text_label_var = true;

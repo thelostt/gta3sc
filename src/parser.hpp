@@ -169,14 +169,10 @@ struct Miss2Identifier
     ///
     /// \warning the lifetime of the returned `Miss2Identifier` must be as long
     /// \warning as the lifetime of the view `value`.
-    static auto match(const string_view& value) -> expected<Miss2Identifier, Error>;
+    static auto match(const string_view& value, const Options&) -> expected<Miss2Identifier, Error>;
 
     /// Checks whether a string is a miss2 identifier.
-    static bool is_identifier(const string_view& value)
-    {
-        auto first_char = value.empty()? '\0' : value.front();
-        return (first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z') || first_char == '$';
-    }
+    static bool is_identifier(const string_view& value, const Options& options);
 };
 
 inline const char* to_string(Miss2Identifier::Error e)

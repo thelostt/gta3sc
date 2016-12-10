@@ -6,6 +6,7 @@
 -fno-switch
 -fno-arrays
 -fscope-then-label
+-fno-underscore-idents
 -fno-streamed-scripts
 -fno-text-label-vars
 -fno-skip-cutscene

@@ -258,7 +258,7 @@ static ParserResult parse_identifier(ParserContext& parser, token_iterator begin
 {
     if(begin != end && begin->type == Token::Text)
     {
-        if(Miss2Identifier::is_identifier(parser.get_text(*begin)))
+        if(Miss2Identifier::is_identifier(parser.get_text(*begin), parser.program.opt))
             return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Text, parser.instream, *begin)));
     }
     return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));

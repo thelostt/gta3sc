@@ -673,7 +673,7 @@ void Script::compute_scope_outputs(const SymTable& symbols, ProgramContext& prog
                         {
                             if((*it)->type() == NodeType::Text)
                             {
-                                auto opt_match = Miss2Identifier::match((*it)->text());
+                                auto opt_match = Miss2Identifier::match((*it)->text(), program.opt);
                                 if(opt_match)
                                 {
                                     string_view varname;
@@ -1252,7 +1252,7 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                     auto name  = string_view();
                     auto count = optional<uint32_t>(nullopt);
 
-                    if(auto opt_token = Miss2Identifier::match(varnode.text()))
+                    if(auto opt_token = Miss2Identifier::match(varnode.text(), program.opt))
                     {
                         auto& token = *opt_token;
                         name = token.identifier;
@@ -1566,9 +1566,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 auto& alt_is_thing_greater_or_equal_to_thing = program.supported_or_fatal(node, commands.is_thing_greater_or_equal_to_thing,
                                                                                           "IS_THING_GREATER_OR_EQUAL_TO_THING");
 
-                auto exp_set_var_to_zero = commands.match(alt_set, node, { &var, number_zero }, symbols, current_scope);
-                auto exp_add_var_with_one = commands.match(alt_add_thing_to_thing, node, { &var, number_one }, symbols, current_scope);
-                auto exp_is_var_geq_times = commands.match(alt_is_thing_greater_or_equal_to_thing, node, { &var, &times }, symbols, current_scope);
+                auto exp_set_var_to_zero = commands.match(alt_set, node, { &var, number_zero }, symbols, current_scope, program.opt);
+                auto exp_add_var_with_one = commands.match(alt_add_thing_to_thing, node, { &var, number_one }, symbols, current_scope, program.opt);
+                auto exp_is_var_geq_times = commands.match(alt_is_thing_greater_or_equal_to_thing, node, { &var, &times }, symbols, current_scope, program.opt);
 
                 if(exp_set_var_to_zero && exp_add_var_with_one && exp_is_var_geq_times)
                 {
@@ -1620,7 +1620,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             auto& alt_is_thing_equal_to_thing = program.supported_or_fatal(node, commands.is_thing_equal_to_thing,
                                                                                             "IS_THING_EQUAL_TO_THING");
 
-                            auto exp_is_var_eq_int  = commands.match(alt_is_thing_equal_to_thing, *case_node, { &var, &case_value }, symbols, current_scope);
+                            auto exp_is_var_eq_int  = commands.match(alt_is_thing_equal_to_thing, *case_node, { &var, &case_value }, symbols, current_scope, program.opt);
                             if(exp_is_var_eq_int)
                             {
                                 commands.annotate({ &var, &case_value }, **exp_is_var_eq_int, symbols, current_scope, *this, program);
@@ -1785,7 +1785,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 }
                 else
                 {
-                    auto exp_command = commands.match(node, symbols, current_scope);
+                    auto exp_command = commands.match(node, symbols, current_scope, program.opt);
                     if(exp_command)
                     {
                         const Command& command = **exp_command;
@@ -1867,8 +1867,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     SyntaxTree& b = op.child(0);
                     SyntaxTree& c = op.child(1);
 
-                    auto exp_cmd_set = commands.match(alter_cmds1, node, { &a, &b }, symbols, current_scope);
-                    auto exp_cmd_op  = commands.match(*alter_op, node, { &a, &c }, symbols, current_scope);
+                    auto exp_cmd_set = commands.match(alter_cmds1, node, { &a, &b }, symbols, current_scope, program.opt);
+                    auto exp_cmd_op  = commands.match(*alter_op, node, { &a, &c }, symbols, current_scope, program.opt);
 
                     if(exp_cmd_set && exp_cmd_op)
                     {
@@ -1903,8 +1903,8 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                                     program.error(node, message);
                             }
 
-                            auto exp_cmd_set2 = commands.match(alter_cmds1, node, { &a, &c }, symbols, current_scope);
-                            auto exp_cmd_op2  = commands.match(*alter_op, node, { &a, &b }, symbols, current_scope);
+                            auto exp_cmd_set2 = commands.match(alter_cmds1, node, { &a, &c }, symbols, current_scope, program.opt);
+                            auto exp_cmd_op2  = commands.match(*alter_op, node, { &a, &b }, symbols, current_scope, program.opt);
 
                             if(exp_cmd_set2 && exp_cmd_op2)
                             {
@@ -1941,7 +1941,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     SyntaxTree& a = node.child(!invert? 0 : 1);
                     SyntaxTree& b = node.child(!invert? 1 : 0);
 
-                    auto exp_command = commands.match(alter_cmds1, node, { &a, &b }, symbols, current_scope);
+                    auto exp_command = commands.match(alter_cmds1, node, { &a, &b }, symbols, current_scope, program.opt);
                     if(exp_command)
                     {
                         commands.annotate({ &a, &b }, **exp_command, symbols, current_scope, *this, program);
@@ -1974,7 +1974,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                 if(varinfo->type == VarType::Int)
                 {
-                    auto exp_op_var_with_one = commands.match(alternator_thing, node, { &var_ident, 1 }, symbols, current_scope);
+                    auto exp_op_var_with_one = commands.match(alternator_thing, node, { &var_ident, 1 }, symbols, current_scope, program.opt);
                     if(exp_op_var_with_one)
                     {
                         commands.annotate({ &var_ident, nullopt }, **exp_op_var_with_one, symbols, current_scope, *this, program);

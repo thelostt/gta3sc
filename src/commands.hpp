@@ -194,13 +194,13 @@ public:
     const shared_ptr<Enum>& get_scriptstream_enum() const { return this->enum_scriptstream; }
 
     // Argument matching methods.
-    expected<const Command*, MatchFailure> match(const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
-    expected<const Command*, MatchFailure> match(const Command&, const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
-    expected<const Command*, MatchFailure> match(const Alternator&, const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&) const;
+    expected<const Command*, MatchFailure> match(const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&, const Options&) const;
+    expected<const Command*, MatchFailure> match(const Command&, const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&, const Options&) const;
+    expected<const Command*, MatchFailure> match(const Alternator&, const SyntaxTree& cmdnode, const SymTable&, const shared_ptr<Scope>&, const Options&) const;
     expected<const Command*, MatchFailure> match(const Command&, optional<const SyntaxTree&> cmdnode, const MatchArgumentList& args,
-                                                 const SymTable&, const shared_ptr<Scope>&) const;
+                                                 const SymTable&, const shared_ptr<Scope>&, const Options&) const;
     expected<const Command*, MatchFailure> match(const Alternator&, optional<const SyntaxTree&> cmdnode, const MatchArgumentList& args,
-                                                 const SymTable&, const shared_ptr<Scope>&) const;
+                                                 const SymTable&, const shared_ptr<Scope>&, const Options&) const;
 
     // Syntax tree annotation methods.
     void annotate(SyntaxTree&, const Command&, const SymTable&, const shared_ptr<Scope>&, Script&, ProgramContext&) const;

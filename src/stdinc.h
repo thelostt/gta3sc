@@ -47,6 +47,7 @@ using dynamic_bitset = std::vector<bool>;
 
 class SyntaxTree;
 class ProgramContext;
+class Options;
 class Commands;
 class CodeGenerator;
 struct Command;
