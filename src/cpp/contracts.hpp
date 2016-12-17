@@ -6,11 +6,16 @@
 #pragma once
 #include <stdexcept>
 
+// Assert
+#include <cassert>
+
 // http://stackoverflow.com/a/19343239/2679626
 #ifndef STRINGIFY
 #   define STRINGIFY_DETAIL(x) #x
 #   define STRINGIFY(x) STRINGIFY_DETAIL(x)
 #endif
+
+#ifndef NDEBUG
 
 struct broken_contract : std::runtime_error
 {
@@ -40,5 +45,10 @@ struct unreachable_exception : std::runtime_error
 #define Unreachable() \
     (throw unreachable_exception("Unreachable code reached at " __FILE__ "(" STRINGIFY(__LINE__) ")."))
 
-// Assert
-#include <cassert>
+#else
+
+#define Expects(cond)     void(0)
+#define Ensures(cond)     void(0)
+#define Unreachable(cond) std::terminate()
+
+#endif
