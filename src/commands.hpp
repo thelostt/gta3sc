@@ -179,6 +179,8 @@ public:
             StringLiteralNotAllowed,
             ExpectedVarIndex,
             LiteralValueDisallowed,
+            UserConstantNotInteger,
+            UserConstantNotFloat,
         };
 
         shared_ptr<const SyntaxTree>  context;

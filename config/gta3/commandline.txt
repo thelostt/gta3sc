@@ -5,6 +5,7 @@
 -mno-optimize-andor
 -fno-switch
 -fno-arrays
+-fno-const
 -fno-scope-then-label
 -fno-underscore-idents
 -fno-streamed-scripts

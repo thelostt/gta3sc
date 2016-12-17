@@ -41,5 +41,12 @@ WAIT i[3]     // expected-error {{variable is not array}}
 PRINT_HELP "bad"		// expected-error {{string literal not allowed here}}
 REQUEST_ANIMATION "bad" // expected-error {{string literals on arguments are disallowed [-fcleo]}}
 
+CONST_INT my_int 0
+CONST_FLOAT my_flt 0.0
+
+WAIT my_flt           // expected-error {{user constant is not of integer type}}
+SET_TIME_SCALE my_int // expected-error {{user constant is not of float type}}
+IS_INT_VAR_EQUAL_TO_CONSTANT i my_int // expected-error {{no string constant with this name}}
+
 }
 TERMINATE_THIS_SCRIPT

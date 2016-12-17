@@ -90,6 +90,7 @@ public:
     bool allow_break_continue = false;
     bool scope_then_label = false;
     bool farrays = false;
+    bool fconst = false;
     bool streamed_scripts = false;
     bool text_label_vars = false;
     bool use_local_offsets = false;

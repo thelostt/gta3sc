@@ -12570,8 +12570,18 @@
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x885" Name="CONST_INT" Supported="false"/>
-    <Command ID="0x886" Name="CONST_FLOAT" Supported="false"/>
+    <Command ID="0x885" Name="CONST_INT" Internal="true">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x886" Name="CONST_FLOAT" Internal="true">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
     <Command ID="0x887" Name="SET_HEADING_LIMIT_FOR_ATTACHED_CHAR">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>

@@ -41,6 +41,7 @@ Options:
   -funderscore-idents      Allows identifiers to begin with a underscore.
   -fswitch                 Enables the SWITCH statement.
   -farrays                 Enables the use of arrays.
+  -fconst                  Enables the use of CONST_INT and CONST_FLOAT.
   -ftext-label-vars        Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
   -mno-header              Does not generate a header on the output SCM.
   -mheader=<version>       Generates the specified header version (gta3,gtavc,
@@ -285,6 +286,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.farrays = flag;
             }
+            else if(optflag(argv, "-fconst", &flag))
+            {
+                options.fconst = flag;
+            }
             else if(optflag(argv, "-fstreamed-scripts", &flag))
             {
                 options.streamed_scripts = flag;
@@ -475,6 +480,18 @@ int main(int argc, char** argv)
         if(!options.guesser && options.fswitch)
         {
             fprintf(stderr, "gta3sc: error: use of -fswitch only available in guesser mode [--guesser]\n");
+            return EXIT_FAILURE;
+        }
+
+        if(!options.guesser && options.farrays)
+        {
+            fprintf(stderr, "gta3sc: error: use of -farrays only available in guesser mode [--guesser]\n");
+            return EXIT_FAILURE;
+        }
+
+        if(!options.guesser && options.fconst)
+        {
+            fprintf(stderr, "gta3sc: error: use of -fconst only available in guesser mode [--guesser]\n");
             return EXIT_FAILURE;
         }
 
