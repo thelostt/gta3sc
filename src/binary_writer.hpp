@@ -39,7 +39,6 @@ public:
 
     void emplace_u16(uint16_t value)
     {
-        // TODO maybe optimize, write a entire i16 at a time? is that portable?
         //assert(this->offset + 2 <= max_offset);
         emplace_u8((value & 0x00FF) >> 0);
         emplace_u8((value & 0xFF00) >> 8);
@@ -47,7 +46,6 @@ public:
 
     void emplace_u32(uint32_t value)
     {
-        // TODO maybe optimize, write a entire i32 at a time? is that portable?
         //assert(this->offset + 4 <= max_offset);
         emplace_u8((value & 0x000000FF) >> 0);
         emplace_u8((value & 0x0000FF00) >> 8);
@@ -94,7 +92,7 @@ public:
     void emplace_chars(size_t count, const char* data, bool to_upper)
     {
         if(to_upper)
-            return emplace_chars(count, data, ::toupper); // TODO FIXME toupper is bad
+            return emplace_chars(count, data, toupper_ascii);
         else
             return emplace_chars(count, data);
     }

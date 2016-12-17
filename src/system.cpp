@@ -4,8 +4,10 @@
 
 #if defined(_WIN32)
 #include <windows.h>
+#include <io.h>
 #elif defined(__unix__)
 #include <unistd.h>
+#include <fcntl.h>
 #endif
 
 static fs::path find_config_path()
@@ -74,4 +76,29 @@ const fs::path& config_path()
 {
     static fs::path conf_path = find_config_path();
     return conf_path;
+}
+
+bool allocate_file(FILE* f, uint64_t size)
+{
+#if defined(_WIN32)
+    assert(ftell(f) == 0);
+
+    LARGE_INTEGER ll;
+    ll.QuadPart = size;
+
+    HANDLE hFile = (HANDLE) _get_osfhandle(_fileno(f));
+
+    if(SetFilePointerEx(hFile, ll, NULL, FILE_BEGIN)
+    && SetEndOfFile(hFile)
+    && SetFilePointer(hFile, 0, NULL, FILE_BEGIN) != INVALID_SET_FILE_POINTER)
+    {
+        return true;
+    }
+    return false;
+
+#elif defined(__unix__)
+    return !posix_fallocate(fileno(f), 0, size);
+#else
+#   error allocate_file not implemented for this platform.
+#endif
 }

@@ -86,8 +86,10 @@ bool decompile(const void* bytecode, size_t bytecode_size,
             });
             if(it != header.streamed_scripts.end())
                 ignore_stream_id = (it - header.streamed_scripts.begin());
-        }
 
+            if(program.has_error())
+                throw ProgramFailure();
+        }
          
         BinaryFetcher main_segment{ bytecode, std::min<uint32_t>(bytecode_size, opt_header? opt_header->main_size : bytecode_size) };
         std::vector<BinaryFetcher> mission_segments;
@@ -104,7 +106,6 @@ bool decompile(const void* bytecode, size_t bytecode_size,
             }
         }
 
-        // TODO add more has error in here?
         if(program.has_error())
             throw ProgramFailure();
 
@@ -159,6 +160,9 @@ bool decompile(const void* bytecode, size_t bytecode_size,
             }
         }
 
+        if(program.has_error())
+            throw ProgramFailure();
+
         if(lang == Options::Lang::IR2)
         {
             if(!program.opt.headerless)
@@ -167,7 +171,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                 for(size_t i = 0; i < opt_header->models.size(); ++i)
                 {
                     temp_string = opt_header->models[i];
-                    std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
+                    std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), toupper_ascii);
                     callback(fmt::format("#DEFINE_MODEL {} -{}", temp_string, i+1));
                 }
             }
@@ -178,7 +182,7 @@ bool decompile(const void* bytecode, size_t bytecode_size,
                 for(size_t i = 0; i < opt_header->streamed_scripts.size(); ++i)
                 {
                     temp_string = opt_header->streamed_scripts[i].name;
-                    std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), ::toupper); // TODO FIXME toupper is bad
+                    std::transform(temp_string.begin(), temp_string.end(), temp_string.begin(), toupper_ascii);
                     callback(fmt::format("#DEFINE_STREAM {} {}", temp_string, i));
                 }
             }

@@ -40,5 +40,5 @@ struct unreachable_exception : std::runtime_error
 #define Unreachable() \
     (throw unreachable_exception("Unreachable code reached at " __FILE__ "(" STRINGIFY(__LINE__) ")."))
 
-//
+// Assert
 #include <cassert>

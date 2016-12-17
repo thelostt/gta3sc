@@ -594,14 +594,14 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
         if(annotation.index)
         {
             if(node.is_annotated())
-                Expects(node.maybe_annotation<const ArrayAnnotation&>());
+                assert(node.maybe_annotation<const ArrayAnnotation&>());
             else
                 node.set_annotation(ArrayAnnotation{ annotation.base, *annotation.index });
         }
         else
         {
             if(node.is_annotated())
-                Expects(node.maybe_annotation<const shared_ptr<Var>&>());
+                assert(node.maybe_annotation<const shared_ptr<Var>&>());
             else
                 node.set_annotation(annotation.base);
         }
@@ -611,7 +611,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
     {
         if(node.is_annotated())
         {
-            Expects(node.maybe_annotation<const TextLabelAnnotation&>()
+            assert(node.maybe_annotation<const TextLabelAnnotation&>()
                  || node.maybe_annotation<const String128Annotation&>());
         }
         else
@@ -654,7 +654,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
             case NodeType::Integer:
             {
                 if(node.is_annotated())
-                    Expects(node.maybe_annotation<const int32_t&>());
+                    assert(node.maybe_annotation<const int32_t&>());
                 else
                     node.set_annotation(static_cast<int32_t>(std::stoi(node.text().to_string(), nullptr, 0)));
                 break;
@@ -663,7 +663,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
             case NodeType::Float:
             {
                 if(node.is_annotated())
-                    Expects(node.maybe_annotation<const float&>());
+                    assert(node.maybe_annotation<const float&>());
                 else
                     node.set_annotation(std::stof(node.text().to_string()));
                 break;
@@ -695,7 +695,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                 if(arginfo.type == ArgType::Label)
                 {
                     if(node.is_annotated())
-                        Expects(node.maybe_annotation<const shared_ptr<Label>&>());
+                        assert(node.maybe_annotation<const shared_ptr<Label>&>());
                     else
                         node.set_annotation(symtable.find_label(node.text()).value());
                 }
@@ -728,7 +728,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                         if(auto opt_const = this->find_constant_for_arg(node.text(), arginfo))
                         {
                             if(node.is_annotated())
-                                Expects(node.maybe_annotation<const int32_t&>());
+                                assert(node.maybe_annotation<const int32_t&>());
                             else
                                 node.set_annotation(*opt_const);
                             break;
@@ -742,8 +742,8 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                     }
 
                     bool is_model_enum = arginfo.uses_enum(this->get_models_enum());
-                    // TODO VC miss2 doesn't allow models and vars with same name?
-
+                    
+                    // TODO VC miss2 doesn't allow models and vars with same name, could avoid the ide check
                     if(!is_model_enum || !program.is_model_from_ide(node.text()))
                     {
                         if(auto opt_match = maybe_var_identifier(node.text(), arginfo))
@@ -762,7 +762,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                     if(is_model_enum)
                     {
                         if(node.is_annotated())
-                            Expects(node.maybe_annotation<const ModelAnnotation&>());
+                            assert(node.maybe_annotation<const ModelAnnotation&>());
                         else
                         {
                             auto index = script.add_or_find_model(node.text());
@@ -792,7 +792,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
         }
     }
 
-    Ensures(i >= command.minimum_args());
+    assert(i >= command.minimum_args());
 }
 
 void Commands::MatchFailure::emit(ProgramContext& program)

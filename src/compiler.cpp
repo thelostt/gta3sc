@@ -4,8 +4,6 @@
 #include "commands.hpp"
 #include "program.hpp"
 
-// TODO move as much errors as possible out of here, and perhaps then move fsyntax-only check more up in main.
-
 template<typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
 static ArgVariant conv_int(T integral)
 {
@@ -113,8 +111,6 @@ void CompilerContext::compile_statement(const SyntaxTree& node, bool not_flag)
             compile_statements(node);
             break;
         case NodeType::NOT:
-            if(!program.opt.relax_not)
-                program.error(node, "NOT disallowed outside of a conditional statement [-frelax-not]");
             compile_statement(node.child(0), !not_flag);
             break;
         case NodeType::Command:
@@ -600,9 +596,7 @@ void CompilerContext::compile_conditions(const SyntaxTree& conds_node, const sha
 {
     auto compile_multi_andor = [this](const auto& conds_node, size_t op)
     {
-        if(conds_node.child_count() > 8)
-            program.error(conds_node, "use of more than 8 conditions is not supported");
-
+        assert(conds_node.child_count() <= 8);
         compile_command(*this->commands.andor, { conv_int(op + conds_node.child_count() - 2) });
         for(auto& cond : conds_node) compile_condition(*cond);
     };

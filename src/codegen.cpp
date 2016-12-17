@@ -328,18 +328,18 @@ inline void generate_code(const CompiledString& str, CodeGenerator& codegen)
     switch(str.type)
     {
         case CompiledString::Type::TextLabel8:
-            Expects(str.storage.size() <= 8);  // enforced on annotation
+            assert(str.storage.size() <= 8);
             if(codegen.program.opt.has_text_label_prefix)
                 codegen.bw.emplace_u8(9);
             codegen.bw.emplace_chars(8, str.storage.c_str(), !str.preserve_case);
             break;
         case CompiledString::Type::TextLabel16:
-            Expects(str.storage.size() <= 16); // enforced on annotation
+            assert(str.storage.size() <= 16);
             codegen.bw.emplace_u8(0xF);
             codegen.bw.emplace_chars(16, str.storage.c_str(), !str.preserve_case);
             break;
         case CompiledString::Type::StringVar:
-            Expects(str.storage.size() <= 127);  // enforced on annotation
+            assert(str.storage.size() <= 127);
             codegen.bw.emplace_u8(0xE);
             codegen.bw.emplace_u8(static_cast<uint8_t>(str.storage.size()));
             codegen.bw.emplace_chars(str.storage.size(), str.storage.c_str(), !str.preserve_case);
@@ -418,11 +418,21 @@ inline void generate_code(const CompiledVar& v, CodeGenerator& codegen)
                     Unreachable();
             }
 
+            auto ivartype = [&]() -> uint8_t {
+                switch(v.var->type)
+                {
+                    case VarType::Int: return 0;
+                    case VarType::Float: return 1;
+                    case VarType::TextLabel: return 2;
+                    case VarType::TextLabel16: return 3;
+                    default: Unreachable();
+                }
+            }();
+
             codegen.bw.emplace_u16(static_cast<uint16_t>(global? v.var->offset() : v.var->index));
             codegen.bw.emplace_u16(static_cast<uint16_t>(indexVar->global? indexVar->offset() : indexVar->index));
             codegen.bw.emplace_u8(static_cast<uint8_t>(v.var->count.value()));
-            codegen.bw.emplace_u8((static_cast<uint8_t>(v.var->type) & 0x7F) | (indexVar->global << 7));
-            // TODO casting VarType to uint8_t is not a future-proof approach
+            codegen.bw.emplace_u8((static_cast<uint8_t>(ivartype) & 0x7F) | (indexVar->global << 7));
         }
     }
 }

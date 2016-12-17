@@ -42,20 +42,6 @@ using std::shared_ptr;
 using std::weak_ptr;
 using dynamic_bitset = std::vector<bool>;
 
-class SyntaxTree;
-class ProgramContext;
-class Options;
-class Commands;
-class CodeGenerator;
-struct Command;
-struct Var;
-class Script;
-class Scope;
-class SymTable;
-struct CompiledScmHeader;
-class MultiFileHeaderList;
-struct Label;
-
 template<typename Value>
 using transparent_set = std::set<Value, std::less<>>;
 
@@ -70,6 +56,20 @@ using insensitive_map = std::map<Key, Value, iless>;
 
 template<typename Key>
 using insensitive_set = std::set<Key, iless>;
+
+class SyntaxTree;
+class ProgramContext;
+class Options;
+class Commands;
+class CodeGenerator;
+struct Command;
+struct Var;
+class Script;
+class Scope;
+class SymTable;
+struct CompiledScmHeader;
+class MultiFileHeaderList;
+struct Label;
 
 #ifndef _MSC_VER
 #   define __debugbreak()
@@ -135,4 +135,11 @@ inline string_view remove_quotes(const string_view& string)
 inline std::string make_quoted(const string_view& string, char quotes = '"')
 {
     return escape_string(string, quotes, true);
+}
+
+inline char toupper_ascii(char c)
+{
+    if(c >= 'a' && c <= 'z')
+        return c - ('a' - 'A');
+    return c;
 }

@@ -440,11 +440,13 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
     {
         if(it->type == ArgType::TextLabel32)
         {
-            Expects(std::next(it,1)->type == it->type);
-            Expects(std::next(it,2)->type == it->type);
-            Expects(std::next(it,3)->type == it->type);
-            it += 3;
+            assert(std::next(it,1)->type == it->type);
+            assert(std::next(it,2)->type == it->type);
+            assert(std::next(it,3)->type == it->type);
+            
             ccmd.args.emplace_back(DecompiledString{ DecompiledString::Type::String128, std::move(*bf.fetch_chars(offset, 128)) });
+
+            it += 3;
             offset += 128;
             continue;
         }

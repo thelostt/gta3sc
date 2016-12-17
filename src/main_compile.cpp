@@ -152,9 +152,6 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
                 if(outstream && outstream != stdout) fclose(outstream);
             });
 
-            // TODO remove this reserve once we use allocate_file for main_scm in generate_output.
-            main_scm.reserve(2048 * 10);
-
             outstream = (output != "-"? u8fopen(output, "wb") : stdout);
             if(outstream == nullptr)
                 program.fatal_error(nocontext, "failed to open output for writing");
@@ -233,12 +230,12 @@ auto read_scripts(const std::vector<std::string>& filenames, ScriptType type,
                   const Script& main, const Script::SubDir& subdir, ProgramContext& program) -> std::vector<IncluderPair>
 {
     std::vector<IncluderPair> output;
+    output.reserve(filenames.size());
 
-    for(auto& filename : filenames)
-    {
+    std::for_each(filenames.begin(), filenames.end(), [&](const auto& filename) {
         if(auto ic_pair = read_script(filename, type, main, subdir, program))
             output.emplace_back(std::move(*ic_pair));
-    }
+    });
 
     return output;
 }
@@ -511,14 +508,7 @@ void generate_output(const std::vector<CodeGenerator>& gens,
                      Writeable1& main_scm, Writeable2& script_img, bool has_script_img,
                      ProgramContext& program)
 {
-    std::vector<std::reference_wrapper<const CodeGenerator>> into_script_img;
-
-    Expects(gens[0].script->is_main_script());
-    auto scmheader = multi_headers.find_header<CompiledScmHeader>(gens[0].script);
-
-    // TODO allocate_file_space(main_scm, ...)
-
-    auto write_headers = [&](auto& output_file, optional<size_t> offset, const shared_ptr<const Script>& script) -> size_t
+    auto write_headers = [&](auto& output_file, size_t offset, const shared_ptr<const Script>& script) -> size_t
     {
         size_t total_size = 0;
         if(auto opt = multi_headers.script_headers(script))
@@ -527,35 +517,44 @@ void generate_output(const std::vector<CodeGenerator>& gens,
             {
                 CodeGeneratorData hgen(script, total_size, header, program);
                 hgen.generate();
-                if(offset)
-                    write_file(output_file, *offset, hgen.buffer(), hgen.buffer_size());
-                else
-                    write_file(output_file, hgen.buffer(), hgen.buffer_size());
+                write_file(output_file, offset, hgen.buffer(), hgen.buffer_size());
                 total_size += hgen.buffer_size();
+                offset += hgen.buffer_size();
             }
         }
         return total_size;
     };
 
-    for(auto& gen : gens)
+    std::vector<std::pair<std::string, const CodeGenerator*>> into_script_img;
+
+    assert(gens[0].script->is_main_script());
+    auto scmheader = multi_headers.find_header<CompiledScmHeader>(gens[0].script);
+
+    size_t multifile_size = std::accumulate(gens.begin(), gens.end(), size_t(0), [&](size_t size, const auto& gen) {
+        if(gen.script->is_root_script() && gen.script->type != ScriptType::StreamedScript)
+            return size + gen.script->full_size();
+        return size;
+    });
+
+    if(!allocate_file_space(main_scm, multifile_size))
+        program.fatal_error(nocontext, "failed to allocate disk space for the main file");
+
+    for(const auto& gen : gens)
     {
         if(!gen.script->is_child_of(ScriptType::StreamedScript))
         {
-            write_headers(main_scm, nullopt, gen.script);
-            write_file(main_scm, gen.buffer(), gen.buffer_size());
+            write_headers(main_scm, gen.script->base.value(), gen.script);
+            write_file(main_scm, gen.script->code_offset.value(), gen.buffer(), gen.buffer_size());
         }
         else
         {
             if(gen.script->type != ScriptType::Required)
-                into_script_img.emplace_back(std::cref(gen));
+                into_script_img.emplace_back(gen.script->path.stem().u8string(), &gen);
         }
     }
 
     std::sort(into_script_img.begin(), into_script_img.end(), [](const auto& lhs, const auto& rhs) {
-        // TODO this creates a string every sorting pass! Fix this.
-        auto& lhs_script = *lhs.get().script;
-        auto& rhs_script = *rhs.get().script;
-        return iless()(lhs_script.path.stem().u8string(), rhs_script.path.stem().u8string());
+        return iless()(lhs.first, rhs.first);
     });
 
     if(has_script_img)
@@ -604,20 +603,19 @@ void generate_output(const std::vector<CodeGenerator>& gens,
         add_entry("aaa.scm", 8);
         for(auto& into : into_script_img)
         {
-            auto& script = into.get().script;
+            auto& script = into.second->script;
             temp_filename = script->path.stem().u8string();
             temp_filename += ".scm";
             add_entry(temp_filename.c_str(), script->full_size());
         }
 
-        // TODO check return status of allocate_file_space
-                
         if(directory.empty())
             end_offset = files_offset;
         else
             end_offset = (directory.back().offset + directory.back().streaming_size) * 2048;
 
-        allocate_file_space(script_img, end_offset);
+        if(!allocate_file_space(script_img, end_offset))
+            program.fatal_error(nocontext, "failed to allocate disk space for script.img");
 
         write_file(script_img, 0, &cd_header, sizeof(cd_header));
         write_file(script_img, sizeof(cd_header), directory.data(), sizeof(CdEntry) * directory.size());
@@ -627,7 +625,7 @@ void generate_output(const std::vector<CodeGenerator>& gens,
 
         for(size_t i = 0; i < into_script_img.size(); ++i)
         {
-            const CodeGenerator& gen = into_script_img[i].get();
+            const CodeGenerator& gen = *into_script_img[i].second;
 
             size_t offset = directory[1+i].offset * 2048;
             offset += write_headers(script_img, offset, gen.script);
@@ -643,7 +641,11 @@ void generate_output(const std::vector<CodeGenerator>& gens,
                 offset += required_gen.buffer_size();
             }
         }
+
+        assert(file_tell(script_img) <= end_offset);
     }
+
+    assert(file_tell(main_scm) == multifile_size);
 }
 
 

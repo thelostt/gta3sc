@@ -624,7 +624,7 @@ static ParserResult parse_actual_command_statement(ParserContext& parser, token_
 
         if(it != end)
         {
-            Expects(it->type == Token::NewLine);
+            assert(it->type == Token::NewLine);
             ++it;
         }
 
@@ -792,7 +792,7 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
 
             if(it != end)
             {
-                Expects(it->type == Token::NewLine);
+                assert(it->type == Token::NewLine);
                 ++it;
             }
 

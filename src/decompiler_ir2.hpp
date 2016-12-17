@@ -51,7 +51,7 @@ public:
           block_name(std::move(block_name)), base_offset(base_offset), script_size(script_size),
           is_main_block(is_main_block), main_ir2(main_ir2)
     {
-        assert(this->is_main_block || &main_ir2 != this);
+        Expects(this->is_main_block || &main_ir2 != this);
 
         size_t label_id = 0;
         size_t last_offset;
@@ -63,9 +63,9 @@ public:
                 auto& label_def = get<DecompiledLabelDef>(d.data);
                 
                 if(label_id != 0)
-                    Expects(label_def.offset > last_offset);
+                    assert(label_def.offset > last_offset);
 
-                Expects(label_def.offset >= this->base_offset
+                assert(label_def.offset >= this->base_offset
                     && label_def.offset < this->base_offset + this->script_size);
 
                 this->label_ids.emplace(label_def.offset - this->base_offset, ++label_id);
@@ -206,7 +206,6 @@ inline std::string decompile_data(const DecompiledString& str, DecompilerIR2&)
             Unreachable();
     }
 
-    // TODO parse to escape sequences (see IR2 spec)
     for(size_t i = 0; i < str.storage.size(); ++i)
     {
         if(str.storage[i] == '\0') break;

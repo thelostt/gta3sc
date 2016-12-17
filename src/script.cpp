@@ -31,8 +31,8 @@ auto Script::from_subdir(const string_view& filename, const Script::SubDir& subd
     }
     else
     {
-        auto generic = fs::path(this->path).replace_extension("").generic_u8string();
-        program.error(nocontext, "file {} does not exist in the '{}' subdirectory", filename, generic);
+        auto stem = this->path.stem().generic_u8string();
+        program.error(nocontext, "file {} does not exist in the '{}' subdirectory", filename, stem);
         return nullptr;
     }
 }
@@ -386,7 +386,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
         const SyntaxTree::const_iterator& output_end,
         shared_ptr<const Scope>& target_scope, bool is_cleo_call)
     {
-        Expects(is_cleo_call == true);
+        assert(is_cleo_call == true);
 
         size_t i = 0;
         for(auto argoutput = output_begin; argoutput != output_end; ++argoutput)
@@ -398,7 +398,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                 auto output_type = scope_output.first;
                 auto output_entity = scope_output.second.expired()? 0 : scope_output.second.lock()->entity;
 
-                Expects(output_type == Scope::OutputType::Int || output_type == Scope::OutputType::Float);
+                assert(output_type == Scope::OutputType::Int || output_type == Scope::OutputType::Float);
 
                 if(output_type != outvar->type)
                 {
@@ -915,7 +915,7 @@ void Script::fix_call_scope_variables(ProgramContext& program)
                 if(var_index >= uint32_t(program.opt.timer_index) && var_index <= uint32_t(program.opt.timer_index + 1))
                     continue;
 
-                Expects(var_index >= program.opt.mission_var_begin);
+                assert(var_index >= program.opt.mission_var_begin);
                 var_index -= program.opt.mission_var_begin;
             }
         }

@@ -173,7 +173,7 @@ void SymTable::build_script_table(const std::vector<shared_ptr<Script>>& scripts
     for(auto& script : scripts)
     {
         auto name = script->path.filename().u8string();
-        std::transform(name.begin(), name.end(), name.begin(), ::toupper); // TODO UTF-8 able
+        std::transform(name.begin(), name.end(), name.begin(), toupper_ascii);
         assert(script->is_main_script() || this->ictable.script_type(name) != nullopt);
         this->scripts.emplace(std::move(name), script);
     }
@@ -685,6 +685,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             is_condition_block = was_cond_before;
         });
 
+        if(node.child_count() > 8)
+            program.error(node, "use of more than 8 conditions is not supported");
+
         is_condition_block = true;
         node.depth_first(std::ref(walker));
     };
@@ -798,6 +801,15 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                 {
                     program.error(node, "more than one {} in script", dir_end);
                 }
+                return false;
+            }
+
+            case NodeType::NOT:
+            {
+                if(!is_condition_block && !program.opt.relax_not)
+                    program.error(node, "NOT outside of a conditional statement [-frelax-not]");
+
+                node.child(0).depth_first(std::ref(walker));
                 return false;
             }
 
