@@ -312,7 +312,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
             auto& argvar = *opt_arg_var;
 
             if(argvar->type != lvar->type
-                && !(is_cleo_call && argvar->is_text_var() && lvar->type == VarType::Int))
+                && !(false && is_cleo_call && argvar->is_text_var() && lvar->type == VarType::Int))
             {
                 program.error(arg_node, "type mismatch in target label");
                 // TODO more info
@@ -359,7 +359,10 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                     if((**arginput).maybe_annotation<const int32_t&>())
                         break;
                     if(is_cleo_call && (**arginput).maybe_annotation<const TextLabelAnnotation&>())
+                    {
+                        program.error(**arginput, "CLEO_CALL semantics for TEXT_LABEL inputs are still unspecified");
                         break;
+                    }
                     handle_script_input(**arginput, lvar, is_cleo_call);
                     break;
                 case VarType::Float:
