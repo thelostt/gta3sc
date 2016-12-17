@@ -748,11 +748,19 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
             is_condition_block = was_cond_before;
         });
 
-        if(node.child_count() > 8)
-            program.error(node, "use of more than 8 conditions is not supported");
-
         is_condition_block = true;
-        node.depth_first(std::ref(walker));
+
+        if(node.type() == NodeType::AND || node.type() == NodeType::OR)
+        {
+            if(node.child_count() > 8)
+                program.error(node, "use of more than 8 conditions is not supported");
+
+            node.depth_first(std::ref(walker));
+        }
+        else
+        {
+            walker(node);
+        }
     };
 
     auto traverse_loop_body = [&](SyntaxTree& node, bool allow_break, bool allow_continue)
