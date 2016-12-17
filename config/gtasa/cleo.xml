@@ -440,7 +440,7 @@
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
-    <Command ID="0xaba" Name="TERMINATE_CUSTOM_SCRIPT_WITH_THIS_NAME" Hash="0xcc47f592">
+    <Command ID="0xaba" Name="TERMINATE_ALL_CUSTOM_SCRIPTS_WITH_THIS_NAME" Hash="0x26d7351d">
       <Args>
         <Arg Type="TEXT_LABEL" AllowPointer="true"/>
       </Args>
