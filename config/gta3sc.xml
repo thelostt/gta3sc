@@ -19,16 +19,16 @@
         <Arg Type="LABEL"/>
       </Args>
     </Command>
-    <Command Name="DEFINE_INT" Hash="0x4ce823af" Internal="true">
+    <Command Name="CONST_INT" Hash="0xe8fdeaec" Internal="true">
       <Args>
-        <Arg Type="STRING"/>
         <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command Name="DEFINE_FLOAT" Hash="0x2786fb5a" Internal="true">
+    <Command Name="CONST_FLOAT" Hash="0xa1cb5b3c" Internal="true">
       <Args>
-        <Arg Type="STRING"/>
-        <Arg Type="FLOAT"/>
+        <Arg Type="INT"/>
+        <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command Name="CONTINUE" Hash="0x89b07699" Internal="true"/>

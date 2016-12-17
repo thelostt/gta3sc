@@ -71,7 +71,7 @@ static ArgType xml_to_argtype(const char* string)
         return ArgType::Param;
     else if(!strcmp(string, "LABEL"))
         return ArgType::Label;
-    else if(!strcmp(string, "CONST"))
+    else if(!strcmp(string, "CONSTANT"))
         return ArgType::Constant;
     else if(!strcmp(string, "TEXT_LABEL"))
         return ArgType::TextLabel;

@@ -4,6 +4,13 @@
 #include "parser.hpp"
 #include "script.hpp"
 
+/// Constant declared with CONST_INT / CONST_FLOAT.
+struct UserConstant
+{
+    variant<int32_t, float>     value;  //< Value of the user constant.
+    weak_ptr<const SyntaxTree>  where;  //< Where this constant was defined.
+};
+
 /// Stores scripts inclusion information.
 class IncluderTable
 {
@@ -87,6 +94,9 @@ public:
     /// Finds the specified streamed script id from its string constant.
     optional<uint16_t> find_streamed_id(const string_view& stream_constant) const;
 
+    /// Finds the specified user defined string constant.
+    optional<const UserConstant&> find_constant(const string_view& name) const;
+
     /// Checks whether local variables in scopes collides with global variables.
     void check_scope_collisions(ProgramContext& program) const;
 
@@ -111,6 +121,14 @@ protected:
         return it.first->second;
     }
 
+    optional<const UserConstant&> add_constant(const shared_ptr<const SyntaxTree>& node, std::string name, variant<int32_t, float> value)
+    {
+        auto it = this->constants.emplace(std::move(name), UserConstant { std::move(value), node });
+        if(it.second == false)
+            return nullopt;
+        return it.first->second;
+    }
+
 public:
     //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!//
     // IMPORTANT! Make sure whenever you add any new field to this object, to update merge() accordingly !!!!!!!!//
@@ -119,6 +137,7 @@ public:
     insensitive_map<std::string, shared_ptr<Script>> scripts;
     insensitive_map<std::string, shared_ptr<Label>>  labels;
     insensitive_map<std::string, shared_ptr<Var>>    global_vars;
+    insensitive_map<std::string, UserConstant>       constants;
     std::vector<std::shared_ptr<Scope>>              local_scopes;
 
     IncluderTable ictable;

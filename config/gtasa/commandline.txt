@@ -6,6 +6,7 @@
 -mno-optimize-andor
 -fswitch
 -farrays
+-fconst
 -fscope-then-label
 -funderscore-idents
 -fstreamed-scripts

@@ -399,8 +399,25 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         {
             if(arginfo.allow_constant && arginfo.type == ArgType::Integer)
             {
-                if(commands.find_constant_for_arg(text, arginfo))
+                if(auto uconst = symtable.find_constant(text))
+                {
+                    if(is<int32_t>(uconst->value))
+                        return &arginfo;
+                    else
+                        return make_unexpected(MatchFailure { hint, MatchFailure::UserConstantNotInteger });
+                }
+                else if(commands.find_constant_for_arg(text, arginfo))
                     return &arginfo;
+            }
+            else if(arginfo.allow_constant && arginfo.type == ArgType::Float)
+            {
+                if(auto uconst = symtable.find_constant(text))
+                {
+                    if(is<float>(uconst->value))
+                        return &arginfo;
+                    else
+                        return make_unexpected(MatchFailure { hint, MatchFailure::UserConstantNotFloat });
+                }
             }
 
             auto exp_var = match_arg(commands, hint, TagVar { text }, arginfo, symtable, scope_ptr, options);
@@ -723,6 +740,23 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                 else if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Float
                      || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param)
                 {
+                    if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Float)
+                    {
+                        if(auto opt_const = symtable.find_constant(node.text()))
+                        {
+                            if(node.is_annotated())
+                                assert(arginfo.type == ArgType::Integer?
+                                    !!node.maybe_annotation<const int32_t&>() : !!node.maybe_annotation<const float&>());
+                            else if(arginfo.type == ArgType::Integer)
+                                node.set_annotation(get<int32_t>(opt_const->value));
+                            else if(arginfo.type == ArgType::Float)
+                                node.set_annotation(get<float>(opt_const->value));
+                            else
+                                Unreachable();
+                            break;
+                        }
+                    }
+
                     if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant)
                     {
                         if(auto opt_const = this->find_constant_for_arg(node.text(), arginfo))
@@ -837,6 +871,8 @@ std::string Commands::MatchFailure::to_string()
         case StringLiteralNotAllowed:   return "string literal not allowed here";
         case ExpectedVarIndex:          return "use of array variable without a index";
         case LiteralValueDisallowed:    return "constant values are disallowed for this argument";
+        case UserConstantNotInteger:    return "user constant is not of integer type";
+        case UserConstantNotFloat:      return "user constant is not of float type";
         default:                        Unreachable();
     }
 }

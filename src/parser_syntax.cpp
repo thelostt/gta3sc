@@ -265,6 +265,34 @@ static ParserResult parse_identifier(ParserContext& parser, token_iterator begin
 }
 
 /*
+    integer
+        :	INTEGER -> INTEGER
+        ;
+*/
+static ParserResult parse_integer(ParserContext& parser, token_iterator begin, token_iterator end)
+{
+    if(begin != end && begin->type == Token::Integer)
+    {
+        return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Integer, parser.instream, *begin)));
+    }
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
+}
+
+/*
+    float
+        :	FLOAT -> FLOAT
+        ;
+*/
+static ParserResult parse_float(ParserContext& parser, token_iterator begin, token_iterator end)
+{
+    if(begin != end && begin->type == Token::Float)
+    {
+        return std::make_pair(std::next(begin), ParserSuccess(new SyntaxTree(NodeType::Float, parser.instream, *begin)));
+    }
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
+}
+
+/*
     scopeStatement
         :	'{' newLine
                 statementList
@@ -736,6 +764,58 @@ static ParserResult parse_keycommand_statement(ParserContext& parser, token_iter
     }
     return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
 }
+
+/*
+    constStatement
+        :	CONST_INT identifier integer
+        |	CONST_FLOAT identifier float
+        ;
+*/
+static ParserResult parse_const_statement(ParserContext& parser, token_iterator begin, token_iterator end)
+{
+    if(begin != end
+        && (begin->type == Token::CONST_INT || begin->type == Token::CONST_FLOAT))
+    {
+        ParserState state = ParserSuccess(nullptr);
+        ParserState identifier, value;
+
+        auto type = begin->type == Token::CONST_INT? NodeType::CONST_INT :
+                    begin->type == Token::CONST_FLOAT? NodeType::CONST_FLOAT : Unreachable();
+
+        auto it = std::next(begin);
+        std::tie(it, identifier) = parse_identifier(parser, it, end);
+        add_error(state, giveup_to_expected(identifier, "identifier"));
+
+        if(type == NodeType::CONST_INT)
+        {
+            std::tie(it, value) = parse_integer(parser, it, end);
+            add_error(state, giveup_to_expected(value, "integer"));
+        }
+        else if(type == NodeType::CONST_FLOAT)
+        {
+            std::tie(it, value) = parse_float(parser, it, end);
+            add_error(state, giveup_to_expected(value, "float"));
+        }
+
+        expect_newline(state, it, end);
+        it = parser_aftertoken(it, end, Token::NewLine);
+
+        if(is<ParserSuccess>(state))
+        {
+            shared_ptr<SyntaxTree> tree(new SyntaxTree(type, parser.instream, *begin));
+            tree->add_child(shared_ptr<SyntaxTree> { new SyntaxTree(NodeType::Text, parser.instream, *begin) });
+            tree->add_child(get<ParserSuccess>(identifier).tree);
+            tree->add_child(get<ParserSuccess>(value).tree);
+            return std::make_pair(it, ParserSuccess(std::move(tree)));
+        }
+        else
+        {
+            return std::make_pair(it, std::move(state));
+        }
+    }
+    return std::make_pair(end, make_error(ParserStatus::GiveUp, begin));
+}
+
 
 /*
     labelStatement
@@ -1243,6 +1323,7 @@ static ParserResult parse_dump_statement(ParserContext& parser, token_iterator b
         | variableDeclaration
         | labelStatement
         | keycommandStatement
+        | constStatement
         | commandStatement
         ;
 */
@@ -1258,6 +1339,7 @@ static ParserResult parse_statement(ParserContext& parser, token_iterator begin,
                               parse_variable_declaration,
                               parse_label_statement,
                               parse_keycommand_statement,
+                              parse_const_statement,
                               parse_command_statement);
 
     if(parser_isgiveup(result.second))

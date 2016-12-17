@@ -35,6 +35,9 @@ enum class Token
     LVAR_TEXT_LABEL,
     LVAR_TEXT_LABEL16,
 
+    CONST_INT,
+    CONST_FLOAT,
+
     Integer,
     Float,
     Text,
@@ -107,6 +110,9 @@ enum class NodeType
     LVAR_FLOAT,
     LVAR_TEXT_LABEL,
     LVAR_TEXT_LABEL16,
+    
+    CONST_INT,
+    CONST_FLOAT,
 
     Integer,
     Float,

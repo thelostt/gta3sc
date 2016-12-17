@@ -7327,13 +7327,13 @@
     <Command ID="0x4a3" Name="IS_INT_VAR_EQUAL_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
       </Args>
     </Command>
     <Command ID="0x4a4" Name="IS_INT_LVAR_EQUAL_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
       </Args>
     </Command>
     <Command ID="0x4a5" Name="GET_DEAD_CHAR_PICKUP_COORDS">
@@ -7392,60 +7392,60 @@
     <Command ID="0x4ae" Name="SET_VAR_INT_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
       </Args>
     </Command>
     <Command ID="0x4af" Name="SET_LVAR_INT_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
       </Args>
     </Command>
     <Command ID="0x4b0" Name="IS_INT_VAR_GREATER_THAN_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
       </Args>
     </Command>
     <Command ID="0x4b1" Name="IS_INT_LVAR_GREATER_THAN_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
       </Args>
     </Command>
     <Command ID="0x4b2" Name="IS_CONSTANT_GREATER_THAN_INT_VAR">
       <Args>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x4b3" Name="IS_CONSTANT_GREATER_THAN_INT_LVAR">
       <Args>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x4b4" Name="IS_INT_VAR_GREATER_OR_EQUAL_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
       </Args>
     </Command>
     <Command ID="0x4b5" Name="IS_INT_LVAR_GREATER_OR_EQUAL_TO_CONSTANT">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
       </Args>
     </Command>
     <Command ID="0x4b6" Name="IS_CONSTANT_GREATER_OR_EQUAL_TO_INT_VAR">
       <Args>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
         <Arg Type="INT" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x4b7" Name="IS_CONSTANT_GREATER_OR_EQUAL_TO_INT_LVAR">
       <Args>
-        <Arg Type="CONST"/>
+        <Arg Type="CONSTANT"/>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>
       </Args>
     </Command>
@@ -12570,8 +12570,18 @@
         <Arg Type="TEXT_LABEL"/>
       </Args>
     </Command>
-    <Command ID="0x885" Name="CONST_INT" Supported="false"/>
-    <Command ID="0x886" Name="CONST_FLOAT" Supported="false"/>
+    <Command ID="0x885" Name="CONST_INT" Internal="true">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
+    <Command ID="0x886" Name="CONST_FLOAT" Internal="true">
+      <Args>
+        <Arg Type="INT"/>
+        <Arg Type="FLOAT" AllowGlobalVar="false" AllowLocalVar="false"/>
+      </Args>
+    </Command>
     <Command ID="0x887" Name="SET_HEADING_LIMIT_FOR_ATTACHED_CHAR">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>

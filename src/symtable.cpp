@@ -75,6 +75,14 @@ optional<uint16_t> SymTable::find_streamed_id(const string_view& stream_constant
     return nullopt;
 }
 
+optional<const UserConstant&> SymTable::find_constant(const string_view& name) const
+{
+    auto it = this->constants.find(name);
+    if(it != this->constants.end())
+        return it->second;
+    return nullopt;
+}
+
 auto IncluderTable::script_type(const string_view& filename) const -> optional<ScriptType>
 {
     auto searcher = [&](const std::string& other) {
@@ -185,6 +193,7 @@ void SymTable::merge(SymTable&& t2, ProgramContext& program)
 
     decltype(labels) int_labels;
     decltype(global_vars) int_gvars;
+    decltype(constants) int_constants;
 
     // finds items that are common in both
     std::set_intersection(t1.labels.begin(), t1.labels.end(),
@@ -197,6 +206,12 @@ void SymTable::merge(SymTable&& t2, ProgramContext& program)
         t2.global_vars.begin(), t2.global_vars.end(),
         std::inserter(int_gvars, int_gvars.begin()),
         t1.global_vars.value_comp());
+
+    // finds items that are common in both
+    std::set_intersection(t1.constants.begin(), t1.constants.end(),
+        t2.constants.begin(), t2.constants.end(),
+        std::inserter(int_constants, int_constants.begin()),
+        t1.constants.value_comp());
 
     for(auto& kv : int_labels)
     {
@@ -211,6 +226,14 @@ void SymTable::merge(SymTable&& t2, ProgramContext& program)
         auto where1 = t1.global_vars.find(kv.first)->second->where;
         auto where2 = t2.global_vars.find(kv.first)->second->where;
         program.error(where2, "variable name exists already");
+        program.note(where1, "previously defined here");
+    }
+
+    for(auto& kv : int_constants)
+    {
+        auto where1 = t1.constants.find(kv.first)->second.where;
+        auto where2 = t2.constants.find(kv.first)->second.where;
+        program.error(where2, "user constant exists already");
         program.note(where1, "previously defined here");
     }
 
@@ -230,6 +253,9 @@ void SymTable::merge(SymTable&& t2, ProgramContext& program)
 
     t1.local_scopes.reserve(t1.local_scopes.size() + t2.local_scopes.size());
     std::move(t2.local_scopes.begin(), t2.local_scopes.end(), std::back_inserter(t1.local_scopes));
+
+    t1.constants.insert(std::make_move_iterator(t2.constants.begin()),
+        std::make_move_iterator(t2.constants.end()));
 
     t1.ictable.merge(std::move(t2.ictable), program);
 }
@@ -311,7 +337,7 @@ void SymTable::check_constant_collisions(ProgramContext& program) const
 
     for(auto& kv : this->global_vars)
     {
-        if(has_constant_with_name(kv.first))
+        if(this->find_constant(kv.first) || has_constant_with_name(kv.first))
             program.error(kv.second->where, "variable name exists already as a string constant");
     }
 
@@ -319,9 +345,15 @@ void SymTable::check_constant_collisions(ProgramContext& program) const
     {
         for(auto& kv : scope->vars)
         {
-            if(has_constant_with_name(kv.first))
+            if(this->find_constant(kv.first) || has_constant_with_name(kv.first))
                 program.error(kv.second->where, "variable name exists already as a string constant");
         }
+    }
+
+    for(auto& kv : this->constants)
+    {
+        if(has_constant_with_name(kv.first))
+            program.error(kv.second.where, "user constant exists already as a string constant");
     }
 }
 
@@ -596,6 +628,34 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
                         continue;
                     }
                 }
+                return false;
+            }
+
+            case NodeType::CONST_INT:
+            case NodeType::CONST_FLOAT:
+            {
+                if(!program.opt.fconst)
+                    program.error(node, "user constants are not supported [-fconst]");
+
+                auto& node_ident = node.child(1);
+                auto& node_value = node.child(2);
+
+                auto value = [&]() -> decltype(UserConstant::value) {
+                    if(node.type() == NodeType::CONST_INT)
+                        return std::stoi(node_value.text().to_string(), nullptr, 0);
+                    else if(node.type() == NodeType::CONST_FLOAT)
+                        return std::stof(node_value.text().to_string());
+                    else
+                        Unreachable();
+                }();
+
+                if(!this->add_constant(node.shared_from_this(), node_ident.text().to_string(), value))
+                {
+                    auto& uconst = this->find_constant(node_ident.text()).value();
+                    program.error(node, "user constant exists already");
+                    program.note(uconst.where, "previously defined here");
+                }
+
                 return false;
             }
 
