@@ -365,11 +365,11 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.constant_checks = flag;
             }
-            else if(const char* name = optget(argv, "-D", nullptr, 1))
+            else if(const char* name = optget(argv, "-D", "--define", 1))
             {
                 options.define(name);
             }
-            else if(const char* name = optget(argv, "-U", nullptr, 1))
+            else if(const char* name = optget(argv, "-U", "--undefine", 1))
             {
                 options.undefine(name);
             }
