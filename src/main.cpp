@@ -73,6 +73,7 @@ Options:
                            default format (i.e. gta3sc: type:? message).
   -Wconflict-text-label-var Warns when text labels conflicts with variable
                             names. Enabled by default.
+  -fconstant-checks        Checks whether variables collides with constants.
 )";
 
 #ifdef GTA3SC_USING_GIT_DESCRIBE
@@ -359,6 +360,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optflag(argv, "-Wconflict-text-label-var", &flag))
             {
                 options.warn_conflict_text_label_var = flag;
+            }
+            else if(optflag(argv, "-fconstant-checks", &flag))
+            {
+                options.constant_checks = flag;
             }
             else if(const char* name = optget(argv, "-D", nullptr, 1))
             {

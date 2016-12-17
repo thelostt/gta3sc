@@ -740,6 +740,8 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                 else if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Float
                      || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param)
                 {
+                    const bool allows_vars_and_constant_collisions = !program.opt.constant_checks;
+
                     if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Float)
                     {
                         if(auto opt_const = symtable.find_constant(node.text()))
@@ -777,8 +779,8 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
 
                     bool is_model_enum = arginfo.uses_enum(this->get_models_enum());
                     
-                    // TODO VC miss2 doesn't allow models and vars with same name, could avoid the ide check
-                    if(!is_model_enum || !program.is_model_from_ide(node.text()))
+                    // only check for variable if...
+                    if(!is_model_enum || !allows_vars_and_constant_collisions || !program.is_model_from_ide(node.text()))
                     {
                         if(auto opt_match = maybe_var_identifier(node.text(), arginfo))
                         {

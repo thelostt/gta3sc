@@ -1,3 +1,4 @@
+-Wconflict-text-label-var
 --add-config=sounds.xml
 --levelfile=gta.dat
 -mheader=gtasa
@@ -18,3 +19,4 @@
 -fmission-var-limit=1024
 -fswitch-case-limit=75
 -farray-elem-limit=255
+-fconstant-checks

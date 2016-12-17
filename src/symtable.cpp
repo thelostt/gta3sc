@@ -329,6 +329,9 @@ void SymTable::check_scope_collisions(ProgramContext& program) const
 
 void SymTable::check_constant_collisions(ProgramContext& program) const
 {
+    if(!program.opt.constant_checks)
+        return;
+
     // XXX this method would probably benefit from parallelism
 
     auto has_constant_with_name = [&](const string_view& name) {

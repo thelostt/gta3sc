@@ -103,9 +103,10 @@ public:
     bool mission_script = false;
     bool oatc = false;
     bool allow_underscore_identifiers = false;
+    bool constant_checks = true;
 
     // Warning flags
-    bool warn_conflict_text_label_var = true;
+    bool warn_conflict_text_label_var = false;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;
