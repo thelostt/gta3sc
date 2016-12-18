@@ -46,6 +46,8 @@ namespace
                          const MultiFileHeaderList& multi_headers,
                          Writeable1& main_scm, Writeable2& script_img, bool has_script_img,
                          ProgramContext& program);
+
+    void check_expect_vars(const Script& main, const SymTable&, ProgramContext&);
 }
 
 int compile(fs::path input, fs::path output, ProgramContext& program)
@@ -112,6 +114,8 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         if(program.has_error())
             throw ProgramFailure();
+
+        check_expect_vars(*main, symbols, program);
 
         Script::handle_special_commands(scripts, symbols, program);
 
@@ -648,5 +652,42 @@ void generate_output(const std::vector<CodeGenerator>& gens,
     assert(file_tell(main_scm) == multifile_size);
 }
 
+void check_expect_vars(const Script& main, const SymTable& symbols, ProgramContext& program)
+{
+    if(!program.opt.warn_expect_var || main.type != ScriptType::Main)
+        return;
+
+    for(auto& expect : program.opt.expect_vars)
+    {
+        string_view var_name;
+        shared_ptr<const Var> var;
+
+        if(expect.first.size() == 0)
+            continue;
+
+        for(auto& name : expect.first)
+        {
+            if(auto opt_var = symbols.find_var(name, nullptr))
+            {
+                var_name = name;
+                var = *opt_var;
+                break;
+            }
+        }
+
+        if(!var)
+        {
+            program.warning(nocontext, "expected variable {} to exist, but it does not", expect.first[0]);
+            continue;
+        }
+
+        if(var->index != expect.second)
+        {
+            program.warning(nocontext, "expected variable {} to have index {} but it has index {}", 
+                                                                var_name.to_string(), expect.second, var->index);
+            continue;
+        }
+    }
+}
 
 }

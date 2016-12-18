@@ -35,6 +35,7 @@ Options:
   -fsyntax-only            Only checks the syntax, i.e. doesn't generate code.
   --recursive-traversal    Disassembler scans the code by the means of a
                            recursive traversal instead of linear-sweep.
+  --expect-var=<info>
 
 Language Options:
   -fswitch                 Enables the SWITCH statement.
@@ -80,8 +81,11 @@ Error Message Options:
                            May be `default` or `json`. Do note the JSON format
                            may contain some pre-compilation messages in the
                            default format (i.e. gta3sc: type:? message).
+  -Werror                  Turns warnings into errors.
   -Wconflict-text-label-var Warns when text labels conflicts with variable
                             names.
+  -Wexpect-var             Warns if any of the variables specified with
+                           the --expect-var option is out of place.
   -fconstant-checks        Checks whether variables collides with constants.
 )";
 
@@ -164,6 +168,14 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.guesser = true;
             }
+            else if(const char* info = optget(argv, nullptr, "--expect-var", 1))
+            {
+                if(!options.push_expect_var(info))
+                {
+                    fprintf(stderr, "gta3sc: error: failed to parse --expect-var entry\n");
+                    return false;
+                }
+            }
             else if(optget(argv, nullptr, "--recursive-traversal", 0))
             {
                 options.linear_sweep = false;
@@ -179,7 +191,7 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
                 if(auto opt_cmdline = read_file_utf8(config_path() / conf.config_name / "commandline.txt"))
                 {
                     auto& cmdline = *opt_cmdline;
-                    small_vector<char*, 32> args;
+                    small_vector<char*, 128> args;
 
                     auto it = !cmdline.empty()? &cmdline[0] : nullptr;
                     auto end = it + cmdline.size();
@@ -371,9 +383,17 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             {
                 options.mission_script = true;
             }
+            else if(optflag(argv, "-Werror", &flag))
+            {
+                options.warning_is_error = flag;
+            }
             else if(optflag(argv, "-Wconflict-text-label-var", &flag))
             {
                 options.warn_conflict_text_label_var = flag;
+            }
+            else if(optflag(argv, "-Wexpect-var", &flag))
+            {
+                options.warn_expect_var = flag;
             }
             else if(optflag(argv, "-fconstant-checks", &flag))
             {

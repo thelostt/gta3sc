@@ -189,3 +189,43 @@ bool ProgramContext::is_model_from_ide(const string_view& name) const
         return false;
     }
 }
+
+
+bool Options::push_expect_var(const string_view& info)
+{
+    std::vector<std::string> names;
+    optional<uint32_t> index;
+
+    try
+    {
+        for(auto it = info.begin(); it != info.end(); )
+        {
+            auto beg_name = it;
+            auto end_name = std::find_if(beg_name, info.end(), [](char c) { return c == ',' || c == ':'; });
+
+            if(end_name == info.end() || beg_name == end_name)
+                return false;
+
+            names.emplace_back(std::string(beg_name, end_name));
+            if(*end_name == ':')
+            {
+                index = std::stoi(std::string(end_name+1, info.end()));
+                break;
+            }
+
+            it = std::next(end_name);
+        }
+    }
+    catch(const std::logic_error&)
+    {
+        return false;
+    }
+
+    if(index)
+    {
+        this->expect_vars.emplace_back(std::move(names), *index);
+        return true;
+    }
+
+    return false;
+}

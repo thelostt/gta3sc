@@ -107,7 +107,9 @@ public:
     bool constant_checks = true;
 
     // Warning flags
+    bool warning_is_error = false;
     bool warn_conflict_text_label_var = false;
+    bool warn_expect_var = true;
 
     // 8 bit stuff
     HeaderVersion header = HeaderVersion::None;
@@ -121,6 +123,9 @@ public:
     optional<uint32_t> mission_var_limit;
     optional<uint32_t> switch_case_limit;
     optional<uint32_t> array_elem_limit;
+
+    /// Parses and pushes a --expect-var entry.
+    bool push_expect_var(const string_view& info);
 
     /// Defines a preprocessor directive.
     void define(std::string symbol, std::string value = "1")
@@ -159,6 +164,8 @@ public:
 
 private:
     transparent_map<std::string, std::string> defines;
+public:
+    std::vector<std::pair<std::vector<std::string>, uint32_t>> expect_vars;
 };
 
 class ProgramContext
@@ -226,8 +233,15 @@ public:
     template<typename Context, typename... Args>
     void warning(const Context& context, const char* msg, Args&&... args)
     {
-        ++warn_count;
-        if(logstream) this->puts(format_error(this->opt, "warning", context, msg, std::forward<Args>(args)...));
+        if(this->opt.warning_is_error)
+        {
+            return this->error(context, msg, std::forward<Args>(args)...);
+        }
+        else
+        {
+            ++warn_count;
+            if(logstream) this->puts(format_error(this->opt, "warning", context, msg, std::forward<Args>(args)...));
+        }
     }
 
     template<typename Context, typename... Args>

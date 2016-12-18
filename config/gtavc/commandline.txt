@@ -19,3 +19,6 @@
 -fswitch-case-limit=-1
 -farray-elem-limit=-1
 -fconstant-checks
+--expect-var=scplayer,script_controlled_player:3
+--expect-var=player:2
+--expect-var=flag_player_on_mission:313
