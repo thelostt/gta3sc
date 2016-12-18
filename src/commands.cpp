@@ -212,6 +212,32 @@ static auto hint_from(optional<const SyntaxTree&> cmdnode, const Commands::Match
     return hint_from(cmdnode);
 }
 
+static auto make_expected_error(const shared_ptr<const SyntaxTree>& hint, 
+                                const Command::Arg& arginfo) -> expected<const Command::Arg*, MatchFailure>
+{
+    switch(arginfo.type)
+    {
+        case ArgType::Param:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::BadArgument });
+        case ArgType::Integer:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedInt });
+        case ArgType::Float:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedFloat });
+        case ArgType::Label:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::NoSuchLabel });
+        case ArgType::Constant:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::NoSuchConstant });
+        case ArgType::TextLabel:
+        case ArgType::TextLabel16:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedTextLabel });
+        case ArgType::TextLabel32:
+        case ArgType::String:
+            return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedStringLiteral });
+        default:
+            Unreachable();
+    }
+}
+
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
                       int32_t arg, const Command::Arg& arginfo, const SymTable& symtable,
                       const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
@@ -220,7 +246,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         return make_unexpected(MatchFailure{ hint, MatchFailure::LiteralValueDisallowed });
     if(arginfo.type == ArgType::Integer || arginfo.type == ArgType::Constant || arginfo.type == ArgType::Param)
         return &arginfo;
-    return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedInt });
+    return make_expected_error(hint, arginfo);
 }
 
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
@@ -231,7 +257,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
         return make_unexpected(MatchFailure{ hint, MatchFailure::LiteralValueDisallowed });
     if(arginfo.type == ArgType::Float || arginfo.type == ArgType::Param)
         return &arginfo;
-    return make_unexpected(MatchFailure{ hint, MatchFailure::ExpectedFloat });
+    return make_expected_error(hint, arginfo);
 }
 
 static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTree>& hint,
@@ -442,7 +468,6 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                       const SyntaxTree& arg, const Command::Arg& arginfo, const SymTable& symtable,
                       const shared_ptr<Scope>& scope_ptr, const Options& options) -> expected<const Command::Arg*, MatchFailure>
 {
-    // TODO FIXME this matcher gives wrong error messages
     switch(arg.type())
     {
         case NodeType::Integer:
@@ -852,6 +877,7 @@ std::string Commands::MatchFailure::to_string()
         case BadArgument:               return "bad argument";
         case ExpectedInt:               return "expected integer";
         case ExpectedFloat:             return "expected float";
+        case ExpectedTextLabel:         return "expected text label";
         case ExpectedStringLiteral:     return "expected string literal";
         case NoSuchLabel:               return "no label with this name";
         case NoSuchConstant:            return "no string constant with this name";

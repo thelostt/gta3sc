@@ -12,16 +12,26 @@ SET 1 i 				// expected-error {{could not match alternative}}
 CREATE_CAR 0 .0 .0 .0 car car // expected-error {{too many arguments}}
 CREATE_CAR 0 .0 .0 .0         // expected-error {{too few arguments}}
 
-// TODO FIXME those errors
-WAIT 0.0 					// expected-error {{expected float}}
-SET_TIME_SCALE 0 			// expected-error {{expected integer}}
+WAIT 0.0 					// expected-error {{expected integer}}
+SET_TIME_SCALE 0 			// expected-error {{expected float}}
 SAVE_STRING_TO_DEBUG_FILE q // expected-error {{expected string literal}}
 
+GOTO 0              // expected-error {{no label with this name}}
+GOTO 0.0            // expected-error {{no label with this name}}
 GOTO dummy 			// expected-error {{no label with this name}}
-WAIT dummy 			// expected-error {{no variable with this name}}
+
+PRINT_HELP 0        // expected-error {{expected text label}}
+PRINT_HELP 0.0      // expected-error {{expected text label}}
 PRINT_HELP $dummy 	// expected-error {{expected variable}}
-WAIT !dummy         // expected-error {{invalid identifier}}
+
 IS_INT_VAR_EQUAL_TO_CONSTANT i DUMMY // expected-error {{no string constant with this name}}
+IS_INT_VAR_EQUAL_TO_CONSTANT i 0 // fine
+IS_INT_VAR_EQUAL_TO_CONSTANT i 0.0 // expected-error {{no string constant with this name}}
+
+START_NEW_SCRIPT script_label 0 0.0 DUMMY // expected-error {{no variable with this name}}
+
+WAIT dummy 			// expected-error {{no variable with this name}}
+WAIT !dummy         // expected-error {{invalid identifier}}
 
 WAIT x              // expected-error {{variable type does not match argument type}}
 SET_VAR_INT lvar 0  // expected-error {{variable kind (global/local) not allowed for this argument}}
@@ -50,3 +60,11 @@ IS_INT_VAR_EQUAL_TO_CONSTANT i my_int // expected-error {{no string constant wit
 
 }
 TERMINATE_THIS_SCRIPT
+
+{
+script_label:
+LVAR_INT s1
+LVAR_FLOAT s2
+LVAR_INT s3
+TERMINATE_THIS_SCRIPT
+}

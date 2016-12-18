@@ -6,8 +6,8 @@ LVAR_INT y
 REPEAT 5 x // fine
 ENDREPEAT
 
-REPEAT 5.0 x // expected-error {{expected float}}
-ENDREPEAT    // FIXME wrong message ^
+REPEAT 5.0 x // expected-error {{expected integer}}
+ENDREPEAT
 
 REPEAT 5 y // expected-error {{variable kind}}
 ENDREPEAT

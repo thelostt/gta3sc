@@ -159,6 +159,7 @@ public:
             BadArgument,
             ExpectedInt,
             ExpectedFloat,
+            ExpectedTextLabel,
             ExpectedStringLiteral,
             NoSuchLabel,
             NoSuchConstant,

@@ -12,8 +12,7 @@ SWITCH n
         BREAK
     CASE j      // expected-error {{variable not allowed}}
         BREAK
-    CASE 1.0    // expected-error {{expected float}}
-				// ^ wrong error message FIXME
+    CASE 1.0    // expected-error {{expected integer}}
         BREAK
     DEFAULT
         BREAK
