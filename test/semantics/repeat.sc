@@ -9,7 +9,7 @@ ENDREPEAT
 REPEAT 5.0 x // expected-error {{expected integer}}
 ENDREPEAT
 
-REPEAT 5 y // expected-error {{variable kind}}
+REPEAT 5 y // fine by extension
 ENDREPEAT
 
 

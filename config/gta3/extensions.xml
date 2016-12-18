@@ -11,6 +11,12 @@
     </Alternator>
   </Alternators>
   <Commands>
+    <Command ID="0xcd" Name="REPEAT" Internal="true">
+      <Args>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
+        <Arg Type="INT" AllowConst="false" AllowLocalVar="true"/>
+      </Args>
+    </Command>
     <Command ID="0x3a" Name="IS_INT_LVAR_EQUAL_TO_INT_VAR" Hash="0xcb7d4693" Extension="true">
       <Args>
         <Arg Type="INT" AllowConst="false" AllowGlobalVar="false"/>

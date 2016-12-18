@@ -1,5 +1,6 @@
 -Wconflict-text-label-var
 --add-config=sounds.xml
+--add-config=extensions.xml
 --levelfile=gta.dat
 -mheader=gtasa
 -mno-q11.4

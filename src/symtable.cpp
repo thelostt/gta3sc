@@ -1021,6 +1021,15 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                         **exp_set_var_to_zero, **exp_add_var_with_one, **exp_is_var_geq_times,
                         std::move(number_zero), std::move(number_one)
                     });
+
+                    if(program.opt.pedantic)
+                    {
+                        if(auto varinfo = get_base_var_annotation(var))
+                        {
+                            if((*varinfo)->global == false)
+                                program.pedantic(var, "REPEAT only allows global variables [-pedantic]");
+                        }
+                    }
                 }
                 else
                 {
