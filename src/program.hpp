@@ -79,6 +79,7 @@ public:
     /// Boolean flags
     bool headerless = false;
     bool pedantic = false;
+    bool pedantic_errors = false; // also enables .pedantic
     bool guesser = false;
     bool use_half_float = false;
     bool has_text_label_prefix = false;
@@ -235,6 +236,18 @@ public:
         ++fatal_count;
         if(logstream) this->puts(format_error(this->opt, "fatal error", context, msg, std::forward<Args>(args)...));
         throw ProgramFailure();
+    }
+
+    template<typename Context, typename... Args>
+    void pedantic(const Context& context, const char* msg, Args&&... args)
+    {
+        if(this->opt.pedantic)
+        {
+            if(this->opt.pedantic_errors)
+                this->error(context, msg, std::forward<Args>(args)...);
+            else
+                this->warning(context, msg, std::forward<Args>(args)...);
+        }
     }
 
     /// Either the command `opt` (named `name`) is supported, or a fatal error is given.

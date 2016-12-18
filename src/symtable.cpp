@@ -408,8 +408,7 @@ void IncluderTable::scan_for_includers(const Script& script, ProgramContext& pro
                     add_script(ScriptType::StreamedScript, node);
                 else if(iequal_to()(command_name, "REQUIRE"))
                 {
-                    if(program.opt.pedantic)
-                        program.error(node, "REQUIRE is a language extension [-pedantic]");
+                    program.pedantic(node, "REQUIRE is a language extension [-pedantic]");
                     add_script(ScriptType::Required, node);
                 }
 
@@ -941,7 +940,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             program.error(node, "unexpected use of internal command");
                         
                         if(command.extension && program.opt.pedantic)
-                            program.error(node, "this command is a language extension [-pedantic]");
+                            program.pedantic(node, "this command is a language extension [-pedantic]");
 
                         commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));
@@ -1307,11 +1306,15 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                     program.error(node, "BREAK only allowed at the end of a SWITCH CASE [-fbreak-continue]");
                 else if(!loop_depth_break)
                     program.error(node, "BREAK not in a loop or SWITCH statement");
+                else
+                    program.pedantic(node, "BREAK anywhere is a language extension [-pedantic]");
                 return false;
             }
 
             case NodeType::CONTINUE:
             {
+                program.pedantic(node, "CONTINUE is a language extension [-pedantic]");
+
                 if(!program.opt.allow_break_continue)
                     program.error(node, "CONTINUE is not supported [-fbreak-continue]");
                 else if(!loop_depth_continue)
@@ -1321,8 +1324,7 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
             case NodeType::DUMP:
             {
-                if(program.opt.pedantic)
-                    program.error(node, "DUMP is a language extension [-pedantic]");
+                program.pedantic(node, "DUMP is a language extension [-pedantic]");
                 return false;
             }
 

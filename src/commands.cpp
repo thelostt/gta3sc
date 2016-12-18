@@ -330,7 +330,7 @@ static auto match_arg(const Commands& commands, const shared_ptr<const SyntaxTre
                 else if(auto opt_const = commands.find_constant_all(index))
                 {
                     indexing = *opt_const;
-                    if(options.pedantic)
+                    if(options.pedantic) // TODO pedantic/warning instead of error
                         return make_unexpected(MatchFailure{ hint, MatchFailure::VariableIndexIsConstant });
                 }
                 else

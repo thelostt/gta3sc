@@ -50,6 +50,9 @@ void CompilerContext::compile_label(shared_ptr<Label> label_ptr)
 
 void CompilerContext::compile_command(const Command& command, ArgList args, bool not_flag)
 {
+    if(command.extension && program.opt.pedantic)
+        program.pedantic(this->script, "use of command {} which is a language extension [-pedantic]", command.name);
+
     if(command.has_optional())
     {
         assert(args.size() == 0 || !is<EOAL>(args.back()));

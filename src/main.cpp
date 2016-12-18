@@ -22,7 +22,8 @@ Options:
   --add-config=<path>      Adds an additional XML definition file.
                            If the path is not absolute or starts with './' or
                            '../', uses a path relative to 'config/<name>/'.
-  -pedantic                Forbid the usage of extensions not in R* compiler.
+  -pedantic                Warns when using extensions not in R* language.
+  -pedantic-errors         Errors when using extensions not in R* language.
   --guesser                Allows the use of language features not completly
                            known or understood by the modding community.
   -D <name>                Defines the preprocessor directive <name>.
@@ -149,6 +150,11 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(const char* o = optget(argv, "-o", nullptr, 1))
             {
                 output = o;
+            }
+            else if(optget(argv, nullptr, "-pedantic-errors", 0))
+            {
+                options.pedantic = true;
+                options.pedantic_errors = true;
             }
             else if(optget(argv, nullptr, "-pedantic", 0))
             {

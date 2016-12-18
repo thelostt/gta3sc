@@ -1,5 +1,7 @@
 // RUN: %gta3sc %s --config=gta3 -emit-ir2 -o - | %FileCheck %s
 // RUN: %gta3sc %s --config=gtavc -emit-ir2 -o - | %FileCheck %s
+// RUN: %not %gta3sc %s --config=gta3 -emit-ir2 -o - -pedantic-errors
+// RUN: %not %gta3sc %s --config=gtavc -emit-ir2 -o - -pedantic-errors
 {
 VAR_INT gi
 LVAR_INT li

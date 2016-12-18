@@ -56,6 +56,22 @@ struct LexerContext
     {
         return error(std::make_pair(pos, 1), std::forward<Args>(args)...);
     }
+
+    template<typename... Args>
+    void pedantic(std::pair<size_t, size_t> pos, Args&&... args) // pos = <begin_pos, size>
+    {
+        if(program.opt.pedantic)
+        {
+            this->program.pedantic(TokenStream::TokenInfo(this->stream, pos.first, pos.first + pos.second),
+                std::forward<Args>(args)...);
+        }
+    }
+
+    template<typename... Args>
+    void pedantic(size_t pos, Args&&... args)
+    {
+        return pedantic(std::make_pair(pos, 1), std::forward<Args>(args)...);
+    }
 };
 
 #define DEFINE_TOKEN(kw)          { #kw, Token :: kw }
@@ -271,7 +287,7 @@ static auto lex_token(LexerContext& lexer, const char* begin, const char* end, s
         if(is_integer(token))
         {
             if(lexer.program.opt.pedantic && have_hexadecimal_prefix(token))
-                lexer.error({begin_pos, token.second}, "hexadecimal integer literals are a language extension [-pedantic]");
+                lexer.pedantic({begin_pos, token.second}, "hexadecimal integer literals are a language extension [-pedantic]");
 
             lexer.add_token(Token::Integer, begin_pos, token.second);
             return token.first + token.second;
@@ -462,7 +478,7 @@ static bool lex_cpp(LexerContext& lexer, char* begin, char* end, size_t begin_po
         size_t line_pos = begin_pos + std::distance(begin, next_char_it);
 
         if(lexer.program.opt.pedantic)
-            lexer.error(line_pos, "preprocessor not allowed [-pedantic]");
+            lexer.pedantic(line_pos, "preprocessor is a language extension [-pedantic]");
 
         if(auto opt_command = lex_gettok(next_char_it + 1, end))
         {
@@ -559,7 +575,7 @@ static void lex_line(LexerContext& lexer, const char* source_data, size_t begin_
 
     if(lexer.program.opt.pedantic && lexer.line_buffer.size() > 255)
     {
-        lexer.error(begin_pos, "line is too long, miss2 only allows 255 characters [-pedantic]");
+        lexer.pedantic(begin_pos, "line is too long, miss2 only allows 255 characters [-pedantic]");
     }
 
     if(lexer.in_dump_mode)
