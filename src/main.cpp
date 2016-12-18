@@ -26,11 +26,23 @@ Options:
   --guesser                Allows the use of language features not completly
                            known or understood by the modding community.
   -D <name>                Defines the preprocessor directive <name>.
+  --define=<name>          Ditto.
   -U <name>                Undefines the preprocessor directive <name>.
+  --undefine=<name>        Ditto.
+  -O                       Enables optimizations.
   -emit-ir2                Emits a explicit IR based on Sanny Builder syntax.
   -fsyntax-only            Only checks the syntax, i.e. doesn't generate code.
-  -fentity-tracking        Tracks entity types in variables.
+  --recursive-traversal    Disassembler scans the code by the means of a
+                           recursive traversal instead of linear-sweep.
+
+Language Options:
+  -fswitch                 Enables the SWITCH statement.
+  -farrays                 Enables the use of arrays.
+  -fconst                  Enables the use of CONST_INT and CONST_FLOAT.
+  -ftext-label-vars        Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
+  -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
   -fscript-name-check      Checks for duplicate SCRIPT_NAMEs.
+  -fentity-tracking        Tracks entity types in variables.
   -fbreak-continue         Allows the use of BREAK and CONTINUE in all
                            statements, including WHILE and REPEAT.
   -fstreamed-scripts       Enables the use of streamed scripts and generates an
@@ -39,10 +51,18 @@ Options:
                            whenever a label is used before a curly bracket
                            instead of after.
   -funderscore-idents      Allows identifiers to begin with a underscore.
-  -fswitch                 Enables the SWITCH statement.
-  -farrays                 Enables the use of arrays.
-  -fconst                  Enables the use of CONST_INT and CONST_FLOAT.
-  -ftext-label-vars        Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
+  -flocal-var-limit=<n>    The index limit of local variables.
+  -fmission-var-limit=<n>  The index limit of mission local variables. Defaults
+                           to -flocal-var-limit if not set. Use -1 to unset.
+  -fmission-var-begin=<n>  Mission variables will start from the index <n>.
+  -ftimer-index=<n>        The local variable index of TIMERA.
+  -fswitch-case-limit=<n>  The limit on the number of CASE in a SWITCH.
+  -farray-elem-limit=<n>   The limit of array elements in a single array.
+  -frelax-not              Allows the use of NOT outside of conditions.
+  -fcleo                   Enables the use of CLEO features.
+  -fmission-script         Compiling a mission script.
+
+Machine Options:
   -mno-header              Does not generate a header on the output SCM.
   -mheader=<version>       Generates the specified header version (gta3,gtavc,
                            gtasa).
@@ -52,27 +72,15 @@ Options:
   -mtyped-text-label       Codegen uses GTA SA text label data type.
   -moptimize-andor         Omits compiling ANDOR on single condition statements.
   -moptimize-zero          Compiles 0.0 as 0, using a 8 bit data type.
-  -O                       Enables optimizations.
-  -flocal-var-limit=<n>    The index limit of local variables.
-  -fmission-var-limit=<n>  The index limit of mission local variables. Defaults
-                           to -flocal-var-limit if not set. Use -1 to unset.
-  -fmission-var-begin=<n>  Mission variables will start from the index <n>.
-  -ftimer-index=<n>        The local variable index of TIMERA.
-  -fswitch-case-limit=<n>  The limit on the number of CASE in a SWITCH.
-  -farray-elem-limit=<n>   The limit of array elements in a single array.
-  -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
-  --recursive-traversal    Disassembler scans the code by the means of a
-                           recursive traversal instead of linear-sweep.
-  -frelax-not              Allows the use of NOT outside of conditions.
-  -fcleo                   Enables the use of CLEO features.
-  -fmission-script         Compiling a mission script.
   -moatc                   Uses the Custom Commands Header whenever possible.
+
+Error Message Options:
   --error-format=<format>  The error formating for the compiler errors.
                            May be `default` or `json`. Do note the JSON format
                            may contain some pre-compilation messages in the
                            default format (i.e. gta3sc: type:? message).
   -Wconflict-text-label-var Warns when text labels conflicts with variable
-                            names. Enabled by default.
+                            names.
   -fconstant-checks        Checks whether variables collides with constants.
 )";
 
