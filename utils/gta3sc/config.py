@@ -65,6 +65,7 @@ class Command:
         self.hash = None
         self.supported = False
         self.internal = False
+        self.extension = False
         self.args = []
 
     def __eq__(self, other):
@@ -99,6 +100,7 @@ class Command:
         init.hash = int(cmdhash, 0) if cmdhash is not None else None
         init.supported = _str2bool(node.get("Supported", "true"))
         init.internal = _str2bool(node.get("Internal", "false"))
+        init.extension = _str2bool(node.get("Extension", "false"))
         init.args = []
         node_args = node.find("Args")
         if node_args is not None:
@@ -117,6 +119,8 @@ class Command:
             node.set("Supported", _bool2str(self.supported))
         if self.internal == True:
             node.set("Internal", _bool2str(self.internal))
+        if self.extension == True:
+            node.set("Extension", _bool2str(self.extension))
         if len(self.args) > 0:
             node_args = etree.SubElement(node, "Args")
             for a in self.args:

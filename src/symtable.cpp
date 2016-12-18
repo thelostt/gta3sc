@@ -939,6 +939,9 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
 
                         if(command.internal)
                             program.error(node, "unexpected use of internal command");
+                        
+                        if(command.extension && program.opt.pedantic)
+                            program.error(node, "this command is a language extension [-pedantic]");
 
                         commands.annotate(node, command, symbols, current_scope, *this, program);
                         node.set_annotation(std::cref(command));

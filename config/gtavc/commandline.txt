@@ -1,3 +1,4 @@
+--add-config=extensions.xml
 --levelfile=gta_vc.dat
 -mheader=gtavc
 -mno-q11.4

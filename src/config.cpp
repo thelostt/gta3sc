@@ -142,6 +142,7 @@ static Command
     xml_attribute<>* name_attrib = cmd_node->first_attribute("Name");
     xml_attribute<>* support_attrib = cmd_node->first_attribute("Supported");
     xml_attribute<>* internal_attrib = cmd_node->first_attribute("Internal");
+    xml_attribute<>* extension_attrib = cmd_node->first_attribute("Extension");
     xml_node<>*      args_node   = cmd_node->first_node("Args");
 
     if(!name_attrib || !(id_attrib || hash_attrib))
@@ -229,6 +230,7 @@ static Command
     return Command {
         xml_to_bool(support_attrib, true),               // supported
         xml_to_bool(internal_attrib, false),             // internal
+        xml_to_bool(extension_attrib, false),            // extension
         std::move(id),                                   // id
         std::move(hash),                                 // hash
         std::move(args),                                 // args
@@ -236,19 +238,24 @@ static Command
     };
 }
 
-static std::pair<std::string, std::vector<const Command*>>
+static void
   parse_alternator_node(
+      insensitive_map<std::string, std::vector<const Command*>>& alternators,
       const rapidxml::xml_node<>* alt_node,
       const transparent_set<Command>& commands)
 {
     using namespace rapidxml;
 
-    std::vector<const Command*> alternatives;
-
     xml_attribute<>* name_attrib = alt_node->first_attribute("Name");
 
     if(!name_attrib)
         throw ConfigError("missing 'Name' attribute on '<Alternator>' node");
+
+    auto eit = alternators.find(name_attrib->value());
+    if(eit == alternators.end())
+    {
+        eit = alternators.emplace(name_attrib->value(), std::vector<const Command*>{}).first;
+    }
 
     for(auto node = alt_node->first_node(); node; node = node->next_sibling())
     {
@@ -259,10 +266,8 @@ static std::pair<std::string, std::vector<const Command*>>
 
         auto it = commands.find(attrib->value());
         if(it != commands.end())
-            alternatives.emplace_back(std::addressof(*it));
+            eit->second.emplace_back(std::addressof(*it));
     }
-
-    return { name_attrib->value(), std::move(alternatives) };
 }
 
 Commands Commands::from_xml(const std::string& config_name, const std::vector<fs::path>& xml_list)
@@ -396,8 +401,7 @@ Commands Commands::from_xml(const std::string& config_name, const std::vector<fs
             {
                 if(!strcmp(alt_node->name(), "Alternator"))
                 {
-                    auto alt_pair = parse_alternator_node(alt_node, commands);
-                    alternators.emplace(std::move(alt_pair));
+                    parse_alternator_node(alternators, alt_node, commands);
                 }
             }
         }

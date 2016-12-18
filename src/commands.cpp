@@ -22,7 +22,7 @@ Commands::Commands(transparent_set<Command>&& commands_,
     this->enum_models = it_model->second;
     this->enum_defaultmodels = it_defaultmodel->second;
     this->enum_scriptstream = it_scriptstream->second;
-
+    
     for(auto& cmd : this->commands)
     {
         if(cmd.id)
