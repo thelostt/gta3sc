@@ -193,6 +193,9 @@ inline const char* to_string(Miss2Identifier::Error e)
     }
 }
 
+optional<int32_t> to_integer(const SyntaxTree&, ProgramContext&);
+optional<float> to_float(const SyntaxTree&, ProgramContext&);
+
 ///////////////////////////////
 
 class TokenStream : public std::enable_shared_from_this<TokenStream>

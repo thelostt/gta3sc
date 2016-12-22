@@ -700,7 +700,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                 if(node.is_annotated())
                     assert(node.maybe_annotation<const int32_t&>());
                 else
-                    node.set_annotation(static_cast<int32_t>(std::stoi(node.text().to_string(), nullptr, 0)));
+                    node.set_annotation(to_integer(node, program).value_or(0));
                 break;
             }
 
@@ -709,7 +709,7 @@ void Commands::annotate(const AnnotateArgumentList& args, const Command& command
                 if(node.is_annotated())
                     assert(node.maybe_annotation<const float&>());
                 else
-                    node.set_annotation(std::stof(node.text().to_string()));
+                    node.set_annotation(to_float(node, program).value_or(.0f));
                 break;
             }
 

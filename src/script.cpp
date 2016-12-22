@@ -22,7 +22,7 @@ shared_ptr<Script> Script::create(fs::path path, ScriptType type, ProgramContext
 auto Script::from_subdir(const string_view& filename, const Script::SubDir& subdir,
                          ScriptType type, ProgramContext& program) const -> shared_ptr<Script>
 {
-    Expects(this->type == ScriptType::Main);
+    Expects(this->is_main_script());
 
     auto path_it = subdir.find(filename);
     if(path_it != subdir.end())

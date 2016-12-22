@@ -644,9 +644,9 @@ void SymTable::scan_symbols(Script& script, ProgramContext& program)
 
                 auto value = [&]() -> decltype(UserConstant::value) {
                     if(node.type() == NodeType::CONST_INT)
-                        return std::stoi(node_value.text().to_string(), nullptr, 0);
+                        return to_integer(node_value, program).value_or(0);
                     else if(node.type() == NodeType::CONST_FLOAT)
-                        return std::stof(node_value.text().to_string());
+                        return to_float(node_value, program).value_or(.0f);
                     else
                         Unreachable();
                 }();

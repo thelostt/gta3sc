@@ -898,3 +898,60 @@ bool Miss2Identifier::is_identifier(const string_view& value, const Options& opt
     else
         return (first_char >= 'a' && first_char <= 'z') || (first_char >= 'A' && first_char <= 'Z') || first_char == '$';
 }
+
+optional<int32_t> to_integer(const SyntaxTree& node, ProgramContext& program)
+{
+    Expects(node.type() == NodeType::Integer);
+
+    try
+    {
+        auto number = node.text();
+
+        if(number.size() > 2+7 && number[0] == '0' && (number[1] == 'x' || number[1] == 'X'))
+        {
+            auto ll = std::stoll(number.to_string(), 0, 0);
+            static_assert(sizeof(ll) == sizeof(int32_t) * 2, "");
+
+            if(ll > std::numeric_limits<int32_t>::max())
+            {
+                if(ll > std::numeric_limits<uint32_t>::max())
+                    throw std::out_of_range("out of range");
+
+                // long long is inside the unsigned int range
+                return static_cast<int32_t>(static_cast<uint32_t>(ll));
+            }
+            else
+            {
+                if(ll < std::numeric_limits<int32_t>::min())
+                    throw std::out_of_range("out of range");
+
+                // long long is inside the signed int range.
+                return static_cast<int32_t>(ll);
+            }
+        }
+        else
+        {
+            return std::stoi(number.to_string(), 0, 0);
+        }
+    }
+    catch(const std::out_of_range&)
+    {
+        program.error(node, "integer is out of range");
+        return nullopt;
+    }
+}
+
+optional<float> to_float(const SyntaxTree& node, ProgramContext& program)
+{
+    Expects(node.type() == NodeType::Float);
+
+    try
+    {
+        return std::stof(node.text().to_string());
+    }
+    catch(const std::out_of_range&)
+    {
+        program.error(node, "float is out of range");
+        return nullopt;
+    }
+}
