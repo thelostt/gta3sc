@@ -300,10 +300,12 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
     shared_ptr<SyntaxTree> node_set_progress_total;
     shared_ptr<SyntaxTree> node_set_total_number_of_missions;
     shared_ptr<SyntaxTree> node_set_collectable1_total;
+    shared_ptr<SyntaxTree> node_set_mission_respect_total;
 
     int32_t count_collectable1 = 0;
     int32_t count_mission_passed = 0;
     int32_t count_progress = 0;
+    int32_t count_respect = 0;
 
     auto handle_script_input = [&program](const SyntaxTree& arg_node, const shared_ptr<Var>& lvar, bool is_cleo_call) -> bool
     {
@@ -686,6 +688,24 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
         }
     };
 
+    auto try_handle_increase_counter = [&](SyntaxTree& node, const Command& command,
+                                           const optional<const Command&>& expected,
+                                           int32_t& counter)
+    {
+        if(program.commands.equal(command, expected))
+        {
+            if(node.child_count() >= 2)
+            {
+                if(auto inc = node.child(1).maybe_annotation<int32_t>())
+                    counter += *inc;
+                else
+                    program.warning(node, "value is not a constant");
+            }
+            return true;
+        }
+        return false;
+    };
+
     for(auto& script : scripts)
     {
         script->tree->depth_first([&](SyntaxTree& node)
@@ -713,23 +733,17 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
                         }
                         else if(try_handle_set_total(node, command, program.commands.set_progress_total, node_set_progress_total)
                              || try_handle_set_total(node, command, program.commands.set_total_number_of_missions, node_set_total_number_of_missions)
-                             || try_handle_set_total(node, command, program.commands.set_collectable1_total, node_set_collectable1_total))
+                             || try_handle_set_total(node, command, program.commands.set_collectable1_total, node_set_collectable1_total)
+                             || try_handle_set_total(node, command, program.commands.set_mission_respect_total, node_set_mission_respect_total))
                             {}
                         else if(program.commands.equal(command, program.commands.register_mission_passed)
                              || program.commands.equal(command, program.commands.register_oddjob_mission_passed))
                             { ++count_mission_passed; }
                         else if(program.commands.equal(command, program.commands.create_collectable1))
                             { ++count_collectable1; }
-                        else if(program.commands.equal(command, program.commands.player_made_progress))
-                        {
-                            if(node.child_count() >= 2)
-                            {
-                                if(auto inc = node.child(1).maybe_annotation<int32_t>())
-                                    count_progress += *inc;
-                                else
-                                    program.warning(node, "progress value is not a constant");
-                            }
-                        }
+                        else if(try_handle_increase_counter(node, command, program.commands.player_made_progress, count_progress)
+                             || try_handle_increase_counter(node, command, program.commands.award_player_mission_respect, count_respect))
+                            {}
                         else if(is_child_of_custom && program.commands.equal(command, program.commands.start_new_script))
                         {
                             program.error(node, "this command is not allowed in {} scripts", to_string(script->type));
@@ -810,6 +824,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
     set_total_annotation(node_set_collectable1_total, count_collectable1);
     set_total_annotation(node_set_total_number_of_missions, count_mission_passed);
     set_total_annotation(node_set_progress_total, count_progress);
+    set_total_annotation(node_set_mission_respect_total, count_respect);
 }
 
 void Script::compute_scope_outputs(const SymTable& symbols, ProgramContext& program)

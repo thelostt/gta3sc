@@ -32,9 +32,11 @@ Commands::Commands(transparent_set<Command>&& commands_,
     this->set_progress_total            = find_command("SET_PROGRESS_TOTAL");
     this->set_total_number_of_missions  = find_command("SET_TOTAL_NUMBER_OF_MISSIONS");
     this->set_collectable1_total        = find_command("SET_COLLECTABLE1_TOTAL");
+    this->set_mission_respect_total     = find_command("SET_MISSION_RESPECT_TOTAL");
     this->register_mission_passed       = find_command("REGISTER_MISSION_PASSED");
     this->register_oddjob_mission_passed= find_command("REGISTER_ODDJOB_MISSION_PASSED");
     this->create_collectable1           = find_command("CREATE_COLLECTABLE1");
+    this->award_player_mission_respect  = find_command("AWARD_PLAYER_MISSION_RESPECT");
     this->player_made_progress          = find_command("PLAYER_MADE_PROGRESS");
     this->repeat                        = find_command("REPEAT");
     this->switch_                       = find_command("SWITCH");

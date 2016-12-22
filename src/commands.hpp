@@ -339,6 +339,8 @@ public:
     optional<const Command&> register_oddjob_mission_passed;
     optional<const Command&> create_collectable1;
     optional<const Command&> player_made_progress;
+    optional<const Command&> set_mission_respect_total;
+    optional<const Command&> award_player_mission_respect;
     optional<const Command&> repeat;
     optional<const Command&> switch_;
     optional<const Command&> case_;

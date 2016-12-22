@@ -4374,7 +4374,7 @@
         <Arg Type="INT" Entity="PLAYER"/>
       </Args>
     </Command>
-    <Command ID="0x2a0" Name="IS_CHAR_STOPPED" Supported="false">
+    <Command ID="0x2a0" Name="IS_CHAR_STOPPED">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
       </Args>
@@ -4834,7 +4834,7 @@
         <Arg Type="INT" Entity="CHAR"/>
       </Args>
     </Command>
-    <Command ID="0x2e1" Name="CREATE_MONEY_PICKUP" Supported="false">
+    <Command ID="0x2e1" Name="CREATE_MONEY_PICKUP">
       <Args>
         <Arg Type="FLOAT"/>
         <Arg Type="FLOAT"/>
@@ -4884,7 +4884,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x2ee" Name="IS_PROJECTILE_IN_AREA" Supported="false">
+    <Command ID="0x2ee" Name="IS_PROJECTILE_IN_AREA">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
         <Arg Type="FLOAT" Desc="Y Coord"/>
@@ -6050,7 +6050,7 @@
         <Arg Type="FLOAT"/>
       </Args>
     </Command>
-    <Command ID="0x3a9" Name="SAVE_NEWLINE_TO_DEBUG_FILE" Supported="false"/>
+    <Command ID="0x3a9" Name="SAVE_NEWLINE_TO_DEBUG_FILE"/>
     <Command ID="0x3aa" Name="POLICE_RADIO_MESSAGE">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -6210,7 +6210,7 @@
       </Args>
     </Command>
     <Command ID="0x3c8" Name="SET_CAMERA_IN_FRONT_OF_PLAYER"/>
-    <Command ID="0x3c9" Name="IS_CAR_VISIBLY_DAMAGED" Supported="false">
+    <Command ID="0x3c9" Name="IS_CAR_VISIBLY_DAMAGED">
       <Args>
         <Arg Type="INT" Entity="CAR"/>
       </Args>
@@ -6456,13 +6456,13 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x3fd" Name="SET_DRUNK_INPUT_DELAY" Supported="false">
+    <Command ID="0x3fd" Name="SET_DRUNK_INPUT_DELAY">
       <Args>
         <Arg Type="INT" Entity="PLAYER"/>
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x3fe" Name="SET_CHAR_MONEY" Supported="false">
+    <Command ID="0x3fe" Name="SET_CHAR_MONEY">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="INT"/>
@@ -6474,7 +6474,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x400" Name="GET_OFFSET_FROM_OBJECT_IN_WORLD_COORDS" Supported="false">
+    <Command ID="0x400" Name="GET_OFFSET_FROM_OBJECT_IN_WORLD_COORDS">
       <Args>
         <Arg Type="INT" Entity="OBJECT"/>
         <Arg Type="FLOAT" Desc="X Offset"/>
@@ -6503,7 +6503,7 @@
         <Arg Type="INT"/>
       </Args>
     </Command>
-    <Command ID="0x407" Name="GET_OFFSET_FROM_CAR_IN_WORLD_COORDS" Supported="false">
+    <Command ID="0x407" Name="GET_OFFSET_FROM_CAR_IN_WORLD_COORDS">
       <Args>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="FLOAT" Desc="X Offset"/>
@@ -6586,7 +6586,7 @@
         <Arg Type="INT" Out="true"/>
       </Args>
     </Command>
-    <Command ID="0x41a" Name="GET_AMMO_IN_CHAR_WEAPON" Supported="false">
+    <Command ID="0x41a" Name="GET_AMMO_IN_CHAR_WEAPON">
       <Args>
         <Arg Type="INT" Entity="CHAR"/>
         <Arg Type="INT" Enum="WEAPONTYPE"/>
@@ -7692,7 +7692,7 @@
         <Arg Type="INT" Desc="Bool"/>
       </Args>
     </Command>
-    <Command ID="0x4e0" Name="SET_CAR_STRAIGHT_LINE_DISTANCE" Supported="false">
+    <Command ID="0x4e0" Name="SET_CAR_STRAIGHT_LINE_DISTANCE">
       <Args>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="INT"/>
@@ -9027,7 +9027,7 @@
     <Command ID="0x5e6" Name="HAS_STUNT_ENDED" Supported="false"/>
     <Command ID="0x5e7" Name="HAS_STUNT_FAILED" Supported="false"/>
     <Command ID="0x5e8" Name="START_RECORDING_STUNT" Supported="false"/>
-    <Command ID="0x5e9" Name="START_RECORDING_CAR" Supported="false">
+    <Command ID="0x5e9" Name="START_RECORDING_CAR">
       <Args>
         <Arg Type="INT" Entity="CAR"/>
         <Arg Type="INT"/>
@@ -10388,7 +10388,7 @@
     <Command ID="0x6cc" Name="DRAW_CROSS_IN_FRONT_OF_DEBUG_CAMERA" Supported="false"/>
     <Command ID="0x6cd" Name="DRAW_DEBUG_CUBE" Supported="false"/>
     <Command ID="0x6ce" Name="GET_CAR_LAST_ROUTE_COORDS" Supported="false"/>
-    <Command ID="0x6cf" Name="DISPLAY_TIMER_BARS" Supported="false">
+    <Command ID="0x6cf" Name="DISPLAY_TIMER_BARS">
       <Args>
         <Arg Type="INT"/>
       </Args>
@@ -12421,7 +12421,7 @@
         <Arg Type="FLOAT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
       </Args>
     </Command>
-    <Command ID="0x86a" Name="CLEAR_ALL_VIEW_VARIABLES" Supported="false"/>
+    <Command ID="0x86a" Name="CLEAR_ALL_VIEW_VARIABLES"/>
     <Command ID="0x86b" Name="CLEAR_THIS_INTEGER_WATCHPOINT">
       <Args>
         <Arg Type="INT" Ref="true" AllowConst="false" AllowLocalVar="false"/>
@@ -13388,7 +13388,7 @@
         <Arg Type="TEXT_LABEL16" Out="true"/>
       </Args>
     </Command>
-    <Command ID="0x91b" Name="RESET_LATEST_CONSOLE_COMMAND" Supported="false"/>
+    <Command ID="0x91b" Name="RESET_LATEST_CONSOLE_COMMAND"/>
     <Command ID="0x91c" Name="GET_USER_OF_CLOSEST_MAP_ATTRACTOR">
       <Args>
         <Arg Type="FLOAT" Desc="X Coord"/>
@@ -14035,12 +14035,12 @@
     </Command>
     <Command ID="0x997" Name="SET_MISSION_RESPECT_TOTAL">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x998" Name="AWARD_PLAYER_MISSION_RESPECT">
       <Args>
-        <Arg Type="INT"/>
+        <Arg Type="INT" AllowGlobalVar="false" AllowLocalVar="false"/>
       </Args>
     </Command>
     <Command ID="0x999" Name="SET_PLAYER_FIRE_WITH_SHOULDER_BUTTON" Supported="false"/>

@@ -25,8 +25,21 @@ endif()
 if(MSVC)
     # MSVC ITERATOR_DEBUG_LEVEL=2 breaks expected-lite
     add_definitions(-D_ITERATOR_DEBUG_LEVEL=0)
+
     # Fix some weird linker error on Debug builds
     set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /Ob1")
+
+    # Static link the CRT on release
+    foreach(flag_var CMAKE_CXX_FLAGS_RELEASE CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+        string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+    endforeach(flag_var)
+    if(NOT CMAKE_CXX_FLAGS_RELEASE MATCHES "/MT")
+        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT")
+    endif()
+    if(NOT CMAKE_CXX_FLAGS_RELWITHDEBINFO MATCHES "/MT")
+        set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /MT")
+    endif()
+
 endif(MSVC)
 
 include_directories(
