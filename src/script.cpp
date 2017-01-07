@@ -394,7 +394,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
         assert(is_cleo_call == true);
 
         size_t i = 0;
-        for(auto argoutput = output_begin; argoutput != output_end; ++argoutput)
+        for(auto argoutput = output_begin; argoutput != output_end; ++argoutput, ++i)
         {
             if(auto opt_outvar = get_base_var_annotation(**argoutput))
             {
