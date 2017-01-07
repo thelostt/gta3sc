@@ -109,7 +109,7 @@ inline std::string escape_string(const string_view& string, char quotes, bool pu
     {
         switch(c)
         {
-            case '\\': result += R"(\\")"; break;
+            case '\\': result += R"(\\)"; break;
             case '\n': result += R"(\n)"; break;
             case '\r': result += R"(\r)"; break;
             case '\t': result += R"(\t)"; break;

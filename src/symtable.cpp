@@ -970,6 +970,11 @@ void Script::annotate_tree(const SymTable& symbols, ProgramContext& program)
                             else
                                 cutscene_skip = nullptr;
                         }
+                        else if(commands.equal(command, commands.cleo_return))
+                        {
+                            if(!current_scope)
+                                program.error(node, "CLEO_RETURN must be inside a scope");
+                        }
                     }
                     else
                     {

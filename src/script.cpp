@@ -445,7 +445,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
         auto& target_scope = (*opt_target_label)->scope;
         if(!target_scope)
         {
-            auto where = program.opt.scope_then_label? "after" : "before";
+            auto where = program.opt.scope_then_label? "before" : "after";
             program.error(arglabel_node, "expected scope in target label");
             program.note(arglabel_node, "add a '{{' {} the target label", where);
             return;
@@ -520,7 +520,7 @@ void Script::handle_special_commands(const std::vector<shared_ptr<Script>>& scri
         auto& target_scope = (*opt_target_label)->scope;
         if(!target_scope)
         {
-            auto where = program.opt.scope_then_label? "after" : "before";
+            auto where = program.opt.scope_then_label? "before" : "after";
             program.error(arglabel_node, "expected scope in target label");
             program.note(arglabel_node, "add a '{{' {} the target label", where);
             return;
