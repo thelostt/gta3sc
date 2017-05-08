@@ -57,7 +57,7 @@ using ArgVariant2 = variant<EOAL, int8_t, int16_t, int32_t, float, DecompiledVar
 struct DecompiledCommand
 {
     bool                     not_flag;
-    const Command&           command;
+    const Command*           command;  // never nullptr
     std::vector<ArgVariant2> args;
 };
 

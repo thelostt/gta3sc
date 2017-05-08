@@ -68,16 +68,16 @@ CustomHeaderOATC::CustomHeaderOATC(const std::vector<CodeGenerator*>& gens, Prog
             if(is<CompiledCommand>(op.data))
             {
                 auto& ccmd = get<CompiledCommand>(op.data);
-                if(ccmd.command.hash)
+                if(ccmd.command->hash)
                 {
-                    if(!this->find_opcode(ccmd.command))
+                    if(!this->find_opcode(*ccmd.command))
                     {
-                        this->ordinal_commands.emplace_back(&ccmd.command, (uint16_t) this->ordinal_commands.size());
+                        this->ordinal_commands.emplace_back(ccmd.command, (uint16_t) this->ordinal_commands.size());
                     }
                 }
-                else if(ccmd.command.id && this->starting_opcode < *ccmd.command.id)
+                else if(ccmd.command->id && this->starting_opcode < *ccmd.command->id)
                 {
-                    this->starting_opcode = *ccmd.command.id + 1;
+                    this->starting_opcode = *ccmd.command->id + 1;
                 }
             }
         }
@@ -447,13 +447,13 @@ inline void generate_code(const CompiledCommand& ccmd, CodeGenerator& codegen)
     optional<uint16_t> opcode;
 
     if(codegen.oatc)
-        opcode = codegen.oatc->find_opcode(ccmd.command);
+        opcode = codegen.oatc->find_opcode(*ccmd.command);
 
     if(opcode == nullopt)
-        opcode = ccmd.command.id;
+        opcode = ccmd.command->id;
 
     if(opcode == nullopt)
-        codegen.program.fatal_error(nocontext, "could not compile command {}, no id or no hash [-moatc]", ccmd.command.name);
+        codegen.program.fatal_error(nocontext, "could not compile command {}, no id or no hash [-moatc]", ccmd.command->name);
 
     codegen.bw.emplace_u16(*opcode | (ccmd.not_flag? 0x8000 : 0x0000));
     for(auto& arg : ccmd.args) ::generate_code(arg, codegen);
@@ -462,6 +462,11 @@ inline void generate_code(const CompiledCommand& ccmd, CodeGenerator& codegen)
 inline void generate_code(const CompiledLabelDef&, CodeGenerator&)
 {
     // label definitions do not have a physical representation
+}
+
+inline void generate_code(const CompiledNothing&, CodeGenerator&)
+{
+    // nothing is nothing
 }
 
 inline void generate_code(const CompiledHex& hex, CodeGenerator& codegen)

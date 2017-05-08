@@ -49,6 +49,9 @@ public:
     /// \warning This method is not thread-safe.
     void set_oatc(const CustomHeaderOATC& oatc) { this->oatc = std::addressof(oatc); }
 
+    /// Optimizes the IR.
+    void peepholer(ProgramContext&);
+
     /// Generates the code.
     void generate();
     

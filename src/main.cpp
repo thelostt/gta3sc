@@ -278,6 +278,7 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             }
             else if(optget(argv, nullptr, "-O", 0))
             {
+                options.optimize_with_peepholer = true;
                 options.optimize_andor = true;
                 options.optimize_zero_floats = true;
             }

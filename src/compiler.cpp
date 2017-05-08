@@ -59,7 +59,7 @@ void CompilerContext::compile_command(const Command& command, ArgList args, bool
         args.emplace_back(EOAL{});
     }
 
-    this->compiled.emplace_back(CompiledCommand{ not_flag, command, std::move(args) });
+    this->compiled.emplace_back(CompiledCommand{ not_flag, &command, std::move(args) });
 }
 
 void CompilerContext::compile_command(const SyntaxTree& command_node, bool not_flag)

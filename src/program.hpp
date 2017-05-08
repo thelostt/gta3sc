@@ -83,6 +83,7 @@ public:
     bool guesser = false;
     bool use_half_float = false;
     bool has_text_label_prefix = false;
+    bool optimize_with_peepholer = false;
     bool optimize_andor = false;
     bool optimize_zero_floats = false;
     bool entity_tracking = true;

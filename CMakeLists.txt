@@ -66,6 +66,7 @@ set(GTA3SC_SRC_MAIN
   src/annotation.hpp
   src/codegen.hpp
   src/codegen.cpp
+  src/peepholer.cpp
   src/config.cpp
   src/commands.cpp
   src/commands.hpp

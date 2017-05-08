@@ -404,7 +404,7 @@ DecompiledData Disassembler::opcode_to_data(size_t& offset)
 
     const Command& command = *this->command_from_opcode(cmdid);
 
-    DecompiledCommand ccmd { (cmdid & 0x8000) != 0, command };
+    DecompiledCommand ccmd { (cmdid & 0x8000) != 0, &command };
 
     auto start_offset = offset;
     offset = offset + 2;

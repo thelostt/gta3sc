@@ -57,7 +57,7 @@ using ArgVariant = variant<EOAL, int8_t, int16_t, int32_t, float, shared_ptr<Lab
 struct CompiledCommand
 {
     bool                    not_flag;
-    const Command&          command;
+    const Command*          command;        // never nullptr
     std::vector<ArgVariant> args;
 };
 
@@ -82,6 +82,15 @@ struct CompiledHex
     size_t compiled_size() const
     {
         return data.size();
+    }
+};
+
+// Produces nothing on the bytecode (helper for the optimizer).
+struct CompiledNothing
+{
+    size_t compiled_size() const
+    {
+        return 0;
     }
 };
 
@@ -132,18 +141,22 @@ struct CompiledScmHeader
 /// IR for a fundamental piece of compiled data. May be a label or a command.
 struct CompiledData
 {
-    variant<CompiledLabelDef, CompiledCommand, CompiledHex> data;
+    variant<CompiledLabelDef, CompiledCommand, CompiledHex, CompiledNothing> data;
 
-    CompiledData(CompiledCommand x)
+    explicit CompiledData(CompiledCommand x)
         : data(std::move(x))
     {}
 
-    CompiledData(std::vector<uint8_t> x)
+    explicit CompiledData(std::vector<uint8_t> x)
         : data(CompiledHex { std::move(x) })
     {}
 
-    CompiledData(shared_ptr<Label> x)
+    explicit CompiledData(shared_ptr<Label> x)
         : data(CompiledLabelDef{ std::move(x) })
+    {}
+
+    explicit CompiledData(CompiledNothing x)
+        : data(std::move(x))
     {}
 };
 

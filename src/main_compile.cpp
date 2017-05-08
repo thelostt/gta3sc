@@ -32,6 +32,8 @@ namespace
 
     auto generate_ir(const SymTable&, std::vector<shared_ptr<Script>>& scripts, ProgramContext& program) -> std::vector<CodeGenerator>;
 
+    void optimize_ir(std::vector<CodeGenerator>&, ProgramContext&);
+
     void generate_scm(std::vector<CodeGenerator>&);
 
     auto build_headers(std::vector<CodeGenerator>& gens, const SymTable& symbols, const std::vector<std::string>& models,
@@ -136,6 +138,8 @@ int compile(fs::path input, fs::path output, ProgramContext& program)
 
         if(program.opt.fsyntax_only)
             return EXIT_SUCCESS;
+
+        optimize_ir(gens, program);
 
         auto multi_headers = build_headers(gens, symbols, models, main, scripts, program);
 
@@ -497,6 +501,16 @@ auto generate_ir(const SymTable& symbols, std::vector<shared_ptr<Script>>& scrip
     });
 
     return gens;
+}
+
+void optimize_ir(std::vector<CodeGenerator>& gens, ProgramContext& program)
+{
+    if(!program.opt.optimize_with_peepholer)
+        return;
+
+    std::for_each(gens.begin(), gens.end(), [&](auto& gen) {
+        gen.peepholer(program);
+    });
 }
 
 void generate_scm(std::vector<CodeGenerator>& gens)
