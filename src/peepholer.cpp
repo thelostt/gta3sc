@@ -48,6 +48,36 @@ static auto get_label(CompiledCommand& ccmd, size_t i) -> shared_ptr<Label>
     return nullptr;
 }
 
+
+template<typename Operation>
+struct perform_op
+{
+    Operation op;
+
+    template<typename T, typename U>
+    auto operator()(const T& a, const U& b) const // -> optional<ArgVariant>
+        -> std::enable_if_t<std::is_integral_v<T> && std::is_integral_v<U>, optional<ArgVariant>>
+    {
+        // TODO smaller size
+        return int32_t { op(a, b) };
+    }
+
+    template<typename T, typename U>
+    auto operator()(const T& a, const U& b) const // -> optional<ArgVariant>
+        -> std::enable_if_t<std::is_floating_point_v<T> && std::is_floating_point_v<U>, optional<ArgVariant>>
+    {
+        return float { op(a, b) };
+    }
+
+    template<typename T, typename U>
+    auto operator()(const T& a, const U& b) const // -> optional<ArgVariant>
+        -> std::enable_if_t<!(std::is_integral_v<T> && std::is_integral_v<U>)
+                         && !(std::is_floating_point_v<T> && std::is_floating_point_v<U>), optional<ArgVariant>>
+    {
+        return nullopt;
+    }
+};
+
 void CodeGenerator::peepholer(ProgramContext& program)
 {
     if(!program.opt.optimize_with_peepholer)
@@ -68,7 +98,8 @@ void CodeGenerator::peepholer(ProgramContext& program)
             {
                 for(auto i = it->second; i < this->compiled.size(); ++i)
                 {
-                    if(is<CompiledLabelDef>(this->compiled[i].data))
+                    if(is<CompiledLabelDef>(this->compiled[i].data)
+                    || is<CompiledNothing>(this->compiled[i].data))
                         continue;
                     else if(is<CompiledCommand>(this->compiled[i].data))
                         return (get<CompiledCommand>(this->compiled[i].data));
@@ -78,6 +109,26 @@ void CodeGenerator::peepholer(ProgramContext& program)
             }
         }
         return nullopt;
+    };
+
+    auto try_constant_folding = [&](size_t i, auto& op0, auto& op1, auto operation,
+                                    optional<const Commands::Alternator&> alternator)
+    {
+        if(commands.is_alternator(*op1.command, alternator))
+        {
+            // TODO check if has args0 and args1 on both
+            if(op0.args[0] == op1.args[0])
+            {
+                auto r = eggs::variants::apply(std::move(operation), op0.args[1], op1.args[1]);
+                if(r != nullopt)
+                {
+                    this->compiled[i+1] = std::move(this->compiled[i]);
+                    get(this->compiled, i+1)->args[1] = *r;
+                    return true;
+                }
+            }
+        }
+        return false;
     };
 
     for(size_t i = 0; i < this->compiled.size(); ++i)
@@ -135,6 +186,21 @@ void CodeGenerator::peepholer(ProgramContext& program)
                 }
             }
 
+            // Perform constant folding.
+            // Replace {SET_THING_TO_THING VAR CONST -> OP_THING VAR CONST}
+            //    with {SET_THING_TO_THING VAR (CONST OP CONST)}
+            if(commands.is_alternator(*op0.command, commands.set))
+            {
+                if(auto opt_op1 = get(this->compiled, i+1))
+                {
+                    auto& op1 = *opt_op1;
+                    // TODO with more operations
+                       try_constant_folding(i, op0, op1, perform_op<std::plus<>>(), commands.add_thing_to_thing)
+                    || try_constant_folding(i, op0, op1, perform_op<std::minus<>>(), commands.sub_thing_from_thing)
+                    || try_constant_folding(i, op0, op1, perform_op<std::multiplies<>>(), commands.mult_thing_by_thing)
+                    || try_constant_folding(i, op0, op1, perform_op<std::divides<>>(), commands.div_thing_by_thing);
+                }
+            }
 
             // This must be at the bottom.
             // Remove any code past unconditional branches in the same basic block.

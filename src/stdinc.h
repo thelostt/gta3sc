@@ -81,6 +81,10 @@ struct Label;
 /// IR for end of argument list used in variadic argument commands.
 struct EOAL
 {
+    bool operator==(const EOAL&) const
+    {
+        return true;
+    }
 };
 
 /// Declared type of a variable.

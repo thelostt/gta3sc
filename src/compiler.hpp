@@ -48,6 +48,13 @@ struct CompiledString
     Type        type;
     bool        preserve_case;
     std::string storage;
+
+    bool operator==(const CompiledString& rhs) const
+    {
+        return this->type == rhs.type
+            && this->preserve_case == rhs.preserve_case
+            && this->storage == rhs.storage;
+    }
 };
 
 /// IR for a single argument of a command.
@@ -158,6 +165,21 @@ struct CompiledData
     explicit CompiledData(CompiledNothing x)
         : data(std::move(x))
     {}
+
+    CompiledData(const CompiledData&) = default;
+
+    CompiledData(CompiledData&& rhs) :
+        data(std::move(rhs.data))
+    {
+        rhs.data = CompiledNothing{};
+    }
+
+    CompiledData& operator=(CompiledData&& rhs)
+    {
+        this->data = std::move(rhs.data);
+        rhs.data = CompiledNothing{};
+        return *this;
+    }
 };
 
 /// Transforms an annotated syntax tree into a intermediate representation (vector of pseudo-instructions).
