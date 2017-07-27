@@ -392,7 +392,13 @@ static void lex_dump(LexerContext& lexer, const char* begin, const char* end, si
     {
         size_t tok_begin = begin_pos + std::distance(begin, next_token->first);
 
-        if((next_token->second % 2) != 0)
+        // Parses a string
+        if(next_token->first[0] == '"')
+        {
+            it = lex_token(lexer, next_token->first, end, begin_pos);
+            continue;
+        }
+        else if((next_token->second % 2) != 0)
         {
             lexer.error({tok_begin, tok_begin + next_token->second}, "hexadecimal tokens must have pairs of two digits");
         }
