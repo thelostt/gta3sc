@@ -3,6 +3,10 @@
 DUMP
    // CHECK-NEXT-L: WAIT 127i8
    0100 04 7F
+   // CHECK-NEXT-L: WAIT 127i8
+   "\x01\x00\x04\x7F"
+   // CHECK-NEXT-L: WAIT 127i8
+   "\x1\x0\x4\x7F"
    // CHECK-NEXT-L: WAIT -1i8
    01 00 04 FF
    // CHECK-NEXT-L: WAIT -110i8

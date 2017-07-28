@@ -166,7 +166,7 @@ static ParserState giveup_to_expected(ParserState state, const char* what)
             if(e.state == ParserStatus::GiveUp)
                 add_error(new_state, ParserError(ParserStatus::Error, e.context, fmt::format("expected {}", what)));
             else
-                add_error(new_state, std::move(e)); 
+                add_error(new_state, std::move(e));
         }
         return new_state;
     }
@@ -402,7 +402,7 @@ static ParserResult parse_expression_statement(ParserContext& parser, token_iter
 
             auto it = begin;
             std::tie(it, lhs) = match_lhs(parser, it, end);
-            
+
             if(!parser_isgiveup(lhs))
             {
                 if(it != end && (opa = match_op(it->type)))
@@ -720,7 +720,7 @@ static ParserResult parse_command_statement(ParserContext& parser, token_iterato
             return std::make_pair(it, std::move(state));
         }
     }
-    else 
+    else
     {
         return parse_positive_command_statement(parser, begin, end);
     }
@@ -840,7 +840,7 @@ static ParserResult parse_label_statement(ParserContext& parser, token_iterator 
 
 /*
     variableDeclaration
-        :	
+        :
             type=(VAR_INT|LVAR_INT|VAR_FLOAT|LVAR_FLOAT|VAR_TEXT_LABEL|LVAR_TEXT_LABEL|VAR_TEXT_LABEL16|LVAR_TEXT_LABEL16)
             identifier+
             newLine
@@ -900,17 +900,17 @@ static ParserResult parse_variable_declaration(ParserContext& parser, token_iter
     conditionList
         :	(conditionListSingle|conditionListAnd|conditionListOr)
         ;
-    
+
     conditionListSingle
         :	commandStatement
         ->  ^(commandStatement)
         ;
-    
+
     conditionListAnd
         :	commandStatement (AND commandStatement)+
         ->	^(AND commandStatement+)
         ;
-    
+
     conditionListOr
         :	commandStatement (OR commandStatement)+
         ->	^(OR commandStatement+)
@@ -1249,7 +1249,7 @@ static ParserResult parse_if_statement(ParserContext& parser, token_iterator beg
                 else_tree->add_child(get<ParserSuccess>(*body_false).tree);
                 tree->add_child(std::move(else_tree));
             }
-            
+
             return std::make_pair(it, ParserSuccess(std::move(tree)));
         }
         else
@@ -1263,7 +1263,7 @@ static ParserResult parse_if_statement(ParserContext& parser, token_iterator beg
 /*
     dumpStatement
         :	DUMP newLine
-                (HEXADECIMAL|newLine)*
+                (HEXADECIMAL|STRING|newLine)*
             ENDDUMP newLine
         ->	^(DUMP)
         ;
@@ -1286,9 +1286,75 @@ static ParserResult parse_dump_statement(ParserContext& parser, token_iterator b
             {
                 bytes.emplace_back(std::stoi(parser.get_text(*it).to_string(), nullptr, 16));
             }
+            else if(it->type == Token::String)
+            {
+                if (parser.program.opt.fdump_strings)
+                {
+                    auto isxdigit = [] (int c)
+                    {
+                      return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+                    };
+
+                    auto str_text = parser.get_text(*it);
+
+                    // Removes '"' from both sides.
+                    str_text.remove_prefix(1);
+                    str_text.remove_suffix(1);
+
+                    // Escapes a sequence of \x[:hexdigit:][:hexdigit:].
+                    // Could be better implemented.
+                    for(auto s_it = str_text.begin(); s_it != str_text.end(); ++s_it)
+                    {
+                        if(*s_it == '\\' && std::next(s_it) != str_text.end() && *std::next(s_it) == 'x')
+                        {
+                            std::advance(s_it, 2);
+                            auto hexseq_begin = s_it;
+
+                            if (s_it != str_text.end() && isxdigit(*s_it))
+                            {
+                              std::advance(s_it, 1);
+                            }
+
+                            if (s_it != str_text.end() && isxdigit(*s_it))
+                            {
+                              std::advance(s_it, 1);
+                            }
+
+                            if (hexseq_begin != s_it)
+                            {
+                                bytes.emplace_back(std::stoi(std::string(hexseq_begin, s_it), nullptr, 16));
+                                std::advance(s_it, -1);
+                            }
+                            else
+                            {
+                                const size_t esc_begin = it->begin + std::distance(str_text.begin(), s_it);
+                                TokenStream::TokenInfo esc_token(parser.tstream.text, esc_begin, esc_begin + 1);
+                                parser.program.warning(esc_token, "empty escape sequence has no effect");
+                            }
+
+                            if (s_it == str_text.end())
+                              break;
+                        }
+                        else
+                        {
+                            // Escape '\\'
+                            if(*s_it == '\\' && std::next(s_it) != str_text.end() && *std::next(s_it) == '\\')
+                              std::advance(s_it, 1);
+                            bytes.push_back(*s_it);
+                        }
+                    }
+                }
+                else
+                {
+                    add_error(state, ParserError(ParserStatus::Error, it, "strings are not allowed in DUMP statements, use -fdump-strings to enable it"));
+                }
+            }
             else if(it->type != Token::NewLine)
             {
-                add_error(state, ParserError(ParserStatus::Error, it, "expected hexadecimal value"));
+                const char* err_msg = parser.program.opt.fdump_strings
+                  ? "expected hexadecimal value"
+                  : "expected hexadecimal value, or string literal";
+                add_error(state, ParserError(ParserStatus::Error, it, err_msg));
             }
         }
 
@@ -1368,7 +1434,7 @@ shared_ptr<SyntaxTree> SyntaxTree::clone() const
     tree->token = this->token;
     tree->instream = this->instream;
     tree->udata = this->udata;
-    
+
     for(auto& child : this->childs)
         tree->add_child(child->clone());
 

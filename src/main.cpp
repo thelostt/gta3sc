@@ -41,6 +41,7 @@ Language Options:
   -fswitch                 Enables the SWITCH statement.
   -farrays                 Enables the use of arrays.
   -fconst                  Enables the use of CONST_INT and CONST_FLOAT.
+  -fdump-strings           Enables the use of strings inside DUMP statements.
   -ftext-label-vars        Enables VAR_TEXT_LABEL and VAR_TEXT_LABEL16.
   -fskip-cutscene          Enables the use of SKIP_CUTSCENE_START.
   -fscript-name-check      Checks for duplicate SCRIPT_NAMEs.
@@ -316,6 +317,10 @@ bool parse_args(char**& argv, fs::path& input, fs::path& output, DataInfo& data,
             else if(optflag(argv, "-fconst", &flag))
             {
                 options.fconst = flag;
+            }
+            else if(optflag(argv, "-fdump-strings", &flag))
+            {
+                options.fdump_strings = flag;
             }
             else if(optflag(argv, "-fstreamed-scripts", &flag))
             {
