@@ -1290,14 +1290,59 @@ static ParserResult parse_dump_statement(ParserContext& parser, token_iterator b
             {
                 if (parser.program.opt.fdump_strings)
                 {
+                    auto isxdigit = [] (int c)
+                    {
+                      return (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F') || (c >= 'a' && c <= 'f');
+                    };
+
                     auto str_text = parser.get_text(*it);
 
                     // Removes '"' from both sides.
                     str_text.remove_prefix(1);
                     str_text.remove_suffix(1);
 
-                    for (uint8_t b : str_text)
-                      bytes.push_back(b);
+                    // Escapes a sequence of \x[:hexdigit:][:hexdigit:].
+                    // Could be better implemented.
+                    for(auto s_it = str_text.begin(); s_it != str_text.end(); ++s_it)
+                    {
+                        if(*s_it == '\\' && std::next(s_it) != str_text.end() && *std::next(s_it) == 'x')
+                        {
+                            std::advance(s_it, 2);
+                            auto hexseq_begin = s_it;
+
+                            if (s_it != str_text.end() && isxdigit(*s_it))
+                            {
+                              std::advance(s_it, 1);
+                            }
+
+                            if (s_it != str_text.end() && isxdigit(*s_it))
+                            {
+                              std::advance(s_it, 1);
+                            }
+
+                            if (hexseq_begin != s_it)
+                            {
+                                bytes.emplace_back(std::stoi(std::string(hexseq_begin, s_it), nullptr, 16));
+                                std::advance(s_it, -1);
+                            }
+                            else
+                            {
+                                const size_t esc_begin = it->begin + std::distance(str_text.begin(), s_it);
+                                TokenStream::TokenInfo esc_token(parser.tstream.text, esc_begin, esc_begin + 1);
+                                parser.program.warning(esc_token, "empty escape sequence has no effect");
+                            }
+
+                            if (s_it == str_text.end())
+                              break;
+                        }
+                        else
+                        {
+                            // Escape '\\'
+                            if(*s_it == '\\' && std::next(s_it) != str_text.end() && *std::next(s_it) == '\\')
+                              std::advance(s_it, 1);
+                            bytes.push_back(*s_it);
+                        }
+                    }
                 }
                 else
                 {

@@ -395,6 +395,7 @@ static void lex_dump(LexerContext& lexer, const char* begin, const char* end, si
         // Parses a string
         if(next_token->first[0] == '"')
         {
+            // FIXME should it check for (length % 2) == 0?
             it = lex_token(lexer, next_token->first, end, begin_pos);
             continue;
         }
